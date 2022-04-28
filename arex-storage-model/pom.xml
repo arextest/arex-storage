@@ -4,11 +4,11 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>arex-storage-service</artifactId>
-        <groupId>io.arex</groupId>
-        <version>1.0.0-SNAPSHOT</version>
+        <groupId>com.arextest</groupId>
+        <version>1.0.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <version>1.0.7-SNAPSHOT</version>
+    <version>1.0.0</version>
     <artifactId>arex-storage-model</artifactId>
     <dependencies>
         <dependency>

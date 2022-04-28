@@ -3,10 +3,10 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>io.arex</groupId>
+    <groupId>com.arextest</groupId>
     <artifactId>arex-storage-service</artifactId>
     <packaging>pom</packaging>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <modules>
         <module>arex-storage-model</module>
         <module>arex-storage-web-api-service</module>
@@ -19,13 +19,8 @@
         <spring.boot.version>1.5.9.RELEASE</spring.boot.version>
         <jmockit.version>1.37</jmockit.version>
         <lombok.version>1.18.2</lombok.version>
-        <arex.storage.model.version>1.0.7-SNAPSHOT</arex.storage.model.version>
-        <releases.repo>
-            http://maven.release.ctripcorp.com/nexus/content/repositories/flightrelease
-        </releases.repo>
-        <snapshots.repo>
-            http://maven.release.ctripcorp.com/nexus/content/repositories/flightsnapshot
-        </snapshots.repo>
+        <arex.storage.model.version>1.0.0</arex.storage.model.version>
+
         <jacoco-maven-plugin.version>0.7.5.201505241946</jacoco-maven-plugin.version>
         <!-- single jacoco.exec file relative to root directory of the project -->
         <jacoco.report.path>${project.basedir}/code-coverage/jacoco.exec</jacoco.report.path>
@@ -90,7 +85,7 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>io.arex</groupId>
+                <groupId>com.arextest</groupId>
                 <artifactId>arex-storage-model</artifactId>
                 <version>${arex.storage.model.version}</version>
             </dependency>
@@ -105,9 +100,9 @@
                 <version>${commons-lang3.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.arex</groupId>
+                <groupId>com.arextest</groupId>
                 <artifactId>arex-common</artifactId>
-                <version>1.0.0-SNAPSHOT</version>
+                <version>0.1.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -214,37 +209,18 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-war-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-install-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
-            </plugin>
         </plugins>
     </build>
     <distributionManagement>
         <snapshotRepository>
             <id>snapshots</id>
             <name>nexus snapshots</name>
-            <url>${snapshots.repo}</url>
+            <url>${snapshotRepository.url}</url>
         </snapshotRepository>
+        <repository>
+            <id>releases</id>
+            <name>nexus releases</name>
+            <url>${releasesRepository.url}</url>
+        </repository>
     </distributionManagement>
 </project>
