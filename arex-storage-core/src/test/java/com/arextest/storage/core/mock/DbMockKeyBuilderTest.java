@@ -4,7 +4,7 @@ import com.arextest.storage.model.mocker.impl.DalResultMocker;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import mockit.Injectable;
 import mockit.Tested;
-import mockit.integration.junit4.JMockit;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,14 +15,12 @@ import java.util.List;
  * @author jmo
  * @since 2022/1/12
  */
-@RunWith(JMockit.class)
 public class DbMockKeyBuilderTest {
     @Tested
     private DbMockKeyBuilder dbMockKeyBuilder;
     @Injectable
     private ObjectMapper objectMapper;
 
-    @Test
     public void dalMockKeyBuildTest() {
         DalResultMocker dalResultMocker = new DalResultMocker();
         String sqlText = "SELECT a.runoob_id, a.runoob_author, b.runoob_count FROMX db.`A` a, `B` b " +

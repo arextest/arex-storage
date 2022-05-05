@@ -17,7 +17,7 @@
         <junit.version>4.12</junit.version>
         <commons-lang3.version>3.3.2</commons-lang3.version>
         <spring.boot.version>1.5.9.RELEASE</spring.boot.version>
-        <jmockit.version>1.37</jmockit.version>
+        <jmockit.version>1.49</jmockit.version>
         <lombok.version>1.18.2</lombok.version>
         <arex.storage.model.version>1.0.0</arex.storage.model.version>
 
@@ -104,6 +104,11 @@
                 <artifactId>arex-common</artifactId>
                 <version>0.1.0</version>
             </dependency>
+            <dependency>
+                <groupId>javax.annotation</groupId>
+                <artifactId>jsr250-api</artifactId>
+                <version>1.0</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
@@ -140,6 +145,10 @@
         <dependency>
             <groupId>javax.validation</groupId>
             <artifactId>validation-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>jsr250-api</artifactId>
         </dependency>
     </dependencies>
     <build>
