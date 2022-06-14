@@ -15,7 +15,5 @@ public class HttpClientMocker extends AbstractMocker {
     private String url;
     @FieldCompression
     private String request;
-    @FieldCompression
-    private String response;
-    private String responseType;
+    private String method;
 }

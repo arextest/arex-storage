@@ -12,9 +12,6 @@ import lombok.EqualsAndHashCode;
 @Data
 public class DatabaseMocker extends AbstractMocker {
     private String dbName;
-    @FieldCompression
-    private String response;
-    private String responseType;
     private String parameters;
     private String tables;
     private String sql;

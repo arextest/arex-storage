@@ -15,10 +15,6 @@ import org.bson.codecs.pojo.annotations.BsonIgnore;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class SoaMainMocker extends ServiceMocker implements MainEntry {
-    /**
-     * 结果类型字符串
-     */
-    private String responseType;
     private Integer configVersion;
     private String agentVersion;
     private String format;

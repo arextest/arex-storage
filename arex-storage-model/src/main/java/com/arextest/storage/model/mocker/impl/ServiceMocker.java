@@ -18,6 +18,4 @@ public class ServiceMocker extends AbstractMocker {
     private String operation;
     @FieldCompression
     private String request;
-    @FieldCompression
-    private String response;
 }

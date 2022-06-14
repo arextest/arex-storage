@@ -1,6 +1,6 @@
 package com.arextest.storage.model.mocker.impl;
 
-import com.arextest.storage.model.annotations.FieldCompression;
+
 import com.arextest.storage.model.mocker.AbstractMocker;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -15,8 +15,6 @@ public class DalResultMocker extends AbstractMocker {
     private String database;
     private String sql;
     private String parameter;
-    @FieldCompression
-    private String response;
     private String typeName;
     private String keyHolder;
     private String methodName;

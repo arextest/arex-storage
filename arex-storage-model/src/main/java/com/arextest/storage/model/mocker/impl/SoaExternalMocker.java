@@ -10,8 +10,5 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class SoaExternalMocker extends ServiceMocker {
-    /**
-     * 结果类型字符串
-     */
-    private String responseType;
+
 }

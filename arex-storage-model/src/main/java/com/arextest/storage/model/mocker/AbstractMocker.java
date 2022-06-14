@@ -1,6 +1,7 @@
 package com.arextest.storage.model.mocker;
 
 
+import com.arextest.storage.model.annotations.FieldCompression;
 import lombok.Data;
 
 /**
@@ -14,4 +15,7 @@ public abstract class AbstractMocker implements MockItem {
     private String appId;
     private long createTime;
     private String ip;
+    @FieldCompression
+    private String response;
+    private String responseType;
 }

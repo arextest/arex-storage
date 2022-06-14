@@ -12,12 +12,12 @@ import lombok.EqualsAndHashCode;
 @Data
 public class ABtMocker extends AbstractMocker {
     /**
-     * abt的key
+     * abt key
      */
     private String expCode;
 
     /**
-     * abt的value
+     * abt value
      */
     private String version;
 }

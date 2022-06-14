@@ -25,8 +25,7 @@ public class ServletMocker extends AbstractMocker implements MainEntry {
     private Map<String, String> responseHeaders;
     @FieldCompression
     private String request;
-    @FieldCompression
-    private String response;
+
     private int env;
 
     @JsonIgnore
