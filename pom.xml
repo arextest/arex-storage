@@ -302,8 +302,8 @@
         </developer>
     </developers>
     <scm>
-        <connection>scm:git:git://github.com/arextest/arex-compare-sdk.git</connection>
-        <developerConnection>scm:git:ssh://github.com:arextest/arex-compare-sdk.git</developerConnection>
-        <url>https://github.com/arextest/arex-compare-sdk</url>
+        <connection>scm:git:git://github.com/arextest/arex-storage.git</connection>
+        <developerConnection>scm:git:ssh://github.com:arextest/arex-storage.git</developerConnection>
+        <url>https://github.com/arextest/arex-storage</url>
     </scm>
 </project>
