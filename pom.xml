@@ -7,6 +7,11 @@
     <artifactId>arex-storage-service</artifactId>
     <packaging>pom</packaging>
     <version>1.0.0</version>
+
+    <name>${project.groupId}:${project.artifactId}</name>
+    <description>Arex-storage is used for data storage.</description>
+    <url>https://github.com/arextest/arex-storage</url>
+
     <modules>
         <module>arex-storage-model</module>
         <module>arex-storage-web-api-service</module>
