@@ -242,7 +242,7 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>3.4.0</version>
                 <configuration>
-                    <additionalOptions>-html5</additionalOptions>
+                    <doclint>none</doclint>
                     <source>8</source>
                     <detectJavaApiLink>false</detectJavaApiLink>
                 </configuration>
