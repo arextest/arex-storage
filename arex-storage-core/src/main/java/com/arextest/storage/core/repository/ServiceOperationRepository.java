@@ -7,5 +7,5 @@ import com.arextest.storage.model.dao.ServiceOperationEntity;
  * @since 2022/8/25
  */
 public interface ServiceOperationRepository extends Repository {
-    Boolean findAndUpdate(ServiceOperationEntity entity);
+    boolean findAndUpdate(ServiceOperationEntity entity);
 }

@@ -52,6 +52,7 @@ public final class AgentWorkingService {
     private ServiceOperationRepository serviceOperationRepository;
 
     private static final String DASH = "_";
+    private static final int SERVICE_TYPE_NORMAL = 4;
     private Map<String, String> operationMap = new ConcurrentHashMap<>(100);
 
     /**
@@ -152,7 +153,7 @@ public final class AgentWorkingService {
             operationEntity.setOperationName(servlet.getPattern());
             operationEntity.setOperationType(category.getCodeValue());
             operationEntity.setServiceId(serviceEntity.getId().toString());
-            operationEntity.setStatus(4);
+            operationEntity.setStatus(SERVICE_TYPE_NORMAL);
             if (serviceOperationRepository.findAndUpdate(operationEntity)) {
                 operationMap.putIfAbsent(key, StringUtils.EMPTY);
             }

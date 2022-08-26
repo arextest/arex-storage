@@ -40,7 +40,7 @@ public class ServiceOperationRepositoryImpl implements ServiceOperationRepositor
         return mongoDatabase.getCollection(this.getCollectionName(), ServiceOperationEntity.class);
     }
     @Override
-    public Boolean findAndUpdate(ServiceOperationEntity entity) {
+    public boolean findAndUpdate(ServiceOperationEntity entity) {
         Bson query = Filters.and(Filters.eq(SERVICE_ID, entity.getServiceId()),
                 Filters.eq(OPERATION_NAME, entity.getOperationName()),
                 Filters.eq(APP_ID, entity.getAppId()));

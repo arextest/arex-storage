@@ -6,6 +6,6 @@ import org.bson.types.ObjectId;
 @Data
 public class BaseEntity {
     private ObjectId id;
-    private Long dataChangeCreateTime;
-    private Long dataChangeUpdateTime;
+    private long dataChangeCreateTime;
+    private long dataChangeUpdateTime;
 }
