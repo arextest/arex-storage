@@ -65,10 +65,6 @@ public interface MainEntry extends MockItem {
         return "POST";
     }
 
-    default Map<String, String> getRequestHeaders() {
-        return null;
-    }
-
     default String getPath() {
         return null;
     }
