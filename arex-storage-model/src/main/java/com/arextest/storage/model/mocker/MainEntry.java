@@ -68,4 +68,8 @@ public interface MainEntry extends MockItem {
     default String getPath() {
         return null;
     }
+
+    default String getRequestHeaders() {
+        return null;
+    }
 }
