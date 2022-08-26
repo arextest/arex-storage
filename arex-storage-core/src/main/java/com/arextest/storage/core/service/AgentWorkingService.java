@@ -4,17 +4,27 @@ import com.arextest.storage.core.mock.MockResultProvider;
 import com.arextest.storage.core.repository.RepositoryProvider;
 import com.arextest.storage.core.repository.RepositoryProviderFactory;
 import com.arextest.storage.core.repository.RepositoryReader;
+import com.arextest.storage.core.repository.ServiceOperationRepository;
+import com.arextest.storage.core.repository.ServiceRepository;
 import com.arextest.storage.core.serialization.ZstdJacksonSerializer;
+import com.arextest.storage.model.dao.ServiceEntity;
+import com.arextest.storage.model.dao.ServiceOperationEntity;
 import com.arextest.storage.model.mocker.ConfigVersion;
 import com.arextest.storage.model.mocker.MockItem;
 import com.arextest.storage.model.enums.MockCategoryType;
 import com.arextest.storage.model.mocker.impl.ConfigVersionMocker;
+import com.arextest.storage.model.mocker.impl.ServletMocker;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import javax.swing.text.html.parser.Entity;
 import javax.validation.constraints.NotNull;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The agent working should be complete two things:
@@ -36,6 +46,13 @@ public final class AgentWorkingService {
     private PrepareMockResultService prepareMockResultService;
     @Resource
     private RecordReplayMappingBuilder recordReplayMappingBuilder;
+    @Resource
+    private ServiceRepository serviceRepository;
+    @Resource
+    private ServiceOperationRepository serviceOperationRepository;
+
+    private static final String DASH = "_";
+    private Map<String, String> operationMap = new ConcurrentHashMap<>(100);
 
     /**
      * requested from AREX's agent hits to recording, we direct save to repository for next replay using
@@ -47,6 +64,7 @@ public final class AgentWorkingService {
      */
     public <T extends MockItem> boolean saveRecord(@NotNull MockCategoryType category, @NotNull T item) {
         RepositoryProvider<T> repositoryWriter = repositoryProviderFactory.findProvider(category);
+        updateMapping(category, item);
         return repositoryWriter != null && repositoryWriter.save(item);
     }
 
@@ -115,5 +133,29 @@ public final class AgentWorkingService {
             return ZstdJacksonSerializer.EMPTY_INSTANCE;
         }
         return queryConfigVersion(MockCategoryType.CONFIG_VERSION, application);
+    }
+
+    private <T extends MockItem> void updateMapping(@NotNull MockCategoryType category, @NotNull T item) {
+        if (item.getClass() == ServletMocker.class) {
+            ServletMocker servlet = (ServletMocker) item;
+
+            ServiceEntity serviceEntity = serviceRepository.queryByAppId(servlet.getAppId());
+            if (serviceEntity == null) {
+                return;
+            }
+            String key = serviceEntity.getId().toString() + DASH + servlet.getPattern();
+            if (operationMap.containsKey(key)) {
+                return;
+            }
+            ServiceOperationEntity operationEntity = new ServiceOperationEntity();
+            operationEntity.setAppId(servlet.getAppId());
+            operationEntity.setOperationName(servlet.getPattern());
+            operationEntity.setOperationType(category.getCodeValue());
+            operationEntity.setServiceId(serviceEntity.getId().toString());
+            operationEntity.setStatus(4);
+            if (serviceOperationRepository.findAndUpdate(operationEntity)) {
+                operationMap.putIfAbsent(key, StringUtils.EMPTY);
+            }
+        }
     }
 }
