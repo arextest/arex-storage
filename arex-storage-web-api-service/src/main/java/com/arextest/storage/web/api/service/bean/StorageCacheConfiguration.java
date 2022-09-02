@@ -3,8 +3,11 @@ package com.arextest.storage.web.api.service.bean;
 
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.common.cache.DefaultRedisCacheProvider;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cglib.core.internal.LoadingCache;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -21,6 +24,8 @@ class StorageCacheConfiguration {
     private String cacheHostUrl;
     @Value("${arex.storage.cache.provider:}")
     private String cacheProvider;
+    @Value("${arex.storage.operation.cache.maxweight}")
+    private long maximumWeight;
 
     @Bean
     CacheProvider cacheProvider() {
@@ -32,6 +37,20 @@ class StorageCacheConfiguration {
             provider = this.createDefaultCacheProvider();
         }
         return provider;
+    }
+
+    @Bean(name = "operationCache")
+    public Cache<String, String> operationCache() {
+        if (maximumWeight == 0) {
+            maximumWeight = 2 * 1024 * 1024 * 1024;
+        }
+        Cache<String, String> cache = Caffeine
+                .newBuilder()
+                .initialCapacity(1000)
+                .maximumWeight(maximumWeight)
+                .weigher((String key, String value) -> key.length() + value.length())
+                .build();
+        return cache;
     }
 
     private CacheProvider createDefaultCacheProvider() {

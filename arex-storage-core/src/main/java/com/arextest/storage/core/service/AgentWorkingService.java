@@ -14,6 +14,7 @@ import com.arextest.storage.model.mocker.MockItem;
 import com.arextest.storage.model.enums.MockCategoryType;
 import com.arextest.storage.model.mocker.impl.ConfigVersionMocker;
 import com.arextest.storage.model.mocker.impl.ServletMocker;
+import com.github.benmanes.caffeine.cache.Cache;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -50,10 +51,16 @@ public final class AgentWorkingService {
     private ServiceRepository serviceRepository;
     @Resource
     private ServiceOperationRepository serviceOperationRepository;
+    @Resource(name = "operationCache")
+    private Cache<String, String> operationCache;
 
     private static final String DASH = "_";
     private static final int SERVICE_TYPE_NORMAL = 4;
-    private Map<String, String> operationMap = new ConcurrentHashMap<>(100);
+    /**
+     * serviceMap.key:      appId
+     * serviceMap.value     serviceId
+     */
+    private Map<String, String> serviceMap = new ConcurrentHashMap<>(100);
 
     /**
      * requested from AREX's agent hits to recording, we direct save to repository for next replay using
@@ -140,22 +147,29 @@ public final class AgentWorkingService {
         if (item.getClass() == ServletMocker.class) {
             ServletMocker servlet = (ServletMocker) item;
 
-            ServiceEntity serviceEntity = serviceRepository.queryByAppId(servlet.getAppId());
-            if (serviceEntity == null) {
-                return;
+            if (!serviceMap.containsKey(servlet.getAppId())) {
+                ServiceEntity serviceEntity = serviceRepository.queryByAppId(servlet.getAppId());
+                if (serviceEntity == null) {
+                    LOGGER.info("AppId:{} does not have a valid service", servlet.getAppId());
+                    return;
+                } else {
+                    serviceMap.putIfAbsent(servlet.getAppId(), serviceEntity.getId().toString());
+                }
             }
-            String key = serviceEntity.getId().toString() + DASH + servlet.getPattern();
-            if (operationMap.containsKey(key)) {
+
+            String serviceId = serviceMap.get(servlet.getAppId());
+            String key = serviceId + DASH + servlet.getPattern();
+            if (operationCache.getIfPresent(key) != null) {
                 return;
             }
             ServiceOperationEntity operationEntity = new ServiceOperationEntity();
             operationEntity.setAppId(servlet.getAppId());
             operationEntity.setOperationName(servlet.getPattern());
             operationEntity.setOperationType(category.getCodeValue());
-            operationEntity.setServiceId(serviceEntity.getId().toString());
+            operationEntity.setServiceId(serviceId);
             operationEntity.setStatus(SERVICE_TYPE_NORMAL);
             if (serviceOperationRepository.findAndUpdate(operationEntity)) {
-                operationMap.putIfAbsent(key, StringUtils.EMPTY);
+                operationCache.put(key, StringUtils.EMPTY);
             }
         }
     }
