@@ -39,20 +39,6 @@ class StorageCacheConfiguration {
         return provider;
     }
 
-    @Bean(name = "operationCache")
-    public Cache<String, String> operationCache() {
-        if (maximumWeight == 0) {
-            maximumWeight = 2 * 1024 * 1024 * 1024;
-        }
-        Cache<String, String> cache = Caffeine
-                .newBuilder()
-                .initialCapacity(1000)
-                .maximumWeight(maximumWeight)
-                .weigher((String key, String value) -> key.length() + value.length())
-                .build();
-        return cache;
-    }
-
     private CacheProvider createDefaultCacheProvider() {
         if (StringUtils.isEmpty(cacheHostUrl)) {
             return new DefaultRedisCacheProvider();

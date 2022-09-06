@@ -1,5 +1,7 @@
 package com.arextest.storage.core.service;
 
+import com.arextest.common.cache.CacheProvider;
+import com.arextest.storage.core.cache.CacheKeyUtils;
 import com.arextest.storage.core.mock.MockResultProvider;
 import com.arextest.storage.core.repository.RepositoryProvider;
 import com.arextest.storage.core.repository.RepositoryProviderFactory;
@@ -51,8 +53,8 @@ public final class AgentWorkingService {
     private ServiceRepository serviceRepository;
     @Resource
     private ServiceOperationRepository serviceOperationRepository;
-    @Resource(name = "operationCache")
-    private Cache<String, String> operationCache;
+    @Resource
+    private CacheProvider cacheProvider;
 
     private static final String DASH = "_";
     private static final int SERVICE_TYPE_NORMAL = 4;
@@ -159,7 +161,7 @@ public final class AgentWorkingService {
 
             String serviceId = serviceMap.get(servlet.getAppId());
             String key = serviceId + DASH + servlet.getPattern();
-            if (operationCache.getIfPresent(key) != null) {
+            if (cacheProvider.get(CacheKeyUtils.toUtf8Bytes(key)) != null) {
                 return;
             }
             ServiceOperationEntity operationEntity = new ServiceOperationEntity();
@@ -169,7 +171,7 @@ public final class AgentWorkingService {
             operationEntity.setServiceId(serviceId);
             operationEntity.setStatus(SERVICE_TYPE_NORMAL);
             if (serviceOperationRepository.findAndUpdate(operationEntity)) {
-                operationCache.put(key, StringUtils.EMPTY);
+                cacheProvider.put(CacheKeyUtils.toUtf8Bytes(key), CacheKeyUtils.toUtf8Bytes(StringUtils.EMPTY));
             }
         }
     }
