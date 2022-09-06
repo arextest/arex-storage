@@ -58,11 +58,7 @@ public final class AgentWorkingService {
 
     private static final String DASH = "_";
     private static final int SERVICE_TYPE_NORMAL = 4;
-    /**
-     * serviceMap.key:      appId
-     * serviceMap.value     serviceId
-     */
-    private Map<String, String> serviceMap = new ConcurrentHashMap<>(100);
+    private static final String SERVICE_MAPPINGS_PREFIX = "service_mappings_";
 
     /**
      * requested from AREX's agent hits to recording, we direct save to repository for next replay using
@@ -149,19 +145,21 @@ public final class AgentWorkingService {
         if (item.getClass() == ServletMocker.class) {
             ServletMocker servlet = (ServletMocker) item;
 
-            if (!serviceMap.containsKey(servlet.getAppId())) {
+            String appServiceKey = SERVICE_MAPPINGS_PREFIX + servlet.getAppId();
+            if (cacheProvider.get(CacheKeyUtils.toUtf8Bytes(appServiceKey)) == null) {
                 ServiceEntity serviceEntity = serviceRepository.queryByAppId(servlet.getAppId());
                 if (serviceEntity == null) {
                     LOGGER.info("AppId:{} does not have a valid service", servlet.getAppId());
                     return;
                 } else {
-                    serviceMap.putIfAbsent(servlet.getAppId(), serviceEntity.getId().toString());
+                    cacheProvider.put(CacheKeyUtils.toUtf8Bytes(appServiceKey),
+                            CacheKeyUtils.toUtf8Bytes(serviceEntity.getId().toString()));
                 }
             }
 
-            String serviceId = serviceMap.get(servlet.getAppId());
-            String key = serviceId + DASH + servlet.getPattern();
-            if (cacheProvider.get(CacheKeyUtils.toUtf8Bytes(key)) != null) {
+            String serviceId = CacheKeyUtils.fromUtf8Bytes(cacheProvider.get(CacheKeyUtils.toUtf8Bytes(appServiceKey)));
+            String operationKey = SERVICE_MAPPINGS_PREFIX + serviceId + DASH + servlet.getPattern();
+            if (cacheProvider.get(CacheKeyUtils.toUtf8Bytes(operationKey)) != null) {
                 return;
             }
             ServiceOperationEntity operationEntity = new ServiceOperationEntity();
@@ -171,7 +169,8 @@ public final class AgentWorkingService {
             operationEntity.setServiceId(serviceId);
             operationEntity.setStatus(SERVICE_TYPE_NORMAL);
             if (serviceOperationRepository.findAndUpdate(operationEntity)) {
-                cacheProvider.put(CacheKeyUtils.toUtf8Bytes(key), CacheKeyUtils.toUtf8Bytes(StringUtils.EMPTY));
+                cacheProvider.put(CacheKeyUtils.toUtf8Bytes(operationKey),
+                        CacheKeyUtils.toUtf8Bytes(StringUtils.EMPTY));
             }
         }
     }
