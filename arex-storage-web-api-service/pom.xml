@@ -48,9 +48,5 @@
             <groupId>com.arextest</groupId>
             <artifactId>arex-common</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.github.ben-manes.caffeine</groupId>
-            <artifactId>caffeine</artifactId>
-        </dependency>
     </dependencies>
 </project>
