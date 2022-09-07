@@ -11,23 +11,17 @@ import com.arextest.storage.core.repository.ServiceRepository;
 import com.arextest.storage.core.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.model.dao.ServiceEntity;
 import com.arextest.storage.model.dao.ServiceOperationEntity;
+import com.arextest.storage.model.enums.MockCategoryType;
 import com.arextest.storage.model.mocker.ConfigVersion;
 import com.arextest.storage.model.mocker.MockItem;
-import com.arextest.storage.model.enums.MockCategoryType;
 import com.arextest.storage.model.mocker.impl.ConfigVersionMocker;
 import com.arextest.storage.model.mocker.impl.ServletMocker;
-import com.github.benmanes.caffeine.cache.Cache;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import javax.swing.text.html.parser.Entity;
 import javax.validation.constraints.NotNull;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The agent working should be complete two things:
