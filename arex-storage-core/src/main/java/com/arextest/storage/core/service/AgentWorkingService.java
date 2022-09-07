@@ -53,6 +53,7 @@ public final class AgentWorkingService {
     private static final String DASH = "_";
     private static final int SERVICE_TYPE_NORMAL = 4;
     private static final String SERVICE_MAPPINGS_PREFIX = "service_mappings_";
+    private static final byte[] EMPTY_BYTE_ARRAY = CacheKeyUtils.toUtf8Bytes(StringUtils.EMPTY);
 
     /**
      * requested from AREX's agent hits to recording, we direct save to repository for next replay using
@@ -163,7 +164,7 @@ public final class AgentWorkingService {
             operationEntity.setServiceId(serviceId);
             operationEntity.setStatus(SERVICE_TYPE_NORMAL);
             if (serviceOperationRepository.findAndUpdate(operationEntity)) {
-                cacheProvider.put(operationKey, CacheKeyUtils.toUtf8Bytes(StringUtils.EMPTY));
+                cacheProvider.put(operationKey, EMPTY_BYTE_ARRAY);
             }
         }
     }
