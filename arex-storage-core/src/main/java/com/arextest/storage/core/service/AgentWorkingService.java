@@ -145,21 +145,21 @@ public final class AgentWorkingService {
         if (item.getClass() == ServletMocker.class) {
             ServletMocker servlet = (ServletMocker) item;
 
-            String appServiceKey = SERVICE_MAPPINGS_PREFIX + servlet.getAppId();
-            if (cacheProvider.get(CacheKeyUtils.toUtf8Bytes(appServiceKey)) == null) {
+            byte[] appServiceKey = CacheKeyUtils.toUtf8Bytes(SERVICE_MAPPINGS_PREFIX + servlet.getAppId());
+            if (cacheProvider.get(appServiceKey) == null) {
                 ServiceEntity serviceEntity = serviceRepository.queryByAppId(servlet.getAppId());
                 if (serviceEntity == null) {
                     LOGGER.info("AppId:{} does not have a valid service", servlet.getAppId());
                     return;
                 } else {
-                    cacheProvider.put(CacheKeyUtils.toUtf8Bytes(appServiceKey),
-                            CacheKeyUtils.toUtf8Bytes(serviceEntity.getId().toString()));
+                    cacheProvider.put(appServiceKey, CacheKeyUtils.toUtf8Bytes(serviceEntity.getId().toString()));
                 }
             }
 
-            String serviceId = CacheKeyUtils.fromUtf8Bytes(cacheProvider.get(CacheKeyUtils.toUtf8Bytes(appServiceKey)));
-            String operationKey = SERVICE_MAPPINGS_PREFIX + serviceId + DASH + servlet.getPattern();
-            if (cacheProvider.get(CacheKeyUtils.toUtf8Bytes(operationKey)) != null) {
+            String serviceId = CacheKeyUtils.fromUtf8Bytes(cacheProvider.get(appServiceKey));
+            byte[] operationKey =
+                    CacheKeyUtils.toUtf8Bytes(SERVICE_MAPPINGS_PREFIX + serviceId + DASH + servlet.getPattern());
+            if (cacheProvider.get(operationKey) != null) {
                 return;
             }
             ServiceOperationEntity operationEntity = new ServiceOperationEntity();
@@ -169,8 +169,7 @@ public final class AgentWorkingService {
             operationEntity.setServiceId(serviceId);
             operationEntity.setStatus(SERVICE_TYPE_NORMAL);
             if (serviceOperationRepository.findAndUpdate(operationEntity)) {
-                cacheProvider.put(CacheKeyUtils.toUtf8Bytes(operationKey),
-                        CacheKeyUtils.toUtf8Bytes(StringUtils.EMPTY));
+                cacheProvider.put(operationKey, CacheKeyUtils.toUtf8Bytes(StringUtils.EMPTY));
             }
         }
     }
