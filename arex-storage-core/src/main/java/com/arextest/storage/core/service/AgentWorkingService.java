@@ -1,5 +1,7 @@
 package com.arextest.storage.core.service;
 
+import com.arextest.common.cache.CacheProvider;
+import com.arextest.storage.core.cache.CacheKeyUtils;
 import com.arextest.storage.core.mock.MockResultProvider;
 import com.arextest.storage.core.repository.RepositoryProvider;
 import com.arextest.storage.core.repository.RepositoryProviderFactory;
@@ -9,9 +11,9 @@ import com.arextest.storage.core.repository.ServiceRepository;
 import com.arextest.storage.core.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.model.dao.ServiceEntity;
 import com.arextest.storage.model.dao.ServiceOperationEntity;
+import com.arextest.storage.model.enums.MockCategoryType;
 import com.arextest.storage.model.mocker.ConfigVersion;
 import com.arextest.storage.model.mocker.MockItem;
-import com.arextest.storage.model.enums.MockCategoryType;
 import com.arextest.storage.model.mocker.impl.ConfigVersionMocker;
 import com.arextest.storage.model.mocker.impl.ServletMocker;
 import lombok.extern.slf4j.Slf4j;
@@ -19,12 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import javax.swing.text.html.parser.Entity;
 import javax.validation.constraints.NotNull;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The agent working should be complete two things:
@@ -50,10 +47,13 @@ public final class AgentWorkingService {
     private ServiceRepository serviceRepository;
     @Resource
     private ServiceOperationRepository serviceOperationRepository;
+    @Resource
+    private CacheProvider cacheProvider;
 
     private static final String DASH = "_";
     private static final int SERVICE_TYPE_NORMAL = 4;
-    private Map<String, String> operationMap = new ConcurrentHashMap<>(100);
+    private static final String SERVICE_MAPPINGS_PREFIX = "service_mappings_";
+    private static final byte[] EMPTY_BYTE_ARRAY = CacheKeyUtils.toUtf8Bytes(StringUtils.EMPTY);
 
     /**
      * requested from AREX's agent hits to recording, we direct save to repository for next replay using
@@ -140,22 +140,31 @@ public final class AgentWorkingService {
         if (item.getClass() == ServletMocker.class) {
             ServletMocker servlet = (ServletMocker) item;
 
-            ServiceEntity serviceEntity = serviceRepository.queryByAppId(servlet.getAppId());
-            if (serviceEntity == null) {
-                return;
+            byte[] appServiceKey = CacheKeyUtils.toUtf8Bytes(SERVICE_MAPPINGS_PREFIX + servlet.getAppId());
+            if (cacheProvider.get(appServiceKey) == null) {
+                ServiceEntity serviceEntity = serviceRepository.queryByAppId(servlet.getAppId());
+                if (serviceEntity == null) {
+                    LOGGER.info("AppId:{} does not have a valid service", servlet.getAppId());
+                    return;
+                } else {
+                    cacheProvider.put(appServiceKey, CacheKeyUtils.toUtf8Bytes(serviceEntity.getId().toString()));
+                }
             }
-            String key = serviceEntity.getId().toString() + DASH + servlet.getPattern();
-            if (operationMap.containsKey(key)) {
+
+            String serviceId = CacheKeyUtils.fromUtf8Bytes(cacheProvider.get(appServiceKey));
+            byte[] operationKey =
+                    CacheKeyUtils.toUtf8Bytes(SERVICE_MAPPINGS_PREFIX + serviceId + DASH + servlet.getPattern());
+            if (cacheProvider.get(operationKey) != null) {
                 return;
             }
             ServiceOperationEntity operationEntity = new ServiceOperationEntity();
             operationEntity.setAppId(servlet.getAppId());
             operationEntity.setOperationName(servlet.getPattern());
             operationEntity.setOperationType(category.getCodeValue());
-            operationEntity.setServiceId(serviceEntity.getId().toString());
+            operationEntity.setServiceId(serviceId);
             operationEntity.setStatus(SERVICE_TYPE_NORMAL);
             if (serviceOperationRepository.findAndUpdate(operationEntity)) {
-                operationMap.putIfAbsent(key, StringUtils.EMPTY);
+                cacheProvider.put(operationKey, EMPTY_BYTE_ARRAY);
             }
         }
     }
