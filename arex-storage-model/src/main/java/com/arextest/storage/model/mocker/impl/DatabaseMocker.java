@@ -15,4 +15,5 @@ public class DatabaseMocker extends AbstractMocker {
     private String parameters;
     private String tables;
     private String sql;
+    private String keyHolder;
 }
