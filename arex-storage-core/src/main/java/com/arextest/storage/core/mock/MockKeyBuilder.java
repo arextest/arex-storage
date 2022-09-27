@@ -50,9 +50,6 @@ public final class MockKeyBuilder {
         if (instance instanceof DynamicResultMocker) {
             return dynamicMockKeyBuild((DynamicResultMocker) instance);
         }
-        if (instance instanceof DalResultMocker) {
-            return dbMockKeyBuilder.dalMockKeyBuild((DalResultMocker) instance);
-        }
         if (instance instanceof ABtMocker) {
             return abMockKeyBuild((ABtMocker) instance);
         }

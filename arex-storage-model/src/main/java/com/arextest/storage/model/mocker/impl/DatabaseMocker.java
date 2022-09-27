@@ -16,4 +16,5 @@ public class DatabaseMocker extends AbstractMocker {
     private String tables;
     private String sql;
     private String keyHolder;
+    private String methodName;
 }

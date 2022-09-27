@@ -64,56 +64,28 @@ final class DbMockKeyBuilder {
      */
     private static final List<String> SQL_TABLE_KEYS = Lists.newArrayList("from", "join", "update", "into");
 
-
-    private static final Pattern SQL_PARAMETER_NAME_PATTERN = Pattern.compile("(?<=,)\\w+(?==)");
-
-    List<byte[]> dalMockKeyBuild(DalResultMocker dalResultMocker) {
-        List<byte[]> mockKeyList = new ArrayList<>(MockKeyBuilder.MAX_MOCK_KEY_CAPACITY);
-        // First,add full match as mock key
-        String sqlParameter = dalResultMocker.getParameter();
-        String sqlText = dalResultMocker.getSql();
-        byte[] dbNameBytes = CacheKeyUtils.toUtf8Bytes(dalResultMocker.getDatabase());
-        byte[] sqlTextBytes = CacheKeyUtils.toUtf8Bytes(sqlText);
-        byte[] methodNameBytes = CacheKeyUtils.toUtf8Bytes(dalResultMocker.getMethodName());
-        byte[] sqlParameterBytes = StringUtils.isEmpty(sqlParameter) ? EMPTY_BYTE :
-                CacheKeyUtils.toUtf8Bytes(sqlParameter);
-        MessageDigest md5Digest = MockKeyBuilder.getMD5Digest();
-        md5Digest.update(dbNameBytes);
-        md5Digest.update(sqlTextBytes);
-        md5Digest.update(methodNameBytes);
-        md5Digest.update(sqlParameterBytes);
-        byte[] hashValue = md5Digest.digest();
-        md5Digest.reset();
-        mockKeyList.add(hashValue);
-        // secondly,add all db table names & all parameters' names as mock key
-        md5Digest.update(dbNameBytes);
-        md5Digest.update(methodNameBytes);
-        findTableNameToMd5(sqlText, md5Digest);
-        if (sqlParameterBytes != EMPTY_BYTE) {
-            tryAddParameterWithoutValue(md5Digest, sqlParameter);
-        }
-        hashValue = md5Digest.digest();
-        md5Digest.reset();
-        mockKeyList.add(hashValue);
-
-        return mockKeyList;
-    }
-
     List<byte[]> dataBaseMockKeyBuild(DatabaseMocker instance) {
         List<byte[]> mockKeyList = new ArrayList<>(MockKeyBuilder.MAX_MOCK_KEY_CAPACITY);
         // First,add full match as mock key
         String sqlParameter = instance.getParameters();
         String sqlText = instance.getSql();
+        byte[] dbNameBytes = CacheKeyUtils.toUtf8Bytes(instance.getDbName());
         byte[] sqlTextBytes = CacheKeyUtils.toUtf8Bytes(sqlText);
+        byte[] methodNameBytes = StringUtils.isEmpty(instance.getMethodName()) ? EMPTY_BYTE :
+                CacheKeyUtils.toUtf8Bytes(instance.getMethodName());
         byte[] sqlParameterBytes = StringUtils.isEmpty(sqlParameter) ? EMPTY_BYTE :
                 CacheKeyUtils.toUtf8Bytes(sqlParameter);
         MessageDigest md5Digest = MockKeyBuilder.getMD5Digest();
+        md5Digest.update(dbNameBytes);
         md5Digest.update(sqlTextBytes);
+        md5Digest.update(methodNameBytes);
         md5Digest.update(sqlParameterBytes);
         byte[] hashValue = md5Digest.digest();
         md5Digest.reset();
         mockKeyList.add(hashValue);
         // secondly,add all db table names & all parameters' names as mock key
+        md5Digest.update(dbNameBytes);
+        md5Digest.update(methodNameBytes);
         findTableNameToMd5(sqlText, md5Digest);
         if (sqlParameterBytes != EMPTY_BYTE) {
             tryAddParameterWithoutValue(md5Digest, sqlParameter);
@@ -125,19 +97,7 @@ final class DbMockKeyBuilder {
         return mockKeyList;
     }
 
-    private void tryAddParameterWithoutValue(MessageDigest md5Digest, String sqlParameter) {
-        if (tryAddParameterParsedAsJson(md5Digest, sqlParameter)) {
-            return;
-        }
-        // TODO: remove when all agents upgrade to new version encoded as json
-        String tidyParameter = TIDY_PREFIX + sqlParameter;
-        Matcher parameterNameMatcher = SQL_PARAMETER_NAME_PATTERN.matcher(tidyParameter);
-        while (parameterNameMatcher.find()) {
-            md5Digest.update(CacheKeyUtils.toUtf8Bytes(parameterNameMatcher.group()));
-        }
-    }
-
-    private boolean tryAddParameterParsedAsJson(MessageDigest md5Digest, String sqlParameter) {
+    private boolean tryAddParameterWithoutValue(MessageDigest md5Digest, String sqlParameter) {
         try {
             JsonNode jsonNode = objectMapper.readTree(sqlParameter);
             if (jsonNode.isEmpty()) {
@@ -154,7 +114,7 @@ final class DbMockKeyBuilder {
             }
             return true;
         } catch (JsonProcessingException e) {
-            LOGGER.warn("tryParseParameterAsJson error:{},sqlParameter:{}", e.getMessage(), sqlParameter, e);
+            LOGGER.warn("tryAddParameterWithoutValue error:{},sqlParameter:{}", e.getMessage(), sqlParameter, e);
             return false;
         }
     }
