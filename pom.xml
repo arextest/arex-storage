@@ -108,6 +108,12 @@
                 <groupId>com.arextest</groupId>
                 <artifactId>arex-common</artifactId>
                 <version>0.1.2</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>commons-io</artifactId>
+                        <groupId>commons-io</groupId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>javax.annotation</groupId>
