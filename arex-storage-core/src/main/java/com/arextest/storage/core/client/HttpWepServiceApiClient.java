@@ -53,7 +53,6 @@ public final class HttpWepServiceApiClient {
         httpMessageConverterList.add(new ResourceHttpMessageConverter());
         httpMessageConverterList.add(new SourceHttpMessageConverter<>());
         httpMessageConverterList.add(new AllEncompassingFormHttpMessageConverter());
-        // 兼容response content type 与实际返回内容不符场景
         MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter(objectMapper);
         converter.setSupportedMediaTypes(Collections.singletonList(MediaType.ALL));
         httpMessageConverterList.add(converter);
