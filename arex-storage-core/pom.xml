@@ -18,12 +18,6 @@
         <dependency>
             <groupId>com.arextest</groupId>
             <artifactId>arex-common</artifactId>
-            <exclusions>
-                <exclusion>
-                    <artifactId>commons-io</artifactId>
-                    <groupId>commons-io</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
