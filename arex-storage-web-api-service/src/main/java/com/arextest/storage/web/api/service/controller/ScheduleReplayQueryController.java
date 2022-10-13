@@ -1,5 +1,6 @@
 package com.arextest.storage.web.api.service.controller;
 
+import com.arextest.storage.core.constants.MockCategoryMaskConstants;
 import com.arextest.storage.core.service.PrepareMockResultService;
 import com.arextest.storage.core.service.RecordReplayMappingBuilder;
 import com.arextest.storage.core.service.ScheduleReplayingService;
@@ -51,7 +52,6 @@ public final class ScheduleReplayQueryController {
     private PrepareMockResultService prepareMockResultService;
     @Resource
     private RecordReplayMappingBuilder recordReplayMappingBuilder;
-    private static final long MAIN_CATEGORY_TYPES = mainCategoryMasks();
 
     /**
      * fetch the replay result for compare
@@ -204,7 +204,7 @@ public final class ScheduleReplayQueryController {
         try {
             prepareMockResultService.preloadAll(recordId);
             ViewRecordResponseType responseType = new ViewRecordResponseType();
-            long categoryTypes = MAIN_CATEGORY_TYPES;
+            long categoryTypes = MockCategoryMaskConstants.MAIN_CATEGORY_TYPES;
             if (requestType.getCategoryTypes() != null) {
                 categoryTypes = requestType.getCategoryTypes();
             }
@@ -282,15 +282,5 @@ public final class ScheduleReplayQueryController {
 
     private Response toResponse(boolean actionResult) {
         return actionResult ? successResponse(new QueryMockCacheResponseType()) : resourceNotFoundResponse();
-    }
-
-    private static long mainCategoryMasks() {
-        long mainCategoryValue = 0;
-        for (MockCategoryType categoryType : MockCategoryType.values()) {
-            if (categoryType.isMainEntry()) {
-                mainCategoryValue |= 1 << categoryType.getCodeValue();
-            }
-        }
-        return mainCategoryValue;
     }
 }

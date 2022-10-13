@@ -1,6 +1,5 @@
 package com.arextest.storage.web.api.service.controller;
 
-import com.arextest.common.model.response.Response;
 import com.arextest.storage.core.client.HttpWepServiceApiClient;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -13,9 +12,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.annotation.Resource;
-import java.util.Map;
-
-import static com.arextest.common.utils.ResponseUtils.successResponse;
 
 /**
  * Created by rchen9 on 2022/10/8.
@@ -32,17 +28,13 @@ public class AgentLoadController {
 
     @PostMapping(value = "/load", produces = {MediaType.APPLICATION_JSON_UTF8_VALUE})
     @ResponseBody
-    public Response load(@RequestBody AgentRemoteConfigurationRequest request) {
-        Map map = httpWepServiceApiClient.jsonPost(agentLoadUrl, request, Map.class);
-        return successResponse(map);
+    public String load(@RequestBody AgentRemoteConfigurationRequest request) {
+        return httpWepServiceApiClient.jsonPost(agentLoadUrl, request, String.class);
     }
 
 
     @Data
     private static final class AgentRemoteConfigurationRequest {
         private String appId;
-        private String agentExtVersion;
-        private String coreVersion;
-        private String host;
     }
 }
