@@ -17,9 +17,4 @@ public class MockCategoryMaskConstants {
         }
         return mainCategoryValue;
     }
-
-    public static void main(String[] args) {
-        long l = mainCategoryMasks();
-        System.out.println();
-    }
 }
