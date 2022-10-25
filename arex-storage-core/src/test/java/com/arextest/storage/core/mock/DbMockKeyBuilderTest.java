@@ -1,28 +1,21 @@
 package com.arextest.storage.core.mock;
 
-import com.arextest.storage.model.mocker.impl.DalResultMocker;
+import com.arextest.storage.model.mocker.impl.DatabaseMocker;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import mockit.Injectable;
 import mockit.Tested;
-
 import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import java.util.List;
 
-/**
- * @author jmo
- * @since 2022/1/12
- */
 public class DbMockKeyBuilderTest {
     @Tested
     private DbMockKeyBuilder dbMockKeyBuilder;
     @Injectable
     private ObjectMapper objectMapper;
 
-    public void dalMockKeyBuildTest() {
-        DalResultMocker dalResultMocker = new DalResultMocker();
+    public void dbMockKeyBuildTest() {
+        DatabaseMocker dalResultMocker = new DatabaseMocker();
         String sqlText = "SELECT a.runoob_id, a.runoob_author, b.runoob_count FROMX db.`A` a, `B` b " +
                 "WHERE" +
                 " a.runoob_author = b.runoob_author\n" +
@@ -40,11 +33,11 @@ public class DbMockKeyBuilderTest {
                 "SELECT a.runoob_id, a.runoob_author, b.runoob_count FROM  `runoob_tbl10`;\n" +
                 "SELECT a.runoob_id, a.runoob_author, b.runoob_count FROM  dbo.[runoob_tbl11] a;\n" +
                 "SELECT a.runoob_id, a.runoob_author, b.runoob_count FROM  dbo.[runoob_tbl12] as a;\n";
-        dalResultMocker.setDatabase("TestDb");
+        dalResultMocker.setDbName("TestDb");
         dalResultMocker.setSql(sqlText);
-        dalResultMocker.setParameter("[{\"ExternalNo\":\"31f4298f20dd4b4cbae1ad141a4136eb\"}]");
-        dalResultMocker.setMethodName("query");
-        List<byte[]> result = dbMockKeyBuilder.dalMockKeyBuild(dalResultMocker);
+        dalResultMocker.setParameters("[{\"ExternalNo\":\"31f4298f20dd4b4cbae1ad141a4136eb\"}]");
+
+        List<byte[]> result = dbMockKeyBuilder.dbMockKeyBuild(dalResultMocker);
         Assert.assertNotNull(result);
         Assert.assertEquals(2, result.size());
         byte[] tableHashCode = new byte[]{64, 11, -33, 43, -102, 83, 28, 7, 55, -65, -46, 108, 103, 109, 20, 35};

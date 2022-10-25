@@ -2,14 +2,12 @@ package com.arextest.storage.core.mock;
 
 import com.arextest.storage.core.cache.CacheKeyUtils;
 import com.arextest.storage.model.mocker.MainEntry;
-import com.arextest.storage.model.mocker.impl.ABtMocker;
-import com.arextest.storage.model.mocker.impl.DalResultMocker;
+import com.arextest.storage.model.mocker.impl.DatabaseMocker;
 import com.arextest.storage.model.mocker.impl.DynamicResultMocker;
+import com.arextest.storage.model.mocker.impl.HttpClientMocker;
 import com.arextest.storage.model.mocker.impl.MessageMocker;
 import com.arextest.storage.model.mocker.impl.RedisMocker;
 import com.arextest.storage.model.mocker.impl.ServiceMocker;
-import com.arextest.storage.model.mocker.impl.DatabaseMocker;
-import com.arextest.storage.model.mocker.impl.HttpClientMocker;
 import com.arextest.storage.model.mocker.impl.ServletMocker;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
@@ -28,10 +26,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * @author jmo
- * @since 2021/11/25
- */
 @Slf4j
 @Component
 public final class MockKeyBuilder {
@@ -50,12 +44,7 @@ public final class MockKeyBuilder {
         if (instance instanceof DynamicResultMocker) {
             return dynamicMockKeyBuild((DynamicResultMocker) instance);
         }
-        if (instance instanceof DalResultMocker) {
-            return dbMockKeyBuilder.dalMockKeyBuild((DalResultMocker) instance);
-        }
-        if (instance instanceof ABtMocker) {
-            return abMockKeyBuild((ABtMocker) instance);
-        }
+
         if (instance instanceof RedisMocker) {
             return redisMockKeyBuild((RedisMocker) instance);
         }
@@ -72,7 +61,7 @@ public final class MockKeyBuilder {
     }
 
     private List<byte[]> dataBaseMockKeyBuild(DatabaseMocker instance) {
-        return dbMockKeyBuilder.dataBaseMockKeyBuild(instance);
+        return dbMockKeyBuilder.dbMockKeyBuild(instance);
     }
 
     private List<byte[]> httpClientMockKeyBuild(HttpClientMocker instance) {
@@ -100,10 +89,6 @@ public final class MockKeyBuilder {
         keys.add(fullRequestHashValue);
         keys.add(serviceOperationBytes);
         return keys;
-    }
-
-    private List<byte[]> abMockKeyBuild(ABtMocker instance) {
-        return Collections.singletonList(CacheKeyUtils.toUtf8Bytes(instance.getExpCode()));
     }
 
     private List<byte[]> dynamicMockKeyBuild(DynamicResultMocker instance) {
