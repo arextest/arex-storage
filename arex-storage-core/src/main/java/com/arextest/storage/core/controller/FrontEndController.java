@@ -1,4 +1,4 @@
-package com.arextest.storage.web.api.service.controller;
+package com.arextest.storage.core.controller;
 
 import com.arextest.storage.core.service.FrontEndRecordService;
 import com.arextest.storage.core.trace.MDCTracer;
@@ -18,11 +18,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
-
-import static com.arextest.storage.web.api.service.controller.ResponseUtils.emptyRecordIdResponse;
-import static com.arextest.storage.web.api.service.controller.ResponseUtils.exceptionResponse;
-import static com.arextest.storage.web.api.service.controller.ResponseUtils.requestBodyEmptyResponse;
-import static com.arextest.storage.web.api.service.controller.ResponseUtils.successResponse;
 
 /**
  * Created by rchen9 on 2022/10/11.
@@ -46,11 +41,11 @@ public class FrontEndController {
     @ResponseBody
     public Response queryFixedRecord(@RequestBody QueryRecordRequestType requestType) {
         if (requestType == null) {
-            return requestBodyEmptyResponse();
+            return ResponseUtils.requestBodyEmptyResponse();
         }
         String recordId = requestType.getRecordId();
         if (StringUtils.isEmpty(recordId)) {
-            return emptyRecordIdResponse();
+            return ResponseUtils.emptyRecordIdResponse();
         }
         MDCTracer.addRecordId(recordId);
         try {
@@ -58,10 +53,10 @@ public class FrontEndController {
             Map<Integer, List<String>> viewResult = frontEndRecordService.queryFixedRecord(recordId,
                     requestType.getCategoryTypes());
             responseType.setRecordResult(viewResult);
-            return successResponse(responseType);
+            return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
             LOGGER.error("queryRecord error:{},request:{}", throwable.getMessage(), requestType);
-            return exceptionResponse(throwable.getMessage());
+            return ResponseUtils.exceptionResponse(throwable.getMessage());
         } finally {
             MDCTracer.clear();
         }

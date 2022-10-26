@@ -1,4 +1,4 @@
-package com.arextest.storage.web.api.service.controller;
+package com.arextest.storage.core.controller;
 
 import com.arextest.storage.model.Response;
 import com.arextest.storage.model.ResponseCode;

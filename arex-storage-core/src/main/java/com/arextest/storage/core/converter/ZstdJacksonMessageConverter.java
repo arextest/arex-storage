@@ -1,4 +1,4 @@
-package com.arextest.storage.web.api.service.converter;
+package com.arextest.storage.core.converter;
 
 import com.arextest.storage.model.enums.MockCategoryType;
 import com.arextest.storage.core.serialization.ZstdJacksonSerializer;

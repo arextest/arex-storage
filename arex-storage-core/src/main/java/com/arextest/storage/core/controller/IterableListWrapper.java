@@ -1,4 +1,4 @@
-package com.arextest.storage.web.api.service.controller;
+package com.arextest.storage.core.controller;
 
 
 import javax.validation.constraints.NotNull;

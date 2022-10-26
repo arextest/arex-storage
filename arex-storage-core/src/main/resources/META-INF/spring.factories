@@ -1,0 +1,4 @@
+# Auto Configure
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+com.arextest.storage.core.bean.StorageCacheProviderAutoConfiguration,\
+com.arextest.storage.core.bean.StorageRepositoryProviderAutoConfiguration
