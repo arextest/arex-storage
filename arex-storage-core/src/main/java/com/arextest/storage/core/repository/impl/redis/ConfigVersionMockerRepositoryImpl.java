@@ -71,4 +71,9 @@ final class ConfigVersionMockerRepositoryImpl implements RepositoryProvider<Conf
     public boolean saveList(List<ConfigVersionMocker> objectValueList) {
         return false;
     }
+
+    @Override
+    public boolean saveFixedRecord(ConfigVersionMocker objectValue) {
+        return false;
+    }
 }
