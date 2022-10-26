@@ -1,10 +1,11 @@
 package com.arextest.storage.core.service;
 
+import com.arextest.common.utils.CompressionUtils;
 import com.arextest.storage.core.mock.MockResultProvider;
 import com.arextest.storage.core.repository.RepositoryProviderFactory;
 import com.arextest.storage.core.repository.RepositoryReader;
+import com.arextest.storage.core.service.utils.MockCategoryUtils;
 import com.arextest.storage.core.trace.MDCTracer;
-import com.arextest.common.utils.CompressionUtils;
 import com.arextest.storage.model.enums.MockCategoryType;
 import com.arextest.storage.model.replay.ReplayCaseRangeRequestType;
 import com.arextest.storage.model.replay.holder.ListResultHolder;
@@ -79,7 +80,7 @@ public final class ScheduleReplayingService {
             if (category.isConfigVersion()) {
                 continue;
             }
-            if (shouldSkipCategory(categoryTypes, category.getCodeValue())) {
+            if (MockCategoryUtils.shouldSkipCategory(categoryTypes, category.getCodeValue())) {
                 continue;
             }
             MDCTracer.addCategory(category);
@@ -94,10 +95,6 @@ public final class ScheduleReplayingService {
         return resultHolderMap;
     }
 
-    private boolean shouldSkipCategory(long categoryTypes, int codeValue) {
-        return (categoryTypes > 0 && (categoryTypes & 1L << codeValue) == 0);
-    }
-
     public int countByRange(MockCategoryType category, ReplayCaseRangeRequestType replayCaseRangeRequest) {
         RepositoryReader<?> repositoryReader = repositoryProviderFactory.findProvider(category);
         if (repositoryReader != null) {
@@ -105,7 +102,8 @@ public final class ScheduleReplayingService {
         }
         return 0;
     }
-    private  List<String> encodeToBase64String(List<byte[]> source) {
+
+    private List<String> encodeToBase64String(List<byte[]> source) {
         if (CollectionUtils.isEmpty(source)) {
             return Collections.emptyList();
         }

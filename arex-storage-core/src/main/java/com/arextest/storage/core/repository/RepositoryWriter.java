@@ -12,4 +12,6 @@ public interface RepositoryWriter<T extends MockItem> {
     boolean save(T objectValue);
 
     boolean saveList(List<T> objectValueList);
+
+    boolean saveFixedRecord(T objectValue);
 }

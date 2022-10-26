@@ -1,7 +1,7 @@
 package com.arextest.storage.core.repository.impl.mongo;
 
-import com.arextest.storage.core.repository.RepositoryProvider;
 import com.arextest.storage.core.compression.GenericCompressionBuilder;
+import com.arextest.storage.core.repository.RepositoryProvider;
 import com.arextest.storage.model.enums.MockResultType;
 import com.arextest.storage.model.mocker.ConfigVersion;
 import com.arextest.storage.model.mocker.MockItem;
@@ -185,6 +185,25 @@ abstract class AbstractMongoDbRepository<T extends MockItem> implements Reposito
             this.mongoRollingCollectionSource.insertMany(objectValueList);
         } catch (Throwable ex) {
             LOGGER.error("save List error:{} , size:{}", ex.getMessage(), objectValueList.size(), ex);
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean saveFixedRecord(T objectValue) {
+        if (objectValue == null) {
+            return false;
+        }
+
+        List<T> objectValueList = Collections.singletonList(objectValue);
+        try {
+            if (enableCompression()) {
+                compress(objectValueList);
+            }
+            this.mongoPinnedCollectionSource.insertMany(objectValueList);
+        } catch (Throwable ex) {
+            LOGGER.error("save fixed List error:{} , size:{}", ex.getMessage(), objectValueList.size(), ex);
             return false;
         }
         return true;

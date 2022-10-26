@@ -2,6 +2,8 @@ package com.arextest.storage.model.mocker.impl;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.bson.codecs.pojo.annotations.BsonId;
+import org.bson.types.ObjectId;
 
 /**
  * @author jmo
@@ -10,5 +12,11 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class SoaExternalMocker extends ServiceMocker {
+
+    @BsonId
+    @Override
+    public ObjectId getId() {
+        return super.getId();
+    }
 
 }

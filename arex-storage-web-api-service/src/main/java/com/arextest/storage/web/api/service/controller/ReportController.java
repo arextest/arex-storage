@@ -1,10 +1,9 @@
 package com.arextest.storage.web.api.service.controller;
 
-import com.arextest.storage.core.service.FrontEndRecordService;
-import com.arextest.storage.core.trace.MDCTracer;
+import com.arextest.storage.core.service.FixRecordService;
 import com.arextest.storage.model.Response;
-import com.arextest.storage.model.replay.QueryRecordRequestType;
-import com.arextest.storage.model.replay.QueryRecordResponseType;
+import com.arextest.storage.model.replay.FixedRecordRequestType;
+import com.arextest.storage.model.replay.FixedRecordResponseType;
 import com.arextest.storage.model.replay.ViewRecordResponseType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -25,26 +24,26 @@ import static com.arextest.storage.web.api.service.controller.ResponseUtils.requ
 import static com.arextest.storage.web.api.service.controller.ResponseUtils.successResponse;
 
 /**
- * Created by rchen9 on 2022/10/11.
+ * Created by rchen9 on 2022/10/19.
  */
 @Slf4j
 @Controller
-@RequestMapping("/api/frontEnd/record")
-public class FrontEndController {
+@RequestMapping("/api/report/record")
+public class ReportController {
 
     @Resource
-    FrontEndRecordService frontEndRecordService;
+    FixRecordService fixRecordService;
 
     /**
-     * query the fixed record
+     * fix record
      *
      * @param requestType recordId
      * @return the record content
      * @see ViewRecordResponseType
      */
-    @PostMapping(value = "/queryFixedRecord", produces = {MediaType.APPLICATION_JSON_UTF8_VALUE})
+    @PostMapping(value = "/fixRecord", produces = {MediaType.APPLICATION_JSON_UTF8_VALUE})
     @ResponseBody
-    public Response queryFixedRecord(@RequestBody QueryRecordRequestType requestType) {
+    public Response fixRecord(@RequestBody FixedRecordRequestType requestType) {
         if (requestType == null) {
             return requestBodyEmptyResponse();
         }
@@ -52,19 +51,17 @@ public class FrontEndController {
         if (StringUtils.isEmpty(recordId)) {
             return emptyRecordIdResponse();
         }
-        MDCTracer.addRecordId(recordId);
+
         try {
-            QueryRecordResponseType responseType = new QueryRecordResponseType();
-            Map<Integer, List<String>> viewResult = frontEndRecordService.queryFixedRecord(recordId,
-                    requestType.getCategoryTypes());
+            FixedRecordResponseType responseType = new FixedRecordResponseType();
+            Map<Integer, List<String>> viewResult = fixRecordService.fixRecord(recordId);
             responseType.setRecordResult(viewResult);
             return successResponse(responseType);
         } catch (Throwable throwable) {
-            LOGGER.error("queryRecord error:{},request:{}", throwable.getMessage(), requestType);
+            LOGGER.error("queryRecord error:{}, request:{}", throwable.getMessage(), requestType);
             return exceptionResponse(throwable.getMessage());
-        } finally {
-            MDCTracer.clear();
         }
     }
+
 
 }
