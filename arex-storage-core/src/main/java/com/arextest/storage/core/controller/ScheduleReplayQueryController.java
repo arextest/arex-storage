@@ -1,4 +1,4 @@
-package com.arextest.storage.web.api.service.controller;
+package com.arextest.storage.core.controller;
 
 import com.arextest.storage.core.constants.MockCategoryMaskConstants;
 import com.arextest.storage.core.service.PrepareMockResultService;
@@ -34,8 +34,6 @@ import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
 
-import static com.arextest.storage.web.api.service.controller.ResponseUtils.*;
-
 /**
  * this class defined all api list for scheduler replaying
  *
@@ -64,11 +62,11 @@ public final class ScheduleReplayQueryController {
     @ResponseBody
     public Response replayResult(@RequestBody QueryReplayResultRequestType requestType) {
         if (requestType == null) {
-            return requestBodyEmptyResponse();
+            return ResponseUtils.requestBodyEmptyResponse();
         }
         final String recordId = requestType.getRecordId();
         if (StringUtils.isEmpty(recordId)) {
-            return emptyRecordIdResponse();
+            return ResponseUtils.emptyRecordIdResponse();
         }
         String replayResultId = requestType.getReplayResultId();
         try {
@@ -77,7 +75,7 @@ public final class ScheduleReplayQueryController {
                 replayResultId = recordReplayMappingBuilder.lastReplayResultId(MockCategoryType.QMQ_CONSUMER, recordId);
             }
             if (StringUtils.isEmpty(replayResultId)) {
-                return emptyReplayResultIdResponse();
+                return ResponseUtils.emptyReplayResultIdResponse();
             }
             MDCTracer.addReplayId(replayResultId);
 
@@ -85,11 +83,11 @@ public final class ScheduleReplayQueryController {
                     replayResultId);
             QueryReplayResultResponseType responseType = new QueryReplayResultResponseType();
             responseType.setResultHolderList(resultHolderList);
-            return successResponse(responseType);
+            return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
             LOGGER.error("replayResult error:{} ,recordId:{} ,replayResultId:{}", throwable.getMessage(), recordId,
                     replayResultId);
-            return exceptionResponse(throwable.getMessage());
+            return ResponseUtils.exceptionResponse(throwable.getMessage());
         } finally {
             MDCTracer.clear();
         }
@@ -111,14 +109,14 @@ public final class ScheduleReplayQueryController {
             return validateResult;
         }
         if (requestType.getMaxCaseCount() <= 0) {
-            return parameterInvalidResponse("The max case size <= 0 from requested");
+            return ResponseUtils.parameterInvalidResponse("The max case size <= 0 from requested");
         }
         MockCategoryType categoryType = MockCategoryType.of(requestType.getCategoryType());
         if (categoryType == null) {
-            return parameterInvalidResponse("request category type not found");
+            return ResponseUtils.parameterInvalidResponse("request category type not found");
         }
         if (!categoryType.isMainEntry()) {
-            return parameterInvalidResponse("request category type not main entry:" + categoryType.getDisplayName());
+            return ResponseUtils.parameterInvalidResponse("request category type not main entry:" + categoryType.getDisplayName());
         }
         try {
             PagingQueryCaseResponseType responseType = new PagingQueryCaseResponseType();
@@ -126,28 +124,28 @@ public final class ScheduleReplayQueryController {
                     requestType);
             List<?> mainList = new IterableListWrapper<>(iterable);
             responseType.setMainEntryList((List<? extends MainEntry>) mainList);
-            return successResponse(responseType);
+            return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
             LOGGER.error("error:{},request:{}", throwable.getMessage(), requestType);
-            return exceptionResponse(throwable.getMessage());
+            return ResponseUtils.exceptionResponse(throwable.getMessage());
         }
     }
 
     private Response rangeParameterValidate(ReplayCaseRangeRequestType requestType) {
         if (requestType == null) {
-            return requestBodyEmptyResponse();
+            return ResponseUtils.requestBodyEmptyResponse();
         }
         if (StringUtils.isEmpty(requestType.getAppId())) {
-            return parameterInvalidResponse("The appId of requested is empty");
+            return ResponseUtils.parameterInvalidResponse("The appId of requested is empty");
         }
         if (requestType.getBeginTime() == null) {
-            return parameterInvalidResponse("The beginTime of requested is null");
+            return ResponseUtils.parameterInvalidResponse("The beginTime of requested is null");
         }
         if (requestType.getEndTime() == null) {
-            return parameterInvalidResponse("The endTime of requested is null");
+            return ResponseUtils.parameterInvalidResponse("The endTime of requested is null");
         }
         if (requestType.getBeginTime() >= requestType.getEndTime()) {
-            return parameterInvalidResponse("The beginTime >= endTime from requested");
+            return ResponseUtils.parameterInvalidResponse("The beginTime >= endTime from requested");
         }
         return null;
     }
@@ -168,16 +166,16 @@ public final class ScheduleReplayQueryController {
         }
         MockCategoryType categoryType = MockCategoryType.of(requestType.getCategoryType());
         if (categoryType == null) {
-            return parameterInvalidResponse("request category type not found");
+            return ResponseUtils.parameterInvalidResponse("request category type not found");
         }
         try {
             QueryCaseCountResponseType responseType = new QueryCaseCountResponseType();
             int countResult = scheduleReplayingService.countByRange(categoryType, requestType);
             responseType.setCount(countResult);
-            return successResponse(responseType);
+            return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
             LOGGER.error("replayCaseCount error:{},request:{}", throwable.getMessage(), requestType, throwable);
-            return exceptionResponse(throwable.getMessage());
+            return ResponseUtils.exceptionResponse(throwable.getMessage());
         } finally {
             MDCTracer.clear();
         }
@@ -194,11 +192,11 @@ public final class ScheduleReplayQueryController {
     @ResponseBody
     public Response viewRecord(@RequestBody ViewRecordRequestType requestType) {
         if (requestType == null) {
-            return requestBodyEmptyResponse();
+            return ResponseUtils.requestBodyEmptyResponse();
         }
         String recordId = requestType.getRecordId();
         if (StringUtils.isEmpty(recordId)) {
-            return emptyRecordIdResponse();
+            return ResponseUtils.emptyRecordIdResponse();
         }
         MDCTracer.addRecordId(recordId);
         try {
@@ -213,10 +211,10 @@ public final class ScheduleReplayQueryController {
                 LOGGER.info("viewRecord not found any resource recordId: {} ,request: {}", recordId, requestType);
             }
             responseType.setRecordResult(viewResult);
-            return successResponse(responseType);
+            return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
             LOGGER.error("viewRecord error:{},request:{}", throwable.getMessage(), requestType);
-            return exceptionResponse(throwable.getMessage());
+            return ResponseUtils.exceptionResponse(throwable.getMessage());
         } finally {
             MDCTracer.clear();
         }
@@ -233,11 +231,11 @@ public final class ScheduleReplayQueryController {
     @ResponseBody
     public Response cacheLoad(@RequestBody QueryMockCacheRequestType requestType) {
         if (requestType == null) {
-            return requestBodyEmptyResponse();
+            return ResponseUtils.requestBodyEmptyResponse();
         }
         String recordId = requestType.getRecordId();
         if (StringUtils.isEmpty(recordId)) {
-            return emptyRecordIdResponse();
+            return ResponseUtils.emptyRecordIdResponse();
         }
         MDCTracer.addRecordId(recordId);
         long beginTime = System.currentTimeMillis();
@@ -245,7 +243,7 @@ public final class ScheduleReplayQueryController {
             return toResponse(prepareMockResultService.preloadAll(recordId));
         } catch (Throwable throwable) {
             LOGGER.error("QueryMockCache error:{},request:{}", throwable.getMessage(), requestType);
-            return exceptionResponse(throwable.getMessage());
+            return ResponseUtils.exceptionResponse(throwable.getMessage());
         } finally {
             long timeUsed = System.currentTimeMillis() - beginTime;
             LOGGER.info("cacheLoad timeUsed:{} ms,record id:{}", timeUsed, recordId);
@@ -263,24 +261,24 @@ public final class ScheduleReplayQueryController {
     @ResponseBody
     public Response cacheRemove(@RequestBody QueryMockCacheRequestType requestType) {
         if (requestType == null) {
-            return requestBodyEmptyResponse();
+            return ResponseUtils.requestBodyEmptyResponse();
         }
         String recordId = requestType.getRecordId();
         if (StringUtils.isEmpty(recordId)) {
-            return emptyRecordIdResponse();
+            return ResponseUtils.emptyRecordIdResponse();
         }
         MDCTracer.addRecordId(recordId);
         try {
             return toResponse(prepareMockResultService.removeAll(recordId));
         } catch (Throwable throwable) {
             LOGGER.error("QueryMockCache error:{},request:{}", throwable.getMessage(), requestType);
-            return exceptionResponse(throwable.getMessage());
+            return ResponseUtils.exceptionResponse(throwable.getMessage());
         } finally {
             MDCTracer.clear();
         }
     }
 
     private Response toResponse(boolean actionResult) {
-        return actionResult ? successResponse(new QueryMockCacheResponseType()) : resourceNotFoundResponse();
+        return actionResult ? ResponseUtils.successResponse(new QueryMockCacheResponseType()) : ResponseUtils.resourceNotFoundResponse();
     }
 }

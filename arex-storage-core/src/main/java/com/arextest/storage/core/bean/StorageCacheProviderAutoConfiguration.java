@@ -1,10 +1,11 @@
-package com.arextest.storage.web.api.service.bean;
+package com.arextest.storage.core.bean;
 
 
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.common.cache.DefaultRedisCacheProvider;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -16,17 +17,20 @@ import java.util.ServiceLoader;
  * @since 2021/10/18
  */
 @Configuration
-class StorageCacheConfiguration {
-    @Value("${arex.storage.cache.redis.host:}")
-    private String cacheHostUrl;
-    @Value("${arex.storage.cache.provider:}")
-    private String cacheProvider;
+@EnableConfigurationProperties({StorageCacheProperties.class})
+public class StorageCacheProviderAutoConfiguration {
+    private final StorageCacheProperties properties;
+
+    public StorageCacheProviderAutoConfiguration(StorageCacheProperties properties) {
+        this.properties = properties;
+    }
 
     @Bean
-    CacheProvider cacheProvider() {
+    @ConditionalOnMissingBean(CacheProvider.class)
+    public CacheProvider cacheProvider() {
         CacheProvider provider = null;
-        if (StringUtils.isNotEmpty(cacheProvider)) {
-            provider = this.lookup(CacheProvider.class, cacheProvider);
+        if (StringUtils.isNotEmpty(properties.getProvider())) {
+            provider = this.lookup(CacheProvider.class, properties.getProvider());
         }
         if (provider == null) {
             provider = this.createDefaultCacheProvider();
@@ -35,10 +39,10 @@ class StorageCacheConfiguration {
     }
 
     private CacheProvider createDefaultCacheProvider() {
-        if (StringUtils.isEmpty(cacheHostUrl)) {
+        if (StringUtils.isEmpty(properties.getRedisHost())) {
             return new DefaultRedisCacheProvider();
         }
-        return new DefaultRedisCacheProvider(cacheHostUrl);
+        return new DefaultRedisCacheProvider(properties.getRedisHost());
     }
 
     private <T> T lookup(@SuppressWarnings("SameParameterValue") Class<T> tClass, String name) {

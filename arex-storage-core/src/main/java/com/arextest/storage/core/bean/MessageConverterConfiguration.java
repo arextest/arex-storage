@@ -1,6 +1,7 @@
-package com.arextest.storage.web.api.service.bean;
+package com.arextest.storage.core.bean;
 
-import com.arextest.storage.web.api.service.converter.ZstdJacksonMessageConverter;
+import com.arextest.storage.core.converter.ZstdJacksonMessageConverter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.web.HttpMessageConverters;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,6 +26,7 @@ class MessageConverterConfiguration {
      * @return HttpMessageConverters
      */
     @Bean
+    @ConditionalOnMissingBean
     HttpMessageConverters customConverters() {
         return new HttpMessageConverters(zstdJacksonMessageConverter);
     }

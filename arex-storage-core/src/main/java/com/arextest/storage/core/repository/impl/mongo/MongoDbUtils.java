@@ -43,10 +43,9 @@ public final class MongoDbUtils {
      */
     private static CodecRegistry customCodecRegistry() {
         final List<Convention> conventions = customConventions();
-        final CodecRegistry customStringId = CodecRegistries.fromProviders(new StringObjectIdCodesProvider());
         final CodecRegistry customPojo = CodecRegistries.fromProviders(PojoCodecProvider
                 .builder().conventions(conventions).automatic(true).build());
-        return CodecRegistries.fromRegistries(customStringId, MongoClientSettings.getDefaultCodecRegistry(),
+        return CodecRegistries.fromRegistries(MongoClientSettings.getDefaultCodecRegistry(),
                 customPojo);
     }
 

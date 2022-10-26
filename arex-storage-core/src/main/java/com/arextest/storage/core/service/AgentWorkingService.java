@@ -18,6 +18,7 @@ import com.arextest.storage.model.mocker.impl.ConfigVersionMocker;
 import com.arextest.storage.model.mocker.impl.ServletMocker;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -49,7 +50,8 @@ public final class AgentWorkingService {
     private ServiceOperationRepository serviceOperationRepository;
     @Resource
     private CacheProvider cacheProvider;
-
+    @Value("${arex.storage.enable-auto-discovery-main-entry:true}")
+    private boolean enableAutoDiscoveryMainEntry;
     private static final String DASH = "_";
     private static final int SERVICE_TYPE_NORMAL = 4;
     private static final String SERVICE_MAPPINGS_PREFIX = "service_mappings_";
@@ -65,7 +67,9 @@ public final class AgentWorkingService {
      */
     public <T extends MockItem> boolean saveRecord(@NotNull MockCategoryType category, @NotNull T item) {
         RepositoryProvider<T> repositoryWriter = repositoryProviderFactory.findProvider(category);
-        updateMapping(category, item);
+        if (enableAutoDiscoveryMainEntry) {
+            updateMapping(category, item);
+        }
         return repositoryWriter != null && repositoryWriter.save(item);
     }
 

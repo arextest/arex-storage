@@ -27,19 +27,14 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-/**
- * @author jmo
- * @since 2021/11/7
- */
-
 @Slf4j
-abstract class AbstractMongoDbRepository<T extends MockItem> implements RepositoryProvider<T> {
+public abstract class AbstractMongoDbRepository<T extends MockItem> implements RepositoryProvider<T> {
     static final String FILE_VERSION_COLUMN_NAME = "fileVersion";
     static final String CREATE_TIME_COLUMN_NAME = "createTime";
     private static final String PRIMARY_KEY_COLUMN_NAME = "_id";
     private static final String RECORD_ID_COLUMN_NAME = "recordId";
     private static final String APP_ID_COLUMN_NAME = "appId";
-    private static final String CASE_FROM_ENV_COLUMN_NAME = "isTest";
+
     private static final String ENV_COLUMN_NAME = "env";
     private static final String REPLAY_ID_COLUMN_NAME = "replayId";
     private static final String MOCKED_RESULT_TYPE_COLUMN_NAME = "type";
@@ -61,7 +56,7 @@ abstract class AbstractMongoDbRepository<T extends MockItem> implements Reposito
     private MongoDatabase mongoDatabase;
 
     @SuppressWarnings("unchecked")
-    protected AbstractMongoDbRepository() {
+    public AbstractMongoDbRepository() {
         this((GenericCompressionBuilder<T>) GenericCompressionBuilder.DEFAULT);
     }
 
@@ -70,6 +65,7 @@ abstract class AbstractMongoDbRepository<T extends MockItem> implements Reposito
         this.targetClassType = (Class<T>) ((ParameterizedType) getClass()
                 .getGenericSuperclass()).getActualTypeArguments()[0];
         this.genericCompressionBuilder = genericCompressionBuilder;
+
     }
 
 
@@ -273,8 +269,7 @@ abstract class AbstractMongoDbRepository<T extends MockItem> implements Reposito
         Bson item = Filters.eq(APP_ID_COLUMN_NAME, rangeRequestType.getAppId());
         queryItems.add(item);
         if (rangeRequestType.getEnv() != null) {
-            item = Filters.or(Filters.eq(CASE_FROM_ENV_COLUMN_NAME, rangeRequestType.getEnv()),
-                    Filters.eq(ENV_COLUMN_NAME, rangeRequestType.getEnv()));
+            item = Filters.eq(ENV_COLUMN_NAME, rangeRequestType.getEnv());
             queryItems.add(item);
         }
         item = buildCreateTimeRange(rangeRequestType.getBeginTime(), rangeRequestType.getEndTime());

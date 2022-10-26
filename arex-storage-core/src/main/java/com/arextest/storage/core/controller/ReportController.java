@@ -1,4 +1,4 @@
-package com.arextest.storage.web.api.service.controller;
+package com.arextest.storage.core.controller;
 
 import com.arextest.storage.core.service.FixRecordService;
 import com.arextest.storage.model.Response;
@@ -18,10 +18,6 @@ import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
 
-import static com.arextest.storage.web.api.service.controller.ResponseUtils.emptyRecordIdResponse;
-import static com.arextest.storage.web.api.service.controller.ResponseUtils.exceptionResponse;
-import static com.arextest.storage.web.api.service.controller.ResponseUtils.requestBodyEmptyResponse;
-import static com.arextest.storage.web.api.service.controller.ResponseUtils.successResponse;
 
 /**
  * Created by rchen9 on 2022/10/19.
@@ -45,23 +41,22 @@ public class ReportController {
     @ResponseBody
     public Response fixRecord(@RequestBody FixedRecordRequestType requestType) {
         if (requestType == null) {
-            return requestBodyEmptyResponse();
+            return ResponseUtils.requestBodyEmptyResponse();
         }
         String recordId = requestType.getRecordId();
         if (StringUtils.isEmpty(recordId)) {
-            return emptyRecordIdResponse();
+            return ResponseUtils.emptyRecordIdResponse();
         }
 
         try {
             FixedRecordResponseType responseType = new FixedRecordResponseType();
             Map<Integer, List<String>> viewResult = fixRecordService.fixRecord(recordId);
             responseType.setRecordResult(viewResult);
-            return successResponse(responseType);
+            return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
             LOGGER.error("queryRecord error:{}, request:{}", throwable.getMessage(), requestType);
-            return exceptionResponse(throwable.getMessage());
+            return ResponseUtils.exceptionResponse(throwable.getMessage());
         }
     }
-
 
 }
