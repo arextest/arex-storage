@@ -37,6 +37,7 @@ public class FixRecordService {
     private ObjectMapper objectMapper;
 
     public <T extends MockItem> Map<Integer, List<String>> fixRecord(String recordId) throws Exception {
+        String fixedUUID = recordId + "-" + System.currentTimeMillis();
         // search the record of mainEntry
         long categoryTypes = MockCategoryMaskConstants.MAIN_CATEGORY_TYPES;
         Map<Integer, List<String>> resultMap = new HashMap<>(mockerCategories.length);
@@ -56,8 +57,9 @@ public class FixRecordService {
             }
             Iterator<T> valueIterator = mockItemIterators.iterator();
             while (valueIterator.hasNext()) {
-                T value = valueIterator.next();
                 List<String> tempList = resultMap.getOrDefault(category.getCodeValue(), new ArrayList<>());
+                T value = valueIterator.next();
+                value.setRecordId(fixedUUID);
                 try {
                     tempList.add(objectMapper.writeValueAsString(value));
                 } catch (Throwable throwable) {
@@ -67,17 +69,16 @@ public class FixRecordService {
             }
         }
         if (MapUtils.isEmpty(resultMap)) {
-            throw new Exception("The record of mainEntry  doesn't exist");
+            throw new Exception("The record of mainEntry doesn't exist");
         }
 
         // copy the original record to the collection of "*Fixed"
-        copyOriginalRecord(recordId);
+        copyOriginalRecord(recordId, fixedUUID);
         return resultMap;
     }
 
 
-    private <T extends MockItem> void copyOriginalRecord(String recordId) throws Exception {
-        String fixedUUID = recordId + "-" + String.valueOf(System.currentTimeMillis());
+    private <T extends MockItem> void copyOriginalRecord(String recordId, String fixedUUID) throws Exception {
         for (int i = 0; i < mockerCategories.length; i++) {
             MockCategoryType category = mockerCategories[i];
             if (category.isConfigVersion()) {
