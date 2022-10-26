@@ -44,7 +44,7 @@ public class FrontEndController {
      */
     @PostMapping(value = "/queryFixedRecord", produces = {MediaType.APPLICATION_JSON_UTF8_VALUE})
     @ResponseBody
-    public Response queryRecord(@RequestBody QueryRecordRequestType requestType) {
+    public Response queryFixedRecord(@RequestBody QueryRecordRequestType requestType) {
         if (requestType == null) {
             return requestBodyEmptyResponse();
         }
