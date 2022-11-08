@@ -5,10 +5,10 @@
     <parent>
         <artifactId>arex-storage-service</artifactId>
         <groupId>com.arextest</groupId>
-        <version>1.0.0</version>
+        <version>1.0.1</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <version>1.0.4</version>
+    <version>1.0.5</version>
     <artifactId>arex-storage-model</artifactId>
     <dependencies>
         <dependency>

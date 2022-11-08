@@ -1,8 +1,8 @@
 package com.arextest.storage.model.replay;
 
+import com.arextest.storage.model.replay.holder.ListResultHolder;
 import com.arextest.storage.model.Response;
 import com.arextest.storage.model.header.ResponseStatusType;
-import com.arextest.storage.model.replay.holder.ListResultHolder;
 import lombok.Data;
 
 import java.util.List;

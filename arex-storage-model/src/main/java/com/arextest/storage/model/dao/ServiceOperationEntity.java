@@ -1,5 +1,6 @@
 package com.arextest.storage.model.dao;
 
+import com.arextest.storage.model.enums.MockCategoryType;
 import lombok.Data;
 
 @Data
@@ -8,7 +9,7 @@ public class ServiceOperationEntity extends BaseEntity {
     private String serviceId;
     private String operationName;
     /**
-     * {@link com.arextest.storage.model.enums.MockCategoryType}.codeValue
+     * {@link MockCategoryType}.codeValue
      */
     private int operationType;
     /**

@@ -1,7 +1,5 @@
 package com.arextest.storage.model.mocker;
 
-import org.bson.types.ObjectId;
-
 /**
  * @author jmo
  * @since 2021/11/8
@@ -20,8 +18,8 @@ public interface MockItem {
      */
     void setCreateTime(long createTime);
 
-    void setId(ObjectId id);
+    void setId(String id);
 
-    ObjectId getId();
+    String getId();
 
 }

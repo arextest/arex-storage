@@ -2,8 +2,6 @@ package com.arextest.storage.model.mocker.impl;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.bson.codecs.pojo.annotations.BsonId;
-import org.bson.types.ObjectId;
 
 /**
  * @author jmo
@@ -12,9 +10,4 @@ import org.bson.types.ObjectId;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class QmqProducerMocker extends MessageMocker {
-    @BsonId
-    @Override
-    public ObjectId getId() {
-        return super.getId();
-    }
 }

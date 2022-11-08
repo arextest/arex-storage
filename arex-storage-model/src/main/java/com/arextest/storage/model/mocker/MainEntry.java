@@ -4,8 +4,6 @@ import com.arextest.storage.model.enums.MockCategoryType;
 import com.arextest.storage.model.enums.RecordEnvType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import java.util.Map;
-
 /**
  * The entrance of the recording
  *

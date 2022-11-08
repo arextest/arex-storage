@@ -8,8 +8,6 @@ import lombok.Data;
  */
 @Data
 public class QueryMockCacheRequestType {
-    /**
-     * 录制Id
-     */
     private String recordId;
+    private String sourceProvider;
 }

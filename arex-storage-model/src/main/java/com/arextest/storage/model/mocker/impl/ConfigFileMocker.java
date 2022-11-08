@@ -5,8 +5,6 @@ import com.arextest.storage.model.mocker.AbstractMocker;
 import com.arextest.storage.model.mocker.ConfigVersion;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.bson.codecs.pojo.annotations.BsonId;
-import org.bson.types.ObjectId;
 
 /**
  * @author jmo
@@ -20,11 +18,5 @@ public class ConfigFileMocker extends AbstractMocker implements ConfigVersion {
     private Long fileVersion;
     @FieldCompression
     private String content;
-
-
-    @BsonId
-    @Override
-    public ObjectId getId() {
-        return super.getId();
-    }
+    private int env;
 }
