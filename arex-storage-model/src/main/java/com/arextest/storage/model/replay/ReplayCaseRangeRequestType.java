@@ -28,4 +28,5 @@ public class ReplayCaseRangeRequestType {
      * The main entry category type,others not allowed.
      */
     private Integer categoryType;
+    private String sourceProvider;
 }

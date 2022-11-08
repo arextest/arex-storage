@@ -1,16 +1,13 @@
 package com.arextest.storage.model.mocker.impl;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.arextest.storage.model.annotations.FieldCompression;
 import com.arextest.storage.model.enums.MockCategoryType;
 import com.arextest.storage.model.mocker.AbstractMocker;
 import com.arextest.storage.model.mocker.MainEntry;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.bson.codecs.pojo.annotations.BsonId;
 import org.bson.codecs.pojo.annotations.BsonIgnore;
-
-import java.util.Map;
 
 /**
  * @author yongwuhe
@@ -40,9 +37,4 @@ public class ServletMocker extends AbstractMocker implements MainEntry {
         this.env = env;
     }
 
-    @BsonId
-    @Override
-    public String getRecordId() {
-        return super.getRecordId();
-    }
 }

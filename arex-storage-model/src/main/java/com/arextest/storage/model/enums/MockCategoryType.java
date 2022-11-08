@@ -1,23 +1,21 @@
 package com.arextest.storage.model.enums;
 
-import com.arextest.storage.model.mocker.MockItem;
 import com.arextest.storage.model.mocker.ConfigVersion;
-import com.arextest.storage.model.mocker.MainEntry;
-import com.arextest.storage.model.mocker.impl.ABtMocker;
-import com.arextest.storage.model.mocker.impl.DalResultMocker;
-import com.arextest.storage.model.mocker.impl.DynamicResultMocker;
-import com.arextest.storage.model.mocker.impl.HttpMocker;
 import com.arextest.storage.model.mocker.impl.ConfigFileMocker;
 import com.arextest.storage.model.mocker.impl.ConfigMetaMocker;
 import com.arextest.storage.model.mocker.impl.ConfigVersionMocker;
+import com.arextest.storage.model.mocker.MainEntry;
+import com.arextest.storage.model.mocker.MockItem;
+import com.arextest.storage.model.mocker.impl.DalResultMocker;
+import com.arextest.storage.model.mocker.impl.DatabaseMocker;
+import com.arextest.storage.model.mocker.impl.DynamicResultMocker;
+import com.arextest.storage.model.mocker.impl.HttpClientMocker;
 import com.arextest.storage.model.mocker.impl.QmqConsumerMocker;
 import com.arextest.storage.model.mocker.impl.QmqProducerMocker;
 import com.arextest.storage.model.mocker.impl.RedisMocker;
+import com.arextest.storage.model.mocker.impl.ServletMocker;
 import com.arextest.storage.model.mocker.impl.SoaExternalMocker;
 import com.arextest.storage.model.mocker.impl.SoaMainMocker;
-import com.arextest.storage.model.mocker.impl.DatabaseMocker;
-import com.arextest.storage.model.mocker.impl.HttpClientMocker;
-import com.arextest.storage.model.mocker.impl.ServletMocker;
 import lombok.Getter;
 
 import java.util.HashMap;
@@ -56,14 +54,7 @@ public enum MockCategoryType {
      * DYNAMIC
      */
     DYNAMIC(5, "dynamic", "DynamicResultMocker", DynamicResultMocker.class),
-    /**
-     * HTTP
-     */
-    HTTP(6, "http", "HttpMocker", HttpMocker.class),
-    /**
-     * AB_TEST
-     */
-    AB_TEST(7, "abt", "ABtMocker", ABtMocker.class),
+
 
     /**
      * the content of a config file

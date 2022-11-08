@@ -17,4 +17,5 @@ public class ViewRecordRequestType {
      * soaExternal codeValue=1,then 1<<1
      */
     private Long categoryTypes;
+    private String sourceProvider;
 }
