@@ -1,7 +1,7 @@
 package com.arextest.storage.trace;
 
-import com.arextest.storage.model.enums.MockCategoryType;
-import com.arextest.storage.model.mocker.MockItem;
+import com.arextest.model.mock.MockCategoryType;
+import com.arextest.model.mock.Mocker;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.MDC;
 
@@ -18,7 +18,7 @@ public final class MDCTracer {
 
     }
 
-    public static void addTrace(MockCategoryType category, MockItem requestType) {
+    public static void addTrace(MockCategoryType category, Mocker requestType) {
         addCategory(category);
         if (requestType == null) {
             return;
@@ -43,7 +43,7 @@ public final class MDCTracer {
 
     public static void addCategory(MockCategoryType category) {
         if (category != null) {
-            put(CATEGORY, category.getDisplayName());
+            put(CATEGORY, category.getName());
         }
     }
 

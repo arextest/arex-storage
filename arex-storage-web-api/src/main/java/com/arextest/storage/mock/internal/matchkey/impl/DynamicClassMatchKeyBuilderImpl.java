@@ -1,0 +1,31 @@
+package com.arextest.storage.mock.internal.matchkey.impl;
+
+import com.arextest.model.mock.MockCategoryType;
+import com.arextest.model.mock.Mocker;
+import com.arextest.storage.cache.CacheKeyUtils;
+import com.arextest.storage.mock.MatchKeyBuilder;
+import org.springframework.stereotype.Component;
+
+import java.security.MessageDigest;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+
+@Component
+final class DynamicClassMatchKeyBuilderImpl implements MatchKeyBuilder {
+
+    @Override
+    public boolean isSupported(MockCategoryType categoryType) {
+        return Objects.equals(categoryType, MockCategoryType.DYNAMIC_CLASS);
+    }
+
+    @Override
+    public List<byte[]> build(Mocker instance) {
+        MessageDigest messageDigest =MessageDigestWriter.getMD5Digest();
+        byte[] operationNameBytes = CacheKeyUtils.toUtf8Bytes(instance.getOperationName());
+        // The operation name is full class & method
+        messageDigest.update(operationNameBytes);
+        messageDigest.update(CacheKeyUtils.toUtf8Bytes(instance.getTargetRequest().getBody()));
+        return Arrays.asList(messageDigest.digest(), operationNameBytes);
+    }
+}

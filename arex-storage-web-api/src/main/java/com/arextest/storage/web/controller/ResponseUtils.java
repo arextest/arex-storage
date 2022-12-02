@@ -1,8 +1,8 @@
 package com.arextest.storage.web.controller;
 
-import com.arextest.storage.model.Response;
-import com.arextest.storage.model.ResponseCode;
-import com.arextest.storage.model.header.ResponseStatusType;
+import com.arextest.model.response.Response;
+import com.arextest.model.response.ResponseCode;
+import com.arextest.model.response.ResponseStatusType;
 
 import javax.validation.constraints.NotNull;
 

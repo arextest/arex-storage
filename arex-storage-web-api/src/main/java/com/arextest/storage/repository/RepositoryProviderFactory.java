@@ -1,41 +1,51 @@
 package com.arextest.storage.repository;
 
-import com.arextest.storage.model.enums.MockCategoryType;
-import com.arextest.storage.model.mocker.MockItem;
+import com.arextest.model.mock.MockCategoryType;
+import com.arextest.model.mock.Mocker;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 import java.util.List;
+import java.util.Set;
 
-/**
- * @author jmo
- * @since 2021/11/11
- */
+@SuppressWarnings("unchecked")
 @Component
 public final class RepositoryProviderFactory {
+    private final List<RepositoryProvider<? extends Mocker>> repositoryProviderList;
     @Getter
-    @Resource
-    private List<RepositoryProvider<? extends MockItem>> repositoryProviderList;
+    private final Set<MockCategoryType> categoryTypes;
 
-    public <T extends MockItem> RepositoryProvider<T> findProvider(MockCategoryType category) {
-        return findProvider(ProviderNames.DEFAULT, category);
+    public RepositoryProviderFactory(List<RepositoryProvider<? extends Mocker>> repositoryProviderList, Set<MockCategoryType> categoryTypes) {
+        this.repositoryProviderList = repositoryProviderList;
+        this.categoryTypes = categoryTypes;
     }
 
-    @SuppressWarnings("unchecked")
-    public <T extends MockItem> RepositoryProvider<T> findProvider(String providerName, MockCategoryType category) {
-        RepositoryProvider<? extends MockItem> repositoryProvider;
-        // TODO:use map impl
+    public <T extends Mocker> RepositoryProvider<T> findProvider(String providerName) {
+        RepositoryProvider<? extends Mocker> repositoryProvider;
         for (int i = 0; i < repositoryProviderList.size(); i++) {
             repositoryProvider = repositoryProviderList.get(i);
-            if (!StringUtils.equals(providerName, repositoryProvider.getProviderName())) {
-                continue;
-            }
-            if (category == repositoryProvider.getCategory()) {
+            if (StringUtils.equals(providerName, repositoryProvider.getProviderName())) {
                 return (RepositoryProvider<T>) repositoryProvider;
             }
         }
         return null;
     }
+
+    public MockCategoryType findCategory(String categoryName) {
+        if (StringUtils.isEmpty(categoryName)) {
+            return null;
+        }
+        for (MockCategoryType categoryType : categoryTypes) {
+            if (StringUtils.equals(categoryName, categoryType.getName())) {
+                return categoryType;
+            }
+        }
+        return null;
+    }
+
+    public <T extends Mocker> RepositoryProvider<T> defaultProvider() {
+        return findProvider(ProviderNames.DEFAULT);
+    }
+
 }

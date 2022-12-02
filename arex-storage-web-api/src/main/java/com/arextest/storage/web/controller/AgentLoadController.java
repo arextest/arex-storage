@@ -26,7 +26,7 @@ public class AgentLoadController {
     @Resource
     private HttpWepServiceApiClient httpWepServiceApiClient;
 
-    @PostMapping(value = "/load", produces = {MediaType.APPLICATION_JSON_UTF8_VALUE})
+    @PostMapping(value = "/load", produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     public String load(@RequestBody AgentRemoteConfigurationRequest request) {
         return httpWepServiceApiClient.jsonPost(agentLoadUrl, request, String.class);
@@ -36,5 +36,6 @@ public class AgentLoadController {
     @Data
     private static final class AgentRemoteConfigurationRequest {
         private String appId;
+        private String ip;
     }
 }

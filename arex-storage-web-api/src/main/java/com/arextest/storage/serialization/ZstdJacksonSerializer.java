@@ -1,15 +1,13 @@
 package com.arextest.storage.serialization;
 
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.arextest.common.serialization.SerializationProvider;
 import com.arextest.common.serialization.SerializationProviders;
 import com.arextest.common.utils.SerializationUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,13 +24,10 @@ public final class ZstdJacksonSerializer {
      * The bytes of zstd  equal json string "{}",useful deserialize
      */
     public static final byte[] EMPTY_INSTANCE = SerializationUtils.EMPTY_INSTANCE;
-    @Resource
-    private ObjectMapper objectMapper;
-    private SerializationProvider serializationProvider;
+    private final SerializationProvider serializationProvider;
 
-    @PostConstruct
-    void initSerializationProvider() {
-        this.serializationProvider = SerializationProviders.jacksonProvider(this.objectMapper);
+    public ZstdJacksonSerializer(ObjectMapper objectMapper) {
+        this.serializationProvider = SerializationProviders.jacksonProvider(objectMapper);
     }
 
     public <T> void serializeTo(T value, OutputStream outputStream) {

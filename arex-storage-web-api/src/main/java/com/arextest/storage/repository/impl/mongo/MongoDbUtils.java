@@ -8,13 +8,7 @@ import com.mongodb.client.MongoDatabase;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
-import org.bson.codecs.pojo.Convention;
-import org.bson.codecs.pojo.Conventions;
 import org.bson.codecs.pojo.PojoCodecProvider;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * @author jmo
@@ -24,14 +18,20 @@ public final class MongoDbUtils {
     private MongoDbUtils() {
     }
 
+    private static final String AREX_STORAGE_DB = "arex_storage_db";
     private static final String DEFAULT_CONNECTION_STRING = "mongodb://localhost";
 
-    public static MongoDatabase create(String host, String dbName) {
+    public static MongoDatabase create(String host) {
         MongoClientSettings.Builder settingsBuilder = MongoClientSettings.builder();
         if (StringUtils.isEmpty(host)) {
             host = DEFAULT_CONNECTION_STRING;
         }
-        settingsBuilder.applyConnectionString(new ConnectionString(host));
+        ConnectionString connectionString = new ConnectionString(host);
+        String dbName = connectionString.getDatabase();
+        if (dbName == null) {
+            dbName = AREX_STORAGE_DB;
+        }
+        settingsBuilder.applyConnectionString(connectionString);
         settingsBuilder.codecRegistry(customCodecRegistry());
         MongoClient mongoClient = MongoClients.create(settingsBuilder.build());
         return mongoClient.getDatabase(dbName);
@@ -43,20 +43,10 @@ public final class MongoDbUtils {
      * @return the combinatorial CodecRegistry
      */
     private static CodecRegistry customCodecRegistry() {
-        final List<Convention> conventions = customConventions();
-        final CodecRegistry customPojo = CodecRegistries.fromProviders(PojoCodecProvider
-                .builder().conventions(conventions).automatic(true).build());
+        AREXMockerCodecProvider arexMockerCodecProvider = new AREXMockerCodecProvider();
+        final CodecRegistry customPojo = CodecRegistries.fromProviders(arexMockerCodecProvider, PojoCodecProvider
+                .builder().automatic(true).build());
         return CodecRegistries.fromRegistries(MongoClientSettings.getDefaultCodecRegistry(),
                 customPojo);
-    }
-
-    private static final Convention MILLISECONDS_DATE_TIME_CONVENTION = new MillisecondsDateTimeConventionImpl();
-    private static final Convention ID_PROPERTY_NAME_CONVENTION = new IdPropertyNameConventionImpl();
-
-    private static List<Convention> customConventions() {
-        final List<Convention> conventions = new ArrayList<>(Conventions.DEFAULT_CONVENTIONS);
-        conventions.add(MILLISECONDS_DATE_TIME_CONVENTION);
-        conventions.add(ID_PROPERTY_NAME_CONVENTION);
-        return Collections.unmodifiableList(conventions);
     }
 }

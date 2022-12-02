@@ -1,0 +1,11 @@
+arex:
+  storage:
+    cache:
+      uri: redis://redis:6379/
+    enableDiscoveryEntryPoint: true
+    mongodbUri: mongodb://arex:iLoveArex@mongodb:27017/arex_storage_db
+    recordEnv: PRO
+#    categoryTypes:
+#      - name: Hi
+#        entryPoint: true
+#        skipComparison: true

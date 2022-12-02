@@ -1,30 +1,21 @@
 package com.arextest.storage.service;
 
-import com.arextest.common.cache.CacheProvider;
-import com.arextest.storage.cache.CacheKeyUtils;
+import com.arextest.model.mock.MockCategoryType;
+import com.arextest.model.mock.Mocker;
 import com.arextest.storage.mock.MockResultContext;
+import com.arextest.storage.mock.MockResultMatchStrategy;
 import com.arextest.storage.mock.MockResultProvider;
-import com.arextest.storage.mock.MockStrategy;
-import com.arextest.storage.model.dao.ServiceEntity;
-import com.arextest.storage.model.dao.ServiceOperationEntity;
-import com.arextest.storage.model.enums.MockCategoryType;
-import com.arextest.storage.model.mocker.ConfigVersion;
-import com.arextest.storage.model.mocker.MockItem;
-import com.arextest.storage.model.mocker.impl.ConfigVersionMocker;
-import com.arextest.storage.model.mocker.impl.ServletMocker;
+import com.arextest.storage.model.RecordEnvType;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
-import com.arextest.storage.repository.RepositoryReader;
-import com.arextest.storage.repository.ServiceOperationRepository;
-import com.arextest.storage.repository.ServiceRepository;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import javax.validation.constraints.NotNull;
+import java.util.List;
 
 /**
  * The agent working should be complete two things:
@@ -34,43 +25,69 @@ import javax.validation.constraints.NotNull;
  * @since 2021/11/11
  */
 @Slf4j
-@Service
 public final class AgentWorkingService {
-    @Resource
-    private MockResultProvider mockResultProvider;
-    @Resource
-    private RepositoryProviderFactory repositoryProviderFactory;
-    @Resource
+    private final MockResultProvider mockResultProvider;
+    private final RepositoryProviderFactory repositoryProviderFactory;
+    @Setter
     private ZstdJacksonSerializer zstdJacksonSerializer;
-    @Resource
+    @Setter
     private PrepareMockResultService prepareMockResultService;
-    @Resource
-    private ServiceRepository serviceRepository;
-    @Resource
-    private ServiceOperationRepository serviceOperationRepository;
-    @Resource
-    private CacheProvider cacheProvider;
-    @Value("${arex.storage.enable-auto-discovery-main-entry:true}")
-    private boolean enableAutoDiscoveryMainEntry;
-    private static final String DASH = "_";
-    private static final int SERVICE_TYPE_NORMAL = 4;
-    private static final String SERVICE_MAPPINGS_PREFIX = "service_mappings_";
-    private static final byte[] EMPTY_BYTE_ARRAY = CacheKeyUtils.toUtf8Bytes(StringUtils.EMPTY);
+
+    private final List<AgentWorkingListener> agentWorkingListeners;
+
+    @Setter
+    private RecordEnvType recordEnvType;
+
+    public AgentWorkingService(MockResultProvider mockResultProvider,
+                               RepositoryProviderFactory repositoryProviderFactory, List<AgentWorkingListener> agentWorkingListeners) {
+        this.mockResultProvider = mockResultProvider;
+        this.repositoryProviderFactory = repositoryProviderFactory;
+        this.agentWorkingListeners = agentWorkingListeners;
+    }
+
+    public AgentWorkingService(MockResultProvider mockResultProvider,
+                               RepositoryProviderFactory repositoryProviderFactory) {
+        this(mockResultProvider, repositoryProviderFactory, null);
+    }
 
     /**
      * requested from AREX's agent hits to recording, we direct save to repository for next replay using
      *
-     * @param category the resource type of requested
-     * @param item     the instance of T
-     * @param <T>      class type
+     * @param item the instance of T
+     * @param <T>  class type
      * @return true means success,else save failure
      */
-    public <T extends MockItem> boolean saveRecord(@NotNull MockCategoryType category, @NotNull T item) {
-        RepositoryProvider<T> repositoryWriter = repositoryProviderFactory.findProvider(category);
-        if (enableAutoDiscoveryMainEntry) {
-            updateMapping(category, item);
+    public <T extends Mocker> boolean saveRecord(@NotNull T item) {
+        if (shouldMarkRecordEnv(item.getCategoryType())) {
+            item.setRecordEnvironment(recordEnvType.getCodeValue());
         }
+        this.dispatchRecordSavingEvent(item);
+        RepositoryProvider<T> repositoryWriter = repositoryProviderFactory.defaultProvider();
+
         return repositoryWriter != null && repositoryWriter.save(item);
+    }
+
+    private void dispatchRecordSavingEvent(Mocker instance) {
+        if (CollectionUtils.isEmpty(this.agentWorkingListeners)) {
+            return;
+        }
+        for (AgentWorkingListener agentWorkingListener : this.agentWorkingListeners) {
+            agentWorkingListener.onRecordSaving(instance);
+        }
+    }
+
+    private void dispatchMockResultEnterEvent(Mocker instance, MockResultContext context) {
+        if (CollectionUtils.isEmpty(this.agentWorkingListeners)) {
+            return;
+        }
+        for (AgentWorkingListener agentWorkingListener : this.agentWorkingListeners) {
+            agentWorkingListener.onRecordMocking(instance, context);
+        }
+    }
+
+    private boolean shouldMarkRecordEnv(MockCategoryType category) {
+        return category.isEntryPoint() ||
+                StringUtils.equals(category.getName(), MockCategoryType.CONFIG_FILE.getName());
     }
 
     /**
@@ -80,32 +97,31 @@ public final class AgentWorkingService {
      * if requested times overhead the size of the resource, return the last sequence item.
      * if the requested should be compared by scheduler,we put it to cache for performance goal.
      *
-     * @param category   the resource type of requested
      * @param recordItem from AREX's recording
      * @return compress bytes with zstd from the cached which filled by scheduler's preload
      */
-    public <T extends MockItem> byte[] queryMockResult(@NotNull MockCategoryType category, @NotNull T recordItem,
-                                                       MockResultContext context) {
-
+    public <T extends Mocker> byte[] queryMockResult(@NotNull T recordItem, MockResultContext context) {
+        this.dispatchMockResultEnterEvent(recordItem, context);
         String recordId = recordItem.getRecordId();
         String replayId = recordItem.getReplayId();
-        if (category.isMainEntry()) {
-            mockResultProvider.putReplayResult(category, recordItem.getReplayId(), recordItem);
+        MockCategoryType category = recordItem.getCategoryType();
+        if (category.isEntryPoint()) {
+            mockResultProvider.putReplayResult(recordItem);
             LOGGER.info("skip main entry mock response,record id:{},replay id:{}", recordId, replayId);
             return zstdJacksonSerializer.serialize(recordItem);
         }
-        byte[] result = mockResultProvider.getRecordResult(category, recordItem,context);
+        byte[] result = mockResultProvider.getRecordResult(recordItem, context);
         if (result == null) {
             LOGGER.info("fetch replay mock record empty from cache,record id:{},replay id:{}", recordId, replayId);
             boolean reloadResult = prepareMockResultService.preload(category, recordId);
             if (reloadResult) {
-                result = mockResultProvider.getRecordResult(category, recordItem,context);
+                result = mockResultProvider.getRecordResult(recordItem, context);
             }
             if (result == null) {
-                if (MockStrategy.BREAK_RECORDED_COUNT == context.getMockStrategy() && context.isLastOfResult()) {
+                if (MockResultMatchStrategy.BREAK_RECORDED_COUNT == context.getMockStrategy() && context.isLastOfResult()) {
                     return ZstdJacksonSerializer.EMPTY_INSTANCE;
                 }
-                mockResultProvider.putReplayResult(category, recordItem.getReplayId(), recordItem);
+                mockResultProvider.putReplayResult(recordItem);
                 LOGGER.info("reload fetch replay mock record empty from cache,record id:{},replay id:{}, " +
                                 "reloadResult:{}",
                         recordId,
@@ -113,67 +129,9 @@ public final class AgentWorkingService {
                 return ZstdJacksonSerializer.EMPTY_INSTANCE;
             }
         }
-        mockResultProvider.putReplayResult(category, recordItem.getReplayId(), recordItem);
-        LOGGER.info("agent query found result for category:{},record id: {},replay id: {}", category.getDisplayName(),
+        mockResultProvider.putReplayResult(recordItem);
+        LOGGER.info("agent query found result for category:{},record id: {},replay id: {}", category,
                 recordId, replayId);
         return result;
-    }
-
-    public byte[] queryConfigVersion(MockCategoryType category, ConfigVersion version) {
-        RepositoryReader<?> repositoryReader = repositoryProviderFactory.findProvider(category);
-        Object value = null;
-        if (repositoryReader != null) {
-            value = repositoryReader.queryByVersion(version);
-        }
-        return zstdJacksonSerializer.serialize(value);
-    }
-
-    /**
-     * build a key for all config files before agent recording,then save any config resources with the key, after
-     * that, it used to replay restore as part of mock dependency.
-     *
-     * @param application the request app
-     * @return version object of ConfigVersionMocker
-     * @see ConfigVersionMocker
-     */
-    public byte[] queryConfigVersionKey(ConfigVersion application) {
-        if (StringUtils.isEmpty(application.getAppId())) {
-            LOGGER.warn("The appId is empty from request application");
-            return ZstdJacksonSerializer.EMPTY_INSTANCE;
-        }
-        return queryConfigVersion(MockCategoryType.CONFIG_VERSION, application);
-    }
-
-    private <T extends MockItem> void updateMapping(@NotNull MockCategoryType category, @NotNull T item) {
-        if (item.getClass() == ServletMocker.class) {
-            ServletMocker servlet = (ServletMocker) item;
-
-            byte[] appServiceKey = CacheKeyUtils.toUtf8Bytes(SERVICE_MAPPINGS_PREFIX + servlet.getAppId());
-            if (cacheProvider.get(appServiceKey) == null) {
-                ServiceEntity serviceEntity = serviceRepository.queryByAppId(servlet.getAppId());
-                if (serviceEntity == null) {
-                    LOGGER.info("AppId:{} does not have a valid service", servlet.getAppId());
-                    return;
-                } else {
-                    cacheProvider.put(appServiceKey, CacheKeyUtils.toUtf8Bytes(serviceEntity.getId().toString()));
-                }
-            }
-
-            String serviceId = CacheKeyUtils.fromUtf8Bytes(cacheProvider.get(appServiceKey));
-            byte[] operationKey =
-                    CacheKeyUtils.toUtf8Bytes(SERVICE_MAPPINGS_PREFIX + serviceId + DASH + servlet.getPattern());
-            if (cacheProvider.get(operationKey) != null) {
-                return;
-            }
-            ServiceOperationEntity operationEntity = new ServiceOperationEntity();
-            operationEntity.setAppId(servlet.getAppId());
-            operationEntity.setOperationName(servlet.getPattern());
-            operationEntity.setOperationType(category.getCodeValue());
-            operationEntity.setServiceId(serviceId);
-            operationEntity.setStatus(SERVICE_TYPE_NORMAL);
-            if (serviceOperationRepository.findAndUpdate(operationEntity)) {
-                cacheProvider.put(operationKey, EMPTY_BYTE_ARRAY);
-            }
-        }
     }
 }
