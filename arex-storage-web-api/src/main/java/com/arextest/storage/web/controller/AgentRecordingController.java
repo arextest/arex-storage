@@ -1,24 +1,20 @@
 package com.arextest.storage.web.controller;
 
+import com.arextest.model.constants.MockAttributeNames;
+import com.arextest.model.mock.AREXMocker;
+import com.arextest.model.mock.MockCategoryType;
+import com.arextest.model.mock.Mocker;
+import com.arextest.model.mock.Mocker.Target;
+import com.arextest.model.response.Response;
 import com.arextest.storage.mock.MockResultContext;
-import com.arextest.storage.mock.MockStrategy;
-import com.arextest.storage.model.Response;
-import com.arextest.storage.model.enums.MockCategoryType;
-import com.arextest.storage.model.enums.RecordEnvType;
-import com.arextest.storage.model.mocker.ConfigVersion;
-import com.arextest.storage.model.mocker.MainEntry;
-import com.arextest.storage.model.mocker.MockItem;
-import com.arextest.storage.model.mocker.impl.ConfigFileMocker;
-import com.arextest.storage.model.mocker.impl.ConfigVersionMocker;
+import com.arextest.storage.mock.MockResultMatchStrategy;
+import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.AgentWorkingService;
 import com.arextest.storage.trace.MDCTracer;
-import com.arextest.storage.converter.ZstdJacksonMessageConverter;
-import com.arextest.storage.serialization.ZstdJacksonSerializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -26,6 +22,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.annotation.Resource;
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.arextest.model.constants.HeaderNames.AREX_MOCK_STRATEGY_CODE;
 
 /**
  * This class defined all api list for agent recording
@@ -37,48 +37,43 @@ import javax.annotation.Resource;
 @RequestMapping("/api/storage/record/")
 @Slf4j
 public class AgentRecordingController {
-    @Value("${arex.record.env}")
-    private RecordEnvType recordEnvType;
+
     @Resource
     private AgentWorkingService agentWorkingService;
-    @Resource
-    private ObjectMapper objectMapper;
-    private static final String AREX_MOCK_STRATEGY_CODE = "X-AREX-Mock-Strategy-Code";
+
 
     /**
-     * from agent query,means to save the request and try find record item as mock result for return.
+     * from agent query,means to save the request and try to find a record item as mock result for return.
      *
      * @param requestType the content of request,
-     * @param shortName   the category name of mock item
      * @return the bytes compress with zstd
      */
     @PostMapping(value = "/query")
     @ResponseBody
-    public byte[] query(@RequestHeader(name = ZstdJacksonMessageConverter.AREX_MOCKER_CATEGORY_HEADER) String shortName,
-                        @RequestBody MockItem requestType, @RequestHeader(name = AREX_MOCK_STRATEGY_CODE,
+    public byte[] query(@RequestBody AREXMocker requestType, @RequestHeader(name = AREX_MOCK_STRATEGY_CODE,
             defaultValue = "0") int strategyCode) {
         try {
-            MockCategoryType category = MockCategoryType.of(shortName);
-            if (category == null || requestType == null) {
-                LOGGER.warn("agent query category not found {}", shortName);
+            MockCategoryType category = requestType.getCategoryType();
+            if (category == null) {
+                LOGGER.warn("agent query category not found");
                 return ZstdJacksonSerializer.EMPTY_INSTANCE;
             }
-            if (category.isConfigVersion() && requestType instanceof ConfigVersion) {
-                return agentWorkingService.queryConfigVersion(category, (ConfigVersion) requestType);
-            }
+//            if (category.isConfigVersion() && requestType instanceof ConfigVersion) {
+//                return agentWorkingService.queryConfigVersion(category, (ConfigVersion) requestType);
+//            }
             if (StringUtils.isEmpty(requestType.getRecordId())) {
-                LOGGER.warn("agent query recordId empty, {}", shortName);
+                LOGGER.warn("agent query recordId empty, {}", category);
                 return ZstdJacksonSerializer.EMPTY_INSTANCE;
             }
             if (StringUtils.isEmpty(requestType.getReplayId())) {
-                LOGGER.warn("agent query replayId is empty,{}, recordId:{}", shortName, requestType.getRecordId());
+                LOGGER.warn("agent query replayId is empty,{}, recordId:{}", category, requestType.getRecordId());
                 return ZstdJacksonSerializer.EMPTY_INSTANCE;
             }
             MDCTracer.addTrace(category, requestType);
-            MockResultContext context = new MockResultContext(MockStrategy.of(strategyCode));
-            return agentWorkingService.queryMockResult(category, requestType, context);
+            MockResultContext context = new MockResultContext(MockResultMatchStrategy.of(strategyCode));
+            return agentWorkingService.queryMockResult(requestType, context);
         } catch (Throwable throwable) {
-            LOGGER.error("query error:{} from category:{}", throwable.getMessage(), shortName, throwable);
+            LOGGER.error("query error:{} from category:{}", throwable.getMessage(), requestType, throwable);
         } finally {
             MDCTracer.clear();
         }
@@ -88,32 +83,26 @@ public class AgentRecordingController {
     /**
      * from agent recording, save the content for replay
      *
-     * @param shortName   the category name of mock item
      * @param requestType the record content of request
      * @return response for save result
      */
     @PostMapping("/save")
     @ResponseBody
-    public Response save(@RequestHeader(name = ZstdJacksonMessageConverter.AREX_MOCKER_CATEGORY_HEADER) String shortName,
-                         @RequestBody MockItem requestType) {
-        MockCategoryType category = MockCategoryType.of(shortName);
-        if (category == null || requestType == null) {
-            LOGGER.warn("agent record save the category not found {}", shortName);
-            return ResponseUtils.parameterInvalidResponse(shortName);
-        }
-        if (!category.isConfigVersion() && StringUtils.isEmpty(requestType.getRecordId())) {
-            LOGGER.warn("agent record save the recordId is empty,category:{}", shortName);
-            return ResponseUtils.emptyRecordIdResponse();
+    public Response save(@RequestBody AREXMocker requestType) {
+        MockCategoryType category = requestType.getCategoryType();
+        if (category == null || StringUtils.isEmpty(category.getName())) {
+            LOGGER.warn("The name of category is empty from agent record save not allowed ,request:{}", requestType);
+            return ResponseUtils.parameterInvalidResponse("empty category");
         }
         try {
             MDCTracer.addTrace(category, requestType);
-            markRecordEnv(requestType);
-            boolean saveResult = agentWorkingService.saveRecord(category, requestType);
-            LOGGER.info("agent record save result:{},category:{},recordId:{}", saveResult, shortName,
+
+            boolean saveResult = agentWorkingService.saveRecord(requestType);
+            LOGGER.info("agent record save result:{},category:{},recordId:{}", saveResult, category,
                     requestType.getRecordId());
             return ResponseUtils.successResponse(saveResult);
         } catch (Throwable throwable) {
-            LOGGER.error("save record error:{} from category:{},recordId:{}", throwable.getMessage(), shortName,
+            LOGGER.error("save record error:{} from category:{},recordId:{}", throwable.getMessage(), category,
                     requestType.getRecordId(), throwable);
             return ResponseUtils.exceptionResponse(throwable.getMessage());
         } finally {
@@ -121,54 +110,51 @@ public class AgentRecordingController {
         }
     }
 
-    private void markRecordEnv(MockItem requestType) {
-        if (requestType instanceof MainEntry) {
-            ((MainEntry) requestType).setEnv(recordEnvType.getCodeValue());
-        }
-        if (requestType instanceof ConfigFileMocker) {
-            ((ConfigFileMocker) requestType).setEnv(recordEnvType.getCodeValue());
-        }
-    }
-
-    /**
-     * requested to build version key
-     *
-     * @param application the appId
-     * @return ConfigVersionMocker bytes
-     */
-    @PostMapping(value = "/queryConfigVersionKey")
-    @ResponseBody
-    public byte[] queryConfigVersionKey(@RequestBody ConfigVersionMocker application) {
-        return agentWorkingService.queryConfigVersionKey(application);
-    }
-
     @Resource
     private ZstdJacksonSerializer zstdJacksonSerializer;
 
     @PostMapping("/saveTest")
     @ResponseBody
-    public Response saveTest(@RequestBody String body, @RequestHeader String categoryName) {
+    public Response saveTest(@RequestBody AREXMocker body) {
         try {
-            MockCategoryType categoryType = MockCategoryType.of(categoryName);
-            MockItem requestType = objectMapper.readValue(body, categoryType.getMockImplClassType());
-            return this.save(categoryName, requestType);
+            return this.save(body);
         } catch (Throwable throwable) {
-            LOGGER.error("save record error:{} from category:{}", throwable.getMessage(), categoryName, throwable);
+            LOGGER.error("save record error:{}", throwable.getMessage(), throwable);
         }
         return null;
     }
 
+    @GetMapping("/saveServletTest")
+    @ResponseBody
+    public Response saveTest() {
+        return saveTest(newServlet());
+    }
+
+    private AREXMocker newServlet() {
+        AREXMocker mocker = new AREXMocker(MockCategoryType.SERVLET);
+        mocker.setOperationName("hello");
+        mocker.setRecordId("demo-recordId-" + System.currentTimeMillis());
+        mocker.setAppId("demoAppID");
+        mocker.setCreationTime(System.currentTimeMillis());
+        Target targetRequest = new Target();
+        targetRequest.setBody("request body");
+        mocker.setTargetRequest(targetRequest);
+        Map<String, String> headers = new HashMap<>();
+        headers.put(".name", "value");
+        targetRequest.setAttribute(MockAttributeNames.HTTP_METHOD, "POST");
+        targetRequest.setAttribute(MockAttributeNames.HEADERS, headers);
+        return mocker;
+    }
+
     @PostMapping("/queryTest")
     public @ResponseBody
-    MockItem queryTest(@RequestBody String body, @RequestHeader String categoryName, @RequestHeader(name = AREX_MOCK_STRATEGY_CODE,
+    Mocker queryTest(@RequestBody AREXMocker body, @RequestHeader(name = AREX_MOCK_STRATEGY_CODE,
             defaultValue = "0") int strategyCode) {
         try {
-            MockCategoryType categoryType = MockCategoryType.of(categoryName);
-            MockItem requestType = objectMapper.readValue(body, categoryType.getMockImplClassType());
-            byte[] bytes = this.query(categoryName, requestType, strategyCode);
-            return zstdJacksonSerializer.deserialize(bytes, categoryType.getMockImplClassType());
+            byte[] bytes = this.query(body, strategyCode);
+            return zstdJacksonSerializer.deserialize(bytes, AREXMocker.class);
         } catch (Throwable throwable) {
-            LOGGER.error("queryTest error:{} from category: {}", throwable.getMessage(), categoryName, throwable);
+            LOGGER.error("queryTest error:{} ", throwable.getMessage(), throwable);
         }
         return null;
     }

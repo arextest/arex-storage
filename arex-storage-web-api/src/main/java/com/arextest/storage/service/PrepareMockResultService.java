@@ -1,17 +1,13 @@
 package com.arextest.storage.service;
 
+import com.arextest.model.mock.MockCategoryType;
+import com.arextest.model.mock.Mocker;
 import com.arextest.storage.mock.MockResultProvider;
-import com.arextest.storage.model.enums.MockCategoryType;
-import com.arextest.storage.model.mocker.MockItem;
-import com.arextest.storage.trace.MDCTracer;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
+import com.arextest.storage.trace.MDCTracer;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
-
-import javax.annotation.Resource;
-import java.util.List;
 
 /**
  * As for improve performance goal,
@@ -21,61 +17,53 @@ import java.util.List;
 @Slf4j
 @Service
 public final class PrepareMockResultService {
-    @Resource
-    private RepositoryProviderFactory providerFactory;
-    @Resource
-    private MockResultProvider mockResultProvider;
+    private final RepositoryProviderFactory providerFactory;
+    private final MockResultProvider mockResultProvider;
+
+    public PrepareMockResultService(RepositoryProviderFactory providerFactory, MockResultProvider mockResultProvider) {
+        this.providerFactory = providerFactory;
+        this.mockResultProvider = mockResultProvider;
+    }
 
     public boolean preloadAll(String sourceProvider, String recordId) {
-        List<RepositoryProvider<? extends MockItem>> repositoryProviderList =
-                providerFactory.getRepositoryProviderList();
+        RepositoryProvider<? extends Mocker> repositoryProvider = providerFactory.findProvider(sourceProvider);
+        if (repositoryProvider == null) {
+            return false;
+        }
         boolean result = false;
-        MockCategoryType categoryType;
-        for (RepositoryProvider<? extends MockItem> repositoryReader : repositoryProviderList) {
-            categoryType = repositoryReader.getCategory();
-            if (categoryType.isConfigVersion()) {
-                continue;
-            }
-            if (StringUtils.isNotEmpty(sourceProvider) &&
-                    !StringUtils.equals(sourceProvider, repositoryReader.getProviderName())) {
-                continue;
-            }
-            result = preload(repositoryReader, recordId);
-            LOGGER.info("preload cache result:{},category:{},record id:{}", result, categoryType.getDisplayName(),
-                    recordId);
-
+        for (MockCategoryType categoryType : providerFactory.getCategoryTypes()) {
+            result = preload(repositoryProvider, categoryType, recordId);
+            LOGGER.info("preload cache result:{},category:{},record id:{}", result, categoryType, recordId);
         }
         return result;
     }
 
     boolean preload(MockCategoryType category, String recordId) {
-        return this.preload(providerFactory.findProvider(category), recordId);
+        // try again load by defaultProvider
+        return this.preload(providerFactory.defaultProvider(), category, recordId);
     }
 
-    private boolean preload(RepositoryProvider<? extends MockItem> repositoryReader, String recordId) {
+    private boolean preload(RepositoryProvider<? extends Mocker> repositoryReader, MockCategoryType categoryType, String recordId) {
         if (repositoryReader == null) {
             return true;
         }
-        MockCategoryType category = repositoryReader.getCategory();
-        MDCTracer.addCategory(category);
-        if (mockResultProvider.recordResultCount(category, recordId) > 0) {
-            LOGGER.warn("skip preload cache for category:{},record id:{}", category.getDisplayName(), recordId);
+        MDCTracer.addCategory(categoryType);
+        if (mockResultProvider.recordResultCount(categoryType, recordId) > 0) {
+            LOGGER.warn("skip preload cache for category:{},record id:{}", categoryType, recordId);
             return true;
         }
-        Iterable<? extends MockItem> iterable;
-        iterable = repositoryReader.queryRecordList(recordId);
+        Iterable<? extends Mocker> iterable;
+        iterable = repositoryReader.queryRecordList(categoryType, recordId);
         if (iterable == null) {
             return true;
         }
-        return mockResultProvider.putRecordResult(category, recordId, iterable);
+        return mockResultProvider.putRecordResult(categoryType, recordId, iterable);
     }
 
     public boolean removeAll(String recordId) {
-        List<RepositoryProvider<? extends MockItem>> repositoryProviderList =
-                providerFactory.getRepositoryProviderList();
         boolean result = false;
-        for (RepositoryProvider<? extends MockItem> repositoryReader : repositoryProviderList) {
-            result = remove(repositoryReader.getCategory(), recordId);
+        for (MockCategoryType categoryType : providerFactory.getCategoryTypes()) {
+            result = remove(categoryType, recordId);
         }
         return result;
     }

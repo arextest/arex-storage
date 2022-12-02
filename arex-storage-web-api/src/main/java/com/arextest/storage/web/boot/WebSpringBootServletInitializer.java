@@ -32,7 +32,7 @@ public class WebSpringBootServletInitializer extends SpringBootServletInitialize
         System.setProperty("java.awt.headless", "false");
         try {
             SpringApplication.run(WebSpringBootServletInitializer.class, args);
-            Desktop.getDesktop().browse(new URI("http://localhost:8080/api/storage/replay/query/replayResult"));
+            Desktop.getDesktop().browse(new URI("http://localhost:8080/api/storage/record/saveServletTest"));
         } catch (Exception e) {
             e.printStackTrace();
         }

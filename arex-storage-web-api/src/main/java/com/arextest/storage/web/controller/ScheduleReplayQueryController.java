@@ -1,37 +1,34 @@
 package com.arextest.storage.web.controller;
 
-import com.arextest.storage.constants.MockCategoryMaskConstants;
-import com.arextest.storage.model.Response;
-import com.arextest.storage.model.enums.MockCategoryType;
-import com.arextest.storage.model.mocker.MainEntry;
-import com.arextest.storage.model.replay.PagingQueryCaseRequestType;
-import com.arextest.storage.model.replay.PagingQueryCaseResponseType;
-import com.arextest.storage.model.replay.QueryCaseCountRequestType;
-import com.arextest.storage.model.replay.QueryCaseCountResponseType;
-import com.arextest.storage.model.replay.QueryMockCacheRequestType;
-import com.arextest.storage.model.replay.QueryMockCacheResponseType;
-import com.arextest.storage.model.replay.QueryReplayResultRequestType;
-import com.arextest.storage.model.replay.QueryReplayResultResponseType;
-import com.arextest.storage.model.replay.ReplayCaseRangeRequestType;
-import com.arextest.storage.model.replay.ViewRecordRequestType;
-import com.arextest.storage.model.replay.ViewRecordResponseType;
-import com.arextest.storage.model.replay.holder.ListResultHolder;
+import com.arextest.model.mock.AREXMocker;
+import com.arextest.model.replay.PagedRequestType;
+import com.arextest.model.replay.PagedResponseType;
+import com.arextest.model.replay.QueryCaseCountRequestType;
+import com.arextest.model.replay.QueryCaseCountResponseType;
+import com.arextest.model.replay.QueryMockCacheRequestType;
+import com.arextest.model.replay.QueryMockCacheResponseType;
+import com.arextest.model.replay.QueryReplayResultRequestType;
+import com.arextest.model.replay.QueryReplayResultResponseType;
+import com.arextest.model.replay.ViewRecordRequestType;
+import com.arextest.model.replay.ViewRecordResponseType;
+import com.arextest.model.replay.holder.ListResultHolder;
+import com.arextest.model.response.Response;
+import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.service.PrepareMockResultService;
 import com.arextest.storage.service.ScheduleReplayingService;
 import com.arextest.storage.trace.MDCTracer;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import javax.annotation.Resource;
 import java.util.List;
-import java.util.Map;
 
 /**
  * this class defined all api list for scheduler replaying
@@ -40,13 +37,18 @@ import java.util.Map;
  * @since 2021/11/3
  */
 @Slf4j
-@Controller
+
 @RequestMapping("/api/storage/replay/query")
-public final class ScheduleReplayQueryController {
-    @Resource
-    private ScheduleReplayingService scheduleReplayingService;
-    @Resource
-    private PrepareMockResultService prepareMockResultService;
+public class ScheduleReplayQueryController {
+
+    private final ScheduleReplayingService scheduleReplayingService;
+
+    private final PrepareMockResultService prepareMockResultService;
+
+    public ScheduleReplayQueryController(ScheduleReplayingService scheduleReplayingService, PrepareMockResultService prepareMockResultService) {
+        this.scheduleReplayingService = scheduleReplayingService;
+        this.prepareMockResultService = prepareMockResultService;
+    }
 
     /**
      * fetch the replay result for compare
@@ -68,20 +70,13 @@ public final class ScheduleReplayQueryController {
         String replayResultId = requestType.getReplayResultId();
         try {
             MDCTracer.addRecordId(recordId);
-
-            if (StringUtils.isEmpty(replayResultId)) {
-                return ResponseUtils.emptyReplayResultIdResponse();
-            }
             MDCTracer.addReplayId(replayResultId);
-
-            List<ListResultHolder<String>> resultHolderList = scheduleReplayingService.queryReplayResult(recordId,
-                    replayResultId);
+            List<ListResultHolder> resultHolderList = scheduleReplayingService.queryReplayResult(recordId, replayResultId);
             QueryReplayResultResponseType responseType = new QueryReplayResultResponseType();
             responseType.setResultHolderList(resultHolderList);
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
-            LOGGER.error("replayResult error:{} ,recordId:{} ,replayResultId:{}", throwable.getMessage(), recordId,
-                    replayResultId);
+            LOGGER.error("replayResult error:{} ,recordId:{} ,replayResultId:{}", throwable.getMessage(), recordId, replayResultId);
             return ResponseUtils.exceptionResponse(throwable.getMessage());
         } finally {
             MDCTracer.clear();
@@ -93,32 +88,22 @@ public final class ScheduleReplayQueryController {
      *
      * @param requestType range query
      * @return response
-     * @see PagingQueryCaseResponseType
+     * @see PagedResponseType
      */
-    @SuppressWarnings("unchecked")
     @PostMapping(value = "/replayCase")
     @ResponseBody
-    public Response replayCase(@RequestBody PagingQueryCaseRequestType requestType) {
+    public Response replayCase(@RequestBody PagedRequestType requestType) {
         Response validateResult = rangeParameterValidate(requestType);
         if (validateResult != null) {
             return validateResult;
         }
-        if (requestType.getMaxCaseCount() <= 0) {
+        if (requestType.getPageSize() <= 0) {
             return ResponseUtils.parameterInvalidResponse("The max case size <= 0 from requested");
         }
-        MockCategoryType categoryType = MockCategoryType.of(requestType.getCategoryType());
-        if (categoryType == null) {
-            return ResponseUtils.parameterInvalidResponse("request category type not found");
-        }
-        if (!categoryType.isMainEntry()) {
-            return ResponseUtils.parameterInvalidResponse("request category type not main entry:" + categoryType.getDisplayName());
-        }
         try {
-            PagingQueryCaseResponseType responseType = new PagingQueryCaseResponseType();
-            Iterable<?> iterable = scheduleReplayingService.pagingQueryReplayCaseList(categoryType,
-                    requestType);
-            List<?> mainList = new IterableListWrapper<>(iterable);
-            responseType.setMainEntryList((List<? extends MainEntry>) mainList);
+            PagedResponseType responseType = new PagedResponseType();
+            List<AREXMocker> records = scheduleReplayingService.queryByRange(requestType);
+            responseType.setRecords(records);
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
             LOGGER.error("error:{},request:{}", throwable.getMessage(), requestType);
@@ -126,7 +111,7 @@ public final class ScheduleReplayQueryController {
         }
     }
 
-    private Response rangeParameterValidate(ReplayCaseRangeRequestType requestType) {
+    private Response rangeParameterValidate(PagedRequestType requestType) {
         if (requestType == null) {
             return ResponseUtils.requestBodyEmptyResponse();
         }
@@ -152,20 +137,16 @@ public final class ScheduleReplayQueryController {
      * @return a size value
      * @see QueryCaseCountResponseType
      */
-    @PostMapping(value = "/countByRange", produces = {MediaType.APPLICATION_JSON_UTF8_VALUE})
+    @PostMapping(value = "/countByRange", produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     public Response countByRange(@RequestBody QueryCaseCountRequestType requestType) {
         Response validateResult = rangeParameterValidate(requestType);
         if (validateResult != null) {
             return validateResult;
         }
-        MockCategoryType categoryType = MockCategoryType.of(requestType.getCategoryType());
-        if (categoryType == null) {
-            return ResponseUtils.parameterInvalidResponse("request category type not found");
-        }
         try {
             QueryCaseCountResponseType responseType = new QueryCaseCountResponseType();
-            int countResult = scheduleReplayingService.countByRange(categoryType, requestType);
+            long countResult = scheduleReplayingService.countByRange(requestType);
             responseType.setCount(countResult);
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
@@ -176,8 +157,18 @@ public final class ScheduleReplayQueryController {
         }
     }
 
+    @GetMapping(value = "/viewRecord/")
+    @ResponseBody
+    public Response viewRecord(String recordId, @RequestParam(required = false) String category, @RequestParam(required = false, defaultValue = ProviderNames.DEFAULT) String srcProvider) {
+        ViewRecordRequestType recordRequestType = new ViewRecordRequestType();
+        recordRequestType.setRecordId(recordId);
+        recordRequestType.setSourceProvider(srcProvider);
+        recordRequestType.setCategoryType(category);
+        return viewRecord(recordRequestType);
+    }
+
     /**
-     * show the main entry by special recordId
+     * show the all records (includes entryPoint & dependencies) by special recordId
      *
      * @param requestType recordId
      * @return the record content
@@ -195,17 +186,12 @@ public final class ScheduleReplayQueryController {
         }
         MDCTracer.addRecordId(recordId);
         try {
-            prepareMockResultService.preloadAll(requestType.getSourceProvider(),recordId);
             ViewRecordResponseType responseType = new ViewRecordResponseType();
-            long categoryTypes = MockCategoryMaskConstants.MAIN_CATEGORY_TYPES;
-            if (requestType.getCategoryTypes() != null) {
-                categoryTypes = requestType.getCategoryTypes();
+            List<AREXMocker> allReadableResult = scheduleReplayingService.queryRecordList(requestType);
+            if (CollectionUtils.isEmpty(allReadableResult)) {
+                LOGGER.info("could not found any resources for recordId: {} ,request: {}", recordId, requestType);
             }
-            Map<Integer, List<String>> viewResult = scheduleReplayingService.queryRecordResult(recordId, categoryTypes);
-            if (MapUtils.isEmpty(viewResult)) {
-                LOGGER.info("viewRecord not found any resource recordId: {} ,request: {}", recordId, requestType);
-            }
-            responseType.setRecordResult(viewResult);
+            responseType.setRecordResult(allReadableResult);
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
             LOGGER.error("viewRecord error:{},request:{}", throwable.getMessage(), requestType);
@@ -235,7 +221,7 @@ public final class ScheduleReplayQueryController {
         MDCTracer.addRecordId(recordId);
         long beginTime = System.currentTimeMillis();
         try {
-            return toResponse(prepareMockResultService.preloadAll(requestType.getSourceProvider(),recordId));
+            return toResponse(prepareMockResultService.preloadAll(requestType.getSourceProvider(), recordId));
         } catch (Throwable throwable) {
             LOGGER.error("QueryMockCache error:{},request:{}", throwable.getMessage(), requestType);
             return ResponseUtils.exceptionResponse(throwable.getMessage());

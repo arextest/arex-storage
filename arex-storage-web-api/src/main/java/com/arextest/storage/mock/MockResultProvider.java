@@ -1,7 +1,7 @@
 package com.arextest.storage.mock;
 
-import com.arextest.storage.model.enums.MockCategoryType;
-import com.arextest.storage.model.mocker.MockItem;
+import com.arextest.model.mock.Mocker;
+import com.arextest.model.mock.MockCategoryType;
 
 import javax.validation.constraints.NotNull;
 import java.util.List;
@@ -11,15 +11,15 @@ import java.util.List;
  * @since 2021/11/9
  */
 public interface MockResultProvider {
-    <T extends MockItem> boolean putRecordResult(MockCategoryType category, String recordId, Iterable<T> values);
+    <T extends Mocker> boolean putRecordResult(MockCategoryType categoryType,String recordId, Iterable<T> values);
 
-    <T extends MockItem> boolean putReplayResult(MockCategoryType category, String replayResultId, T value);
+    <T extends Mocker> boolean putReplayResult(T value);
 
-    byte[] getRecordResult(MockCategoryType category, @NotNull MockItem mockItem,MockResultContext context);
+    byte[] getRecordResult(@NotNull Mocker mockItem,MockResultContext context);
 
     List<byte[]> getRecordResultList(MockCategoryType category, String recordId);
 
-    List<byte[]> getReplayResultList(MockCategoryType category, String replayResultId);
+    List<byte[]> getReplayResultList(MockCategoryType category, String replayId);
 
     int replayResultCount(MockCategoryType category, String replayResultId);
 

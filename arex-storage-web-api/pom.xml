@@ -5,17 +5,17 @@
     <parent>
         <artifactId>arex-storage-service</artifactId>
         <groupId>com.arextest</groupId>
-        <version>1.0.1</version>
+        <version>1.0.2</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>arex-storage-web-api</artifactId>
     <packaging>${packagingType}</packaging>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
     <dependencies>
         <dependency>
             <groupId>com.arextest</groupId>
-            <artifactId>arex-storage-model</artifactId>
-            <version>1.0.5</version>
+            <artifactId>arex-model</artifactId>
+            <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.arextest</groupId>
@@ -64,10 +64,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-log4j2</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.arextest</groupId>
-            <artifactId>arex-common</artifactId>
-        </dependency>
+
     </dependencies>
     <profiles>
         <profile>

@@ -1,34 +1,30 @@
 package com.arextest.storage.cache;
 
-import com.arextest.storage.model.enums.MockCategoryType;
-import com.arextest.storage.model.enums.MockResultType;
+import com.arextest.model.mock.MockCategoryType;
+import com.arextest.storage.model.MockResultType;
 
 import javax.validation.constraints.NotNull;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
-/**
- * @author jmo
- * @since 2021/11/17
- */
+
 public final class CacheKeyUtils {
+    public static final byte[] EMPTY_BYTE = new byte[]{};
+
     private CacheKeyUtils() {
 
     }
 
     public static byte[] toUtf8Bytes(String value) {
-        return value.getBytes(StandardCharsets.UTF_8);
+        return value == null ? EMPTY_BYTE : value.getBytes(StandardCharsets.UTF_8);
     }
 
     public static String fromUtf8Bytes(byte[] value) {
         return value == null ? null : new String(value, StandardCharsets.UTF_8);
     }
 
-    private static int mergeToInt(MockResultType resultType, MockCategoryType category) {
-        int value = 1 << resultType.getCodeValue();
-        value = value << Short.SIZE;
-        value += category.getCodeValue();
-        return value;
+    private static byte[] categoryBytes(MockResultType resultType, MockCategoryType category) {
+        return toUtf8Bytes(category.getName() + resultType.getCodeValue());
     }
 
     public static byte[] buildReplayKey(MockCategoryType category, String replayResultId) {
@@ -45,46 +41,39 @@ public final class CacheKeyUtils {
 
     public static byte[] buildConsumeKey(MockCategoryType category, byte[] recordIdBytes, byte[] replayIdBytes,
                                          byte[] mockKeyBytes) {
-        int value = mergeToInt(MockResultType.CONSUME_RESULT, category);
-        int capacity = recordIdBytes.length + mockKeyBytes.length + Integer.SIZE + replayIdBytes.length;
+        byte[] value = categoryBytes(MockResultType.CONSUME_RESULT, category);
+        int capacity = recordIdBytes.length + mockKeyBytes.length + value.length + replayIdBytes.length;
         return ByteBuffer.allocate(capacity)
                 .put(recordIdBytes)
                 .put(mockKeyBytes)
-                .putInt(value)
+                .put(value)
                 .put(replayIdBytes)
                 .array();
     }
 
-    public static byte[] buildRecordKey(MockCategoryType category, byte[] recordIdBytes,
-                                        byte[] mockKeyBytes) {
+    public static byte[] buildRecordKey(MockCategoryType category, byte[] recordIdBytes, byte[] mockKeyBytes) {
         return buildSourceKey(MockResultType.RECORD_RESULT, category, recordIdBytes,
                 mockKeyBytes);
     }
 
     public static byte[] buildSourceKey(MockResultType resultType, MockCategoryType category, byte[] id) {
-        int value = mergeToInt(resultType, category);
-        return merge(id, value);
+        byte[] value = categoryBytes(resultType, category);
+        return ByteBuffer.allocate(id.length + value.length)
+                .put(id)
+                .put(value)
+                .array();
     }
 
     public static byte[] buildSourceKey(MockResultType resultType, MockCategoryType category, byte[] id,
                                         byte[] mockKey) {
-        int value = mergeToInt(resultType, category);
-        int capacity = id.length + mockKey.length + Integer.SIZE;
+        byte[] value = categoryBytes(resultType, category);
+        int capacity = value.length + id.length + mockKey.length;
         return ByteBuffer.allocate(capacity)
                 .put(id)
                 .put(mockKey)
-                .putInt(value)
+                .put(value)
                 .array();
     }
-
-    public static byte[] merge(@NotNull String src, @NotNull MockCategoryType category) {
-        return merge(src, category.getCodeValue());
-    }
-
-    public static byte[] merge(@NotNull String src, int value) {
-        return merge(toUtf8Bytes(src), value);
-    }
-
 
     public static byte[] merge(@NotNull byte[] src, int value) {
         return ByteBuffer.allocate(src.length + Integer.SIZE)

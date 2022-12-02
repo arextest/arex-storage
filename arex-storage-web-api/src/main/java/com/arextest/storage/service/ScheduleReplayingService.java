@@ -1,24 +1,25 @@
 package com.arextest.storage.service;
 
 import com.arextest.common.utils.CompressionUtils;
+import com.arextest.model.mock.AREXMocker;
+import com.arextest.model.mock.MockCategoryType;
+import com.arextest.model.replay.PagedRequestType;
+import com.arextest.model.replay.ViewRecordRequestType;
+import com.arextest.model.replay.holder.ListResultHolder;
 import com.arextest.storage.mock.MockResultProvider;
-import com.arextest.storage.model.enums.MockCategoryType;
-import com.arextest.storage.model.replay.ReplayCaseRangeRequestType;
-import com.arextest.storage.model.replay.holder.ListResultHolder;
-import com.arextest.storage.trace.MDCTracer;
+import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.RepositoryReader;
-import com.arextest.storage.service.utils.MockCategoryUtils;
+import com.arextest.storage.trace.MDCTracer;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
-import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 /**
  * When user create a plan, the schedule fired to replaying,
@@ -30,34 +31,35 @@ import java.util.Map;
  * @since 2021/11/4
  */
 @Slf4j
-@Service
-public final class ScheduleReplayingService {
-    @Resource
-    private MockResultProvider mockResultProvider;
-    private final MockCategoryType[] mockerCategories = MockCategoryType.values();
-    @Resource
-    private RepositoryProviderFactory repositoryProviderFactory;
+public class ScheduleReplayingService {
+    private final MockResultProvider mockResultProvider;
+    private final RepositoryProviderFactory repositoryProviderFactory;
 
-    public List<ListResultHolder<String>> queryReplayResult(final String recordId, final String replayResultId) {
-        List<ListResultHolder<String>> resultHolderList = new ArrayList<>(mockerCategories.length);
-        ListResultHolder<String> listResultHolder;
-        for (int i = 0; i < mockerCategories.length; i++) {
-            MockCategoryType category = mockerCategories[i];
-            if (category.isConfigVersion()) {
+    public ScheduleReplayingService(MockResultProvider mockResultProvider, RepositoryProviderFactory repositoryProviderFactory) {
+        this.mockResultProvider = mockResultProvider;
+        this.repositoryProviderFactory = repositoryProviderFactory;
+    }
+
+    public List<ListResultHolder> queryReplayResult(String recordId, String replayResultId) {
+        Set<MockCategoryType> categoryTypes = repositoryProviderFactory.getCategoryTypes();
+        List<ListResultHolder> resultHolderList = new ArrayList<>(categoryTypes.size());
+        ListResultHolder listResultHolder;
+        for (MockCategoryType categoryType : categoryTypes) {
+            if (categoryType.isSkipComparison()) {
                 continue;
             }
-            MDCTracer.addCategory(category);
-            List<String> recordList = encodeToBase64String(mockResultProvider.getRecordResultList(category, recordId));
-            List<String> replayResultList = encodeToBase64String(mockResultProvider.getReplayResultList(category,
+            MDCTracer.addCategory(categoryType);
+            List<String> recordList = encodeToBase64String(mockResultProvider.getRecordResultList(categoryType, recordId));
+            List<String> replayResultList = encodeToBase64String(mockResultProvider.getReplayResultList(categoryType,
                     replayResultId));
             if (CollectionUtils.isEmpty(recordList) && CollectionUtils.isEmpty(replayResultList)) {
                 LOGGER.info("skipped empty replay result for category:{}, recordId:{} ,replayResultId:{}",
-                        category.getDisplayName(), recordId,
+                        categoryType, recordId,
                         replayResultId);
                 continue;
             }
-            listResultHolder = new ListResultHolder<>();
-            listResultHolder.setCategoryName(category.getDisplayName());
+            listResultHolder = new ListResultHolder();
+            listResultHolder.setCategoryType(categoryType);
             listResultHolder.setRecord(recordList);
             listResultHolder.setReplayResult(replayResultList);
             resultHolderList.add(listResultHolder);
@@ -65,38 +67,48 @@ public final class ScheduleReplayingService {
         return resultHolderList;
     }
 
-    public Iterable<?> pagingQueryReplayCaseList(MockCategoryType category, ReplayCaseRangeRequestType requestType) {
-        RepositoryReader<?> repositoryReader = repositoryProviderFactory.findProvider(requestType.getSourceProvider(),category);
+    public List<AREXMocker> queryByRange(PagedRequestType requestType) {
+        RepositoryReader<AREXMocker> repositoryReader = findProvider(requestType.getSourceProvider());
         if (repositoryReader != null) {
-            return repositoryReader.queryByRange(requestType);
+            return new IterableListWrapper<>(repositoryReader.queryByRange(requestType));
         }
         return Collections.emptyList();
     }
 
-    public Map<Integer, List<String>> queryRecordResult(String recordId, long categoryTypes) {
-        Map<Integer, List<String>> resultHolderMap = new HashMap<>(mockerCategories.length);
-        for (int i = 0; i < mockerCategories.length; i++) {
-            MockCategoryType category = mockerCategories[i];
-            if (category.isConfigVersion()) {
-                continue;
-            }
-            if (MockCategoryUtils.shouldSkipCategory(categoryTypes, category.getCodeValue())) {
-                continue;
-            }
-            MDCTracer.addCategory(category);
-            List<String> recordList = encodeToBase64String(mockResultProvider.getRecordResultList(category, recordId));
-            if (CollectionUtils.isEmpty(recordList)) {
-                LOGGER.info("skipped empty record result for category:{}, recordId:{} ", category.getDisplayName(),
-                        recordId);
-                continue;
-            }
-            resultHolderMap.put(category.getCodeValue(), recordList);
+    private RepositoryProvider<AREXMocker> findProvider(String sourceProvider) {
+        if (StringUtils.isEmpty(sourceProvider)) {
+            return repositoryProviderFactory.defaultProvider();
         }
-        return resultHolderMap;
+        return repositoryProviderFactory.findProvider(sourceProvider);
     }
 
-    public int countByRange(MockCategoryType category, ReplayCaseRangeRequestType replayCaseRangeRequest) {
-        RepositoryReader<?> repositoryReader = repositoryProviderFactory.findProvider(replayCaseRangeRequest.getSourceProvider(),category);
+    public List<AREXMocker> queryRecordList(ViewRecordRequestType viewRecordRequestType) {
+        String sourceProvider = viewRecordRequestType.getSourceProvider();
+        String recordId = viewRecordRequestType.getRecordId();
+        RepositoryReader<AREXMocker> repositoryReader = findProvider(sourceProvider);
+        if (repositoryReader == null) {
+            return Collections.emptyList();
+        }
+        MockCategoryType categoryType =repositoryProviderFactory.findCategory(viewRecordRequestType.getCategoryType());
+        if (categoryType != null) {
+            return new IterableListWrapper<>(repositoryReader.queryRecordList(categoryType, recordId));
+        }
+        List<AREXMocker> readableResult = new LinkedList<>();
+        for (MockCategoryType category : repositoryProviderFactory.getCategoryTypes()) {
+            MDCTracer.addCategory(category);
+            Iterable<AREXMocker> recordList = repositoryReader.queryRecordList(category, recordId);
+            if (recordList == null) {
+                continue;
+            }
+            for (AREXMocker mocker : recordList) {
+                readableResult.add(mocker);
+            }
+        }
+        return readableResult;
+    }
+
+    public long countByRange(PagedRequestType replayCaseRangeRequest) {
+        RepositoryReader<?> repositoryReader = repositoryProviderFactory.findProvider(replayCaseRangeRequest.getSourceProvider());
         if (repositoryReader != null) {
             return repositoryReader.countByRange(replayCaseRangeRequest);
         }

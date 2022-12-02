@@ -8,9 +8,9 @@ public class MockResultContext {
     @Getter
     private boolean lastOfResult = false;
     @Getter
-    private final MockStrategy mockStrategy;
+    private final MockResultMatchStrategy mockStrategy;
 
-    public MockResultContext(MockStrategy mockStrategy) {
+    public MockResultContext(MockResultMatchStrategy mockStrategy) {
         this.mockStrategy = mockStrategy;
     }
 }
