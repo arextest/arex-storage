@@ -42,7 +42,7 @@ public final class MongoDbUtils {
      *
      * @return the combinatorial CodecRegistry
      */
-    private static CodecRegistry customCodecRegistry() {
+    public static CodecRegistry customCodecRegistry() {
         AREXMockerCodecProvider arexMockerCodecProvider = new AREXMockerCodecProvider();
         final CodecRegistry customPojo = CodecRegistries.fromProviders(arexMockerCodecProvider, PojoCodecProvider
                 .builder().automatic(true).build());

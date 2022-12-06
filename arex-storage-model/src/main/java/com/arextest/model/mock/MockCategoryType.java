@@ -56,6 +56,8 @@ public class MockCategoryType {
     public static final MockCategoryType CONFIG_FILE = MockCategoryType.createSkipComparison("ConfigFile");
     public static final MockCategoryType DYNAMIC_CLASS = MockCategoryType.createSkipComparison("DynamicClass");
     public static final MockCategoryType REDIS = MockCategoryType.createDependency("Redis");
+    public static final MockCategoryType DUBBO_PROVIDER = MockCategoryType.createEntryPoint("DubboProvider");
+    public static final MockCategoryType DUBBO_CONSUMER = MockCategoryType.createDependency("DubboConsumer");
 
     static {
         HashSet<MockCategoryType> internalSet = new HashSet<>();
@@ -67,6 +69,8 @@ public class MockCategoryType {
         internalSet.add(CONFIG_FILE);
         internalSet.add(DYNAMIC_CLASS);
         internalSet.add(REDIS);
+        internalSet.add(DUBBO_PROVIDER);
+        internalSet.add(DUBBO_CONSUMER);
         DEFAULTS = Collections.unmodifiableSet(internalSet);
     }
 }

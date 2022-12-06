@@ -44,7 +44,7 @@ public class MockSourceEditionController {
         return copyTo(ProviderNames.DEFAULT, srcRecordId, ProviderNames.PINNED, targetRecordId);
     }
 
-    @GetMapping(value = "/copy/", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/copy/")
     @ResponseBody
     public Response copyTo(String srcProviderName, String srcRecordId, String targetProviderName, String targetRecordId) {
         if (StringUtils.isEmpty(srcProviderName)) {

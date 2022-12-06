@@ -20,7 +20,7 @@ import java.util.List;
 
 @Component
 @Slf4j
-final class UnknownDependencyMatchKeyBuilderImpl implements MatchKeyBuilder {
+final class DefaultDependencyMatchKeyBuilderImpl implements MatchKeyBuilder {
 
     @Override
     public boolean isSupported(MockCategoryType categoryType) {

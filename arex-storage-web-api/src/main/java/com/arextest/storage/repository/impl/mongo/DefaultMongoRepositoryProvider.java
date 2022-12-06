@@ -36,7 +36,7 @@ public class DefaultMongoRepositoryProvider implements RepositoryProvider<AREXMo
     public static final String PRIMARY_KEY_COLUMN_NAME = "_id";
     static final String RECORD_ID_COLUMN_NAME = "recordId";
     private static final String APP_ID_COLUMN_NAME = "appId";
-    private static final String ENV_COLUMN_NAME = "env";
+    private static final String ENV_COLUMN_NAME = "recordEnvironment";
     private static final String OPERATION_COLUMN_NAME = "operationName";
     private static final String COLLECTION_PREFIX = "Mocker";
 

@@ -33,6 +33,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     @Value("${arex.storage.cache.expired.seconds:7200}")
     private long cacheExpiredSeconds;
     private static final int EMPTY_SIZE = 0;
+    private static final int SINGLE_RECORD_SIZE = 1;
     @Resource
     private CacheProvider redisCacheProvider;
     @Resource
@@ -161,7 +162,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
             int mockKeySize = mockKeyList.size();
             for (int i = 0; i < mockKeySize; i++) {
                 mockKeyBytes = mockKeyList.get(i);
-                result = getRecordResult(category, recordIdBytes, replayIdBytes, mockKeyBytes, context);
+                result = sequenceMockResult(category, recordIdBytes, replayIdBytes, mockKeyBytes, context);
                 if (result != null) {
                     return result;
                 }
@@ -175,8 +176,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
         return null;
     }
 
-    private byte[] getRecordResult(MockCategoryType category, final byte[] recordIdBytes, byte[] replayIdBytes,
-                                   final byte[] mockKeyBytes, MockResultContext context) {
+    private byte[] sequenceMockResult(MockCategoryType category, final byte[] recordIdBytes, byte[] replayIdBytes,
+                                      final byte[] mockKeyBytes, MockResultContext context) {
         try {
             byte[] sourceKey = CacheKeyUtils.buildRecordKey(category, recordIdBytes, mockKeyBytes);
             int count = resultCount(sourceKey);
@@ -220,9 +221,9 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
         final List<byte[]> recordResult = new ArrayList<>(size);
         for (int sequence = 1; sequence <= size; sequence++) {
             byte[] sequenceKey = createSequenceKey(resultCountKey, sequence);
-            byte[] values = redisCacheProvider.get(sequenceKey);
-            if (values != null) {
-                recordResult.add(values);
+            byte[] value =redisCacheProvider.get(sequenceKey);
+            if (value != null) {
+                recordResult.add(value);
             }
         }
         return recordResult;
