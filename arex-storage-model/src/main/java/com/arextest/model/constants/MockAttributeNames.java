@@ -13,6 +13,7 @@ public final class MockAttributeNames {
      * for example:POST/GET/PUT
      */
     public static final String HTTP_METHOD = "HttpMethod";
+    public static final String HTTP_QUERY_STRING = "QueryString";
     public static final String SERVLET_PATH = "ServletPath";
     public static final String HEADERS = "Headers";
     public static final String URL = "url";

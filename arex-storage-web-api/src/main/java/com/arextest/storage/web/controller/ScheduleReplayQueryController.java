@@ -37,8 +37,7 @@ import java.util.List;
  * @since 2021/11/3
  */
 @Slf4j
-
-@RequestMapping("/api/storage/replay/query")
+@RequestMapping(path = "/api/storage/replay/query", produces = {MediaType.APPLICATION_JSON_VALUE})
 public class ScheduleReplayQueryController {
 
     private final ScheduleReplayingService scheduleReplayingService;
@@ -53,11 +52,11 @@ public class ScheduleReplayQueryController {
     /**
      * fetch the replay result for compare
      *
-     * @param requestType which record id & replay id should be fetch.
+     * @param requestType which record id &amp; replay id should be fetch.
      * @return response
      * @see QueryReplayResultResponseType
      */
-    @PostMapping(value = "/replayResult", produces = {MediaType.APPLICATION_JSON_VALUE})
+    @PostMapping(value = "/replayResult")
     @ResponseBody
     public Response replayResult(@RequestBody QueryReplayResultRequestType requestType) {
         if (requestType == null) {
@@ -137,7 +136,7 @@ public class ScheduleReplayQueryController {
      * @return a size value
      * @see QueryCaseCountResponseType
      */
-    @PostMapping(value = "/countByRange", produces = {MediaType.APPLICATION_JSON_VALUE})
+    @PostMapping(value = "/countByRange")
     @ResponseBody
     public Response countByRange(@RequestBody QueryCaseCountRequestType requestType) {
         Response validateResult = rangeParameterValidate(requestType);
@@ -168,7 +167,7 @@ public class ScheduleReplayQueryController {
     }
 
     /**
-     * show the all records (includes entryPoint & dependencies) by special recordId
+     * show the all records (includes entryPoint &amp; dependencies) by special recordId
      *
      * @param requestType recordId
      * @return the record content
@@ -208,7 +207,7 @@ public class ScheduleReplayQueryController {
      * @param requestType recordId
      * @return true loaded success
      */
-    @PostMapping(value = "/cacheLoad", produces = {MediaType.APPLICATION_JSON_VALUE})
+    @PostMapping(value = "/cacheLoad")
     @ResponseBody
     public Response cacheLoad(@RequestBody QueryMockCacheRequestType requestType) {
         if (requestType == null) {
@@ -238,7 +237,7 @@ public class ScheduleReplayQueryController {
      * @param requestType the recordId
      * @return true remove success
      */
-    @PostMapping(value = "/cacheRemove", produces = {MediaType.APPLICATION_JSON_UTF8_VALUE})
+    @PostMapping(value = "/cacheRemove")
     @ResponseBody
     public Response cacheRemove(@RequestBody QueryMockCacheRequestType requestType) {
         if (requestType == null) {

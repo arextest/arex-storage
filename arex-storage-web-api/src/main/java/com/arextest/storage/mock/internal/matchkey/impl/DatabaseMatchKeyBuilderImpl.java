@@ -35,7 +35,6 @@ import java.util.Objects;
 @Slf4j
 @Component
 final class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
-
     private final ObjectMapper objectMapper;
 
     private static final char SQL_BATCH_TERMINAL_CHAR = ';';
@@ -104,7 +103,7 @@ final class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
         }
         byte[] tableMatchKey  = md5Digest.digest();
 
-        return Arrays.asList(fullMatchKey,tableMatchKey);
+        return Arrays.asList(fullMatchKey,tableMatchKey,operationBytes);
     }
 
     private void tryAddParameterWithoutValue(MessageDigest md5Digest, String sqlParameter) {

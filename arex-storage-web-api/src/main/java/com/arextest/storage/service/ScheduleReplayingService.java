@@ -108,7 +108,7 @@ public class ScheduleReplayingService {
     }
 
     public long countByRange(PagedRequestType replayCaseRangeRequest) {
-        RepositoryReader<?> repositoryReader = repositoryProviderFactory.findProvider(replayCaseRangeRequest.getSourceProvider());
+        RepositoryReader<?> repositoryReader =findProvider(replayCaseRangeRequest.getSourceProvider());
         if (repositoryReader != null) {
             return repositoryReader.countByRange(replayCaseRangeRequest);
         }

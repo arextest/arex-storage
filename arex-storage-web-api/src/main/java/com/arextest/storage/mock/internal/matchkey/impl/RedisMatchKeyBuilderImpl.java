@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.security.MessageDigest;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -33,6 +34,6 @@ final class RedisMatchKeyBuilderImpl implements MatchKeyBuilder {
         byte[] redisKeyBytes = CacheKeyUtils.toUtf8Bytes(request.getBody());
         messageDigest.update(redisKeyBytes);
         messageDigest.update(CacheKeyUtils.toUtf8Bytes(request.attributeAsString(MockAttributeNames.CLUSTER_NAME)));
-        return Collections.singletonList(messageDigest.digest());
+        return Arrays.asList(messageDigest.digest(),operationBytes);
     }
 }

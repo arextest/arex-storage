@@ -36,13 +36,16 @@ final class HttpClientMatchKeyBuilderImpl implements MatchKeyBuilder {
         if (request == null) {
             return Collections.singletonList(operationBytes);
         }
-        byte[] urlBytes = CacheKeyUtils.toUtf8Bytes(request.attributeAsString(MockAttributeNames.URL));
+        byte[] queryStringBytes =
+                CacheKeyUtils.toUtf8Bytes(request.attributeAsString(MockAttributeNames.HTTP_QUERY_STRING));
+        byte[] httpMethodBytes=CacheKeyUtils.toUtf8Bytes(request.attributeAsString(MockAttributeNames.HTTP_METHOD));
         MessageDigest messageDigest =MessageDigestWriter.getMD5Digest();
         messageDigest.update(operationBytes);
-        messageDigest.update(urlBytes);
+        messageDigest.update(queryStringBytes);
+        messageDigest.update(httpMethodBytes);
         byte[] httpMethodWithUrlBytes = messageDigest.digest();
         if (StringUtils.isEmpty(request.getBody())) {
-            return Collections.singletonList(httpMethodWithUrlBytes);
+           return Arrays.asList(httpMethodWithUrlBytes,operationBytes);
         }
         messageDigest.reset();
         StringReader stringReader = new StringReader(request.getBody());
@@ -54,7 +57,7 @@ final class HttpClientMatchKeyBuilderImpl implements MatchKeyBuilder {
             LOGGER.error("Http Client replay result match key build error:{}", e.getMessage(), e);
         }
         messageDigest.update(httpMethodWithUrlBytes);
-        return Arrays.asList(messageDigest.digest(), httpMethodWithUrlBytes);
+        return Arrays.asList(messageDigest.digest(), httpMethodWithUrlBytes,operationBytes);
 
     }
 }
