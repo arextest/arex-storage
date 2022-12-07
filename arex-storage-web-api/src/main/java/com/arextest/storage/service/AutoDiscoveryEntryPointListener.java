@@ -39,7 +39,7 @@ public class AutoDiscoveryEntryPointListener implements AgentWorkingListener {
                 LOGGER.info("AppId:{} does not have a valid service", appId);
                 return;
             } else {
-                cacheProvider.put(appServiceKey, CacheKeyUtils.toUtf8Bytes(serviceEntity.getId().toString()));
+                cacheProvider.put(appServiceKey, CacheKeyUtils.toUtf8Bytes(serviceEntity.getId()));
             }
         }
         String operationName = item.getOperationName();

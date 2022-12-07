@@ -52,6 +52,6 @@ public class ServiceOperationRepositoryImpl implements ServiceOperationRepositor
                 update,
                 new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER));
 
-        return entity != null && StringUtils.isNotEmpty(entity.getId().toString());
+        return entity != null && StringUtils.isNotEmpty(entity.getId());
     }
 }

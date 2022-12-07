@@ -47,7 +47,6 @@ final class HttpClientMatchKeyBuilderImpl implements MatchKeyBuilder {
         if (StringUtils.isEmpty(request.getBody())) {
            return Arrays.asList(httpMethodWithUrlBytes,operationBytes);
         }
-        messageDigest.reset();
         StringReader stringReader = new StringReader(request.getBody());
         OutputStream output = new MessageDigestWriter(messageDigest);
         try {

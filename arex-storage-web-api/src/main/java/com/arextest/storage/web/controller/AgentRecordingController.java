@@ -13,6 +13,7 @@ import com.arextest.storage.service.AgentWorkingService;
 import com.arextest.storage.trace.MDCTracer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -113,7 +114,7 @@ public class AgentRecordingController {
     @Resource
     private ZstdJacksonSerializer zstdJacksonSerializer;
 
-    @PostMapping("/saveTest")
+    @PostMapping(value = "/saveTest", produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     public Response saveTest(@RequestBody AREXMocker body) {
         try {
@@ -124,7 +125,7 @@ public class AgentRecordingController {
         return null;
     }
 
-    @GetMapping("/saveServletTest")
+    @GetMapping(value = "/saveServletTest", produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     public Response saveTest() {
         return saveTest(newServlet());
@@ -146,7 +147,7 @@ public class AgentRecordingController {
         return mocker;
     }
 
-    @PostMapping("/queryTest")
+    @PostMapping(value = "/queryTest", produces = {MediaType.APPLICATION_JSON_VALUE})
     public @ResponseBody
     Mocker queryTest(@RequestBody AREXMocker body, @RequestHeader(name = AREX_MOCK_STRATEGY_CODE,
             defaultValue = "0") int strategyCode) {

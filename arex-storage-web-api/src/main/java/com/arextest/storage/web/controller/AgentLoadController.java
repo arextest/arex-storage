@@ -36,6 +36,6 @@ public class AgentLoadController {
     @Data
     private static final class AgentRemoteConfigurationRequest {
         private String appId;
-        private String ip;
+        private String host;
     }
 }
