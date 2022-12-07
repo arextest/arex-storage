@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -75,42 +76,59 @@ final class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
         return dbMockKeyBuild(databaseMocker);
     }
 
+    /**
+     * 1,db+sql+parameterNameWithValue+operationName
+     * 2,db+table+parameterName+operationName
+     * 3,db+table+operationName
+     * 4,db+operationName
+     * 5,operationName, as a fallback
+     *
+     * @param databaseMocker the db mocker
+     * @return all mock keys
+     */
     private List<byte[]> dbMockKeyBuild(Mocker databaseMocker) {
-        Mocker.Target targetRequest=databaseMocker.getTargetRequest();
-
-        // First,add full match as mock key
+        List<byte[]> keys = new ArrayList<>();
+        Mocker.Target targetRequest = databaseMocker.getTargetRequest();
         String sqlParameter = targetRequest.attributeAsString(MockAttributeNames.DB_PARAMETERS);
         String sqlText = targetRequest.getBody();
-        String dbName=targetRequest.attributeAsString(MockAttributeNames.DB_NAME);
+        String dbName = targetRequest.attributeAsString(MockAttributeNames.DB_NAME);
         byte[] dbNameBytes = CacheKeyUtils.toUtf8Bytes(dbName);
         byte[] sqlTextBytes = CacheKeyUtils.toUtf8Bytes(sqlText);
         byte[] sqlParameterBytes = CacheKeyUtils.toUtf8Bytes(sqlParameter);
-        byte[] operationBytes=CacheKeyUtils.toUtf8Bytes(databaseMocker.getOperationName());
+        byte[] operationBytes = CacheKeyUtils.toUtf8Bytes(databaseMocker.getOperationName());
         MessageDigest md5Digest = MessageDigestWriter.getMD5Digest();
         md5Digest.update(dbNameBytes);
+        md5Digest.update(operationBytes);
+        // 4,db+operationName
+        byte[] dbNameMatchKey = md5Digest.digest();
         md5Digest.update(sqlTextBytes);
         md5Digest.update(sqlParameterBytes);
-        md5Digest.update(operationBytes);
-        byte[] fullMatchKey = md5Digest.digest();
-        md5Digest.reset();
-
-        // secondly,add all db table names & all parameters' names as mock key
         md5Digest.update(dbNameBytes);
-        md5Digest.update(operationBytes);
+        // 1,db+sql+parameterNameWithValue+operationName
+        byte[] fullMatchKey = md5Digest.digest();
+        keys.add(fullMatchKey);
         findTableNameToMd5(sqlText, md5Digest);
-        if (StringUtils.isNotEmpty(sqlParameter)) {
-            tryAddParameterWithoutValue(md5Digest, sqlParameter);
+        md5Digest.update(dbNameMatchKey);
+        // 3,db+table+operationName
+        byte[] tableMatchKey = md5Digest.digest();
+        if (StringUtils.isNotEmpty(sqlParameter) && tryAddParameterWithoutValue(md5Digest, sqlParameter)) {
+            md5Digest.update(tableMatchKey);
+            byte[] tableWithParametersMatchKey = md5Digest.digest();
+            // 2,db+table+parameterName+operationName
+            keys.add(tableWithParametersMatchKey);
         }
-        byte[] tableMatchKey  = md5Digest.digest();
-
-        return Arrays.asList(fullMatchKey,tableMatchKey,operationBytes);
+        keys.add(tableMatchKey);
+        keys.add(dbNameMatchKey);
+        // 5,operationName, as a fallback
+        keys.add(operationBytes);
+        return keys;
     }
 
-    private void tryAddParameterWithoutValue(MessageDigest md5Digest, String sqlParameter) {
+    private boolean tryAddParameterWithoutValue(MessageDigest md5Digest, String sqlParameter) {
         try {
             JsonNode jsonNode = objectMapper.readTree(sqlParameter);
             if (jsonNode.isEmpty()) {
-                return;
+                return false;
             }
             Iterator<JsonNode> iterator = jsonNode.elements();
             while (iterator.hasNext()) {
@@ -125,6 +143,7 @@ final class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
         } catch (JsonProcessingException e) {
             LOGGER.warn("tryParseParameterAsJson error:{},sqlParameter:{}", e.getMessage(), sqlParameter, e);
         }
+        return true;
 
     }
 
