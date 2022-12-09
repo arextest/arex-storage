@@ -22,6 +22,9 @@ public final class RepositoryProviderFactory {
     }
 
     public <T extends Mocker> RepositoryProvider<T> findProvider(String providerName) {
+        if (StringUtils.isEmpty(providerName)) {
+            providerName = ProviderNames.DEFAULT;
+        }
         RepositoryProvider<? extends Mocker> repositoryProvider;
         for (int i = 0; i < repositoryProviderList.size(); i++) {
             repositoryProvider = repositoryProviderList.get(i);
@@ -47,5 +50,4 @@ public final class RepositoryProviderFactory {
     public <T extends Mocker> RepositoryProvider<T> defaultProvider() {
         return findProvider(ProviderNames.DEFAULT);
     }
-
 }

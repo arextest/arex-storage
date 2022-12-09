@@ -60,7 +60,7 @@ final class AREXMockerCodecImpl implements Codec<AREXMocker> {
     }
 
     private boolean isRecordIdPropertyModel(PropertyModel<?> propertyModel) {
-        return StringUtils.equals(DefaultMongoRepositoryProvider.RECORD_ID_COLUMN_NAME, propertyModel.getName());
+        return StringUtils.equals(AREXMockerMongoRepositoryProvider.RECORD_ID_COLUMN_NAME, propertyModel.getName());
     }
 
     @Override

@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.annotation.Resource;
@@ -125,14 +126,14 @@ public class AgentRecordingController {
         return null;
     }
 
-    @GetMapping(value = "/saveServletTest", produces = {MediaType.APPLICATION_JSON_VALUE})
+    @GetMapping(value = "/saveTest/", produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
-    public Response saveTest() {
-        return saveTest(newServlet());
+    public Response saveTest(@RequestParam(required = false, defaultValue = "Servlet") String category) {
+        return saveTest(arexMocker(MockCategoryType.create(category)));
     }
 
-    private AREXMocker newServlet() {
-        AREXMocker mocker = new AREXMocker(MockCategoryType.SERVLET);
+    private AREXMocker arexMocker(MockCategoryType categoryType) {
+        AREXMocker mocker = new AREXMocker(categoryType);
         mocker.setOperationName("hello");
         mocker.setRecordId("demo-recordId-" + System.currentTimeMillis());
         mocker.setAppId("demoAppID");

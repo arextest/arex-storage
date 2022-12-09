@@ -1,5 +1,6 @@
 package com.arextest.storage.web.controller;
 
+
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.PagedResponseType;
@@ -67,6 +68,9 @@ public class ScheduleReplayQueryController {
             return ResponseUtils.emptyRecordIdResponse();
         }
         String replayResultId = requestType.getReplayResultId();
+        if (StringUtils.isEmpty(replayResultId)) {
+            return ResponseUtils.emptyReplayResultIdResponse();
+        }
         try {
             MDCTracer.addRecordId(recordId);
             MDCTracer.addReplayId(replayResultId);
@@ -125,6 +129,9 @@ public class ScheduleReplayQueryController {
         }
         if (requestType.getBeginTime() >= requestType.getEndTime()) {
             return ResponseUtils.parameterInvalidResponse("The beginTime >= endTime from requested");
+        }
+        if (requestType.getCategory() == null) {
+            return ResponseUtils.parameterInvalidResponse("The category of requested is empty");
         }
         return null;
     }

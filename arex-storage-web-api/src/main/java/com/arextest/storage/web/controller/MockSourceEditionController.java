@@ -119,12 +119,24 @@ public class MockSourceEditionController {
     }
 
     /**
+     * update special pinned mocker's by whole object
+     *
+     * @param body object value
+     * @return success true otherwise false
+     */
+    @PostMapping("/pinned/update/")
+    @ResponseBody
+    public Response pinnedUpdate(@RequestBody AREXMocker body) {
+        return this.update(ProviderNames.PINNED, body);
+    }
+
+    /**
      * update special mocker's by whole object
      *
      * @param body object value
      * @return success true otherwise false
      */
-    @PostMapping("/update")
+    @PostMapping("/update/")
     @ResponseBody
     public Response update(@RequestHeader String srcProviderName, @RequestBody AREXMocker body) {
         Response response = checkError(srcProviderName, body);
@@ -132,22 +144,7 @@ public class MockSourceEditionController {
             return response;
         }
         MockCategoryType category = body.getCategoryType();
-        if (category == null) {
-            LOGGER.warn("update record the category not found {}", srcProviderName);
-            return ResponseUtils.parameterInvalidResponse(srcProviderName);
-        }
-        if (StringUtils.isBlank(body.getAppId())) {
-            LOGGER.warn("update record request appId is empty,{}", body);
-            return ResponseUtils.parameterInvalidResponse("request appId is empty");
-        }
-        if (StringUtils.isBlank(body.getRecordId())) {
-            LOGGER.warn("update record the recordId is empty {}", body);
-            return ResponseUtils.emptyRecordIdResponse();
-        }
-        if (StringUtils.isBlank(body.getId())) {
-            LOGGER.warn("update record the uniqueId is empty {}", body);
-            return ResponseUtils.parameterInvalidResponse("request id is empty");
-        }
+
         try {
             boolean updateResult = editableService.update(srcProviderName, body);
             if (updateResult) {
