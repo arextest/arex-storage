@@ -7,13 +7,11 @@ import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.ViewRecordRequestType;
 import com.arextest.model.replay.holder.ListResultHolder;
 import com.arextest.storage.mock.MockResultProvider;
-import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.RepositoryReader;
 import com.arextest.storage.trace.MDCTracer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -68,28 +66,22 @@ public class ScheduleReplayingService {
     }
 
     public List<AREXMocker> queryByRange(PagedRequestType requestType) {
-        RepositoryReader<AREXMocker> repositoryReader = findProvider(requestType.getSourceProvider());
+        RepositoryReader<AREXMocker> repositoryReader =
+                repositoryProviderFactory.findProvider(requestType.getSourceProvider());
         if (repositoryReader != null) {
             return new IterableListWrapper<>(repositoryReader.queryByRange(requestType));
         }
         return Collections.emptyList();
     }
 
-    private RepositoryProvider<AREXMocker> findProvider(String sourceProvider) {
-        if (StringUtils.isEmpty(sourceProvider)) {
-            return repositoryProviderFactory.defaultProvider();
-        }
-        return repositoryProviderFactory.findProvider(sourceProvider);
-    }
-
     public List<AREXMocker> queryRecordList(ViewRecordRequestType viewRecordRequestType) {
         String sourceProvider = viewRecordRequestType.getSourceProvider();
         String recordId = viewRecordRequestType.getRecordId();
-        RepositoryReader<AREXMocker> repositoryReader = findProvider(sourceProvider);
+        RepositoryReader<AREXMocker> repositoryReader = repositoryProviderFactory.findProvider(sourceProvider);
         if (repositoryReader == null) {
             return Collections.emptyList();
         }
-        MockCategoryType categoryType =repositoryProviderFactory.findCategory(viewRecordRequestType.getCategoryType());
+        MockCategoryType categoryType = repositoryProviderFactory.findCategory(viewRecordRequestType.getCategoryType());
         if (categoryType != null) {
             return new IterableListWrapper<>(repositoryReader.queryRecordList(categoryType, recordId));
         }
@@ -108,7 +100,8 @@ public class ScheduleReplayingService {
     }
 
     public long countByRange(PagedRequestType replayCaseRangeRequest) {
-        RepositoryReader<?> repositoryReader =findProvider(replayCaseRangeRequest.getSourceProvider());
+        RepositoryReader<?> repositoryReader =
+                repositoryProviderFactory.findProvider(replayCaseRangeRequest.getSourceProvider());
         if (repositoryReader != null) {
             return repositoryReader.countByRange(replayCaseRangeRequest);
         }

@@ -14,7 +14,7 @@ public final class MockAttributeNames {
      */
     public static final String HTTP_METHOD = "HttpMethod";
     public static final String HTTP_QUERY_STRING = "QueryString";
-    public static final String SERVLET_PATH = "ServletPath";
+    public static final String REQUEST_PATH = "RequestPath";
     public static final String HEADERS = "Headers";
     public static final String URL = "url";
 

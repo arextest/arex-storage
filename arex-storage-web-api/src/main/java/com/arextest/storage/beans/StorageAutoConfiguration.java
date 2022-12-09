@@ -3,12 +3,16 @@ package com.arextest.storage.beans;
 
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.common.cache.DefaultRedisCacheProvider;
+import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.storage.converter.ZstdJacksonMessageConverter;
 import com.arextest.storage.mock.MockResultProvider;
+import com.arextest.storage.repository.ProviderNames;
+import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.ServiceOperationRepository;
 import com.arextest.storage.repository.ServiceRepository;
+import com.arextest.storage.repository.impl.mongo.AREXMockerMongoRepositoryProvider;
 import com.arextest.storage.repository.impl.mongo.MongoDbUtils;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.AgentWorkingListener;
@@ -111,5 +115,15 @@ public class StorageAutoConfiguration {
     public ScheduleReplayingService scheduleReplayingService(MockResultProvider mockResultProvider,
                                                              RepositoryProviderFactory repositoryProviderFactory) {
         return new ScheduleReplayingService(mockResultProvider, repositoryProviderFactory);
+    }
+
+    @Bean
+    public RepositoryProvider<AREXMocker> pinnedMockerProvider(MongoDatabase mongoDatabase) {
+        return new AREXMockerMongoRepositoryProvider(ProviderNames.PINNED, mongoDatabase);
+    }
+
+    @Bean
+    public RepositoryProvider<AREXMocker> defaultMockerProvider(MongoDatabase mongoDatabase) {
+        return new AREXMockerMongoRepositoryProvider(mongoDatabase);
     }
 }

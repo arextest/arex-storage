@@ -15,7 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.conversions.Bson;
-import org.springframework.stereotype.Component;
 
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
@@ -29,9 +28,8 @@ import java.util.List;
  * which means auto deleted the records after TTL index created on creationTime of collection
  */
 @Slf4j
-@Component
-public class DefaultMongoRepositoryProvider implements RepositoryProvider<AREXMocker> {
-    private static final String FILE_VERSION_COLUMN_NAME = "fileVersion";
+public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<AREXMocker> {
+
     static final String CREATE_TIME_COLUMN_NAME = "creationTime";
     public static final String PRIMARY_KEY_COLUMN_NAME = "_id";
     static final String RECORD_ID_COLUMN_NAME = "recordId";
@@ -49,10 +47,16 @@ public class DefaultMongoRepositoryProvider implements RepositoryProvider<AREXMo
     private static final int DEFAULT_MAX_LIMIT_SIZE = 1000;
     private static final int DEFAULT_BSON_WHERE_SIZE = 8;
     protected final MongoDatabase mongoDatabase;
+    private final String providerName;
 
-    public DefaultMongoRepositoryProvider(MongoDatabase mongoDatabase) {
+    public AREXMockerMongoRepositoryProvider(MongoDatabase mongoDatabase) {
+        this(ProviderNames.DEFAULT, mongoDatabase);
+    }
+
+    public AREXMockerMongoRepositoryProvider(String providerName, MongoDatabase mongoDatabase) {
         this.targetClassType = AREXMocker.class;
         this.mongoDatabase = mongoDatabase;
+        this.providerName = providerName;
     }
 
     private MongoCollection<AREXMocker> createOrGetCollection(MockCategoryType category) {
@@ -145,7 +149,7 @@ public class DefaultMongoRepositoryProvider implements RepositoryProvider<AREXMo
 
     @Override
     public String getProviderName() {
-        return ProviderNames.DEFAULT;
+        return this.providerName;
     }
 
     private Bson buildPrimaryKeyFilter(Mocker value) {

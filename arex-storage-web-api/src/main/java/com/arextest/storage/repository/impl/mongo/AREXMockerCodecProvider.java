@@ -76,7 +76,7 @@ final class AREXMockerCodecProvider implements CodecProvider {
         if (TARGET_RESPONSE_NAME.equals(propertyModelBuilder.getName())) {
             return targetCodec;
         }
-        if (DefaultMongoRepositoryProvider.CREATE_TIME_COLUMN_NAME.equals(propertyModelBuilder.getName())) {
+        if (AREXMockerMongoRepositoryProvider.CREATE_TIME_COLUMN_NAME.equals(propertyModelBuilder.getName())) {
             return millisecondsDateTimeCodec;
         }
         return null;
