@@ -39,6 +39,8 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     private static final String COLLECTION_PREFIX = "Mocker";
 
     private static final String AGENT_RECORD_VERSION_COLUMN_NAME = "agentVersion";
+
+    private static final String CONFIG_BATCH_NO = "configBatchNo";
     private final static Bson CREATE_TIME_ASCENDING_SORT = Sorts.ascending(CREATE_TIME_COLUMN_NAME);
     private final static Bson CREATE_TIME_DESCENDING_SORT = Sorts.descending(CREATE_TIME_COLUMN_NAME);
 
@@ -101,6 +103,32 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     public long countByRange(PagedRequestType rangeRequestType) {
         MongoCollection<AREXMocker> collectionSource = createOrGetCollection(rangeRequestType.getCategory());
         return collectionSource.countDocuments(Filters.and(buildReadRangeFilters(rangeRequestType)));
+    }
+
+    @Override
+    public AREXMocker queryByConfigBatchNO(MockCategoryType categoryType, AREXMocker requestType) {
+        MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
+        AREXMocker item = collectionSource
+                .find(Filters.and(buildConfigVersionFetchWhere(requestType)))
+                .sort(CREATE_TIME_DESCENDING_SORT)
+                .limit(DEFAULT_MIN_LIMIT_SIZE)
+                .first();
+        return item;
+    }
+
+    protected List<Bson> buildConfigVersionFetchWhere(AREXMocker requestType) {
+        Bson app = Filters.eq(APP_ID_COLUMN_NAME, requestType.getAppId());
+        final List<Bson> bsonList = new ArrayList<>(DEFAULT_BSON_WHERE_SIZE);
+        bsonList.add(app);
+        if (StringUtils.isNotEmpty(requestType.getConfigBatchNo())) {
+            bsonList.add(Filters.eq(CONFIG_BATCH_NO, requestType.getConfigBatchNo()));
+        }
+        if (StringUtils.isNotEmpty(requestType.getOperationName())) {
+            bsonList.add(Filters.eq(OPERATION_COLUMN_NAME, requestType.getOperationName()));
+        }
+        bsonList.add(Filters.eq(ENV_COLUMN_NAME, requestType.getRecordEnvironment()));
+
+        return bsonList;
     }
 
 

@@ -39,4 +39,5 @@ public class AREXMocker implements Mocker {
      * for example: pattern of servlet web api
      */
     private String operationName;
+    private String configBatchNo;
 }

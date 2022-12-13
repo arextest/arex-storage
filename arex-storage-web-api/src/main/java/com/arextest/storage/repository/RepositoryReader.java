@@ -1,5 +1,6 @@
 package com.arextest.storage.repository;
 
+import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.model.replay.PagedRequestType;
@@ -16,4 +17,6 @@ public interface RepositoryReader<T extends Mocker> {
     Iterable<T> queryByRange(PagedRequestType rangeRequestType);
 
     long countByRange(PagedRequestType rangeRequestType);
+
+    T queryByConfigBatchNO(MockCategoryType categoryType, AREXMocker requestType);
 }
