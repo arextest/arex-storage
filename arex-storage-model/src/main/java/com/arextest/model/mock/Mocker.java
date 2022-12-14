@@ -20,6 +20,8 @@ public interface Mocker {
 
     void setRecordEnvironment(int environment);
 
+    int getRecordEnvironment();
+
     /**
      * millis from utc format without timezone
      */
@@ -52,6 +54,7 @@ public interface Mocker {
          * It used by AREX's agent deserialization which class type should be applying
          */
         private String type;
+
         public Object getAttribute(String name) {
             return attributes == null ? null : attributes.get(name);
         }

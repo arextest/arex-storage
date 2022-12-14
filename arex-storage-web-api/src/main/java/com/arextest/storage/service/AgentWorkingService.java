@@ -1,5 +1,6 @@
 package com.arextest.storage.service;
 
+import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.mock.MockResultContext;
@@ -8,6 +9,7 @@ import com.arextest.storage.mock.MockResultProvider;
 import com.arextest.storage.model.RecordEnvType;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
+import com.arextest.storage.repository.RepositoryReader;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -133,5 +135,17 @@ public final class AgentWorkingService {
         LOGGER.info("agent query found result for category:{},record id: {},replay id: {}", category,
                 recordId, replayId);
         return result;
+    }
+
+    public byte[] queryConfigFile(AREXMocker requestType) {
+        RepositoryReader<AREXMocker> repositoryReader = repositoryProviderFactory.defaultProvider();
+        if (repositoryReader == null) {
+            return ZstdJacksonSerializer.EMPTY_INSTANCE;
+        }
+        AREXMocker arexMocker = repositoryReader.queryRecord(requestType);
+        if (arexMocker != null) {
+            return zstdJacksonSerializer.serialize(arexMocker);
+        }
+        return ZstdJacksonSerializer.EMPTY_INSTANCE;
     }
 }

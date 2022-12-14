@@ -75,11 +75,11 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     }
 
     @Override
-    public AREXMocker queryRecord(MockCategoryType categoryType, String recordId) {
+    public AREXMocker queryRecord(Mocker requestType) {
+        MockCategoryType categoryType = requestType.getCategoryType();
         MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
-        Bson recordIdFilter = buildRecordIdFilter(categoryType, recordId);
         AREXMocker item = collectionSource
-                .find(recordIdFilter)
+                .find(Filters.and(buildRecordFilters(categoryType, requestType)))
                 .sort(CREATE_TIME_DESCENDING_SORT)
                 .limit(DEFAULT_MIN_LIMIT_SIZE)
                 .first();
@@ -173,6 +173,15 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         return Filters.eq(RECORD_ID_COLUMN_NAME, value);
     }
 
+    private List<Bson> buildRecordFilters(MockCategoryType categoryType, @NotNull Mocker mocker) {
+        List<Bson> filters = this.buildAppIdWithOperationFilters(mocker.getAppId(),
+                mocker.getOperationName());
+        Bson recordIdFilter = buildRecordIdFilter(categoryType, mocker.getRecordId());
+        filters.add(recordIdFilter);
+        Bson env = Filters.eq(ENV_COLUMN_NAME, mocker.getRecordEnvironment());
+        filters.add(env);
+        return filters;
+    }
     private List<Bson> buildReadRangeFilters(@NotNull PagedRequestType rangeRequestType) {
         List<Bson> filters = this.buildAppIdWithOperationFilters(rangeRequestType.getAppId(),
                 rangeRequestType.getOperation());

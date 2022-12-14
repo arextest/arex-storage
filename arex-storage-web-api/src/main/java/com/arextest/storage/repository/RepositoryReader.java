@@ -11,7 +11,7 @@ import com.arextest.model.replay.PagedRequestType;
 public interface RepositoryReader<T extends Mocker> {
     Iterable<T> queryRecordList(MockCategoryType categoryType, String recordId);
 
-    T queryRecord(MockCategoryType categoryType, String recordId);
+    T queryRecord(Mocker requestType);
 
     Iterable<T> queryByRange(PagedRequestType rangeRequestType);
 

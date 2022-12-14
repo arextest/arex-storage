@@ -60,9 +60,9 @@ public class AgentRecordingController {
                 LOGGER.warn("agent query category not found");
                 return ZstdJacksonSerializer.EMPTY_INSTANCE;
             }
-//            if (category.isConfigVersion() && requestType instanceof ConfigVersion) {
-//                return agentWorkingService.queryConfigVersion(category, (ConfigVersion) requestType);
-//            }
+            if (category.equals(MockCategoryType.CONFIG_FILE)) {
+                return agentWorkingService.queryConfigFile(requestType);
+            }
             if (StringUtils.isEmpty(requestType.getRecordId())) {
                 LOGGER.warn("agent query recordId empty, {}", category);
                 return ZstdJacksonSerializer.EMPTY_INSTANCE;
