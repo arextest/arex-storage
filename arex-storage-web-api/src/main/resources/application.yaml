@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: AREX's Storage Web API Spring Boot
+  jackson:
+    serialization:
+      FAIL_ON_EMPTY_BEANS: false
+    default-property-inclusion: non_null
+  profiles:
+    active: docker
+#for report
+arex:
+  report:
+    config:
+      agent:
+        url: http://arex-report-service:8080/api/config/agent/load

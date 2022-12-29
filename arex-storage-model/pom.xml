@@ -5,32 +5,11 @@
     <parent>
         <artifactId>arex-storage-service</artifactId>
         <groupId>com.arextest</groupId>
-        <version>1.0.0</version>
+        <version>1.0.3</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <version>1.0.4</version>
-    <artifactId>arex-storage-model</artifactId>
+    <version>1.0.3</version>
+    <artifactId>arex-model</artifactId>
     <dependencies>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-            <version>2.10.3</version>
-        </dependency>
-        <dependency>
-            <groupId>org.mongodb</groupId>
-            <artifactId>bson</artifactId>
-            <version>3.10.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-            <version>2.13.1</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.13.1</version>
-        </dependency>
     </dependencies>
-
 </project>
