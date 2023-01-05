@@ -1,5 +1,6 @@
 package com.arextest.storage.web.controller;
 
+import com.alibaba.fastjson.JSONObject;
 import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
@@ -64,11 +65,11 @@ public class AgentRecordingController {
                 return agentWorkingService.queryConfigFile(requestType);
             }
             if (StringUtils.isEmpty(requestType.getRecordId())) {
-                LOGGER.warn("agent query recordId empty, {}", category);
+                LOGGER.warn("agent query recordId empty, {}", JSONObject.toJSONString(category));
                 return ZstdJacksonSerializer.EMPTY_INSTANCE;
             }
             if (StringUtils.isEmpty(requestType.getReplayId())) {
-                LOGGER.warn("agent query replayId is empty,{}, recordId:{}", category, requestType.getRecordId());
+                LOGGER.warn("agent query replayId is empty,{}, recordId:{}", JSONObject.toJSONString(category), requestType.getRecordId());
                 return ZstdJacksonSerializer.EMPTY_INSTANCE;
             }
             MDCTracer.addTrace(category, requestType);
@@ -93,7 +94,7 @@ public class AgentRecordingController {
     public Response save(@RequestBody AREXMocker requestType) {
         MockCategoryType category = requestType.getCategoryType();
         if (category == null || StringUtils.isEmpty(category.getName())) {
-            LOGGER.warn("The name of category is empty from agent record save not allowed ,request:{}", requestType);
+            LOGGER.warn("The name of category is empty from agent record save not allowed ,request:{}", JSONObject.toJSONString(requestType));
             return ResponseUtils.parameterInvalidResponse("empty category");
         }
         try {
@@ -104,7 +105,7 @@ public class AgentRecordingController {
                     requestType.getRecordId());
             return ResponseUtils.successResponse(saveResult);
         } catch (Throwable throwable) {
-            LOGGER.error("save record error:{} from category:{},recordId:{}", throwable.getMessage(), category,
+            LOGGER.error("save record error:{} from category:{},recordId:{}", throwable.getMessage(), JSONObject.toJSONString(category),
                     requestType.getRecordId(), throwable);
             return ResponseUtils.exceptionResponse(throwable.getMessage());
         } finally {
