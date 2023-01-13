@@ -108,102 +108,102 @@ public class ArexExpressionVisitorAdapter implements ExpressionVisitor {
 
     @Override
     public void visit(BitwiseRightShift aThis) {
-        columnsObj.put(aThis.toString(), "");
+        columnsObj.put(aThis.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(BitwiseLeftShift aThis) {
-        columnsObj.put(aThis.toString(), "");
+        columnsObj.put(aThis.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(NullValue nullValue) {
-        columnsObj.put(nullValue.toString(), "");
+        columnsObj.put(nullValue.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(Function function) {
-        columnsObj.put(function.toString(), "");
+        columnsObj.put(function.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(SignedExpression signedExpression) {
-        columnsObj.put(signedExpression.toString(), "");
+        columnsObj.put(signedExpression.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(JdbcParameter jdbcParameter) {
-        columnsObj.put(jdbcParameter.toString(), "");
+        columnsObj.put(jdbcParameter.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(JdbcNamedParameter jdbcNamedParameter) {
-        columnsObj.put(jdbcNamedParameter.toString(), "");
+        columnsObj.put(jdbcNamedParameter.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(DoubleValue doubleValue) {
-        columnsObj.put(doubleValue.toString(), "");
+        columnsObj.put(doubleValue.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(LongValue longValue) {
-        columnsObj.put(longValue.toString(), "");
+        columnsObj.put(longValue.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(HexValue hexValue) {
-        columnsObj.put(hexValue.toString(), "");
+        columnsObj.put(hexValue.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(DateValue dateValue) {
-        columnsObj.put(dateValue.toString(), "");
+        columnsObj.put(dateValue.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(TimeValue timeValue) {
-        columnsObj.put(timeValue.toString(), "");
+        columnsObj.put(timeValue.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(TimestampValue timestampValue) {
-        columnsObj.put(timestampValue.toString(), "");
+        columnsObj.put(timestampValue.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(Parenthesis parenthesis) {
-        columnsObj.put(parenthesis.toString(), "");
+        columnsObj.put(parenthesis.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(StringValue stringValue) {
-        columnsObj.put(stringValue.toString(), "");
+        columnsObj.put(stringValue.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(Addition addition) {
-        columnsObj.put(addition.toString(), "");
+        columnsObj.put(addition.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(Division division) {
-        columnsObj.put(division.toString(), "");
+        columnsObj.put(division.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(IntegerDivision division) {
-        columnsObj.put(division.toString(), "");
+        columnsObj.put(division.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(Multiplication multiplication) {
-        columnsObj.put(multiplication.toString(), "");
+        columnsObj.put(multiplication.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(Subtraction subtraction) {
-        columnsObj.put(subtraction.toString(), "");
+        columnsObj.put(subtraction.toString(), Constants.EMPTY);
     }
 
     @Override
@@ -238,311 +238,311 @@ public class ArexExpressionVisitorAdapter implements ExpressionVisitor {
 
     @Override
     public void visit(Between between) {
-        columnsObj.put(between.toString(), "");
+        columnsObj.put(between.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(EqualsTo equalsTo) {
-        columnsObj.put(equalsTo.toString(), "");
+        columnsObj.put(equalsTo.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(GreaterThan greaterThan) {
-        columnsObj.put(greaterThan.toString(), "");
+        columnsObj.put(greaterThan.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(GreaterThanEquals greaterThanEquals) {
-        columnsObj.put(greaterThanEquals.toString(), "");
+        columnsObj.put(greaterThanEquals.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(InExpression inExpression) {
-        columnsObj.put(inExpression.toString(), "");
+        columnsObj.put(inExpression.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(FullTextSearch fullTextSearch) {
-        columnsObj.put(fullTextSearch.toString(), "");
+        columnsObj.put(fullTextSearch.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(IsNullExpression isNullExpression) {
-        columnsObj.put(isNullExpression.toString(), "");
+        columnsObj.put(isNullExpression.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(IsBooleanExpression isBooleanExpression) {
-        columnsObj.put(isBooleanExpression.toString(), "");
+        columnsObj.put(isBooleanExpression.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(LikeExpression likeExpression) {
-        columnsObj.put(likeExpression.toString(), "");
+        columnsObj.put(likeExpression.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(MinorThan minorThan) {
-        columnsObj.put(minorThan.toString(), "");
+        columnsObj.put(minorThan.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(MinorThanEquals minorThanEquals) {
-        columnsObj.put(minorThanEquals.toString(), "");
+        columnsObj.put(minorThanEquals.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(NotEqualsTo notEqualsTo) {
-        columnsObj.put(notEqualsTo.toString(), "");
+        columnsObj.put(notEqualsTo.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(Column tableColumn) {
-        columnsObj.put(tableColumn.toString(), "");
+        columnsObj.put(tableColumn.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(SubSelect subSelect) {
-        columnsObj.put(subSelect.toString(), "");
+        columnsObj.put(subSelect.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(CaseExpression caseExpression) {
-        columnsObj.put(caseExpression.toString(), "");
+        columnsObj.put(caseExpression.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(WhenClause whenClause) {
-        columnsObj.put(whenClause.toString(), "");
+        columnsObj.put(whenClause.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(ExistsExpression existsExpression) {
-        columnsObj.put(existsExpression.toString(), "");
+        columnsObj.put(existsExpression.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(AnyComparisonExpression anyComparisonExpression) {
-        columnsObj.put(anyComparisonExpression.toString(), "");
+        columnsObj.put(anyComparisonExpression.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(Concat concat) {
-        columnsObj.put(concat.toString(), "");
+        columnsObj.put(concat.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(Matches matches) {
-        columnsObj.put(matches.toString(), "");
+        columnsObj.put(matches.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(BitwiseAnd bitwiseAnd) {
-        columnsObj.put(bitwiseAnd.toString(), "");
+        columnsObj.put(bitwiseAnd.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(BitwiseOr bitwiseOr) {
-        columnsObj.put(bitwiseOr.toString(), "");
+        columnsObj.put(bitwiseOr.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(BitwiseXor bitwiseXor) {
-        columnsObj.put(bitwiseXor.toString(), "");
+        columnsObj.put(bitwiseXor.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(CastExpression cast) {
-        columnsObj.put(cast.toString(), "");
+        columnsObj.put(cast.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(TryCastExpression cast) {
-        columnsObj.put(cast.toString(), "");
+        columnsObj.put(cast.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(Modulo modulo) {
-        columnsObj.put(modulo.toString(), "");
+        columnsObj.put(modulo.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(AnalyticExpression aexpr) {
-        columnsObj.put(aexpr.toString(), "");
+        columnsObj.put(aexpr.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(ExtractExpression eexpr) {
-        columnsObj.put(eexpr.toString(), "");
+        columnsObj.put(eexpr.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(IntervalExpression iexpr) {
-        columnsObj.put(iexpr.toString(), "");
+        columnsObj.put(iexpr.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(OracleHierarchicalExpression oexpr) {
-        columnsObj.put(oexpr.toString(), "");
+        columnsObj.put(oexpr.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(RegExpMatchOperator rexpr) {
-        columnsObj.put(rexpr.toString(), "");
+        columnsObj.put(rexpr.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(JsonExpression jsonExpr) {
-        columnsObj.put(jsonExpr.toString(), "");
+        columnsObj.put(jsonExpr.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(JsonOperator jsonExpr) {
-        columnsObj.put(jsonExpr.toString(), "");
+        columnsObj.put(jsonExpr.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(RegExpMySQLOperator regExpMySQLOperator) {
-        columnsObj.put(regExpMySQLOperator.toString(), "");
+        columnsObj.put(regExpMySQLOperator.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(UserVariable var) {
-        columnsObj.put(var.toString(), "");
+        columnsObj.put(var.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(NumericBind bind) {
-        columnsObj.put(bind.toString(), "");
+        columnsObj.put(bind.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(KeepExpression aexpr) {
-        columnsObj.put(aexpr.toString(), "");
+        columnsObj.put(aexpr.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(MySQLGroupConcat groupConcat) {
-        columnsObj.put(groupConcat.toString(), "");
+        columnsObj.put(groupConcat.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(ValueListExpression valueList) {
-        columnsObj.put(valueList.toString(), "");
+        columnsObj.put(valueList.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(RowConstructor rowConstructor) {
-        columnsObj.put(rowConstructor.toString(), "");
+        columnsObj.put(rowConstructor.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(RowGetExpression rowGetExpression) {
-        columnsObj.put(rowGetExpression.toString(), "");
+        columnsObj.put(rowGetExpression.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(OracleHint hint) {
-        columnsObj.put(hint.toString(), "");
+        columnsObj.put(hint.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(TimeKeyExpression timeKeyExpression) {
-        columnsObj.put(timeKeyExpression.toString(), "");
+        columnsObj.put(timeKeyExpression.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(DateTimeLiteralExpression literal) {
-        columnsObj.put(literal.toString(), "");
+        columnsObj.put(literal.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(NotExpression aThis) {
-        columnsObj.put(aThis.toString(), "");
+        columnsObj.put(aThis.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(NextValExpression aThis) {
-        columnsObj.put(aThis.toString(), "");
+        columnsObj.put(aThis.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(CollateExpression aThis) {
-        columnsObj.put(aThis.toString(), "");
+        columnsObj.put(aThis.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(SimilarToExpression aThis) {
-        columnsObj.put(aThis.toString(), "");
+        columnsObj.put(aThis.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(ArrayExpression aThis) {
-        columnsObj.put(aThis.toString(), "");
+        columnsObj.put(aThis.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(ArrayConstructor aThis) {
-        columnsObj.put(aThis.toString(), "");
+        columnsObj.put(aThis.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(VariableAssignment aThis) {
-        columnsObj.put(aThis.toString(), "");
+        columnsObj.put(aThis.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(XMLSerializeExpr aThis) {
-        columnsObj.put(aThis.toString(), "");
+        columnsObj.put(aThis.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(TimezoneExpression aThis) {
-        columnsObj.put(aThis.toString(), "");
+        columnsObj.put(aThis.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(JsonAggregateFunction aThis) {
-        columnsObj.put(aThis.toString(), "");
+        columnsObj.put(aThis.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(JsonFunction aThis) {
-        columnsObj.put(aThis.toString(), "");
+        columnsObj.put(aThis.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(ConnectByRootOperator aThis) {
-        columnsObj.put(aThis.toString(), "");
+        columnsObj.put(aThis.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(OracleNamedFunctionParameter aThis) {
-        columnsObj.put(aThis.toString(), "");
+        columnsObj.put(aThis.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(AllColumns allColumns) {
-        columnsObj.put(allColumns.toString(), "");
+        columnsObj.put(allColumns.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(AllTableColumns allTableColumns) {
-        columnsObj.put(allTableColumns.toString(), "");
+        columnsObj.put(allTableColumns.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(AllValue allValue) {
-        columnsObj.put(allValue.toString(), "");
+        columnsObj.put(allValue.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(IsDistinctExpression isDistinctExpression) {
-        columnsObj.put(isDistinctExpression.toString(), "");
+        columnsObj.put(isDistinctExpression.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(GeometryDistance geometryDistance) {
-        columnsObj.put(geometryDistance.toString(), "");
+        columnsObj.put(geometryDistance.toString(), Constants.EMPTY);
     }
 }

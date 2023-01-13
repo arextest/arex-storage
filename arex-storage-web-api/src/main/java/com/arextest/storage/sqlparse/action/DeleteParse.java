@@ -30,7 +30,7 @@ public class DeleteParse implements Parse<Delete> {
         if (tables != null && !tables.isEmpty()) {
             JSONObject delTableObj = new JSONObject();
             tables.forEach(item -> {
-                delTableObj.put(item.getFullyQualifiedName(), "");
+                delTableObj.put(item.getFullyQualifiedName(), Constants.EMPTY);
             });
             sqlObject.put(Constants.DEL_TABLES, delTableObj);
         }

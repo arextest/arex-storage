@@ -31,7 +31,7 @@ public class JoinParseUtil {
         if (onExpressions != null && !onExpressions.isEmpty()) {
             JSONObject onObj = new JSONObject();
             onExpressions.forEach(item -> {
-                onObj.put(item.toString(), "");
+                onObj.put(item.toString(), Constants.EMPTY);
             });
             res.put(Constants.ON, onObj);
         }
@@ -41,7 +41,7 @@ public class JoinParseUtil {
         if (usingColumns != null && !usingColumns.isEmpty()) {
             JSONObject usingObj = new JSONObject();
             usingColumns.forEach(item -> {
-                usingObj.put(item.toString(), "");
+                usingObj.put(item.toString(), Constants.EMPTY);
             });
             res.put(Constants.USING, usingObj);
         }

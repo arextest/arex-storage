@@ -29,7 +29,7 @@ public class InsertParse implements Parse<Insert> {
         if (columns != null && !columns.isEmpty()) {
             JSONObject columnsObj = new JSONObject();
             columns.forEach(item -> {
-                columnsObj.put(item.toString(), "");
+                columnsObj.put(item.toString(), Constants.EMPTY);
             });
             sqlObject.put(Constants.COLUMNS, columnsObj);
         }
@@ -39,7 +39,7 @@ public class InsertParse implements Parse<Insert> {
         if (setColumns != null && !setColumns.isEmpty()) {
             JSONObject setColumnsObj = new JSONObject();
             setColumns.forEach(item -> {
-                setColumnsObj.put(item.toString(), "");
+                setColumnsObj.put(item.toString(), Constants.EMPTY);
             });
             sqlObject.put(Constants.COLUMNS, setColumnsObj);
         }

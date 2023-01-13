@@ -4,6 +4,7 @@ package com.arextest.storage.sqlparse.constants;
  * Created by rchen9 on 2023/1/10.
  */
 public class Constants {
+    public static final Integer EMPTY = 0;
     public static final String SELECT = "select";
     public static final String INSERT = "insert";
     public static final String UPDATE = "update";

@@ -1,5 +1,6 @@
 package com.arextest.storage.sqlparse.select;
 
+import com.arextest.storage.sqlparse.constants.Constants;
 import net.sf.jsqlparser.statement.select.OrderByElement;
 import net.sf.jsqlparser.statement.select.OrderByVisitor;
 import org.json.JSONObject;
@@ -17,6 +18,6 @@ public class ArexOrderByVisitorAdapter implements OrderByVisitor {
 
     @Override
     public void visit(OrderByElement orderBy) {
-        sqlObject.put(orderBy.toString(), "");
+        sqlObject.put(orderBy.toString(), Constants.EMPTY);
     }
 }

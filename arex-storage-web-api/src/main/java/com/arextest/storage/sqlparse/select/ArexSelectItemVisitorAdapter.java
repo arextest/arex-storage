@@ -1,5 +1,6 @@
 package com.arextest.storage.sqlparse.select;
 
+import com.arextest.storage.sqlparse.constants.Constants;
 import net.sf.jsqlparser.statement.select.AllColumns;
 import net.sf.jsqlparser.statement.select.AllTableColumns;
 import net.sf.jsqlparser.statement.select.SelectExpressionItem;
@@ -19,16 +20,16 @@ public class ArexSelectItemVisitorAdapter implements SelectItemVisitor {
 
     @Override
     public void visit(AllColumns allColumns) {
-        sqlObject.put(allColumns.toString(), "");
+        sqlObject.put(allColumns.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(AllTableColumns allTableColumns) {
-        sqlObject.put(allTableColumns.toString(), "");
+        sqlObject.put(allTableColumns.toString(), Constants.EMPTY);
     }
 
     @Override
     public void visit(SelectExpressionItem selectExpressionItem) {
-        sqlObject.put(selectExpressionItem.toString(), "");
+        sqlObject.put(selectExpressionItem.toString(), Constants.EMPTY);
     }
 }
