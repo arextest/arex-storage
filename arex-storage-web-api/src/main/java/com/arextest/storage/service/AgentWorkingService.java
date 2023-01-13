@@ -11,6 +11,7 @@ import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.RepositoryReader;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
+import com.arextest.storage.sqlparse.SqlParseUtil;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -40,6 +41,8 @@ public final class AgentWorkingService {
     @Setter
     private RecordEnvType recordEnvType;
 
+    private static final String PARSED_SQL = "parsedSql";
+
     public AgentWorkingService(MockResultProvider mockResultProvider,
                                RepositoryProviderFactory repositoryProviderFactory, List<AgentWorkingListener> agentWorkingListeners) {
         this.mockResultProvider = mockResultProvider;
@@ -62,6 +65,9 @@ public final class AgentWorkingService {
     public <T extends Mocker> boolean saveRecord(@NotNull T item) {
         if (shouldMarkRecordEnv(item.getCategoryType())) {
             item.setRecordEnvironment(recordEnvType.getCodeValue());
+        }
+        if (shouldParseSql(item.getCategoryType())) {
+            this.fillSqlParseField(item);
         }
         this.dispatchRecordSavingEvent(item);
         RepositoryProvider<T> repositoryWriter = repositoryProviderFactory.defaultProvider();
@@ -92,6 +98,19 @@ public final class AgentWorkingService {
                 StringUtils.equals(category.getName(), MockCategoryType.CONFIG_FILE.getName());
     }
 
+    private boolean shouldParseSql(MockCategoryType category) {
+        return StringUtils.equals(category.getName(), MockCategoryType.DATABASE.getName());
+    }
+
+    private <T extends Mocker> void fillSqlParseField(T item) {
+        Mocker.Target targetRequest = item.getTargetRequest();
+        if (targetRequest == null || StringUtils.isEmpty(targetRequest.getBody())) {
+            return;
+        }
+        Object parsedSql = SqlParseUtil.sqlParse(targetRequest.getBody());
+        targetRequest.setAttribute(PARSED_SQL, parsedSql.toString());
+    }
+
     /**
      * requested from AREX's agent replaying which should be fetch the mocked resource of dependency.
      * NOTE:
@@ -103,6 +122,9 @@ public final class AgentWorkingService {
      * @return compress bytes with zstd from the cached which filled by scheduler's preload
      */
     public <T extends Mocker> byte[] queryMockResult(@NotNull T recordItem, MockResultContext context) {
+        if (shouldParseSql(recordItem.getCategoryType())) {
+            this.fillSqlParseField(recordItem);
+        }
         this.dispatchMockResultEnterEvent(recordItem, context);
         String recordId = recordItem.getRecordId();
         String replayId = recordItem.getReplayId();

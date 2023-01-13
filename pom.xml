@@ -23,6 +23,8 @@
         <spring.boot.version>2.6.3</spring.boot.version>
         <jmockit.version>1.49</jmockit.version>
         <lombok.version>1.18.2</lombok.version>
+        <jsqlparser.version>4.5</jsqlparser.version>
+        <json.vserion>20180813</json.vserion>
         <arex.storage.model.version>1.0.5</arex.storage.model.version>
 
         <jacoco-maven-plugin.version>0.7.5.201505241946</jacoco-maven-plugin.version>
@@ -115,6 +117,16 @@
                 <artifactId>jsr250-api</artifactId>
                 <version>1.0</version>
             </dependency>
+            <dependency>
+                <groupId>com.github.jsqlparser</groupId>
+                <artifactId>jsqlparser</artifactId>
+                <version>${jsqlparser.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.json</groupId>
+                <artifactId>json</artifactId>
+                <version>${json.vserion}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
@@ -152,7 +164,14 @@
             <groupId>javax.validation</groupId>
             <artifactId>validation-api</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>com.github.jsqlparser</groupId>
+            <artifactId>jsqlparser</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <pluginManagement>
