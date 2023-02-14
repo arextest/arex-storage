@@ -13,6 +13,8 @@ public final class MDCTracer {
     private static final String CATEGORY = "category";
     private static final String REPLAY_ID = "replayId";
     private static final String RECORD_ID = "recordId";
+    private static final String APP_TYPE = "app-type";
+    private static final String AREX_STORAGE = "arex-storage";
 
     private MDCTracer() {
 
@@ -33,15 +35,22 @@ public final class MDCTracer {
         }
     }
 
+    public static void addAppType() {
+        MDC.put(APP_TYPE, AREX_STORAGE);
+    }
+
     public static void addReplayId(String replayId) {
+        addAppType();
         put(REPLAY_ID, replayId);
     }
 
     public static void addRecordId(String recordId) {
+        addAppType();
         put(RECORD_ID, recordId);
     }
 
     public static void addCategory(MockCategoryType category) {
+        addAppType();
         if (category != null) {
             put(CATEGORY, category.getName());
         }

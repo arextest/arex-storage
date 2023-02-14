@@ -1,9 +1,9 @@
 arex:
   storage:
     cache:
-      uri: redis://redis:6379/
+      uri: redis://10.5.153.1:6379/
     enableDiscoveryEntryPoint: true
-    mongodbUri: mongodb://arex:iLoveArex@mongodb:27017/arex_storage_db
+    mongodbUri: ${arex.storage.mongo.host:mongodb://arex:iLoveArex@mongodb:27017/arex_storage_db}
     recordEnv: PRO
 #    categoryTypes:
 #      - name: Hi
