@@ -17,14 +17,15 @@ import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 @Component
 @Slf4j
-final class DefaultDependencyMatchKeyBuilderImpl implements MatchKeyBuilder {
+final class DubboConsumerMatchKeyBuilderImpl implements MatchKeyBuilder {
 
     @Override
     public boolean isSupported(MockCategoryType categoryType) {
-        return !categoryType.isEntryPoint() && !categoryType.isSkipComparison();
+        return Objects.equals(categoryType, MockCategoryType.DUBBO_CONSUMER);
     }
 
     @Override
@@ -42,7 +43,7 @@ final class DefaultDependencyMatchKeyBuilderImpl implements MatchKeyBuilder {
             IOUtils.copy(stringReader, output, StandardCharsets.UTF_8);
             stringReader.close();
         } catch (IOException e) {
-            LOGGER.error("Unknown dependency replay result match key build error:{}", e.getMessage(), e);
+            LOGGER.error("DubboConsumer replay result match key build error:{}", e.getMessage(), e);
         }
         return Arrays.asList(messageDigest.digest(), operationBytes);
     }

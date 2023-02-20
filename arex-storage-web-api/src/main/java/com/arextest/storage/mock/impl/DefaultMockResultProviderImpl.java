@@ -160,10 +160,11 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
             byte[] result;
             byte[] mockKeyBytes;
             int mockKeySize = mockKeyList.size();
+            boolean strictMatch = context.getMockStrategy() == MockResultMatchStrategy.STRICT_MATCH;
             for (int i = 0; i < mockKeySize; i++) {
                 mockKeyBytes = mockKeyList.get(i);
                 result = sequenceMockResult(category, recordIdBytes, replayIdBytes, mockKeyBytes, context);
-                if (result != null) {
+                if (strictMatch || result != null) {
                     return result;
                 }
             }
