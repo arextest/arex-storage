@@ -120,7 +120,8 @@ public final class AgentWorkingService {
                 result = mockResultProvider.getRecordResult(recordItem, context);
             }
             if (result == null) {
-                if (MockResultMatchStrategy.BREAK_RECORDED_COUNT == context.getMockStrategy() && context.isLastOfResult()) {
+                if (MockResultMatchStrategy.STRICT_MATCH == context.getMockStrategy() ||
+                        (MockResultMatchStrategy.BREAK_RECORDED_COUNT == context.getMockStrategy() && context.isLastOfResult())) {
                     return ZstdJacksonSerializer.EMPTY_INSTANCE;
                 }
                 mockResultProvider.putReplayResult(recordItem);
@@ -131,6 +132,8 @@ public final class AgentWorkingService {
                 return ZstdJacksonSerializer.EMPTY_INSTANCE;
             }
         }
+        String id = zstdJacksonSerializer.deserialize(result, AREXMocker.class).getId();
+        recordItem.setId(id);
         mockResultProvider.putReplayResult(recordItem);
         LOGGER.info("agent query found result for category:{},record id: {},replay id: {}", category,
                 recordId, replayId);
