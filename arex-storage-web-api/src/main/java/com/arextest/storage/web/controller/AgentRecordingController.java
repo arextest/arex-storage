@@ -1,6 +1,5 @@
 package com.arextest.storage.web.controller;
 
-import com.alibaba.fastjson.JSONObject;
 import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
