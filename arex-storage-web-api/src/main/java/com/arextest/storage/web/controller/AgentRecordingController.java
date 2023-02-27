@@ -65,11 +65,11 @@ public class AgentRecordingController {
                 return agentWorkingService.queryConfigFile(requestType);
             }
             if (StringUtils.isEmpty(requestType.getRecordId())) {
-                LOGGER.warn("agent query recordId empty, {}", JSONObject.toJSONString(category));
+                LOGGER.warn("agent query recordId empty, {}", category);
                 return ZstdJacksonSerializer.EMPTY_INSTANCE;
             }
             if (StringUtils.isEmpty(requestType.getReplayId())) {
-                LOGGER.warn("agent query replayId is empty,{}, recordId:{}", JSONObject.toJSONString(category), requestType.getRecordId());
+                LOGGER.warn("agent query replayId is empty,{}, recordId:{}", category, requestType.getRecordId());
                 return ZstdJacksonSerializer.EMPTY_INSTANCE;
             }
             MDCTracer.addTrace(category, requestType);
@@ -94,7 +94,7 @@ public class AgentRecordingController {
     public Response save(@RequestBody AREXMocker requestType) {
         MockCategoryType category = requestType.getCategoryType();
         if (category == null || StringUtils.isEmpty(category.getName())) {
-            LOGGER.warn("The name of category is empty from agent record save not allowed ,request:{}", JSONObject.toJSONString(requestType));
+            LOGGER.warn("The name of category is empty from agent record save not allowed ,request:{}", requestType);
             return ResponseUtils.parameterInvalidResponse("empty category");
         }
         try {
@@ -105,7 +105,7 @@ public class AgentRecordingController {
                     requestType.getRecordId());
             return ResponseUtils.successResponse(saveResult);
         } catch (Throwable throwable) {
-            LOGGER.error("save record error:{} from category:{},recordId:{}", throwable.getMessage(), JSONObject.toJSONString(category),
+            LOGGER.error("save record error:{} from category:{},recordId:{}", throwable.getMessage(), category,
                     requestType.getRecordId(), throwable);
             return ResponseUtils.exceptionResponse(throwable.getMessage());
         } finally {
