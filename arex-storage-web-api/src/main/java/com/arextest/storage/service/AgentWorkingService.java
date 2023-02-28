@@ -132,8 +132,6 @@ public final class AgentWorkingService {
                 return ZstdJacksonSerializer.EMPTY_INSTANCE;
             }
         }
-        String id = zstdJacksonSerializer.deserialize(result, AREXMocker.class).getId();
-        recordItem.setId(id);
         mockResultProvider.putReplayResult(recordItem);
         LOGGER.info("agent query found result for category:{},record id: {},replay id: {}", category,
                 recordId, replayId);
