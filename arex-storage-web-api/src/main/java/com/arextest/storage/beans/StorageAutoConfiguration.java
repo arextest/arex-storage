@@ -20,7 +20,9 @@ import com.arextest.storage.service.AgentWorkingService;
 import com.arextest.storage.service.AutoDiscoveryEntryPointListener;
 import com.arextest.storage.service.PrepareMockResultService;
 import com.arextest.storage.service.ScheduleReplayingService;
+import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.web.controller.ScheduleReplayQueryController;
+import com.arextest.storage.web.controller.MockSourceEditionController;
 import com.mongodb.client.MongoDatabase;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -108,6 +110,13 @@ public class StorageAutoConfiguration {
     public ScheduleReplayQueryController scheduleReplayQueryController(ScheduleReplayingService scheduleReplayingService,
                                                                        PrepareMockResultService prepareMockResultService) {
         return new ScheduleReplayQueryController(scheduleReplayingService, prepareMockResultService);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(MockSourceEditionController.class)
+    public MockSourceEditionController mockSourceEditionController(MockSourceEditionService editableService,
+                                                                   PrepareMockResultService storageCache) {
+        return new MockSourceEditionController(editableService, storageCache);
     }
 
     @Bean
