@@ -2,6 +2,7 @@ package com.arextest.storage.mock;
 
 import com.arextest.model.mock.Mocker;
 import com.arextest.model.mock.MockCategoryType;
+import org.apache.commons.lang3.tuple.Pair;
 
 import javax.validation.constraints.NotNull;
 import java.util.List;
@@ -15,7 +16,7 @@ public interface MockResultProvider {
 
     <T extends Mocker> boolean putReplayResult(T value);
 
-    byte[] getRecordResult(@NotNull Mocker mockItem,MockResultContext context);
+    Pair<byte[], byte[]> getRecordResult(@NotNull Mocker mockItem, MockResultContext context);
 
     List<byte[]> getRecordResultList(MockCategoryType category, String recordId);
 

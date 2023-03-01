@@ -3,6 +3,7 @@ package com.arextest.storage.service;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
+import com.arextest.storage.cache.CacheKeyUtils;
 import com.arextest.storage.mock.MockResultContext;
 import com.arextest.storage.mock.MockResultMatchStrategy;
 import com.arextest.storage.mock.MockResultProvider;
@@ -15,6 +16,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 import javax.validation.constraints.NotNull;
 import java.util.List;
@@ -112,7 +114,7 @@ public final class AgentWorkingService {
             LOGGER.info("skip main entry mock response,record id:{},replay id:{}", recordId, replayId);
             return zstdJacksonSerializer.serialize(recordItem);
         }
-        byte[] result = mockResultProvider.getRecordResult(recordItem, context);
+        Pair<byte[], byte[]> result = mockResultProvider.getRecordResult(recordItem, context);
         if (result == null) {
             LOGGER.info("fetch replay mock record empty from cache,record id:{},replay id:{}", recordId, replayId);
             boolean reloadResult = prepareMockResultService.preload(category, recordId);
@@ -132,10 +134,14 @@ public final class AgentWorkingService {
                 return ZstdJacksonSerializer.EMPTY_INSTANCE;
             }
         }
+        String id = CacheKeyUtils.fromUtf8Bytes(result.getLeft());
+        if (StringUtils.isNotEmpty(id)) {
+            recordItem.setId(id);
+        }
         mockResultProvider.putReplayResult(recordItem);
         LOGGER.info("agent query found result for category:{},record id: {},replay id: {}", category,
                 recordId, replayId);
-        return result;
+        return result.getRight();
     }
 
     public byte[] queryConfigFile(AREXMocker requestType) {
