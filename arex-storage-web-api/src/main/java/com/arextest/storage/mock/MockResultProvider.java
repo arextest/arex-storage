@@ -16,7 +16,7 @@ public interface MockResultProvider {
 
     <T extends Mocker> boolean putReplayResult(T value);
 
-    Pair<byte[], byte[]> getRecordResult(@NotNull Mocker mockItem, MockResultContext context);
+    byte[] getRecordResult(@NotNull Mocker mockItem, MockResultContext context);
 
     List<byte[]> getRecordResultList(MockCategoryType category, String recordId);
 

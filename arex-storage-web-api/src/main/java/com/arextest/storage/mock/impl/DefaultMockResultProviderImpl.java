@@ -57,7 +57,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
             if (valueRefKey == null) {
                 continue;
             }
-            if (!category.isEntryPoint()) {
+            if (!category.isEntryPoint() && !category.isSkipComparison()) {
                 sequenceIdPut(valueRefKey, value.getId());
             }
             for (int i = 0; i < mockKeyList.size(); i++) {
@@ -147,7 +147,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
      * @return compressed bytes with zstd
      */
     @Override
-    public Pair<byte[], byte[]> getRecordResult(@NotNull Mocker mockItem, MockResultContext context) {
+    public byte[] getRecordResult(@NotNull Mocker mockItem, MockResultContext context) {
         MockCategoryType category = mockItem.getCategoryType();
         String recordId = mockItem.getRecordId();
         String replayId = mockItem.getReplayId();
@@ -162,14 +162,14 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
             }
             final byte[] recordIdBytes = CacheKeyUtils.toUtf8Bytes(recordId);
             final byte[] replayIdBytes = CacheKeyUtils.toUtf8Bytes(replayId);
-            Pair<byte[], byte[]> result;
+            byte[] result;
             byte[] mockKeyBytes;
             int mockKeySize = mockKeyList.size();
             boolean strictMatch = context.getMockStrategy() == MockResultMatchStrategy.STRICT_MATCH;
             for (int i = 0; i < mockKeySize; i++) {
                 mockKeyBytes = mockKeyList.get(i);
-                result = sequenceMockResult(category, recordIdBytes, replayIdBytes, mockKeyBytes, context);
-                if (strictMatch || (result != null && result.getRight() != null)) {
+                result = sequenceMockResult(category, recordIdBytes, replayIdBytes, mockKeyBytes, context, mockItem);
+                if (strictMatch || result != null) {
                     return result;
                 }
             }
@@ -182,8 +182,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
         return null;
     }
 
-    private Pair<byte[], byte[]> sequenceMockResult(MockCategoryType category, final byte[] recordIdBytes, byte[] replayIdBytes,
-                                      final byte[] mockKeyBytes, MockResultContext context) {
+    private byte[] sequenceMockResult(MockCategoryType category, final byte[] recordIdBytes, byte[] replayIdBytes,
+                                      final byte[] mockKeyBytes, MockResultContext context, @NotNull Mocker mockItem) {
         try {
             byte[] sourceKey = CacheKeyUtils.buildRecordKey(category, recordIdBytes, mockKeyBytes);
             int count = resultCount(sourceKey);
@@ -205,7 +205,10 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
             if (valueRefKey != null) {
                 byte[] zstdValue = redisCacheProvider.get(valueRefKey);
                 byte[] id = getSequenceId(valueRefKey);
-                return Pair.of(id, zstdValue);
+                if (zstdValue != null && id != null) {
+                    mockItem.setId(CacheKeyUtils.fromUtf8Bytes(id));
+                }
+                return zstdValue;
             }
         } catch (Throwable throwable) {
             LOGGER.error("from agent's sequence consumeResult error:{} for category:{}",

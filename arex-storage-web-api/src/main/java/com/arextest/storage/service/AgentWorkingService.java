@@ -114,7 +114,7 @@ public final class AgentWorkingService {
             LOGGER.info("skip main entry mock response,record id:{},replay id:{}", recordId, replayId);
             return zstdJacksonSerializer.serialize(recordItem);
         }
-        Pair<byte[], byte[]> result = mockResultProvider.getRecordResult(recordItem, context);
+        byte[] result = mockResultProvider.getRecordResult(recordItem, context);
         if (result == null) {
             LOGGER.info("fetch replay mock record empty from cache,record id:{},replay id:{}", recordId, replayId);
             boolean reloadResult = prepareMockResultService.preload(category, recordId);
@@ -134,14 +134,10 @@ public final class AgentWorkingService {
                 return ZstdJacksonSerializer.EMPTY_INSTANCE;
             }
         }
-        String id = CacheKeyUtils.fromUtf8Bytes(result.getLeft());
-        if (StringUtils.isNotEmpty(id)) {
-            recordItem.setId(id);
-        }
         mockResultProvider.putReplayResult(recordItem);
         LOGGER.info("agent query found result for category:{},record id: {},replay id: {}", category,
                 recordId, replayId);
-        return result.getRight();
+        return result;
     }
 
     public byte[] queryConfigFile(AREXMocker requestType) {
