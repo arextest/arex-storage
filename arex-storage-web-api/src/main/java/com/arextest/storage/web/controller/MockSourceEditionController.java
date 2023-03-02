@@ -94,7 +94,7 @@ public class MockSourceEditionController {
     @PostMapping("/add/{srcProviderName}/")
     @ResponseBody
     public Response add(@PathVariable String srcProviderName, @RequestBody AREXMocker body) {
-        Response response = CheckRequiredParameters(srcProviderName, body);
+        Response response = checkRequiredParameters(srcProviderName, body);
         if (response != null) {
             return response;
         }
@@ -130,7 +130,7 @@ public class MockSourceEditionController {
     @PostMapping("/update/")
     @ResponseBody
     public Response update(@RequestHeader String srcProviderName, @RequestBody AREXMocker body) {
-        Response response = CheckRequiredParameters(srcProviderName, body);
+        Response response = checkRequiredParameters(srcProviderName, body);
         if (response != null) {
             return response;
         }
@@ -149,7 +149,7 @@ public class MockSourceEditionController {
         }
     }
 
-    private Response CheckRequiredParameters(String srcProviderName, AREXMocker body) {
+    private Response checkRequiredParameters(String srcProviderName, AREXMocker body) {
         MockCategoryType category = body.getCategoryType();
         if (category == null) {
             LOGGER.warn("update record the category not found {}", srcProviderName);
