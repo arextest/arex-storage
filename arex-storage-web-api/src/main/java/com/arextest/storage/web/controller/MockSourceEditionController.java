@@ -94,7 +94,7 @@ public class MockSourceEditionController {
     @PostMapping("/add/{srcProviderName}/")
     @ResponseBody
     public Response add(@PathVariable String srcProviderName, @RequestBody AREXMocker body) {
-        Response response = checkError(srcProviderName, body);
+        Response response = CheckRequiredParameters(srcProviderName, body);
         if (response != null) {
             return response;
         }
@@ -130,7 +130,7 @@ public class MockSourceEditionController {
     @PostMapping("/update/")
     @ResponseBody
     public Response update(@RequestHeader String srcProviderName, @RequestBody AREXMocker body) {
-        Response response = checkError(srcProviderName, body);
+        Response response = CheckRequiredParameters(srcProviderName, body);
         if (response != null) {
             return response;
         }
@@ -149,7 +149,7 @@ public class MockSourceEditionController {
         }
     }
 
-    private Response checkError(String srcProviderName, AREXMocker body) {
+    private Response CheckRequiredParameters(String srcProviderName, AREXMocker body) {
         MockCategoryType category = body.getCategoryType();
         if (category == null) {
             LOGGER.warn("update record the category not found {}", srcProviderName);
@@ -162,10 +162,6 @@ public class MockSourceEditionController {
         if (StringUtils.isBlank(body.getRecordId())) {
             LOGGER.warn("update record the recordId is empty {}", body);
             return ResponseUtils.emptyRecordIdResponse();
-        }
-        if (StringUtils.isBlank(body.getId())) {
-            LOGGER.warn("update record the uniqueId is empty {}", body);
-            return ResponseUtils.parameterInvalidResponse("request id is empty");
         }
         return null;
     }
