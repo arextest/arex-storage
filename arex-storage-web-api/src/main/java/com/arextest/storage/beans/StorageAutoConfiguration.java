@@ -15,11 +15,8 @@ import com.arextest.storage.repository.ServiceRepository;
 import com.arextest.storage.repository.impl.mongo.AREXMockerMongoRepositoryProvider;
 import com.arextest.storage.repository.impl.mongo.MongoDbUtils;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
-import com.arextest.storage.service.AgentWorkingListener;
-import com.arextest.storage.service.AgentWorkingService;
-import com.arextest.storage.service.AutoDiscoveryEntryPointListener;
-import com.arextest.storage.service.PrepareMockResultService;
-import com.arextest.storage.service.ScheduleReplayingService;
+import com.arextest.storage.service.*;
+import com.arextest.storage.web.controller.MockSourceEditionController;
 import com.arextest.storage.web.controller.ScheduleReplayQueryController;
 import com.mongodb.client.MongoDatabase;
 import org.apache.commons.collections4.CollectionUtils;
@@ -115,6 +112,13 @@ public class StorageAutoConfiguration {
     public ScheduleReplayingService scheduleReplayingService(MockResultProvider mockResultProvider,
                                                              RepositoryProviderFactory repositoryProviderFactory) {
         return new ScheduleReplayingService(mockResultProvider, repositoryProviderFactory);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(MockSourceEditionController.class)
+    public MockSourceEditionController mockSourceEditionController(MockSourceEditionService editableService,
+                                                                   PrepareMockResultService storageCache) {
+        return new MockSourceEditionController(editableService, storageCache);
     }
 
     @Bean
