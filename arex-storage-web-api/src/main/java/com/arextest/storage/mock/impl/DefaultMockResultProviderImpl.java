@@ -56,8 +56,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
             if (valueRefKey == null) {
                 continue;
             }
-            if (!category.isEntryPoint() && !category.isSkipComparison()) {
-                sequenceIdPut(valueRefKey, value.getId());
+            if (shouldUseIdOfInstanceToMockResult(category)) {
+                PutRecordInstancId(valueRefKey, value.getId());
             }
             for (int i = 0; i < mockKeyList.size(); i++) {
                 byte[] mockKeyBytes = mockKeyList.get(i);
@@ -167,8 +167,12 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
             boolean strictMatch = context.getMockStrategy() == MockResultMatchStrategy.STRICT_MATCH;
             for (int i = 0; i < mockKeySize; i++) {
                 mockKeyBytes = mockKeyList.get(i);
-                result = sequenceMockResult(category, recordIdBytes, replayIdBytes, mockKeyBytes, context, mockItem);
+                result = sequenceMockResult(category, recordIdBytes, replayIdBytes, mockKeyBytes, context);
                 if (strictMatch || result != null) {
+                    if (shouldUseIdOfInstanceToMockResult(category)) {
+                        byte[] id = getIdOfRecordInstance(context.getValueRefKey());
+                        mockItem.setId(CacheKeyUtils.fromUtf8Bytes(id));
+                    }
                     return result;
                 }
             }
@@ -181,8 +185,12 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
         return null;
     }
 
+    private boolean shouldUseIdOfInstanceToMockResult(MockCategoryType category) {
+        return !category.isEntryPoint() && !category.isSkipComparison();
+    }
+
     private byte[] sequenceMockResult(MockCategoryType category, final byte[] recordIdBytes, byte[] replayIdBytes,
-                                      final byte[] mockKeyBytes, MockResultContext context, @NotNull Mocker mockItem) {
+                                      final byte[] mockKeyBytes, MockResultContext context) {
         try {
             byte[] sourceKey = CacheKeyUtils.buildRecordKey(category, recordIdBytes, mockKeyBytes);
             int count = resultCount(sourceKey);
@@ -202,12 +210,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
             byte[] consumeSequenceKey = createSequenceKey(sourceKey, sequence);
             byte[] valueRefKey = redisCacheProvider.get(consumeSequenceKey);
             if (valueRefKey != null) {
-                byte[] zstdValue = redisCacheProvider.get(valueRefKey);
-                byte[] id = getSequenceId(valueRefKey);
-                if (zstdValue != null && id != null) {
-                    mockItem.setId(CacheKeyUtils.fromUtf8Bytes(id));
-                }
-                return zstdValue;
+                context.setValueRefKey(valueRefKey);
+                return redisCacheProvider.get(valueRefKey);
             }
         } catch (Throwable throwable) {
             LOGGER.error("from agent's sequence consumeResult error:{} for category:{}",
@@ -268,21 +272,21 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
         return CacheKeyUtils.merge(src, sequence);
     }
 
-    private byte[] sequenceIdPut(byte[] valueRefKey, String id) {
-        final byte[] sequenceIdKey = createSequenceIdKey(valueRefKey);
-        boolean retResult = redisCacheProvider.put(sequenceIdKey, cacheExpiredSeconds, CacheKeyUtils.toUtf8Bytes(id));
+    private byte[] PutRecordInstancId(byte[] valueRefKey, String id) {
+        final byte[] recordInstancIdKey = createRecordInstancIdKey(valueRefKey);
+        boolean retResult = redisCacheProvider.put(recordInstancIdKey, cacheExpiredSeconds, CacheKeyUtils.toUtf8Bytes(id));
         if (retResult) {
-            return sequenceIdKey;
+            return recordInstancIdKey;
         }
         return null;
     }
 
-    private byte[] getSequenceId(byte[] valueRefKey) {
-        final byte[] sequenceIdKey = createSequenceIdKey(valueRefKey);
-        return redisCacheProvider.get(sequenceIdKey);
+    private byte[] getIdOfRecordInstance(byte[] valueRefKey) {
+        final byte[] recordInstancIdKey = createRecordInstancIdKey(valueRefKey);
+        return redisCacheProvider.get(recordInstancIdKey);
     }
 
-    private byte[] createSequenceIdKey(byte[] src) {
+    private byte[] createRecordInstancIdKey(byte[] src) {
         return CacheKeyUtils.merge(src, DEFAULT_ID_CODE);
     }
 }

@@ -10,6 +10,10 @@ public class MockResultContext {
     @Getter
     private final MockResultMatchStrategy mockStrategy;
 
+    @Setter
+    @Getter
+    private byte[] valueRefKey;
+
     public MockResultContext(MockResultMatchStrategy mockStrategy) {
         this.mockStrategy = mockStrategy;
     }
