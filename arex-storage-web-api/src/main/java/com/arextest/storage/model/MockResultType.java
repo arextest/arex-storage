@@ -25,7 +25,12 @@ public enum MockResultType {
     /**
      * a mapping relation between recordId and replayId
      */
-    RECORD_REPLAY_MAPPING(3);
+    RECORD_REPLAY_MAPPING(3),
+
+    /**
+     * the id of record mock
+     */
+    RECORD_INSTANCE_ID(4);
 
 
     @Getter

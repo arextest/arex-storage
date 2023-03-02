@@ -9,6 +9,7 @@ import com.arextest.storage.mock.MatchKeyFactory;
 import com.arextest.storage.mock.MockResultContext;
 import com.arextest.storage.mock.MockResultProvider;
 import com.arextest.storage.mock.MockResultMatchStrategy;
+import com.arextest.storage.model.MockResultType;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -34,7 +35,6 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     private long cacheExpiredSeconds;
     private static final int EMPTY_SIZE = 0;
     private static final int SINGLE_RECORD_SIZE = 1;
-    private static final int DEFAULT_ID_CODE = 1;
     @Resource
     private CacheProvider redisCacheProvider;
     @Resource
@@ -57,7 +57,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
                 continue;
             }
             if (shouldUseIdOfInstanceToMockResult(category)) {
-                putRecordInstancId(valueRefKey, value.getId());
+                putRecordInstanceId(valueRefKey, value.getId());
             }
             for (int i = 0; i < mockKeyList.size(); i++) {
                 byte[] mockKeyBytes = mockKeyList.get(i);
@@ -272,21 +272,17 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
         return CacheKeyUtils.merge(src, sequence);
     }
 
-    private byte[] putRecordInstancId(byte[] valueRefKey, String id) {
-        final byte[] recordInstancIdKey = createRecordInstancIdKey(valueRefKey);
-        boolean retResult = redisCacheProvider.put(recordInstancIdKey, cacheExpiredSeconds, CacheKeyUtils.toUtf8Bytes(id));
-        if (retResult) {
-            return recordInstancIdKey;
-        }
-        return null;
+    private void putRecordInstanceId(byte[] valueRefKey, String id) {
+        final byte[] recordInstanceIdKey = createRecordInstanceIdKey(valueRefKey);
+        redisCacheProvider.put(recordInstanceIdKey, cacheExpiredSeconds, CacheKeyUtils.toUtf8Bytes(id));
     }
 
     private byte[] getIdOfRecordInstance(byte[] valueRefKey) {
-        final byte[] recordInstancIdKey = createRecordInstancIdKey(valueRefKey);
-        return redisCacheProvider.get(recordInstancIdKey);
+        final byte[] recordInstanceIdKey = createRecordInstanceIdKey(valueRefKey);
+        return redisCacheProvider.get(recordInstanceIdKey);
     }
 
-    private byte[] createRecordInstancIdKey(byte[] src) {
-        return CacheKeyUtils.merge(src, DEFAULT_ID_CODE);
+    private byte[] createRecordInstanceIdKey(byte[] src) {
+        return CacheKeyUtils.merge(src, MockResultType.RECORD_INSTANCE_ID.getCodeValue());
     }
 }
