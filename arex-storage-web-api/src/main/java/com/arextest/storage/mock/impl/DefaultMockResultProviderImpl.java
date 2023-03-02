@@ -57,7 +57,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
                 continue;
             }
             if (shouldUseIdOfInstanceToMockResult(category)) {
-                PutRecordInstancId(valueRefKey, value.getId());
+                putRecordInstancId(valueRefKey, value.getId());
             }
             for (int i = 0; i < mockKeyList.size(); i++) {
                 byte[] mockKeyBytes = mockKeyList.get(i);
@@ -272,7 +272,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
         return CacheKeyUtils.merge(src, sequence);
     }
 
-    private byte[] PutRecordInstancId(byte[] valueRefKey, String id) {
+    private byte[] putRecordInstancId(byte[] valueRefKey, String id) {
         final byte[] recordInstancIdKey = createRecordInstancIdKey(valueRefKey);
         boolean retResult = redisCacheProvider.put(recordInstancIdKey, cacheExpiredSeconds, CacheKeyUtils.toUtf8Bytes(id));
         if (retResult) {
