@@ -9,6 +9,7 @@ import com.arextest.storage.mock.MatchKeyFactory;
 import com.arextest.storage.mock.MockResultContext;
 import com.arextest.storage.mock.MockResultProvider;
 import com.arextest.storage.mock.MockResultMatchStrategy;
+import com.arextest.storage.model.MockResultType;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -55,6 +56,9 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
             if (valueRefKey == null) {
                 continue;
             }
+            if (shouldUseIdOfInstanceToMockResult(category)) {
+                putRecordInstanceId(valueRefKey, value.getId());
+            }
             for (int i = 0; i < mockKeyList.size(); i++) {
                 byte[] mockKeyBytes = mockKeyList.get(i);
                 byte[] key = CacheKeyUtils.buildRecordKey(category, recordIdBytes, mockKeyBytes);
@@ -66,6 +70,10 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
         }
         LOGGER.info("put record result to cache size:{} for category:{},record id:{}", size, category, recordId);
         return size > EMPTY_SIZE;
+    }
+
+    private boolean shouldUseIdOfInstanceToMockResult(MockCategoryType category) {
+        return !category.isEntryPoint() && !category.isSkipComparison();
     }
 
     @Override
@@ -160,10 +168,15 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
             byte[] result;
             byte[] mockKeyBytes;
             int mockKeySize = mockKeyList.size();
+            boolean strictMatch = context.getMockStrategy() == MockResultMatchStrategy.STRICT_MATCH;
             for (int i = 0; i < mockKeySize; i++) {
                 mockKeyBytes = mockKeyList.get(i);
                 result = sequenceMockResult(category, recordIdBytes, replayIdBytes, mockKeyBytes, context);
-                if (result != null) {
+                if (strictMatch || result != null) {
+                    if (shouldUseIdOfInstanceToMockResult(category)) {
+                        byte[] id = getIdOfRecordInstance(context.getValueRefKey());
+                        mockItem.setId(CacheKeyUtils.fromUtf8Bytes(id));
+                    }
                     return result;
                 }
             }
@@ -197,6 +210,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
             byte[] consumeSequenceKey = createSequenceKey(sourceKey, sequence);
             byte[] valueRefKey = redisCacheProvider.get(consumeSequenceKey);
             if (valueRefKey != null) {
+                context.setValueRefKey(valueRefKey);
                 return redisCacheProvider.get(valueRefKey);
             }
         } catch (Throwable throwable) {
@@ -256,5 +270,19 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
 
     private byte[] createSequenceKey(byte[] src, int sequence) {
         return CacheKeyUtils.merge(src, sequence);
+    }
+
+    private void putRecordInstanceId(byte[] valueRefKey, String id) {
+        final byte[] recordInstanceIdKey = createRecordInstanceIdKey(valueRefKey);
+        redisCacheProvider.put(recordInstanceIdKey, cacheExpiredSeconds, CacheKeyUtils.toUtf8Bytes(id));
+    }
+
+    private byte[] getIdOfRecordInstance(byte[] valueRefKey) {
+        final byte[] recordInstanceIdKey = createRecordInstanceIdKey(valueRefKey);
+        return redisCacheProvider.get(recordInstanceIdKey);
+    }
+
+    private byte[] createRecordInstanceIdKey(byte[] src) {
+        return CacheKeyUtils.merge(src, MockResultType.RECORD_INSTANCE_ID.getCodeValue());
     }
 }
