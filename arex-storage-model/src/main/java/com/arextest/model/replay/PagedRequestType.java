@@ -14,7 +14,7 @@ public class PagedRequestType {
     private Integer env;
     private int pageSize;
     private String operation;
-    private String agentRecordVersion;
+    private String recordVersion;
     private MockCategoryType category;
     private String sourceProvider;
 }

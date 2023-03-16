@@ -41,6 +41,10 @@ public interface Mocker {
 
     Target getTargetResponse();
 
+    String getRecordVersion();
+
+    void setRecordVersion(String recordVersion);
+
 
     @Getter
     @Setter

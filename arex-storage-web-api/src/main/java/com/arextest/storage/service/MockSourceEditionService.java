@@ -86,7 +86,7 @@ public class MockSourceEditionService {
         Iterable<Mocker> srcItemIterable;
         Set<MockCategoryType> categoryTypes = providerFactory.getCategoryTypes();
         for (MockCategoryType categoryType : categoryTypes) {
-            srcItemIterable = srcProvider.queryRecordList(categoryType, srcRecordId);
+            srcItemIterable = srcProvider.queryRecordList(categoryType, srcRecordId, null);
             if (srcItemIterable == null) {
                 continue;
             }

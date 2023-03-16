@@ -38,7 +38,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     private static final String OPERATION_COLUMN_NAME = "operationName";
     private static final String COLLECTION_PREFIX = "Mocker";
 
-    private static final String AGENT_RECORD_VERSION_COLUMN_NAME = "agentVersion";
+    private static final String AGENT_RECORD_VERSION_COLUMN_NAME = "recordVersion";
     private final static Bson CREATE_TIME_ASCENDING_SORT = Sorts.ascending(CREATE_TIME_COLUMN_NAME);
     private final static Bson CREATE_TIME_DESCENDING_SORT = Sorts.descending(CREATE_TIME_COLUMN_NAME);
 
@@ -65,11 +65,11 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     }
 
     @Override
-    public Iterable<AREXMocker> queryRecordList(MockCategoryType category, String recordId) {
+    public Iterable<AREXMocker> queryRecordList(MockCategoryType category, String recordId, String recordVersion) {
         MongoCollection<AREXMocker> collectionSource = createOrGetCollection(category);
-        Bson recordIdFilter = buildRecordIdFilter(category, recordId);
+        List<Bson> bsonList = buildRecordFilterWithVersion(category, recordId, recordVersion);
         Iterable<AREXMocker> iterable = collectionSource
-                .find(recordIdFilter)
+                .find(Filters.and(bsonList))
                 .sort(CREATE_TIME_ASCENDING_SORT);
         return new AttachmentCategoryIterable(category, iterable);
     }
@@ -173,6 +173,14 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         return Filters.eq(RECORD_ID_COLUMN_NAME, value);
     }
 
+    private List<Bson> buildRecordFilterWithVersion(MockCategoryType category, String recordId, String recordVersion) {
+        List<Bson> bsonList = new ArrayList<>(DEFAULT_BSON_WHERE_SIZE);
+        Bson recordIdFilter = buildRecordIdFilter(category, recordId);
+        bsonList.add(recordIdFilter);
+        bsonList.add(Filters.eq(AGENT_RECORD_VERSION_COLUMN_NAME, recordVersion));
+        return bsonList;
+    }
+
     private List<Bson> buildRecordFilters(MockCategoryType categoryType, @NotNull Mocker mocker) {
         List<Bson> filters = this.buildAppIdWithOperationFilters(mocker.getAppId(),
                 mocker.getOperationName());
@@ -192,11 +200,8 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         }
         item = buildTimeRangeFilter(rangeRequestType.getBeginTime(), rangeRequestType.getEndTime());
         filters.add(item);
-        String filterValue = rangeRequestType.getAgentRecordVersion();
-        if (StringUtils.isNotEmpty(filterValue)) {
-            item = Filters.eq(AGENT_RECORD_VERSION_COLUMN_NAME, filterValue);
-            filters.add(item);
-        }
+        item = Filters.eq(AGENT_RECORD_VERSION_COLUMN_NAME, rangeRequestType.getRecordVersion());
+        filters.add(item);
         return filters;
     }
 

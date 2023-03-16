@@ -118,7 +118,6 @@ final class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
             keys.add(tableWithParametersMatchKey);
         }
         keys.add(tableMatchKey);
-        keys.add(dbNameMatchKey);
         // 5,operationName, as a fallback
         keys.add(operationBytes);
         return keys;

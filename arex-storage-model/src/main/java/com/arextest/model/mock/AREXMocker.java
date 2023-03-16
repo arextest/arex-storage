@@ -40,4 +40,8 @@ public class AREXMocker implements Mocker {
      * for example: pattern of servlet web api
      */
     private String operationName;
+    /**
+     * record the version of recorded data
+     */
+    private String recordVersion;
 }

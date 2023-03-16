@@ -111,6 +111,10 @@ public class ScheduleReplayQueryController {
         try {
             PagedResponseType responseType = new PagedResponseType();
             List<AREXMocker> records = scheduleReplayingService.queryByRange(requestType);
+            if (CollectionUtils.isEmpty(records)) {
+                requestType.setRecordVersion(null);
+                records = scheduleReplayingService.queryByRange(requestType);
+            }
             responseType.setRecords(records);
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
@@ -158,6 +162,10 @@ public class ScheduleReplayQueryController {
         try {
             QueryCaseCountResponseType responseType = new QueryCaseCountResponseType();
             long countResult = scheduleReplayingService.countByRange(requestType);
+            if (countResult == 0l) {
+                requestType.setRecordVersion(null);
+                countResult = scheduleReplayingService.countByRange(requestType);
+            }
             responseType.setCount(countResult);
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
@@ -203,6 +211,8 @@ public class ScheduleReplayQueryController {
             List<AREXMocker> allReadableResult = scheduleReplayingService.queryRecordList(requestType);
             if (CollectionUtils.isEmpty(allReadableResult)) {
                 LOGGER.info("could not found any resources for recordId: {} ,request: {}", recordId, requestType);
+                requestType.setRecordVersion(null);
+                allReadableResult = scheduleReplayingService.queryRecordList(requestType);
             }
             responseType.setRecordResult(allReadableResult);
             return ResponseUtils.successResponse(responseType);
