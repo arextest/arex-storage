@@ -24,7 +24,7 @@ final class DefaultDependencyMatchKeyBuilderImpl implements MatchKeyBuilder {
 
     @Override
     public boolean isSupported(MockCategoryType categoryType) {
-        return !categoryType.isEntryPoint() && !MockCategoryType.DEFAULTS.contains(categoryType);
+        return !categoryType.isEntryPoint() && !categoryType.isSkipComparison() && !MockCategoryType.DEFAULTS.contains(categoryType);
     }
 
     @Override
