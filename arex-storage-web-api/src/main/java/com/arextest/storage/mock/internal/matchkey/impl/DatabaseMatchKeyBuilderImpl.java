@@ -104,6 +104,7 @@ final class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
         md5Digest.update(sqlTextBytes);
         md5Digest.update(sqlParameterBytes);
         md5Digest.update(dbNameBytes);
+        md5Digest.update(operationBytes);
         // 1,db+sql+parameterNameWithValue+operationName
         byte[] fullMatchKey = md5Digest.digest();
         keys.add(fullMatchKey);
@@ -118,6 +119,7 @@ final class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
             keys.add(tableWithParametersMatchKey);
         }
         keys.add(tableMatchKey);
+        keys.add(dbNameMatchKey);
         // 5,operationName, as a fallback
         keys.add(operationBytes);
         return keys;
