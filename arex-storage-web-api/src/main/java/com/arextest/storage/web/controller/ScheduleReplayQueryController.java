@@ -45,8 +45,7 @@ public class ScheduleReplayQueryController {
 
     private final PrepareMockResultService prepareMockResultService;
 
-    public ScheduleReplayQueryController(ScheduleReplayingService scheduleReplayingService,
-            PrepareMockResultService prepareMockResultService) {
+    public ScheduleReplayQueryController(ScheduleReplayingService scheduleReplayingService, PrepareMockResultService prepareMockResultService) {
         this.scheduleReplayingService = scheduleReplayingService;
         this.prepareMockResultService = prepareMockResultService;
     }
@@ -75,16 +74,12 @@ public class ScheduleReplayQueryController {
         try {
             MDCTracer.addRecordId(recordId);
             MDCTracer.addReplayId(replayResultId);
-            List<ListResultHolder> resultHolderList =
-                    scheduleReplayingService.queryReplayResult(recordId, replayResultId);
+            List<ListResultHolder> resultHolderList = scheduleReplayingService.queryReplayResult(recordId, replayResultId);
             QueryReplayResultResponseType responseType = new QueryReplayResultResponseType();
             responseType.setResultHolderList(resultHolderList);
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
-            LOGGER.error("replayResult error:{} ,recordId:{} ,replayResultId:{}",
-                    throwable.getMessage(),
-                    recordId,
-                    replayResultId);
+            LOGGER.error("replayResult error:{} ,recordId:{} ,replayResultId:{}", throwable.getMessage(), recordId, replayResultId);
             return ResponseUtils.exceptionResponse(throwable.getMessage());
         } finally {
             MDCTracer.clear();
@@ -111,10 +106,6 @@ public class ScheduleReplayQueryController {
         try {
             PagedResponseType responseType = new PagedResponseType();
             List<AREXMocker> records = scheduleReplayingService.queryByRange(requestType);
-            if (CollectionUtils.isEmpty(records)) {
-                requestType.setRecordVersion(null);
-                records = scheduleReplayingService.queryByRange(requestType);
-            }
             responseType.setRecords(records);
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
@@ -162,10 +153,6 @@ public class ScheduleReplayQueryController {
         try {
             QueryCaseCountResponseType responseType = new QueryCaseCountResponseType();
             long countResult = scheduleReplayingService.countByRange(requestType);
-            if (countResult == 0l) {
-                requestType.setRecordVersion(null);
-                countResult = scheduleReplayingService.countByRange(requestType);
-            }
             responseType.setCount(countResult);
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
@@ -178,9 +165,7 @@ public class ScheduleReplayQueryController {
 
     @GetMapping(value = "/viewRecord/")
     @ResponseBody
-    public Response viewRecord(String recordId,
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false, defaultValue = ProviderNames.DEFAULT) String srcProvider) {
+    public Response viewRecord(String recordId, @RequestParam(required = false) String category, @RequestParam(required = false, defaultValue = ProviderNames.DEFAULT) String srcProvider) {
         ViewRecordRequestType recordRequestType = new ViewRecordRequestType();
         recordRequestType.setRecordId(recordId);
         recordRequestType.setSourceProvider(srcProvider);
@@ -211,8 +196,6 @@ public class ScheduleReplayQueryController {
             List<AREXMocker> allReadableResult = scheduleReplayingService.queryRecordList(requestType);
             if (CollectionUtils.isEmpty(allReadableResult)) {
                 LOGGER.info("could not found any resources for recordId: {} ,request: {}", recordId, requestType);
-                requestType.setRecordVersion(null);
-                allReadableResult = scheduleReplayingService.queryRecordList(requestType);
             }
             responseType.setRecordResult(allReadableResult);
             return ResponseUtils.successResponse(responseType);
@@ -283,8 +266,6 @@ public class ScheduleReplayQueryController {
     }
 
     private Response toResponse(boolean actionResult) {
-        return actionResult ?
-                ResponseUtils.successResponse(new QueryMockCacheResponseType()) :
-                ResponseUtils.resourceNotFoundResponse();
+        return actionResult ? ResponseUtils.successResponse(new QueryMockCacheResponseType()) : ResponseUtils.resourceNotFoundResponse();
     }
 }

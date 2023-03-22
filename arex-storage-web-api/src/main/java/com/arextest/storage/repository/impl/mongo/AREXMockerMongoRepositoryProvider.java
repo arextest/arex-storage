@@ -65,11 +65,11 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     }
 
     @Override
-    public Iterable<AREXMocker> queryRecordList(MockCategoryType category, String recordId, String recordVersion) {
+    public Iterable<AREXMocker> queryRecordList(MockCategoryType category, String recordId) {
         MongoCollection<AREXMocker> collectionSource = createOrGetCollection(category);
-        List<Bson> bsonList = buildRecordFilterWithVersion(category, recordId, recordVersion);
+        Bson recordIdFilter = buildRecordIdFilter(category, recordId);
         Iterable<AREXMocker> iterable = collectionSource
-                .find(Filters.and(bsonList))
+                .find(recordIdFilter)
                 .sort(CREATE_TIME_ASCENDING_SORT);
         return new AttachmentCategoryIterable(category, iterable);
     }
@@ -90,11 +90,22 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     public Iterable<AREXMocker> queryByRange(PagedRequestType pagedRequestType) {
         MockCategoryType categoryType = pagedRequestType.getCategory();
         MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
+        AREXMocker item = getLastRecordVersionMocker(pagedRequestType, collectionSource);
+        String recordVersion = item == null ? null : item.getRecordVersion();
         Iterable<AREXMocker> iterable = collectionSource
-                .find(Filters.and(buildReadRangeFilters(pagedRequestType)))
+                .find(Filters.and(withRecordVersionFilters(pagedRequestType, recordVersion)))
                 .sort(CREATE_TIME_ASCENDING_SORT)
                 .limit(Math.min(pagedRequestType.getPageSize(), DEFAULT_MAX_LIMIT_SIZE));
         return new AttachmentCategoryIterable(categoryType, iterable);
+    }
+
+    private AREXMocker getLastRecordVersionMocker(PagedRequestType pagedRequestType, MongoCollection<AREXMocker> collectionSource) {
+        AREXMocker item = collectionSource
+                .find(Filters.and(buildReadRangeFilters(pagedRequestType)))
+                .sort(CREATE_TIME_DESCENDING_SORT)
+                .limit(DEFAULT_MIN_LIMIT_SIZE)
+                .first();
+        return item;
     }
 
     @Override
@@ -173,14 +184,6 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         return Filters.eq(RECORD_ID_COLUMN_NAME, value);
     }
 
-    private List<Bson> buildRecordFilterWithVersion(MockCategoryType category, String recordId, String recordVersion) {
-        List<Bson> bsonList = new ArrayList<>(DEFAULT_BSON_WHERE_SIZE);
-        Bson recordIdFilter = buildRecordIdFilter(category, recordId);
-        bsonList.add(recordIdFilter);
-        bsonList.add(Filters.eq(AGENT_RECORD_VERSION_COLUMN_NAME, recordVersion));
-        return bsonList;
-    }
-
     private List<Bson> buildRecordFilters(MockCategoryType categoryType, @NotNull Mocker mocker) {
         List<Bson> filters = this.buildAppIdWithOperationFilters(mocker.getAppId(),
                 mocker.getOperationName());
@@ -200,9 +203,16 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         }
         item = buildTimeRangeFilter(rangeRequestType.getBeginTime(), rangeRequestType.getEndTime());
         filters.add(item);
-        item = Filters.eq(AGENT_RECORD_VERSION_COLUMN_NAME, rangeRequestType.getRecordVersion());
-        filters.add(item);
+
         return filters;
+    }
+
+    private List<Bson> withRecordVersionFilters(@NotNull PagedRequestType rangeRequestType, String recordVersion) {
+        List<Bson> bsons = buildReadRangeFilters(rangeRequestType);
+        if (StringUtils.isNotEmpty(recordVersion)) {
+            bsons.add(Filters.eq(AGENT_RECORD_VERSION_COLUMN_NAME, recordVersion));
+        }
+        return bsons;
     }
 
     private Bson buildTimeRangeFilter(long beginTime, long endTime) {

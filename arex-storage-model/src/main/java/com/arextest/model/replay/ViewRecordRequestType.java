@@ -13,5 +13,4 @@ public class ViewRecordRequestType {
     private String recordId;
     private String sourceProvider;
     private String categoryType;
-    private String recordVersion;
 }

@@ -53,7 +53,7 @@ public final class PrepareMockResultService {
             return true;
         }
         Iterable<? extends Mocker> iterable;
-        iterable = repositoryReader.queryRecordList(categoryType, recordId, null);
+        iterable = repositoryReader.queryRecordList(categoryType, recordId);
         if (iterable == null) {
             return true;
         }

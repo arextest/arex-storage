@@ -77,19 +77,18 @@ public class ScheduleReplayingService {
     public List<AREXMocker> queryRecordList(ViewRecordRequestType viewRecordRequestType) {
         String sourceProvider = viewRecordRequestType.getSourceProvider();
         String recordId = viewRecordRequestType.getRecordId();
-        String recordVersion = viewRecordRequestType.getRecordVersion();
         RepositoryReader<AREXMocker> repositoryReader = repositoryProviderFactory.findProvider(sourceProvider);
         if (repositoryReader == null) {
             return Collections.emptyList();
         }
         MockCategoryType categoryType = repositoryProviderFactory.findCategory(viewRecordRequestType.getCategoryType());
         if (categoryType != null) {
-            return new IterableListWrapper<>(repositoryReader.queryRecordList(categoryType, recordId, recordVersion));
+            return new IterableListWrapper<>(repositoryReader.queryRecordList(categoryType, recordId));
         }
         List<AREXMocker> readableResult = new LinkedList<>();
         for (MockCategoryType category : repositoryProviderFactory.getCategoryTypes()) {
             MDCTracer.addCategory(category);
-            Iterable<AREXMocker> recordList = repositoryReader.queryRecordList(category, recordId, recordVersion);
+            Iterable<AREXMocker> recordList = repositoryReader.queryRecordList(category, recordId);
             if (recordList == null) {
                 continue;
             }
