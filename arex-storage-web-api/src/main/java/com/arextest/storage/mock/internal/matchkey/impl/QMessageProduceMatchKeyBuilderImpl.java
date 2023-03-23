@@ -22,7 +22,7 @@ import java.util.Objects;
 
 @Component
 @Slf4j
-@Order(0)
+@Order(20)
 final class QMessageProduceMatchKeyBuilderImpl implements MatchKeyBuilder {
 
     @Override

@@ -23,7 +23,7 @@ import java.util.Objects;
 
 @Component
 @Slf4j
-@Order(2)
+@Order(15)
 final class HttpClientMatchKeyBuilderImpl implements MatchKeyBuilder {
 
     @Override

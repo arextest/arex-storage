@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Objects;
 
 @Component
-@Order(3)
+@Order(10)
 final class DynamicClassMatchKeyBuilderImpl implements MatchKeyBuilder {
 
     @Override

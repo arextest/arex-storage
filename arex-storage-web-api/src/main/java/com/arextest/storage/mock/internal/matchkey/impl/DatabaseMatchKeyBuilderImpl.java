@@ -36,7 +36,7 @@ import java.util.Objects;
  */
 @Slf4j
 @Component
-@Order(1)
+@Order(0)
 final class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
     private final ObjectMapper objectMapper;
 

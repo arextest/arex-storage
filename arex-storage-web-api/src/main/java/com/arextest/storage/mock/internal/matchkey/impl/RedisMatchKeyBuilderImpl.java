@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Objects;
 
 @Component
-@Order(4)
+@Order(25)
 final class RedisMatchKeyBuilderImpl implements MatchKeyBuilder {
 
     @Override

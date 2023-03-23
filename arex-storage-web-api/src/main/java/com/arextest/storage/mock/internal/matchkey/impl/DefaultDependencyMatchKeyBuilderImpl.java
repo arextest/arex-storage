@@ -21,7 +21,7 @@ import java.util.List;
 
 @Component
 @Slf4j
-@Order(6)
+@Order()
 final class DefaultDependencyMatchKeyBuilderImpl implements MatchKeyBuilder {
 
     @Override
