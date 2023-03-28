@@ -111,7 +111,9 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     @Override
     public long countByRange(PagedRequestType rangeRequestType) {
         MongoCollection<AREXMocker> collectionSource = createOrGetCollection(rangeRequestType.getCategory());
-        return collectionSource.countDocuments(Filters.and(buildReadRangeFilters(rangeRequestType)));
+        AREXMocker item = getLastRecordVersionMocker(rangeRequestType, collectionSource);
+        String recordVersion = item == null ? null : item.getRecordVersion();
+        return collectionSource.countDocuments(Filters.and(withRecordVersionFilters(rangeRequestType, recordVersion)));
     }
 
 
