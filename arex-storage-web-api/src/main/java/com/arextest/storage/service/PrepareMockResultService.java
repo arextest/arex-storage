@@ -9,6 +9,8 @@ import com.arextest.storage.trace.MDCTracer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /**
  * As for improve performance goal,
  * The schedule send replay case before,should be call prepare action,touch all dependency to cached.
@@ -39,13 +41,13 @@ public final class PrepareMockResultService {
     }
 
     boolean preload(MockCategoryType category, String recordId) {
-        // try again load by defaultProvider
-        return this.preload(providerFactory.defaultProvider(), category, recordId);
+        // try again load by defaultProvider and pinnedProvider
+        return this.preload(providerFactory.getRepositoryProviderList(), category, recordId);
     }
 
     private boolean preload(RepositoryProvider<? extends Mocker> repositoryReader, MockCategoryType categoryType, String recordId) {
         if (repositoryReader == null) {
-            return true;
+            return false;
         }
         MDCTracer.addCategory(categoryType);
         if (mockResultProvider.recordResultCount(categoryType, recordId) > 0) {
@@ -55,9 +57,18 @@ public final class PrepareMockResultService {
         Iterable<? extends Mocker> iterable;
         iterable = repositoryReader.queryRecordList(categoryType, recordId);
         if (iterable == null) {
-            return true;
+            return false;
         }
         return mockResultProvider.putRecordResult(categoryType, recordId, iterable);
+    }
+
+    private boolean preload(List<RepositoryProvider<? extends Mocker>> repositoryReaderList, MockCategoryType categoryType, String recordId) {
+        for (RepositoryProvider<? extends Mocker> repositoryReader : repositoryReaderList) {
+            if (this.preload(repositoryReader, categoryType, recordId)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean removeAll(String recordId) {
