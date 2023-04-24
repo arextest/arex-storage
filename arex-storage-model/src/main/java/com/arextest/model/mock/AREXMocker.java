@@ -17,7 +17,8 @@ public class AREXMocker implements Mocker {
     }
 
     /**
-     * Only for editing dependencies,the entry point ignored
+     * 1、Only for editing dependencies,the entry point ignored
+     * 2、During query, record the id of the mock, and use the id to associate data during comparison
      */
     private String id;
     /**
@@ -39,4 +40,8 @@ public class AREXMocker implements Mocker {
      * for example: pattern of servlet web api
      */
     private String operationName;
+    /**
+     * record the version of recorded data
+     */
+    private String recordVersion;
 }

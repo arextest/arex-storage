@@ -37,5 +37,6 @@ public class AgentLoadController {
     private static final class AgentRemoteConfigurationRequest {
         private String appId;
         private String host;
+        private String recordVersion;
     }
 }

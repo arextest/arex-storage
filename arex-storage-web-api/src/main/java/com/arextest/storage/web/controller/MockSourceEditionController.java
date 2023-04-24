@@ -1,42 +1,33 @@
 package com.arextest.storage.web.controller;
 
 
-import com.arextest.model.response.ResponseStatusType;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.response.Response;
+import com.arextest.model.response.ResponseStatusType;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.service.PrepareMockResultService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-
-import javax.annotation.Resource;
+import org.springframework.web.bind.annotation.*;
 
 
-@Controller
 @RequestMapping(path = "/api/storage/edit/", produces = MediaType.APPLICATION_JSON_VALUE)
 @Slf4j
 public class MockSourceEditionController {
-    @Resource
-    private MockSourceEditionService editableService;
-    @Resource
-    private ObjectMapper objectMapper;
-    @Resource
-    private PrepareMockResultService storageCache;
+
+    private final MockSourceEditionService editableService;
+
+    private final PrepareMockResultService storageCache;
+
+    public MockSourceEditionController(MockSourceEditionService editableService, PrepareMockResultService storageCache) {
+        this.editableService = editableService;
+        this.storageCache = storageCache;
+    }
 
     @GetMapping(value = "/pinned/{srcRecordId}/{targetRecordId}/")
     @ResponseBody
@@ -103,7 +94,7 @@ public class MockSourceEditionController {
     @PostMapping("/add/{srcProviderName}/")
     @ResponseBody
     public Response add(@PathVariable String srcProviderName, @RequestBody AREXMocker body) {
-        Response response = checkError(srcProviderName, body);
+        Response response = checkRequiredParameters(srcProviderName, body);
         if (response != null) {
             return response;
         }
@@ -139,7 +130,7 @@ public class MockSourceEditionController {
     @PostMapping("/update/")
     @ResponseBody
     public Response update(@RequestHeader String srcProviderName, @RequestBody AREXMocker body) {
-        Response response = checkError(srcProviderName, body);
+        Response response = checkRequiredParameters(srcProviderName, body);
         if (response != null) {
             return response;
         }
@@ -158,7 +149,7 @@ public class MockSourceEditionController {
         }
     }
 
-    private Response checkError(String srcProviderName, AREXMocker body) {
+    private Response checkRequiredParameters(String srcProviderName, AREXMocker body) {
         MockCategoryType category = body.getCategoryType();
         if (category == null) {
             LOGGER.warn("update record the category not found {}", srcProviderName);
@@ -172,16 +163,12 @@ public class MockSourceEditionController {
             LOGGER.warn("update record the recordId is empty {}", body);
             return ResponseUtils.emptyRecordIdResponse();
         }
-        if (StringUtils.isBlank(body.getId())) {
-            LOGGER.warn("update record the uniqueId is empty {}", body);
-            return ResponseUtils.parameterInvalidResponse("request id is empty");
-        }
         return null;
     }
 
     @Getter
     @Setter
-    private static class CopyResponseType implements Response {
+    protected static class CopyResponseType implements Response {
         private ResponseStatusType responseStatusType;
         private int copied;
     }
