@@ -27,6 +27,7 @@ import org.springframework.boot.autoconfigure.http.HttpMessageConverters;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 
 import java.util.List;
 import java.util.Set;
@@ -122,11 +123,13 @@ public class StorageAutoConfiguration {
     }
 
     @Bean
+    @Order(2)
     public RepositoryProvider<AREXMocker> pinnedMockerProvider(MongoDatabase mongoDatabase) {
         return new AREXMockerMongoRepositoryProvider(ProviderNames.PINNED, mongoDatabase);
     }
 
     @Bean
+    @Order(1)
     public RepositoryProvider<AREXMocker> defaultMockerProvider(MongoDatabase mongoDatabase) {
         return new AREXMockerMongoRepositoryProvider(mongoDatabase);
     }

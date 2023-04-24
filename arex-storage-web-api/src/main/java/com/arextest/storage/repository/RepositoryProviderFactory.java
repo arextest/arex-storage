@@ -12,6 +12,7 @@ import java.util.Set;
 @SuppressWarnings("unchecked")
 @Component
 public final class RepositoryProviderFactory {
+    @Getter
     private final List<RepositoryProvider<? extends Mocker>> repositoryProviderList;
     @Getter
     private final Set<MockCategoryType> categoryTypes;
