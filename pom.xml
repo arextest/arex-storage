@@ -6,7 +6,7 @@
     <groupId>com.arextest</groupId>
     <artifactId>arex-storage-service</artifactId>
     <packaging>pom</packaging>
-    <version>1.0.3</version>
+    <version>1.0.4</version>
 
     <name>${project.groupId}:${project.artifactId}</name>
     <description>Arex-storage is used for data storage.</description>
@@ -23,7 +23,7 @@
         <spring.boot.version>2.6.3</spring.boot.version>
         <jmockit.version>1.49</jmockit.version>
         <lombok.version>1.18.2</lombok.version>
-        <arex.storage.model.version>1.0.5</arex.storage.model.version>
+        <arex.storage.model.version>1.0.4</arex.storage.model.version>
 
         <jacoco-maven-plugin.version>0.7.5.201505241946</jacoco-maven-plugin.version>
         <!-- single jacoco.exec file relative to root directory of the project -->
@@ -114,6 +114,11 @@
                 <groupId>javax.annotation</groupId>
                 <artifactId>jsr250-api</artifactId>
                 <version>1.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.arextest</groupId>
+                <artifactId>arex-model</artifactId>
+                <version>${arex.storage.model.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

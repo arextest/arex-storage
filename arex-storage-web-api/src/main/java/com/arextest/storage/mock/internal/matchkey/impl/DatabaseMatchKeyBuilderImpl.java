@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.security.MessageDigest;
@@ -35,6 +36,7 @@ import java.util.Objects;
  */
 @Slf4j
 @Component
+@Order(30)
 final class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
     private final ObjectMapper objectMapper;
 
@@ -104,6 +106,7 @@ final class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
         md5Digest.update(sqlTextBytes);
         md5Digest.update(sqlParameterBytes);
         md5Digest.update(dbNameBytes);
+        md5Digest.update(operationBytes);
         // 1,db+sql+parameterNameWithValue+operationName
         byte[] fullMatchKey = md5Digest.digest();
         keys.add(fullMatchKey);
