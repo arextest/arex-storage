@@ -35,14 +35,15 @@ import static com.arextest.model.constants.HeaderNames.AREX_MOCK_STRATEGY_CODE;
  * @author jmo
  * @since 2021/11/3
  */
-@Controller
 @RequestMapping("/api/storage/record/")
 @Slf4j
 public class AgentRecordingController {
 
-    @Resource
-    private AgentWorkingService agentWorkingService;
+    private final AgentWorkingService agentWorkingService;
 
+    public AgentRecordingController(AgentWorkingService agentWorkingService) {
+        this.agentWorkingService = agentWorkingService;
+    }
 
     /**
      * from agent query,means to save the request and try to find a record item as mock result for return.
