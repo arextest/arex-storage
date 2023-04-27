@@ -16,7 +16,6 @@ import com.arextest.storage.repository.impl.mongo.AREXMockerMongoRepositoryProvi
 import com.arextest.storage.repository.impl.mongo.MongoDbUtils;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.*;
-import com.arextest.storage.web.controller.AgentRecordingController;
 import com.arextest.storage.web.controller.MockSourceEditionController;
 import com.arextest.storage.web.controller.ScheduleReplayQueryController;
 import com.mongodb.client.MongoDatabase;
@@ -107,11 +106,6 @@ public class StorageAutoConfiguration {
     public ScheduleReplayQueryController scheduleReplayQueryController(ScheduleReplayingService scheduleReplayingService,
                                                                        PrepareMockResultService prepareMockResultService) {
         return new ScheduleReplayQueryController(scheduleReplayingService, prepareMockResultService);
-    }
-    @Bean
-    @ConditionalOnMissingBean(AgentRecordingController.class)
-    public AgentRecordingController agentRecordingController(AgentWorkingService agentWorkingService) {
-        return new AgentRecordingController(agentWorkingService);
     }
 
     @Bean
