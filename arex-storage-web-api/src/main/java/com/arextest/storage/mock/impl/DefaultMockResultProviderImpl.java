@@ -183,8 +183,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
                             firstResult = result;
                             return firstResult;
                         }
-                        if (CollectionUtils.isNotEmpty(consumerRecordIds) && consumerRecordIds.contains(recordInstanceId)
-                                && !context.isLastOfResult()) {
+                        if (CollectionUtils.isNotEmpty(consumerRecordIds) && consumerRecordIds.contains(recordInstanceId)) {
                             break;
                         }
                         consumerRecordIds.add(recordInstanceId);
