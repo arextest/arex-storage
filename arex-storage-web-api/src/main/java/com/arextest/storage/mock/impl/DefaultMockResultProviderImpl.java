@@ -166,7 +166,9 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
             final byte[] recordIdBytes = CacheKeyUtils.toUtf8Bytes(recordId);
             final byte[] replayIdBytes = CacheKeyUtils.toUtf8Bytes(replayId);
             byte[] result;
+            byte[] firstResult = null;
             byte[] mockKeyBytes;
+            List<String> consumerRecordIds = new ArrayList<>();
             int mockKeySize = mockKeyList.size();
             boolean strictMatch = context.getMockStrategy() == MockResultMatchStrategy.STRICT_MATCH;
             for (int i = 0; i < mockKeySize; i++) {
@@ -175,11 +177,24 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
                 if (strictMatch || result != null) {
                     if (shouldUseIdOfInstanceToMockResult(category)) {
                         byte[] id = getIdOfRecordInstance(context.getValueRefKey());
-                        mockItem.setId(CacheKeyUtils.fromUtf8Bytes(id));
+                        String recordInstanceId = CacheKeyUtils.fromUtf8Bytes(id);
+                        mockItem.setId(recordInstanceId);
+                        if (CollectionUtils.isNotEmpty(consumerRecordIds) && consumerRecordIds.contains(recordInstanceId)
+                                && !context.isLastOfResult()) {
+                            break;
+                        }
+                        if (context.isLastOfResult()) {
+                            firstResult = result;
+                            return firstResult;
+                        }
+                        consumerRecordIds.add(recordInstanceId);
                     }
-                    return result;
+                    if (firstResult == null) {
+                        firstResult = result;
+                    }
                 }
             }
+            return firstResult;
         } catch (Throwable throwable) {
             LOGGER.error("from agent's sequence consumeResult error:{} for category:{},recordId:{},replayId:{}",
                     throwable.getMessage(),
