@@ -179,13 +179,13 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
                         byte[] id = getIdOfRecordInstance(context.getValueRefKey());
                         String recordInstanceId = CacheKeyUtils.fromUtf8Bytes(id);
                         mockItem.setId(recordInstanceId);
-                        if (CollectionUtils.isNotEmpty(consumerRecordIds) && consumerRecordIds.contains(recordInstanceId)
-                                && !context.isLastOfResult()) {
-                            break;
-                        }
                         if (context.isLastOfResult()) {
                             firstResult = result;
                             return firstResult;
+                        }
+                        if (CollectionUtils.isNotEmpty(consumerRecordIds) && consumerRecordIds.contains(recordInstanceId)
+                                && !context.isLastOfResult()) {
+                            break;
                         }
                         consumerRecordIds.add(recordInstanceId);
                     }
