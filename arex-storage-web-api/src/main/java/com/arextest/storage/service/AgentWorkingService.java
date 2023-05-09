@@ -63,29 +63,39 @@ public final class AgentWorkingService {
         if (shouldMarkRecordEnv(item.getCategoryType())) {
             item.setRecordEnvironment(recordEnvType.getCodeValue());
         }
-        this.dispatchRecordSavingEvent(item);
+        if (!this.dispatchRecordSavingEvent(item)) {
+            LOGGER.warn("switch not open, skip save record data");
+            return false;
+        }
         RepositoryProvider<T> repositoryWriter = repositoryProviderFactory.defaultProvider();
 
         return repositoryWriter != null && repositoryWriter.save(item);
     }
 
-    private void dispatchRecordSavingEvent(Mocker instance) {
+    private boolean dispatchRecordSavingEvent(Mocker instance) {
         if (CollectionUtils.isEmpty(this.agentWorkingListeners)) {
-            return;
+            return true;
         }
         for (AgentWorkingListener agentWorkingListener : this.agentWorkingListeners) {
-            agentWorkingListener.onRecordSaving(instance);
+            if (agentWorkingListener.onRecordSaving(instance)) {
+                return false;
+            }
         }
+        return true;
     }
 
-    private void dispatchMockResultEnterEvent(Mocker instance, MockResultContext context) {
+    private boolean dispatchMockResultEnterEvent(Mocker instance, MockResultContext context) {
         if (CollectionUtils.isEmpty(this.agentWorkingListeners)) {
-            return;
+            return true;
         }
         for (AgentWorkingListener agentWorkingListener : this.agentWorkingListeners) {
-            agentWorkingListener.onRecordMocking(instance, context);
+            if (agentWorkingListener.onRecordMocking(instance, context)) {
+                return false;
+            }
         }
+        return true;
     }
+
 
     private boolean shouldMarkRecordEnv(MockCategoryType category) {
         return category.isEntryPoint() ||
@@ -103,7 +113,10 @@ public final class AgentWorkingService {
      * @return compress bytes with zstd from the cached which filled by scheduler's preload
      */
     public <T extends Mocker> byte[] queryMockResult(@NotNull T recordItem, MockResultContext context) {
-        this.dispatchMockResultEnterEvent(recordItem, context);
+        if (this.dispatchMockResultEnterEvent(recordItem, context)) {
+            LOGGER.warn("switch not open, skip query record data");
+            return ZstdJacksonSerializer.EMPTY_INSTANCE;
+        }
         String recordId = recordItem.getRecordId();
         String replayId = recordItem.getReplayId();
         MockCategoryType category = recordItem.getCategoryType();
