@@ -3,6 +3,7 @@ package com.arextest.storage.service;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.mock.MockResultProvider;
+import com.arextest.storage.model.RecordStatusType;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.trace.MDCTracer;
@@ -34,23 +35,27 @@ public final class PrepareMockResultService {
         }
         boolean result = false;
         for (MockCategoryType categoryType : providerFactory.getCategoryTypes()) {
-            result = preload(repositoryProvider, categoryType, recordId);
+            result = preload(repositoryProvider, categoryType, recordId, true);
             LOGGER.info("preload cache result:{},category:{},record id:{}", result, categoryType, recordId);
         }
         return result;
     }
 
-    boolean preload(MockCategoryType category, String recordId) {
+    boolean preload(MockCategoryType category, String recordId, boolean setRecordStatus) {
         // try again load by defaultProvider and pinnedProvider
-        return this.preload(providerFactory.getRepositoryProviderList(), category, recordId);
+        return this.preload(providerFactory.getRepositoryProviderList(), category, recordId, setRecordStatus);
     }
 
-    private boolean preload(RepositoryProvider<? extends Mocker> repositoryReader, MockCategoryType categoryType, String recordId) {
+    private boolean preload(RepositoryProvider<? extends Mocker> repositoryReader, MockCategoryType categoryType,
+                            String recordId, boolean setRecordStatus) {
         if (repositoryReader == null) {
             return false;
         }
         MDCTracer.addCategory(categoryType);
         if (mockResultProvider.recordResultCount(categoryType, recordId) > 0) {
+            if (setRecordStatus) {
+                mockResultProvider.setRecordStatus(categoryType, recordId, RecordStatusType.UNUSED.getCodeValue());
+            }
             LOGGER.warn("skip preload cache for category:{},record id:{}", categoryType, recordId);
             return true;
         }
@@ -62,9 +67,10 @@ public final class PrepareMockResultService {
         return mockResultProvider.putRecordResult(categoryType, recordId, iterable);
     }
 
-    private boolean preload(List<RepositoryProvider<? extends Mocker>> repositoryReaderList, MockCategoryType categoryType, String recordId) {
+    private boolean preload(List<RepositoryProvider<? extends Mocker>> repositoryReaderList, MockCategoryType categoryType,
+                            String recordId, boolean setRecordStatus) {
         for (RepositoryProvider<? extends Mocker> repositoryReader : repositoryReaderList) {
-            if (this.preload(repositoryReader, categoryType, recordId)) {
+            if (this.preload(repositoryReader, categoryType, recordId, setRecordStatus)) {
                 return true;
             }
         }

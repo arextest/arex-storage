@@ -28,4 +28,6 @@ public interface MockResultProvider {
     boolean removeRecordResult(MockCategoryType category, String recordId);
 
     boolean removeReplayResult(MockCategoryType category, String replayResultId);
+
+    void setRecordStatus(MockCategoryType categoryType, String recordId, int status);
 }

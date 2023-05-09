@@ -4,6 +4,7 @@ package com.arextest.storage.serialization;
 import com.arextest.common.serialization.SerializationProvider;
 import com.arextest.common.serialization.SerializationProviders;
 import com.arextest.common.utils.SerializationUtils;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -12,6 +13,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
 
 /**
  * @author jmo
@@ -25,6 +27,8 @@ public final class ZstdJacksonSerializer {
      */
     public static final byte[] EMPTY_INSTANCE = SerializationUtils.EMPTY_INSTANCE;
     private final SerializationProvider serializationProvider;
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     public ZstdJacksonSerializer(ObjectMapper objectMapper) {
         this.serializationProvider = SerializationProviders.jacksonProvider(objectMapper);
@@ -62,5 +66,19 @@ public final class ZstdJacksonSerializer {
             return null;
         }
         return SerializationUtils.useZstdDeserialize(this.serializationProvider, zstdValues, clazz);
+    }
+
+    public <T> List<T> deserializeToList(byte[] zstdValues, Class<T> clazz) {
+        if (zstdValues == null) {
+            return null;
+        }
+        String deserializeStr = this.deserialize(zstdValues, String.class);
+        JavaType javaType = MAPPER.getTypeFactory().constructParametricType(List.class, new Class[]{clazz});
+        try {
+            return (List) MAPPER.readValue(deserializeStr, javaType);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 }

@@ -115,13 +115,15 @@ public final class AgentWorkingService {
         byte[] result = mockResultProvider.getRecordResult(recordItem, context);
         if (result == null) {
             LOGGER.info("fetch replay mock record empty from cache,record id:{},replay id:{}", recordId, replayId);
-            boolean reloadResult = prepareMockResultService.preload(category, recordId);
+            boolean lastOfResult = context.isLastOfResult() ? true : false;
+            boolean reloadResult = prepareMockResultService.preload(category, recordId, !lastOfResult);
             if (reloadResult) {
                 result = mockResultProvider.getRecordResult(recordItem, context);
             }
             if (result == null) {
-                if (MockResultMatchStrategy.STRICT_MATCH == context.getMockStrategy() ||
-                        (MockResultMatchStrategy.BREAK_RECORDED_COUNT == context.getMockStrategy() && context.isLastOfResult())) {
+                if (MockResultMatchStrategy.STRICT_MATCH == context.getMockStrategy()
+//                        || (MockResultMatchStrategy.BREAK_RECORDED_COUNT == context.getMockStrategy() && context.isLastOfResult())
+                ) {
                     return ZstdJacksonSerializer.EMPTY_INSTANCE;
                 }
                 mockResultProvider.putReplayResult(recordItem);
