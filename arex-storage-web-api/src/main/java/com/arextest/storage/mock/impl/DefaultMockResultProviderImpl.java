@@ -113,8 +113,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
             allRecordInstanceData.forEach(data -> {
                 data.setStatus(status);
             });
+            putRecordInstanceData(categoryType, CacheKeyUtils.toUtf8Bytes(recordId), allRecordInstanceData);
         }
-        putRecordInstanceData(categoryType, CacheKeyUtils.toUtf8Bytes(recordId), allRecordInstanceData);
     }
 
     private byte[] getRecordInstanceData(MockCategoryType category, byte[] recordIdBytes) {
@@ -218,7 +218,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
             byte[] result;
             byte[] firstResult = null;
             byte[] mockKeyBytes;
-            List<RecordInstanceData> recordInstanceList = getRecordDataFromZstd(mockItem, category, recordIdBytes);
+            List<RecordInstanceData> recordInstanceList = getRecordDataFromZstd(category, recordIdBytes);
             int mockKeySize = mockKeyList.size();
             boolean strictMatch = context.getMockStrategy() == MockResultMatchStrategy.STRICT_MATCH;
             for (int i = 0; i < mockKeySize; i++) {
@@ -239,8 +239,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
                         if (instanceOptional.isPresent()) {
                             RecordInstanceData instanceData = instanceOptional.get();
                             if (instanceData.used()) {
-                                Optional<RecordInstanceData> unusedInstanceOptional =
-                                        recordInstanceList.stream().filter(data -> !data.used()).findFirst();
+                                Optional<RecordInstanceData> unusedInstanceOptional = recordInstanceList.stream().filter(data -> StringUtils.equals(data.getOperationName(),
+                                        mockItem.getOperationName()) && !data.used()).findFirst();
                                 if (unusedInstanceOptional.isPresent()) {
                                     RecordInstanceData unusedInstanceData = unusedInstanceOptional.get();
                                     firstResult = unusedInstanceData.getRecordData();
@@ -268,13 +268,12 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
         return null;
     }
 
-    private List<RecordInstanceData> getRecordDataFromZstd(Mocker mockItem, MockCategoryType category, byte[] recordIdBytes) {
+    private List<RecordInstanceData> getRecordDataFromZstd(MockCategoryType category, byte[] recordIdBytes) {
         List<RecordInstanceData> recordInstanceList = null;
         if (shouldUseIdOfInstanceToMockResult(category)) {
             byte[] recordInstanceData = getRecordInstanceData(category, recordIdBytes);
             List<RecordInstanceData> allRecordInstanceData = serializer.deserializeToList(recordInstanceData, RecordInstanceData.class);
-            recordInstanceList = allRecordInstanceData.stream().filter(data -> StringUtils.equals(data.getOperationName(),
-                    mockItem.getOperationName())).collect(Collectors.toList());
+            return allRecordInstanceData;
         }
         return recordInstanceList;
     }
