@@ -62,14 +62,17 @@ public class AutoDiscoveryEntryPointListener implements AgentWorkingListener {
     }
 
     @Override
-    public void onRecordSaving(Mocker instance) {
+    public boolean onRecordSaving(Mocker instance) {
         if (instance.getCategoryType().isEntryPoint()) {
             this.register(instance);
         }
+        return false;
     }
 
     @Override
-    public void onRecordMocking(Mocker instance, MockResultContext context) {
-
+    public boolean onRecordMocking(Mocker instance, MockResultContext context) {
+        return false;
     }
+
+
 }

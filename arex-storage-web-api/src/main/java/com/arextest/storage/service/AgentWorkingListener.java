@@ -10,7 +10,7 @@ import com.arextest.storage.mock.MockResultContext;
  * @since 2022/11/24
  */
 public interface AgentWorkingListener {
-    void onRecordSaving(Mocker instance);
+    boolean onRecordSaving(Mocker instance);
 
-    void onRecordMocking(Mocker instance, MockResultContext context);
+    boolean onRecordMocking(Mocker instance, MockResultContext context);
 }
