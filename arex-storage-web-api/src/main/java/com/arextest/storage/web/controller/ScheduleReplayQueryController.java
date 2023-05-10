@@ -1,17 +1,7 @@
 package com.arextest.storage.web.controller;
 
-
 import com.arextest.model.mock.AREXMocker;
-import com.arextest.model.replay.PagedRequestType;
-import com.arextest.model.replay.PagedResponseType;
-import com.arextest.model.replay.QueryCaseCountRequestType;
-import com.arextest.model.replay.QueryCaseCountResponseType;
-import com.arextest.model.replay.QueryMockCacheRequestType;
-import com.arextest.model.replay.QueryMockCacheResponseType;
-import com.arextest.model.replay.QueryReplayResultRequestType;
-import com.arextest.model.replay.QueryReplayResultResponseType;
-import com.arextest.model.replay.ViewRecordRequestType;
-import com.arextest.model.replay.ViewRecordResponseType;
+import com.arextest.model.replay.*;
 import com.arextest.model.replay.holder.ListResultHolder;
 import com.arextest.model.response.Response;
 import com.arextest.storage.repository.ProviderNames;
@@ -286,7 +276,7 @@ public class ScheduleReplayQueryController {
 
     @PostMapping(value = "/listRecord")
     @ResponseBody
-    public Response listRecord(@RequestBody PagedRequestType requestType) {
+    public Response listRecord(@RequestBody ListRecordCaseRequestType requestType) {
         if (requestType == null) {
             return ResponseUtils.requestBodyEmptyResponse();
         }

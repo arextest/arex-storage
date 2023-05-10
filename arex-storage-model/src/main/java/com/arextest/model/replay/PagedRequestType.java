@@ -22,9 +22,4 @@ public class PagedRequestType {
      * old version default value: true
      */
     private Boolean filterPastRecordVersion;
-    /**
-     * true:asc(default)
-     * false:desc
-     */
-    private Boolean defaultAsc;
 }
