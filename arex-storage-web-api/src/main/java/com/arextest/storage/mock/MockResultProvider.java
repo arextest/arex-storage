@@ -29,5 +29,8 @@ public interface MockResultProvider {
 
     boolean removeReplayResult(MockCategoryType category, String replayResultId);
 
-    void setRecordStatus(MockCategoryType categoryType, String recordId, int status);
+    /**
+     * update RecordInstanceData status in cache
+     */
+    void updateRecordInstanceStatus(MockCategoryType categoryType, String recordId, int status);
 }

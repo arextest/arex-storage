@@ -54,7 +54,7 @@ public final class PrepareMockResultService {
         MDCTracer.addCategory(categoryType);
         if (mockResultProvider.recordResultCount(categoryType, recordId) > 0) {
             if (setRecordStatus) {
-                mockResultProvider.setRecordStatus(categoryType, recordId, RecordStatusType.UNUSED.getCodeValue());
+                mockResultProvider.updateRecordInstanceStatus(categoryType, recordId, RecordStatusType.UNUSED.getCodeValue());
             }
             LOGGER.warn("skip preload cache for category:{},record id:{}", categoryType, recordId);
             return true;

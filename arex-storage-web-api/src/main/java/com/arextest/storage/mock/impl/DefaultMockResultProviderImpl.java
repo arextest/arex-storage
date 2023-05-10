@@ -85,6 +85,9 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
         return size > EMPTY_SIZE;
     }
 
+    /**
+    * put RecordInstanceData to cache
+     */
     private void putRecordInstanceData(MockCategoryType category, byte[] recordIdBytes, List<RecordInstanceData> unusedRecordInstanceList) {
         byte[] unusedRecordInstanceKey = getRecordInstanceDataKey(category, recordIdBytes);
         byte[] value = null;
@@ -106,15 +109,19 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     }
 
     @Override
-    public void setRecordStatus(MockCategoryType categoryType, String recordId, int status) {
+    public void updateRecordInstanceStatus(MockCategoryType categoryType, String recordId, int status) {
+        if (!shouldUseIdOfInstanceToMockResult(categoryType)) {
+            return;
+        }
         byte[] recordInstanceData = getRecordInstanceData(categoryType, recordId);
         List<RecordInstanceData> allRecordInstanceData = serializer.deserializeToList(recordInstanceData, RecordInstanceData.class);
-        if (CollectionUtils.isNotEmpty(allRecordInstanceData)) {
-            allRecordInstanceData.forEach(data -> {
-                data.setStatus(status);
-            });
-            putRecordInstanceData(categoryType, CacheKeyUtils.toUtf8Bytes(recordId), allRecordInstanceData);
+        if (CollectionUtils.isEmpty(allRecordInstanceData)) {
+            return;
         }
+        allRecordInstanceData.forEach(data -> {
+            data.setStatus(status);
+        });
+        putRecordInstanceData(categoryType, CacheKeyUtils.toUtf8Bytes(recordId), allRecordInstanceData);
     }
 
     private byte[] getRecordInstanceData(MockCategoryType category, byte[] recordIdBytes) {
@@ -251,7 +258,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
                             }
                             putRecordInstanceData(category, recordIdBytes, recordInstanceList);
                         }
-                        LOGGER.info("get record result from record instance id :{}", CacheKeyUtils.fromUtf8Bytes(id));
+                        LOGGER.info("get record result from record instance id :{}, operation :{}", CacheKeyUtils.fromUtf8Bytes(id), mockItem.getOperationName());
                     }
                     if (firstResult == null) {
                         firstResult = result;
