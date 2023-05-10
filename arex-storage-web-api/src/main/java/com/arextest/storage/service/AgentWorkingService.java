@@ -113,7 +113,7 @@ public final class AgentWorkingService {
      * @return compress bytes with zstd from the cached which filled by scheduler's preload
      */
     public <T extends Mocker> byte[] queryMockResult(@NotNull T recordItem, MockResultContext context) {
-        if (this.dispatchMockResultEnterEvent(recordItem, context)) {
+        if (!this.dispatchMockResultEnterEvent(recordItem, context)) {
             LOGGER.warn("switch not open, skip query record data");
             return ZstdJacksonSerializer.EMPTY_INSTANCE;
         }
