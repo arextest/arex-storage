@@ -22,12 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -276,5 +271,31 @@ public class ScheduleReplayQueryController {
         return actionResult ?
                 ResponseUtils.successResponse(new QueryMockCacheResponseType()) :
                 ResponseUtils.resourceNotFoundResponse();
+    }
+
+    @GetMapping(value = "/countRecord/{appId}")
+    @ResponseBody
+    public Response countRecordByAppId(@PathVariable String appId) {
+        try {
+            return ResponseUtils.successResponse(scheduleReplayingService.countRecordByAppId(appId));
+        } catch (Throwable throwable) {
+            LOGGER.error("countRecordByAppId error:{},appId:{}", throwable.getMessage(), appId);
+            return ResponseUtils.exceptionResponse(throwable.getMessage());
+        }
+    }
+
+    @PostMapping(value = "/listRecord")
+    @ResponseBody
+    public Response listRecord(@RequestBody PagedRequestType requestType) {
+        if (requestType == null) {
+            return ResponseUtils.requestBodyEmptyResponse();
+        }
+
+        try {
+            return ResponseUtils.successResponse(scheduleReplayingService.listRecordCase(requestType));
+        } catch (Throwable throwable) {
+            LOGGER.error("listRecord error:{},request:{}", throwable.getMessage(), requestType);
+            return ResponseUtils.exceptionResponse(throwable.getMessage());
+        }
     }
 }

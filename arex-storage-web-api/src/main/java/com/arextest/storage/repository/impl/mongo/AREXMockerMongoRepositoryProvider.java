@@ -13,6 +13,7 @@ import com.mongodb.client.model.Sorts;
 import com.mongodb.client.result.DeleteResult;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.conversions.Bson;
 
@@ -90,30 +91,29 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     public Iterable<AREXMocker> queryByRange(PagedRequestType pagedRequestType) {
         MockCategoryType categoryType = pagedRequestType.getCategory();
         MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
-        AREXMocker item = getLastRecordVersionMocker(pagedRequestType, collectionSource);
-        String recordVersion = item == null ? null : item.getRecordVersion();
+        List<Bson> filters = buildReadRangeFilters(pagedRequestType);
+
+        if (BooleanUtils.isNotFalse(pagedRequestType.getFilterPastRecordVersion())) {
+            withRecordVersionFilters(filters, collectionSource);
+        }
+        Bson CreateSort = BooleanUtils.isNotFalse(pagedRequestType.getDefaultAsc())
+                ? CREATE_TIME_ASCENDING_SORT : CREATE_TIME_DESCENDING_SORT;
         Iterable<AREXMocker> iterable = collectionSource
-                .find(Filters.and(withRecordVersionFilters(pagedRequestType, recordVersion)))
-                .sort(CREATE_TIME_ASCENDING_SORT)
+                .find(Filters.and(filters))
+                .sort(CreateSort)
                 .limit(Math.min(pagedRequestType.getPageSize(), DEFAULT_MAX_LIMIT_SIZE));
         return new AttachmentCategoryIterable(categoryType, iterable);
-    }
-
-    private AREXMocker getLastRecordVersionMocker(PagedRequestType pagedRequestType, MongoCollection<AREXMocker> collectionSource) {
-        AREXMocker item = collectionSource
-                .find(Filters.and(buildReadRangeFilters(pagedRequestType)))
-                .sort(CREATE_TIME_DESCENDING_SORT)
-                .limit(DEFAULT_MIN_LIMIT_SIZE)
-                .first();
-        return item;
     }
 
     @Override
     public long countByRange(PagedRequestType rangeRequestType) {
         MongoCollection<AREXMocker> collectionSource = createOrGetCollection(rangeRequestType.getCategory());
-        AREXMocker item = getLastRecordVersionMocker(rangeRequestType, collectionSource);
-        String recordVersion = item == null ? null : item.getRecordVersion();
-        return collectionSource.countDocuments(Filters.and(withRecordVersionFilters(rangeRequestType, recordVersion)));
+        List<Bson> filters = buildReadRangeFilters(rangeRequestType);
+
+        if (BooleanUtils.isNotFalse(rangeRequestType.getFilterPastRecordVersion())) {
+            withRecordVersionFilters(filters, collectionSource);
+        }
+        return collectionSource.countDocuments(Filters.and(filters));
     }
 
 
@@ -209,15 +209,20 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         return filters;
     }
 
-    private List<Bson> withRecordVersionFilters(@NotNull PagedRequestType rangeRequestType, String recordVersion) {
-        List<Bson> bsons = buildReadRangeFilters(rangeRequestType);
-        if (StringUtils.isNotEmpty(recordVersion)) {
-            bsons.add(Filters.eq(AGENT_RECORD_VERSION_COLUMN_NAME, recordVersion));
+    private void withRecordVersionFilters(@NotNull List<Bson> filters, @NotNull MongoCollection<AREXMocker> collectionSource) {
+        AREXMocker item = collectionSource
+                .find(Filters.and(filters))
+                .sort(CREATE_TIME_DESCENDING_SORT)
+                .limit(DEFAULT_MIN_LIMIT_SIZE)
+                .first();
+        if (item != null && StringUtils.isNotEmpty(item.getRecordVersion())) {
+            filters.add(Filters.eq(AGENT_RECORD_VERSION_COLUMN_NAME, item.getRecordVersion()));
         }
-        return bsons;
     }
 
-    private Bson buildTimeRangeFilter(long beginTime, long endTime) {
+    private Bson buildTimeRangeFilter(Long beginTime, Long endTime) {
+        beginTime = beginTime == null ? 0L : beginTime;
+        endTime = endTime == null ? System.currentTimeMillis() : endTime;
         Bson newItemFrom = Filters.gt(CREATE_TIME_COLUMN_NAME, new Date(beginTime));
         Bson newItemTo = Filters.lte(CREATE_TIME_COLUMN_NAME, new Date(endTime));
         return Filters.and(newItemFrom, newItemTo);

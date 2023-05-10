@@ -111,8 +111,9 @@ public class StorageAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(ScheduleReplayingService.class)
     public ScheduleReplayingService scheduleReplayingService(MockResultProvider mockResultProvider,
-                                                             RepositoryProviderFactory repositoryProviderFactory) {
-        return new ScheduleReplayingService(mockResultProvider, repositoryProviderFactory);
+                                                             RepositoryProviderFactory repositoryProviderFactory,
+                                                             ServiceOperationRepository serviceOperationRepository) {
+        return new ScheduleReplayingService(mockResultProvider, repositoryProviderFactory, serviceOperationRepository);
     }
 
     @Bean

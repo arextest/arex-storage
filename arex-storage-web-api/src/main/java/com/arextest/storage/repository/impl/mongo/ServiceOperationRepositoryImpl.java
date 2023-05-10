@@ -13,6 +13,8 @@ import org.bson.conversions.Bson;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author b_yu
@@ -53,5 +55,13 @@ public class ServiceOperationRepositoryImpl implements ServiceOperationRepositor
                 new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER));
 
         return entity != null && StringUtils.isNotEmpty(entity.getId());
+    }
+
+    @Override
+    public Iterable<ServiceOperationEntity> queryServiceOperations(String appId, String operation) {
+        List<Bson> filters = new ArrayList<>();
+        filters.add(Filters.eq(APP_ID, appId));
+        if (operation != null) filters.add(Filters.eq(OPERATION_NAME, operation));
+        return getCollection().find(Filters.and(filters));
     }
 }
