@@ -3,10 +3,10 @@ package com.arextest.storage.service;
 import com.arextest.common.utils.CompressionUtils;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
-import com.arextest.model.replay.*;
+import com.arextest.model.replay.PagedRequestType;
+import com.arextest.model.replay.ViewRecordRequestType;
 import com.arextest.model.replay.holder.ListResultHolder;
 import com.arextest.storage.mock.MockResultProvider;
-import com.arextest.storage.model.dao.ServiceOperationEntity;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.RepositoryReader;
 import com.arextest.storage.repository.ServiceOperationRepository;
@@ -15,7 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * When user create a plan, the schedule fired to replaying,
@@ -30,14 +29,11 @@ import java.util.stream.Collectors;
 public class ScheduleReplayingService {
     private final MockResultProvider mockResultProvider;
     private final RepositoryProviderFactory repositoryProviderFactory;
-    private final ServiceOperationRepository serviceOperationRepository;
 
     public ScheduleReplayingService(MockResultProvider mockResultProvider,
-                                    RepositoryProviderFactory repositoryProviderFactory,
-                                    ServiceOperationRepository serviceOperationRepository) {
+                                    RepositoryProviderFactory repositoryProviderFactory) {
         this.mockResultProvider = mockResultProvider;
         this.repositoryProviderFactory = repositoryProviderFactory;
-        this.serviceOperationRepository = serviceOperationRepository;
     }
 
     public List<ListResultHolder> queryReplayResult(String recordId, String replayResultId) {
@@ -110,81 +106,12 @@ public class ScheduleReplayingService {
         return 0;
     }
 
-    public CountRecordCaseResponseType countRecordByAppId(String appId) {
-        Set<String> operationNames = new HashSet<>();
-        Set<String> operationTypes = new HashSet<>();
-        serviceOperationRepository.queryServiceOperations(appId, null).forEach(serviceOperationEntity -> {
-            operationNames.add(serviceOperationEntity.getOperationName());
-            operationTypes.add(serviceOperationEntity.getOperationType());
-        });
-        CountRecordCaseResponseType response = new CountRecordCaseResponseType();
-        //ascending dictionary order
-        response.setOperationNameList(new ArrayList<>(operationNames).stream().sorted().collect(Collectors.toList()));
-
-        long count = 0;
-        PagedRequestType mockerQueryRequest = new PagedRequestType();
-        mockerQueryRequest.setAppId(appId);
-        mockerQueryRequest.setFilterPastRecordVersion(false);
-        for(String operationType : operationTypes) {
-            mockerQueryRequest.setCategory(MockCategoryType.create(operationType));
-            count += countByRange(mockerQueryRequest);
-        }
-        response.setRecordedCaseCount(count);
-        return response;
-    }
-
-    public ListRecordCaseResponseType listRecordCase(ListRecordCaseRequestType listRecordCaseRequest) {
-        String appId = listRecordCaseRequest.getAppId();
-        String operationName = listRecordCaseRequest.getOperationName();
-        ServiceOperationEntity serviceOperationEntity = null;
-        Iterable<ServiceOperationEntity> serviceOperationEntities =
-                serviceOperationRepository.queryServiceOperations(appId, operationName);
-        for (ServiceOperationEntity entity : serviceOperationEntities) {
-            if (entity != null) {
-                serviceOperationEntity = entity;
-                break;
-            }
-        }
-        String operationType = Optional.ofNullable(serviceOperationEntity).map(ServiceOperationEntity::getOperationType)
-                .orElse(null);
-        PagedRequestType pagedRequestType = listRecordCaseRequestToPagedRequestType(listRecordCaseRequest);
-        pagedRequestType.setCategory(MockCategoryType.create(operationType));
-        pagedRequestType.setFilterPastRecordVersion(false);
-
-        ListRecordCaseResponseType responseType = new ListRecordCaseResponseType();
-        RepositoryReader<AREXMocker> repositoryReader = repositoryProviderFactory.findProvider(
-                pagedRequestType.getSourceProvider());
-        if (repositoryReader == null) {
-            return responseType;
-        }
-        List<AREXMocker> arexMockers = new IterableListWrapper<>(repositoryReader.queryRecordListPaging(
-                pagedRequestType, listRecordCaseRequest.getLastId()));
-        responseType.setRecordList(arexMockers);
-
-        //remove start&end time to count all the records, only First Page will return
-        if (listRecordCaseRequest.getLastId() == null) {
-            pagedRequestType.setBeginTime(null);
-            pagedRequestType.setEndTime(null);
-            responseType.setTotalCount(repositoryReader.countByRange(pagedRequestType));
-        }
-        return responseType;
-    }
-
-    private PagedRequestType listRecordCaseRequestToPagedRequestType(ListRecordCaseRequestType input) {
-        PagedRequestType output = new PagedRequestType();
-        output.setOperation(input.getOperationName());
-        output.setPageSize(input.getPageSize());
-        output.setAppId(input.getAppId());
-        return output;
-    }
-
     private List<String> encodeToBase64String(List<byte[]> source) {
         if (CollectionUtils.isEmpty(source)) {
             return Collections.emptyList();
         }
         final List<String> recordResult = new ArrayList<>(source.size());
-        for (int i = 0; i < source.size(); i++) {
-            byte[] values = source.get(i);
+        for (byte[] values : source) {
             String encodeResult = CompressionUtils.encodeToBase64String(values);
             if (encodeResult != null) {
                 recordResult.add(encodeResult);

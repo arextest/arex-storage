@@ -262,30 +262,4 @@ public class ScheduleReplayQueryController {
                 ResponseUtils.successResponse(new QueryMockCacheResponseType()) :
                 ResponseUtils.resourceNotFoundResponse();
     }
-
-    @GetMapping(value = "/countRecord/{appId}")
-    @ResponseBody
-    public Response countRecordByAppId(@PathVariable String appId) {
-        try {
-            return ResponseUtils.successResponse(scheduleReplayingService.countRecordByAppId(appId));
-        } catch (Throwable throwable) {
-            LOGGER.error("countRecordByAppId error:{},appId:{}", throwable.getMessage(), appId);
-            return ResponseUtils.exceptionResponse(throwable.getMessage());
-        }
-    }
-
-    @PostMapping(value = "/listRecord")
-    @ResponseBody
-    public Response listRecord(@RequestBody ListRecordCaseRequestType requestType) {
-        if (requestType == null) {
-            return ResponseUtils.requestBodyEmptyResponse();
-        }
-
-        try {
-            return ResponseUtils.successResponse(scheduleReplayingService.listRecordCase(requestType));
-        } catch (Throwable throwable) {
-            LOGGER.error("listRecord error:{},request:{}", throwable.getMessage(), requestType);
-            return ResponseUtils.exceptionResponse(throwable.getMessage());
-        }
-    }
 }

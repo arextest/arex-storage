@@ -15,7 +15,7 @@ public class ListRecordCaseResponseType implements Response {
      * for paging
      * only First-Page will return
      */
-    private long totalCount;
+    private Long totalCount;
 
     private List<AREXMocker> recordList;
 }

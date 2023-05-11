@@ -17,6 +17,7 @@ import com.arextest.storage.repository.impl.mongo.MongoDbUtils;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.*;
 import com.arextest.storage.web.controller.MockSourceEditionController;
+import com.arextest.storage.web.controller.RecordQueryController;
 import com.arextest.storage.web.controller.ScheduleReplayQueryController;
 import com.mongodb.client.MongoDatabase;
 import org.apache.commons.collections4.CollectionUtils;
@@ -109,11 +110,24 @@ public class StorageAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean(RecordQueryController.class)
+    public RecordQueryController recordQueryController(RecordQueryService recordQueryService) {
+        return new RecordQueryController(recordQueryService);
+    }
+
+    @Bean
     @ConditionalOnMissingBean(ScheduleReplayingService.class)
     public ScheduleReplayingService scheduleReplayingService(MockResultProvider mockResultProvider,
-                                                             RepositoryProviderFactory repositoryProviderFactory,
-                                                             ServiceOperationRepository serviceOperationRepository) {
-        return new ScheduleReplayingService(mockResultProvider, repositoryProviderFactory, serviceOperationRepository);
+                                                             RepositoryProviderFactory repositoryProviderFactory) {
+        return new ScheduleReplayingService(mockResultProvider, repositoryProviderFactory);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(RecordQueryService.class)
+    public RecordQueryService recordQueryService(RepositoryProviderFactory repositoryProviderFactory,
+                                                 ServiceOperationRepository serviceOperationRepository,
+                                                 ScheduleReplayingService scheduleReplayingService) {
+        return new RecordQueryService(repositoryProviderFactory, serviceOperationRepository, scheduleReplayingService);
     }
 
     @Bean
