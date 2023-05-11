@@ -26,7 +26,6 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 import javax.validation.constraints.NotNull;
 import java.util.*;
-import java.util.stream.Collectors;
 
 
 @Component
@@ -66,8 +65,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
             if (shouldUseIdOfInstanceToMockResult(category)) {
                 putRecordInstanceId(valueRefKey, value.getId());
                 unusedRecordInstanceList.add(
-                        new RecordInstanceData(CacheKeyUtils.toUtf8Bytes(value.getId()), RecordStatusType.UNUSED.getCodeValue(),
-                                value.getOperationName(), zstdValue));
+                        new RecordInstanceData(valueRefKey, RecordStatusType.UNUSED.getCodeValue(), value.getOperationName()));
             }
             for (int i = 0; i < mockKeyList.size(); i++) {
                 byte[] mockKeyBytes = mockKeyList.get(i);
@@ -86,7 +84,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     }
 
     /**
-    * put RecordInstanceData to cache
+     * put RecordInstanceData to cache
      */
     private void putRecordInstanceData(MockCategoryType category, byte[] recordIdBytes, List<RecordInstanceData> unusedRecordInstanceList) {
         byte[] unusedRecordInstanceKey = getRecordInstanceDataKey(category, recordIdBytes);
@@ -122,6 +120,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
             data.setStatus(status);
         });
         putRecordInstanceData(categoryType, CacheKeyUtils.toUtf8Bytes(recordId), allRecordInstanceData);
+        LOGGER.info("update record instance status, status:{}, record id:{}", status, recordId);
     }
 
     private byte[] getRecordInstanceData(MockCategoryType category, byte[] recordIdBytes) {
@@ -222,47 +221,58 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
             }
             final byte[] recordIdBytes = CacheKeyUtils.toUtf8Bytes(recordId);
             final byte[] replayIdBytes = CacheKeyUtils.toUtf8Bytes(replayId);
-            byte[] result;
+            byte[] result = null;
             byte[] firstResult = null;
             byte[] mockKeyBytes;
             List<RecordInstanceData> recordInstanceList = getRecordDataFromZstd(category, recordIdBytes);
             int mockKeySize = mockKeyList.size();
             boolean strictMatch = context.getMockStrategy() == MockResultMatchStrategy.STRICT_MATCH;
+            boolean tryFindLastValue = MockResultMatchStrategy.TRY_FIND_LAST_VALUE == context.getMockStrategy();
             for (int i = 0; i < mockKeySize; i++) {
                 mockKeyBytes = mockKeyList.get(i);
-                result = sequenceMockResult(category, recordIdBytes, replayIdBytes, mockKeyBytes, context);
-                if (firstResult != null) {
-                    break;
+                byte[] valueRefKey = sequenceMockResult(category, recordIdBytes, replayIdBytes, mockKeyBytes, context);
+                if (valueRefKey != null) {
+                    context.setValueRefKey(valueRefKey);
+                    result = redisCacheProvider.get(valueRefKey);
                 }
-                if (strictMatch || result != null) {
-                    if (shouldUseIdOfInstanceToMockResult(category)) {
-                        byte[] id = getIdOfRecordInstance(context.getValueRefKey());
-                        mockItem.setId(CacheKeyUtils.fromUtf8Bytes(id));
-                        if (CollectionUtils.isEmpty(recordInstanceList)) {
-                            break;
-                        }
-                        Optional<RecordInstanceData> instanceOptional =
-                                recordInstanceList.stream().filter(data -> Arrays.equals(id, data.getInstanceId())).findFirst();
-                        if (instanceOptional.isPresent()) {
-                            RecordInstanceData instanceData = instanceOptional.get();
-                            if (instanceData.used()) {
-                                Optional<RecordInstanceData> unusedInstanceOptional = recordInstanceList.stream().filter(data -> StringUtils.equals(data.getOperationName(),
-                                        mockItem.getOperationName()) && !data.used()).findFirst();
-                                if (unusedInstanceOptional.isPresent()) {
-                                    RecordInstanceData unusedInstanceData = unusedInstanceOptional.get();
-                                    firstResult = unusedInstanceData.getRecordData();
-                                    unusedInstanceData.setStatus(RecordStatusType.USED.getCodeValue());
-                                }
-                            } else {
-                                instanceData.setStatus(RecordStatusType.USED.getCodeValue());
+                if (strictMatch) {
+                    return result;
+                }
+                if (result == null || firstResult != null) {
+                    continue;
+                }
+                if (context.isLastOfResult() && tryFindLastValue) {
+                    return result;
+                }
+                if (!shouldUseIdOfInstanceToMockResult(category)) {
+                    firstResult = result;
+                } else {
+                    byte[] id = getIdOfRecordInstance(context.getValueRefKey());
+                    mockItem.setId(CacheKeyUtils.fromUtf8Bytes(id));
+                    if (CollectionUtils.isEmpty(recordInstanceList)) {
+                        continue;
+                    }
+                    Optional<RecordInstanceData> instanceOptional =
+                            recordInstanceList.stream().filter(data -> Arrays.equals(valueRefKey, data.getValueRefKey())).findFirst();
+                    if (instanceOptional.isPresent()) {
+                        RecordInstanceData instanceData = instanceOptional.get();
+                        if (instanceData.used()) {
+                            Optional<RecordInstanceData> unusedInstanceOptional = recordInstanceList.stream().filter(data -> StringUtils.equals(data.getOperationName(),
+                                    mockItem.getOperationName()) && !data.used()).findFirst();
+                            if (unusedInstanceOptional.isPresent()) {
+                                RecordInstanceData unusedInstanceData = unusedInstanceOptional.get();
+                                firstResult = redisCacheProvider.get(unusedInstanceData.getValueRefKey());
+                                unusedInstanceData.setStatus(RecordStatusType.USED.getCodeValue());
                             }
-                            putRecordInstanceData(category, recordIdBytes, recordInstanceList);
+                        } else {
+                            instanceData.setStatus(RecordStatusType.USED.getCodeValue());
+                            firstResult = result;
                         }
-                        LOGGER.info("get record result from record instance id :{}, operation :{}", CacheKeyUtils.fromUtf8Bytes(id), mockItem.getOperationName());
+                        putRecordInstanceData(category, recordIdBytes, recordInstanceList);
                     }
-                    if (firstResult == null) {
-                        firstResult = result;
-                    }
+                    boolean accurateMatch = i == 0 ? true : false;
+                    LOGGER.info("get record result from record instance id :{}, operation :{}, match result:{}, match key index :{}",
+                            CacheKeyUtils.fromUtf8Bytes(id), mockItem.getOperationName(), accurateMatch, i);
                 }
             }
             return firstResult;
@@ -276,13 +286,12 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     }
 
     private List<RecordInstanceData> getRecordDataFromZstd(MockCategoryType category, byte[] recordIdBytes) {
-        List<RecordInstanceData> recordInstanceList = null;
         if (shouldUseIdOfInstanceToMockResult(category)) {
             byte[] recordInstanceData = getRecordInstanceData(category, recordIdBytes);
             List<RecordInstanceData> allRecordInstanceData = serializer.deserializeToList(recordInstanceData, RecordInstanceData.class);
             return allRecordInstanceData;
         }
-        return recordInstanceList;
+        return Collections.emptyList();
     }
 
     private byte[] sequenceMockResult(MockCategoryType category, final byte[] recordIdBytes, byte[] replayIdBytes,
@@ -304,11 +313,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
                 sequence = count;
             }
             byte[] consumeSequenceKey = createSequenceKey(sourceKey, sequence);
-            byte[] valueRefKey = redisCacheProvider.get(consumeSequenceKey);
-            if (valueRefKey != null) {
-                context.setValueRefKey(valueRefKey);
-                return redisCacheProvider.get(valueRefKey);
-            }
+            return redisCacheProvider.get(consumeSequenceKey);
         } catch (Throwable throwable) {
             LOGGER.error("from agent's sequence consumeResult error:{} for category:{}",
                     throwable.getMessage(),
@@ -386,13 +391,12 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     @AllArgsConstructor
     @NoArgsConstructor
     private static final class RecordInstanceData {
-        private byte[] instanceId;
+        private byte[] valueRefKey;
         /**
          * @see com.arextest.storage.model.RecordStatusType
          */
         private int status;
         private String operationName;
-        private byte[] recordData;
 
         public boolean used() {
             return status == RecordStatusType.USED.getCodeValue();
