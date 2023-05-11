@@ -42,7 +42,6 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     private static final String AGENT_RECORD_VERSION_COLUMN_NAME = "recordVersion";
     private final static Bson CREATE_TIME_ASCENDING_SORT = Sorts.ascending(CREATE_TIME_COLUMN_NAME);
     private final static Bson CREATE_TIME_DESCENDING_SORT = Sorts.descending(CREATE_TIME_COLUMN_NAME);
-    private final static Bson PRIMARY_KEY_DESCENDING_SORT = Sorts.descending(PRIMARY_KEY_COLUMN_NAME);
 
 
     private final Class<AREXMocker> targetClassType;
@@ -106,7 +105,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     }
 
     @Override
-    public Iterable<AREXMocker> queryRecordListPaging(PagedRequestType pagedRequestType, String lastId) {
+    public Iterable<AREXMocker> queryRecordListPaging(PagedRequestType pagedRequestType, Integer pageIndex) {
         MockCategoryType categoryType = pagedRequestType.getCategory();
         MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
         List<Bson> filters = this.buildAppIdWithOperationFilters(pagedRequestType.getAppId(),
@@ -114,16 +113,14 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         if (pagedRequestType.getEnv() != null) {
             filters.add(Filters.eq(ENV_COLUMN_NAME, pagedRequestType.getEnv()));
         }
-        if (StringUtils.isNotEmpty(lastId)) {
-            filters.add(Filters.lt(PRIMARY_KEY_COLUMN_NAME, lastId));
-        }
         if (BooleanUtils.isNotFalse(pagedRequestType.getFilterPastRecordVersion())) {
             withRecordVersionFilters(filters, collectionSource);
         }
 
         Iterable<AREXMocker> iterable = collectionSource
                 .find(Filters.and(filters))
-                .sort(PRIMARY_KEY_DESCENDING_SORT)
+                .sort(CREATE_TIME_DESCENDING_SORT)
+                .skip(pagedRequestType.getPageSize() * (pageIndex - 1))
                 .limit(Math.min(pagedRequestType.getPageSize(), DEFAULT_MAX_LIMIT_SIZE));
         return new AttachmentCategoryIterable(categoryType, iterable);
     }

@@ -61,15 +61,12 @@ public class RecordQueryService {
             return responseType;
         }
         List<AREXMocker> arexMockers = new IterableListWrapper<>(repositoryReader.queryRecordListPaging(
-                pagedRequestType, listRecordCaseRequest.getLastId()));
+                pagedRequestType, listRecordCaseRequest.getPageIndex()));
         responseType.setRecordList(arexMockers);
 
-        //remove start&end time to count all the records, only First Page will return
-        if (listRecordCaseRequest.getLastId() == null) {
-            pagedRequestType.setBeginTime(null);
-            pagedRequestType.setEndTime(null);
-            responseType.setTotalCount(repositoryReader.countByRange(pagedRequestType));
-        }
+        pagedRequestType.setBeginTime(null);
+        pagedRequestType.setEndTime(null);
+        responseType.setTotalCount(repositoryReader.countByRange(pagedRequestType));
         return responseType;
     }
 

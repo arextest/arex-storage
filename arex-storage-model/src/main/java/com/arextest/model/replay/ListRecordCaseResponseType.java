@@ -11,10 +11,6 @@ import java.util.List;
 public class ListRecordCaseResponseType implements Response {
     private ResponseStatusType responseStatusType;
 
-    /**
-     * for paging
-     * only First-Page will return
-     */
     private Long totalCount;
 
     private List<AREXMocker> recordList;
