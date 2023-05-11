@@ -234,39 +234,41 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
                     context.setValueRefKey(valueRefKey);
                     result = redisCacheProvider.get(valueRefKey);
                 }
-                if (firstResult != null) {
-                    break;
+                if (strictMatch) {
+                    return result;
                 }
-                if (strictMatch || result != null) {
-                    if (shouldUseIdOfInstanceToMockResult(category)) {
-                        byte[] id = getIdOfRecordInstance(context.getValueRefKey());
-                        mockItem.setId(CacheKeyUtils.fromUtf8Bytes(id));
-                        if (CollectionUtils.isEmpty(recordInstanceList)) {
-                            break;
-                        }
-                        Optional<RecordInstanceData> instanceOptional =
-                                recordInstanceList.stream().filter(data -> Arrays.equals(valueRefKey, data.getValueRefKey())).findFirst();
-                        if (instanceOptional.isPresent()) {
-                            RecordInstanceData instanceData = instanceOptional.get();
-                            if (instanceData.used()) {
-                                Optional<RecordInstanceData> unusedInstanceOptional = recordInstanceList.stream().filter(data -> StringUtils.equals(data.getOperationName(),
-                                        mockItem.getOperationName()) && !data.used()).findFirst();
-                                if (unusedInstanceOptional.isPresent()) {
-                                    RecordInstanceData unusedInstanceData = unusedInstanceOptional.get();
-                                    firstResult = redisCacheProvider.get(unusedInstanceData.getValueRefKey());
-                                    unusedInstanceData.setStatus(RecordStatusType.USED.getCodeValue());
-                                }
-                            } else {
-                                instanceData.setStatus(RecordStatusType.USED.getCodeValue());
+                if (result == null || firstResult != null) {
+                    continue;
+                }
+                if (!shouldUseIdOfInstanceToMockResult(category)) {
+                    firstResult = result;
+                } else {
+                    byte[] id = getIdOfRecordInstance(context.getValueRefKey());
+                    mockItem.setId(CacheKeyUtils.fromUtf8Bytes(id));
+                    if (CollectionUtils.isEmpty(recordInstanceList)) {
+                        continue;
+                    }
+                    Optional<RecordInstanceData> instanceOptional =
+                            recordInstanceList.stream().filter(data -> Arrays.equals(valueRefKey, data.getValueRefKey())).findFirst();
+                    if (instanceOptional.isPresent()) {
+                        RecordInstanceData instanceData = instanceOptional.get();
+                        if (instanceData.used()) {
+                            Optional<RecordInstanceData> unusedInstanceOptional = recordInstanceList.stream().filter(data -> StringUtils.equals(data.getOperationName(),
+                                    mockItem.getOperationName()) && !data.used()).findFirst();
+                            if (unusedInstanceOptional.isPresent()) {
+                                RecordInstanceData unusedInstanceData = unusedInstanceOptional.get();
+                                firstResult = redisCacheProvider.get(unusedInstanceData.getValueRefKey());
+                                unusedInstanceData.setStatus(RecordStatusType.USED.getCodeValue());
                             }
-                            putRecordInstanceData(category, recordIdBytes, recordInstanceList);
+                        } else {
+                            instanceData.setStatus(RecordStatusType.USED.getCodeValue());
+                            firstResult = result;
                         }
-                        LOGGER.info("get record result from record instance id :{}, operation :{}", CacheKeyUtils.fromUtf8Bytes(id), mockItem.getOperationName());
+                        putRecordInstanceData(category, recordIdBytes, recordInstanceList);
                     }
-
-                    if (firstResult == null) {
-                        firstResult = result;
-                    }
+                    boolean accurateMatch = i == 0 ? true : false;
+                    LOGGER.info("get record result from record instance id :{}, operation :{}, match result:{}, match key index :{}",
+                            CacheKeyUtils.fromUtf8Bytes(id), mockItem.getOperationName(), accurateMatch, i);
                 }
             }
             return firstResult;
