@@ -140,8 +140,10 @@ public class ScheduleReplayingService {
         Iterable<ServiceOperationEntity> serviceOperationEntities =
                 serviceOperationRepository.queryServiceOperations(appId, operationName);
         for (ServiceOperationEntity entity : serviceOperationEntities) {
-            serviceOperationEntity = entity;
-            break;
+            if (entity != null) {
+                serviceOperationEntity = entity;
+                break;
+            }
         }
         String operationType = Optional.ofNullable(serviceOperationEntity).map(ServiceOperationEntity::getOperationType)
                 .orElse(null);
