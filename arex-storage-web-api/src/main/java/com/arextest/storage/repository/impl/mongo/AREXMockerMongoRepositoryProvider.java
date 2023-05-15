@@ -121,7 +121,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
                 .find(Filters.and(filters))
                 .sort(CREATE_TIME_DESCENDING_SORT)
                 .skip(pagedRequestType.getPageSize() * (pageIndex - 1))
-                .limit(Math.min(pagedRequestType.getPageSize(), DEFAULT_MAX_LIMIT_SIZE));
+                .limit(pagedRequestType.getPageSize());
         return new AttachmentCategoryIterable(categoryType, iterable);
     }
 

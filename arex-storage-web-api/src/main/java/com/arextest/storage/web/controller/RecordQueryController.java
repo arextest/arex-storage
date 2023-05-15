@@ -5,7 +5,12 @@ import com.arextest.model.response.Response;
 import com.arextest.storage.service.RecordQueryService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 @Slf4j
 @RequestMapping(path = "api/storage/record/query", produces = {MediaType.APPLICATION_JSON_VALUE})
@@ -34,7 +39,9 @@ public class RecordQueryController {
         if (requestType == null) {
             return ResponseUtils.requestBodyEmptyResponse();
         }
-
+        if (requestType.getPageSize() <= 0 || requestType.getPageSize() >= 1000) {
+            return ResponseUtils.parameterInvalidResponse("illegal pageSize!");
+        }
         try {
             return ResponseUtils.successResponse(recordQueryService.listRecordCase(requestType));
         } catch (Throwable throwable) {
