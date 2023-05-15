@@ -222,7 +222,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
             final byte[] recordIdBytes = CacheKeyUtils.toUtf8Bytes(recordId);
             final byte[] replayIdBytes = CacheKeyUtils.toUtf8Bytes(replayId);
             byte[] result = null;
-            byte[] firstResult = null;
+            byte[] mockResult = null;
             byte[] mockKeyBytes;
             List<RecordInstanceData> recordInstanceList = getRecordDataFromZstd(category, recordIdBytes);
             int mockKeySize = mockKeyList.size();
@@ -235,47 +235,49 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
                     context.setValueRefKey(valueRefKey);
                     result = redisCacheProvider.get(valueRefKey);
                 }
-                if (strictMatch) {
+                if (strictMatch || (context.isLastOfResult() && tryFindLastValue)) {
                     return result;
                 }
-                if (result == null || firstResult != null) {
+                if (result == null || mockResult != null) {
                     continue;
                 }
-                if (context.isLastOfResult() && tryFindLastValue) {
-                    return result;
-                }
                 if (!shouldUseIdOfInstanceToMockResult(category)) {
-                    firstResult = result;
-                } else {
-                    byte[] id = getIdOfRecordInstance(context.getValueRefKey());
-                    mockItem.setId(CacheKeyUtils.fromUtf8Bytes(id));
-                    if (CollectionUtils.isEmpty(recordInstanceList)) {
-                        continue;
-                    }
-                    Optional<RecordInstanceData> instanceOptional =
-                            recordInstanceList.stream().filter(data -> Arrays.equals(valueRefKey, data.getValueRefKey())).findFirst();
-                    if (instanceOptional.isPresent()) {
-                        RecordInstanceData instanceData = instanceOptional.get();
-                        if (instanceData.used()) {
-                            Optional<RecordInstanceData> unusedInstanceOptional = recordInstanceList.stream().filter(data -> StringUtils.equals(data.getOperationName(),
-                                    mockItem.getOperationName()) && !data.used()).findFirst();
-                            if (unusedInstanceOptional.isPresent()) {
-                                RecordInstanceData unusedInstanceData = unusedInstanceOptional.get();
-                                firstResult = redisCacheProvider.get(unusedInstanceData.getValueRefKey());
-                                unusedInstanceData.setStatus(RecordStatusType.USED.getCodeValue());
-                            }
-                        } else {
-                            instanceData.setStatus(RecordStatusType.USED.getCodeValue());
-                            firstResult = result;
+                    mockResult = result;
+                    continue;
+                }
+                byte[] id = getIdOfRecordInstance(context.getValueRefKey());
+                mockItem.setId(CacheKeyUtils.fromUtf8Bytes(id));
+
+                if (CollectionUtils.isEmpty(recordInstanceList)) {
+                    continue;
+                }
+
+                Optional<RecordInstanceData> instanceOptional =
+                        recordInstanceList.stream().filter(data -> Arrays.equals(valueRefKey, data.getValueRefKey())).findFirst();
+                if (instanceOptional.isPresent()) {
+                    RecordInstanceData instanceData = instanceOptional.get();
+                    if (instanceData.used()) {
+                        Optional<RecordInstanceData> unusedInstanceOptional = recordInstanceList.stream().filter(
+                                data -> StringUtils.equals(data.getOperationName(), mockItem.getOperationName()) && !data.used()).findFirst();
+                        if (unusedInstanceOptional.isPresent()) {
+                            RecordInstanceData unusedInstanceData = unusedInstanceOptional.get();
+                            mockResult = redisCacheProvider.get(unusedInstanceData.getValueRefKey());
+                            unusedInstanceData.setStatus(RecordStatusType.USED.getCodeValue());
                         }
-                        putRecordInstanceData(category, recordIdBytes, recordInstanceList);
+                    } else {
+                        instanceData.setStatus(RecordStatusType.USED.getCodeValue());
                     }
-                    boolean accurateMatch = i == 0 ? true : false;
-                    LOGGER.info("get record result from record instance id :{}, operation :{}, match result:{}, match key index :{}",
-                            CacheKeyUtils.fromUtf8Bytes(id), mockItem.getOperationName(), accurateMatch, i);
+                    putRecordInstanceData(category, recordIdBytes, recordInstanceList);
+                }
+                LOGGER.info("get record result from record instance id :{}, operation :{}, accurateMatch :{}, match key index :{}",
+                        CacheKeyUtils.fromUtf8Bytes(id), mockItem.getOperationName(), i == 0, i);
+
+                if (mockResult == null) {
+                    mockResult = result;
                 }
             }
-            return firstResult;
+
+            return mockResult;
         } catch (Throwable throwable) {
             LOGGER.error("from agent's sequence consumeResult error:{} for category:{},recordId:{},replayId:{}",
                     throwable.getMessage(),
@@ -399,7 +401,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
         private String operationName;
 
         public boolean used() {
-            return status == RecordStatusType.USED.getCodeValue();
+            return RecordStatusType.USED.getCodeValue() == status;
         }
     }
 }
