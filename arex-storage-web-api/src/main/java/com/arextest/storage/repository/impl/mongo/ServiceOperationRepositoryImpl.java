@@ -13,6 +13,7 @@ import org.bson.conversions.Bson;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
+import java.util.Arrays;
 
 /**
  * @author b_yu
@@ -24,6 +25,7 @@ public class ServiceOperationRepositoryImpl implements ServiceOperationRepositor
     private static final String SERVICE_ID = "serviceId";
     private static final String OPERATION_NAME = "operationName";
     private static final String OPERATION_TYPE = "operationType";
+    private static final String OPERATION_TYPES = "operationTypes";
     private static final String STATUS = "status";
 
     @Resource
@@ -46,6 +48,7 @@ public class ServiceOperationRepositoryImpl implements ServiceOperationRepositor
         Bson update = Updates.combine(Updates.set(OPERATION_TYPE, entity.getOperationType()),
                 Updates.set(STATUS, 4),
                 Updates.set(DATA_CHANGE_UPDATE_TIME, System.currentTimeMillis()),
+                Updates.addEachToSet(OPERATION_TYPES, entity.getOperationTypes()),
                 Updates.setOnInsert(DATA_CHANGE_CREATE_TIME, System.currentTimeMillis()));
 
         entity = getCollection().findOneAndUpdate(query,
