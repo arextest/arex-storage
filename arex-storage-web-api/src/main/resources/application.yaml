@@ -9,7 +9,6 @@ spring:
     active: docker
 #for report
 arex:
-  report:
-    config:
-      agent:
-        url: http://arex-report-service:8080/api/config/agent/load
+  url:
+    report:
+      agentload: ${arex.report.config.agent.url}/api/config/agent/load

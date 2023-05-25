@@ -21,7 +21,7 @@ import javax.annotation.Resource;
 @Slf4j
 public class AgentLoadController {
 
-    @Value("${arex.report.config.agent.url}")
+    @Value("${arex.url.report.agentload}")
     private String agentLoadUrl;
     @Resource
     private HttpWepServiceApiClient httpWepServiceApiClient;
