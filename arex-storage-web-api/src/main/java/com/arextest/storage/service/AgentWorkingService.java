@@ -135,7 +135,7 @@ public final class AgentWorkingService {
             }
             if (result == null) {
                 if (MockResultMatchStrategy.STRICT_MATCH == context.getMockStrategy()
-//                        || (MockResultMatchStrategy.BREAK_RECORDED_COUNT == context.getMockStrategy() && context.isLastOfResult())
+                        || (MockResultMatchStrategy.BREAK_RECORDED_COUNT == context.getMockStrategy() && context.isLastOfResult())
                 ) {
                     return ZstdJacksonSerializer.EMPTY_INSTANCE;
                 }

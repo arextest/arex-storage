@@ -230,7 +230,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
             boolean tryFindLastValue = MockResultMatchStrategy.TRY_FIND_LAST_VALUE == context.getMockStrategy();
             for (int i = 0; i < mockKeySize; i++) {
                 mockKeyBytes = mockKeyList.get(i);
-                byte[] valueRefKey = sequenceMockResult(category, recordIdBytes, replayIdBytes, mockKeyBytes, context);
+                byte[] valueRefKey = sequenceMockResultKey(category, recordIdBytes, replayIdBytes, mockKeyBytes, context);
                 if (valueRefKey != null) {
                     context.setValueRefKey(valueRefKey);
                     result = redisCacheProvider.get(valueRefKey);
@@ -249,6 +249,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
                 mockItem.setId(CacheKeyUtils.fromUtf8Bytes(id));
 
                 if (CollectionUtils.isEmpty(recordInstanceList)) {
+                    mockResult = result;
                     continue;
                 }
 
@@ -296,7 +297,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
         return Collections.emptyList();
     }
 
-    private byte[] sequenceMockResult(MockCategoryType category, final byte[] recordIdBytes, byte[] replayIdBytes,
+    private byte[] sequenceMockResultKey(MockCategoryType category, final byte[] recordIdBytes, byte[] replayIdBytes,
                                       final byte[] mockKeyBytes, MockResultContext context) {
         try {
             byte[] sourceKey = CacheKeyUtils.buildRecordKey(category, recordIdBytes, mockKeyBytes);

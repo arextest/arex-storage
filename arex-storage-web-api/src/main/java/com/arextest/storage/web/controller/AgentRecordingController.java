@@ -53,7 +53,7 @@ public class AgentRecordingController {
     @PostMapping(value = "/query")
     @ResponseBody
     public byte[] query(@RequestBody AREXMocker requestType, @RequestHeader(name = AREX_MOCK_STRATEGY_CODE,
-            defaultValue = "1") int strategyCode) {
+            defaultValue = "0") int strategyCode) {
         try {
             MockCategoryType category = requestType.getCategoryType();
             if (category == null) {

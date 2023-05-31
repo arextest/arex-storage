@@ -41,19 +41,19 @@ public final class PrepareMockResultService {
         return result;
     }
 
-    boolean preload(MockCategoryType category, String recordId, boolean setRecordStatus) {
+    boolean preload(MockCategoryType category, String recordId, boolean initialStatus) {
         // try again load by defaultProvider and pinnedProvider
-        return this.preload(providerFactory.getRepositoryProviderList(), category, recordId, setRecordStatus);
+        return this.preload(providerFactory.getRepositoryProviderList(), category, recordId, initialStatus);
     }
 
     private boolean preload(RepositoryProvider<? extends Mocker> repositoryReader, MockCategoryType categoryType,
-                            String recordId, boolean setRecordStatus) {
+                            String recordId, boolean initialStatus) {
         if (repositoryReader == null) {
             return false;
         }
         MDCTracer.addCategory(categoryType);
         if (mockResultProvider.recordResultCount(categoryType, recordId) > 0) {
-            if (setRecordStatus) {
+            if (initialStatus) {
                 mockResultProvider.updateRecordInstanceStatus(categoryType, recordId, RecordStatusType.UNUSED.getCodeValue());
             }
             LOGGER.warn("skip preload cache for category:{},record id:{}", categoryType, recordId);
@@ -68,9 +68,9 @@ public final class PrepareMockResultService {
     }
 
     private boolean preload(List<RepositoryProvider<? extends Mocker>> repositoryReaderList, MockCategoryType categoryType,
-                            String recordId, boolean setRecordStatus) {
+                            String recordId, boolean initialStatus) {
         for (RepositoryProvider<? extends Mocker> repositoryReader : repositoryReaderList) {
-            if (this.preload(repositoryReader, categoryType, recordId, setRecordStatus)) {
+            if (this.preload(repositoryReader, categoryType, recordId, initialStatus)) {
                 return true;
             }
         }
