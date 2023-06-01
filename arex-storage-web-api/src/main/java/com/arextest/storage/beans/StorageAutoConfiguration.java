@@ -83,8 +83,10 @@ public class StorageAutoConfiguration {
     @ConditionalOnProperty(prefix = "arex.storage", name = "enableDiscoveryEntryPoint", havingValue = "true")
     public AgentWorkingListener autoDiscoveryEntryPointListener(ServiceRepository serviceRepository,
                                                                 ServiceOperationRepository serviceOperationRepository,
-                                                                CacheProvider cacheProvider) {
-        return new AutoDiscoveryEntryPointListener(serviceRepository, serviceOperationRepository, cacheProvider);
+                                                                CacheProvider cacheProvider,
+                                                                RecordService recordService) {
+        return new AutoDiscoveryEntryPointListener(serviceRepository, serviceOperationRepository, cacheProvider,
+                recordService);
     }
 
     @Bean
@@ -111,8 +113,8 @@ public class StorageAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(RecordQueryController.class)
-    public RecordQueryController recordQueryController(RecordQueryService recordQueryService) {
-        return new RecordQueryController(recordQueryService);
+    public RecordQueryController recordQueryController(RecordService recordService) {
+        return new RecordQueryController(recordService);
     }
 
     @Bean
@@ -123,11 +125,11 @@ public class StorageAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean(RecordQueryService.class)
-    public RecordQueryService recordQueryService(RepositoryProviderFactory repositoryProviderFactory,
-                                                 ServiceOperationRepository serviceOperationRepository,
-                                                 ScheduleReplayingService scheduleReplayingService) {
-        return new RecordQueryService(repositoryProviderFactory, serviceOperationRepository, scheduleReplayingService);
+    @ConditionalOnMissingBean(RecordService.class)
+    public RecordService recordQueryService(RepositoryProviderFactory repositoryProviderFactory,
+                                            ServiceOperationRepository serviceOperationRepository,
+                                            ScheduleReplayingService scheduleReplayingService) {
+        return new RecordService(repositoryProviderFactory, serviceOperationRepository, scheduleReplayingService);
     }
 
     @Bean

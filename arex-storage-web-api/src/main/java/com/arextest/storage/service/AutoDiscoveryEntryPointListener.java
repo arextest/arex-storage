@@ -9,19 +9,17 @@ import com.arextest.storage.model.dao.ServiceOperationEntity;
 import com.arextest.storage.repository.ServiceOperationRepository;
 import com.arextest.storage.repository.ServiceRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.validation.constraints.NotNull;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
 @Slf4j
 public class AutoDiscoveryEntryPointListener implements AgentWorkingListener {
     private final ServiceRepository serviceRepository;
     private final ServiceOperationRepository serviceOperationRepository;
     private final CacheProvider cacheProvider;
+    private final RecordService recordService;
 
     private static final String DASH = "_";
     private static final int SERVICE_TYPE_NORMAL = 4;
@@ -29,11 +27,13 @@ public class AutoDiscoveryEntryPointListener implements AgentWorkingListener {
     private static final byte[] EMPTY_BYTE_ARRAY = CacheKeyUtils.toUtf8Bytes(StringUtils.EMPTY);
 
     public AutoDiscoveryEntryPointListener(ServiceRepository serviceRepository,
-            ServiceOperationRepository serviceOperationRepository,
-            CacheProvider cacheProvider) {
+                                           ServiceOperationRepository serviceOperationRepository,
+                                           CacheProvider cacheProvider,
+                                           RecordService recordService) {
         this.serviceRepository = serviceRepository;
         this.serviceOperationRepository = serviceOperationRepository;
         this.cacheProvider = cacheProvider;
+        this.recordService = recordService;
     }
 
     private <T extends Mocker> void register(@NotNull T item) {
@@ -76,6 +76,7 @@ public class AutoDiscoveryEntryPointListener implements AgentWorkingListener {
     public boolean onRecordSaving(Mocker instance) {
         if (instance.getCategoryType().isEntryPoint()) {
             this.register(instance);
+            recordService.updateCount(instance);
         }
         return false;
     }
