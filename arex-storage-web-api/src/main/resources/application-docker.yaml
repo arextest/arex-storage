@@ -5,6 +5,10 @@ arex:
     enableDiscoveryEntryPoint: true
     mongodbUri: ${arex.storage.mongo.host:mongodb://arex:iLoveArex@mongodb:27017/arex_storage_db}
     recordEnv: PRO
+  report:
+    config:
+      agent:
+        url: ${arex.report.service.api:http://arex-report-service:8080}
 #    categoryTypes:
 #      - name: Hi
 #        entryPoint: true

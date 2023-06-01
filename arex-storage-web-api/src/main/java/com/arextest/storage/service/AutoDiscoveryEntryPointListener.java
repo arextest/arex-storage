@@ -9,9 +9,13 @@ import com.arextest.storage.model.dao.ServiceOperationEntity;
 import com.arextest.storage.repository.ServiceOperationRepository;
 import com.arextest.storage.repository.ServiceRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 @Slf4j
 public class AutoDiscoveryEntryPointListener implements AgentWorkingListener {
@@ -24,7 +28,9 @@ public class AutoDiscoveryEntryPointListener implements AgentWorkingListener {
     private static final String SERVICE_MAPPINGS_PREFIX = "service_mappings_";
     private static final byte[] EMPTY_BYTE_ARRAY = CacheKeyUtils.toUtf8Bytes(StringUtils.EMPTY);
 
-    public AutoDiscoveryEntryPointListener(ServiceRepository serviceRepository, ServiceOperationRepository serviceOperationRepository, CacheProvider cacheProvider) {
+    public AutoDiscoveryEntryPointListener(ServiceRepository serviceRepository,
+            ServiceOperationRepository serviceOperationRepository,
+            CacheProvider cacheProvider) {
         this.serviceRepository = serviceRepository;
         this.serviceOperationRepository = serviceOperationRepository;
         this.cacheProvider = cacheProvider;
@@ -45,7 +51,12 @@ public class AutoDiscoveryEntryPointListener implements AgentWorkingListener {
         String operationName = item.getOperationName();
         String serviceId = CacheKeyUtils.fromUtf8Bytes(cacheProvider.get(appServiceKey));
         byte[] operationKey =
-                CacheKeyUtils.toUtf8Bytes(SERVICE_MAPPINGS_PREFIX + serviceId + DASH + item.getOperationName());
+                CacheKeyUtils.toUtf8Bytes(SERVICE_MAPPINGS_PREFIX
+                        + serviceId
+                        + DASH
+                        + item.getOperationName()
+                        + DASH
+                        + item.getCategoryType().getName());
         if (cacheProvider.get(operationKey) != null) {
             return;
         }
@@ -53,12 +64,12 @@ public class AutoDiscoveryEntryPointListener implements AgentWorkingListener {
         operationEntity.setAppId(appId);
         operationEntity.setOperationName(operationName);
         operationEntity.setOperationType(item.getCategoryType().getName());
+        operationEntity.setOperationTypes(Collections.singletonList(item.getCategoryType().getName()));
         operationEntity.setServiceId(serviceId);
         operationEntity.setStatus(SERVICE_TYPE_NORMAL);
         if (serviceOperationRepository.findAndUpdate(operationEntity)) {
             cacheProvider.put(operationKey, EMPTY_BYTE_ARRAY);
         }
-
     }
 
     @Override
