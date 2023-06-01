@@ -1,6 +1,5 @@
 package com.arextest.storage.web.controller;
 
-import com.arextest.model.replay.ListRecordCaseRequestType;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.response.Response;
 import com.arextest.storage.service.RecordService;

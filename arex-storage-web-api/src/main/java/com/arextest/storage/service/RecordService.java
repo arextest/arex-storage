@@ -4,7 +4,6 @@ import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.model.replay.CountRecordCaseResponseType;
-import com.arextest.model.replay.ListRecordCaseRequestType;
 import com.arextest.model.replay.ListRecordCaseResponseType;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.storage.repository.RepositoryProviderFactory;
@@ -79,14 +78,6 @@ public class RecordService {
         pagedRequestType.setEndTime(null);
         responseType.setTotalCount(repositoryReader.countByRange(pagedRequestType));
         return responseType;
-    }
-
-    private PagedRequestType listRecordCaseRequestToPagedRequestType(ListRecordCaseRequestType input) {
-        PagedRequestType output = new PagedRequestType();
-        output.setOperation(input.getOperationName());
-        output.setPageSize(input.getPageSize());
-        output.setAppId(input.getAppId());
-        return output;
     }
 
     public void updateCount(Mocker item) {
