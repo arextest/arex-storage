@@ -92,7 +92,7 @@ public class RecordService {
     public void updateCount(Mocker item) {
         String key = item.getAppId();
         Long count = recordCaseCountCache.getIfPresent(item.getAppId());
-
+        //cold start-up
         if (count == null) {
             count = countRecord(key);
         }
