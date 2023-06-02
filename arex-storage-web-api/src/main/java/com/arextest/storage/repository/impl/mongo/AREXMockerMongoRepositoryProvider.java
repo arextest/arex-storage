@@ -43,6 +43,8 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     private final static Bson CREATE_TIME_ASCENDING_SORT = Sorts.ascending(CREATE_TIME_COLUMN_NAME);
     private final static Bson CREATE_TIME_DESCENDING_SORT = Sorts.descending(CREATE_TIME_COLUMN_NAME);
 
+    private static final Integer CREATE_TIME_DESC_CODE = 2;
+
 
     private final Class<AREXMocker> targetClassType;
     private static final int DEFAULT_MIN_LIMIT_SIZE = 1;
@@ -91,37 +93,21 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     @Override
     public Iterable<AREXMocker> queryByRange(PagedRequestType pagedRequestType) {
         MockCategoryType categoryType = pagedRequestType.getCategory();
+        Integer pageIndex = pagedRequestType.getPageIndex();
         MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
         List<Bson> filters = buildReadRangeFilters(pagedRequestType);
 
         if (BooleanUtils.isNotFalse(pagedRequestType.getFilterPastRecordVersion())) {
             withRecordVersionFilters(filters, collectionSource);
         }
+
+        Bson sortBson = CREATE_TIME_DESC_CODE.equals(pagedRequestType.getCreationTimeOrder())
+                ? CREATE_TIME_DESCENDING_SORT : CREATE_TIME_ASCENDING_SORT;
         Iterable<AREXMocker> iterable = collectionSource
                 .find(Filters.and(filters))
-                .sort(CREATE_TIME_ASCENDING_SORT)
+                .sort(sortBson)
+                .skip(pageIndex == null ? 0 : pagedRequestType.getPageSize() * (pageIndex - 1))
                 .limit(Math.min(pagedRequestType.getPageSize(), DEFAULT_MAX_LIMIT_SIZE));
-        return new AttachmentCategoryIterable(categoryType, iterable);
-    }
-
-    @Override
-    public Iterable<AREXMocker> queryRecordListPaging(PagedRequestType pagedRequestType, Integer pageIndex) {
-        MockCategoryType categoryType = pagedRequestType.getCategory();
-        MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
-        List<Bson> filters = this.buildAppIdWithOperationFilters(pagedRequestType.getAppId(),
-                pagedRequestType.getOperation());
-        if (pagedRequestType.getEnv() != null) {
-            filters.add(Filters.eq(ENV_COLUMN_NAME, pagedRequestType.getEnv()));
-        }
-        if (BooleanUtils.isNotFalse(pagedRequestType.getFilterPastRecordVersion())) {
-            withRecordVersionFilters(filters, collectionSource);
-        }
-
-        Iterable<AREXMocker> iterable = collectionSource
-                .find(Filters.and(filters))
-                .sort(CREATE_TIME_DESCENDING_SORT)
-                .skip(pagedRequestType.getPageSize() * (pageIndex - 1))
-                .limit(pagedRequestType.getPageSize());
         return new AttachmentCategoryIterable(categoryType, iterable);
     }
 

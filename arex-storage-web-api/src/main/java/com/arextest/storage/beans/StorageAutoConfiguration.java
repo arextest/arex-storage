@@ -17,7 +17,6 @@ import com.arextest.storage.repository.impl.mongo.MongoDbUtils;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.*;
 import com.arextest.storage.web.controller.MockSourceEditionController;
-import com.arextest.storage.web.controller.RecordQueryController;
 import com.arextest.storage.web.controller.ScheduleReplayQueryController;
 import com.mongodb.client.MongoDatabase;
 import org.apache.commons.collections4.CollectionUtils;
@@ -83,10 +82,8 @@ public class StorageAutoConfiguration {
     @ConditionalOnProperty(prefix = "arex.storage", name = "enableDiscoveryEntryPoint", havingValue = "true")
     public AgentWorkingListener autoDiscoveryEntryPointListener(ServiceRepository serviceRepository,
                                                                 ServiceOperationRepository serviceOperationRepository,
-                                                                CacheProvider cacheProvider,
-                                                                RecordService recordService) {
-        return new AutoDiscoveryEntryPointListener(serviceRepository, serviceOperationRepository, cacheProvider,
-                recordService);
+                                                                CacheProvider cacheProvider) {
+        return new AutoDiscoveryEntryPointListener(serviceRepository, serviceOperationRepository, cacheProvider);
     }
 
     @Bean
@@ -112,24 +109,11 @@ public class StorageAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean(RecordQueryController.class)
-    public RecordQueryController recordQueryController(RecordService recordService) {
-        return new RecordQueryController(recordService);
-    }
-
-    @Bean
     @ConditionalOnMissingBean(ScheduleReplayingService.class)
     public ScheduleReplayingService scheduleReplayingService(MockResultProvider mockResultProvider,
-                                                             RepositoryProviderFactory repositoryProviderFactory) {
-        return new ScheduleReplayingService(mockResultProvider, repositoryProviderFactory);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean(RecordService.class)
-    public RecordService recordQueryService(RepositoryProviderFactory repositoryProviderFactory,
-                                            ServiceOperationRepository serviceOperationRepository,
-                                            ScheduleReplayingService scheduleReplayingService) {
-        return new RecordService(repositoryProviderFactory, serviceOperationRepository, scheduleReplayingService);
+                                                             RepositoryProviderFactory repositoryProviderFactory,
+                                                             ServiceOperationRepository serviceOperationRepository) {
+        return new ScheduleReplayingService(mockResultProvider, repositoryProviderFactory, serviceOperationRepository);
     }
 
     @Bean

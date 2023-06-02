@@ -13,7 +13,7 @@ public class PagedRequestType {
     private Long endTime;
     private Integer env;
     private int pageSize;
-    private int pageIndex;
+    private Integer pageIndex;
     private String operation;
     private MockCategoryType category;
     private String sourceProvider;
@@ -23,4 +23,11 @@ public class PagedRequestType {
      * old version default value: true
      */
     private Boolean filterPastRecordVersion;
+
+    /**
+     * Order by CreationTime.
+     * null:no usage 1:desc 2:asc
+     * default : 2
+     */
+    private Integer creationTimeOrder;
 }

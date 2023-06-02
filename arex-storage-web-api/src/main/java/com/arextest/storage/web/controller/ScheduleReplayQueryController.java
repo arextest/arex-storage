@@ -93,6 +93,9 @@ public class ScheduleReplayQueryController {
         if (requestType.getPageSize() <= 0) {
             return ResponseUtils.parameterInvalidResponse("The max case size <= 0 from requested");
         }
+        if (requestType.getCategory() == null) {
+            return ResponseUtils.parameterInvalidResponse("The category of requested is empty");
+        }
         try {
             PagedResponseType responseType = new PagedResponseType();
             List<AREXMocker> records = scheduleReplayingService.queryByRange(requestType);
@@ -120,9 +123,9 @@ public class ScheduleReplayQueryController {
         if (requestType.getBeginTime() >= requestType.getEndTime()) {
             return ResponseUtils.parameterInvalidResponse("The beginTime >= endTime from requested");
         }
-        if (requestType.getCategory() == null) {
-            return ResponseUtils.parameterInvalidResponse("The category of requested is empty");
-        }
+        //        if (requestType.getCategory() == null) {
+        //            return ResponseUtils.parameterInvalidResponse("The category of requested is empty");
+        //        }
         return null;
     }
 

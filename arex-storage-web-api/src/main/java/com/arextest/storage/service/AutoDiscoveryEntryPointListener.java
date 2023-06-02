@@ -19,7 +19,6 @@ public class AutoDiscoveryEntryPointListener implements AgentWorkingListener {
     private final ServiceRepository serviceRepository;
     private final ServiceOperationRepository serviceOperationRepository;
     private final CacheProvider cacheProvider;
-    private final RecordService recordService;
 
     private static final String DASH = "_";
     private static final int SERVICE_TYPE_NORMAL = 4;
@@ -28,12 +27,10 @@ public class AutoDiscoveryEntryPointListener implements AgentWorkingListener {
 
     public AutoDiscoveryEntryPointListener(ServiceRepository serviceRepository,
                                            ServiceOperationRepository serviceOperationRepository,
-                                           CacheProvider cacheProvider,
-                                           RecordService recordService) {
+                                           CacheProvider cacheProvider) {
         this.serviceRepository = serviceRepository;
         this.serviceOperationRepository = serviceOperationRepository;
         this.cacheProvider = cacheProvider;
-        this.recordService = recordService;
     }
 
     private <T extends Mocker> void register(@NotNull T item) {
@@ -76,7 +73,6 @@ public class AutoDiscoveryEntryPointListener implements AgentWorkingListener {
     public boolean onRecordSaving(Mocker instance) {
         if (instance.getCategoryType().isEntryPoint()) {
             this.register(instance);
-            recordService.updateCount(instance);
         }
         return false;
     }
