@@ -30,4 +30,6 @@ public class PagedRequestType {
      * default : 2
      */
     private Integer creationTimeOrder;
+
+    private Boolean needTotal;
 }
