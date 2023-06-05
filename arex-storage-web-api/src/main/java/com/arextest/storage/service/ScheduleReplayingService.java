@@ -122,7 +122,10 @@ public class ScheduleReplayingService {
         Set<String> operationTypes = new HashSet<>();
         String appId = replayCaseRangeRequest.getAppId();
         serviceOperationRepository.queryServiceOperations(appId, null)
-                .forEach(serviceOperationEntity -> operationTypes.addAll(serviceOperationEntity.getOperationTypes()));
+                .forEach(serviceOperationEntity -> {
+                    if (serviceOperationEntity.getOperationTypes() != null)
+                        operationTypes.addAll(serviceOperationEntity.getOperationTypes());
+                });
         long count = 0;
         for(String operationType : operationTypes) {
             replayCaseRangeRequest.setCategory(MockCategoryType.create(operationType));

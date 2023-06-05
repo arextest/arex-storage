@@ -41,9 +41,6 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     private final static Bson CREATE_TIME_ASCENDING_SORT = Sorts.ascending(CREATE_TIME_COLUMN_NAME);
     private final static Bson CREATE_TIME_DESCENDING_SORT = Sorts.descending(CREATE_TIME_COLUMN_NAME);
 
-    private static final Integer CREATE_TIME_DESC_CODE = 2;
-
-
     private final Class<AREXMocker> targetClassType;
     private static final int DEFAULT_MIN_LIMIT_SIZE = 1;
     private static final int DEFAULT_MAX_LIMIT_SIZE = 1000;

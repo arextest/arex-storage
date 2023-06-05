@@ -9,5 +9,5 @@ public enum OrderMethodEnum {
     ASCENDING(1),
     DESCENDING(2);
 
-    private Integer code;
+    private final int code;
 }
