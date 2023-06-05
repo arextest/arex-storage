@@ -1,7 +1,6 @@
 package com.arextest.storage.service;
 
 import com.arextest.common.utils.CompressionUtils;
-import com.arextest.common.utils.ResponseUtils;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.replay.PagedRequestType;
@@ -104,7 +103,7 @@ public class ScheduleReplayingService {
 
     public long countByRange(PagedRequestType replayCaseRangeRequest) {
         if (replayCaseRangeRequest.getCategory() == null) {
-            return countMultiCategory(replayCaseRangeRequest);
+            return countAllEntrypointCategory(replayCaseRangeRequest);
         } else {
             return countSingleCategory(replayCaseRangeRequest);
         }
@@ -119,7 +118,7 @@ public class ScheduleReplayingService {
         return 0;
     }
 
-    private long countMultiCategory(PagedRequestType replayCaseRangeRequest) {
+    private long countAllEntrypointCategory(PagedRequestType replayCaseRangeRequest) {
         Set<String> operationTypes = new HashSet<>();
         String appId = replayCaseRangeRequest.getAppId();
         serviceOperationRepository.queryServiceOperations(appId, null)

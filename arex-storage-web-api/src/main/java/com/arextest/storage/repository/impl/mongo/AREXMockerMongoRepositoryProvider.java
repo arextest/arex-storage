@@ -3,6 +3,8 @@ package com.arextest.storage.repository.impl.mongo;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
+import com.arextest.model.replay.OrderCondition;
+import com.arextest.model.replay.OrderMethod;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
@@ -18,11 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.bson.conversions.Bson;
 
 import javax.validation.constraints.NotNull;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  * The rolling provider used by default,
@@ -101,8 +99,17 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
             withRecordVersionFilters(filters, collectionSource);
         }
 
-        Bson sortBson = CREATE_TIME_DESC_CODE.equals(pagedRequestType.getCreationTimeOrder())
-                ? CREATE_TIME_DESCENDING_SORT : CREATE_TIME_ASCENDING_SORT;
+
+        Bson sortBson;
+        OrderCondition orderCondition = pagedRequestType.getOrderCondition();
+        if (orderCondition == null) {
+            sortBson = CREATE_TIME_ASCENDING_SORT;
+        } else {
+            sortBson = Objects.equals(OrderMethod.ASCENDING.getCode(), orderCondition.getOrderMethod())
+                    ? Sorts.ascending(orderCondition.getOrderKey())
+                    : Sorts.descending(orderCondition.getOrderKey());
+        }
+
         Iterable<AREXMocker> iterable = collectionSource
                 .find(Filters.and(filters))
                 .sort(sortBson)

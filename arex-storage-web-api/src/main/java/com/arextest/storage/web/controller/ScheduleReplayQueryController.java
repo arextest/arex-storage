@@ -100,8 +100,6 @@ public class ScheduleReplayQueryController {
             PagedResponseType responseType = new PagedResponseType();
             List<AREXMocker> records = scheduleReplayingService.queryByRange(requestType);
             responseType.setRecords(records);
-            if (requestType.getNeedTotal())
-                responseType.setTotalCount(scheduleReplayingService.countByRange(requestType));
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
             LOGGER.error("error:{},request:{}", throwable.getMessage(), requestType);
@@ -116,19 +114,10 @@ public class ScheduleReplayQueryController {
         if (StringUtils.isEmpty(requestType.getAppId())) {
             return ResponseUtils.parameterInvalidResponse("The appId of requested is empty");
         }
-        //        if (requestType.getBeginTime() == null) {
-        //            return ResponseUtils.parameterInvalidResponse("The beginTime of requested is null");
-        //        }
-        //        if (requestType.getEndTime() == null) {
-        //            return ResponseUtils.parameterInvalidResponse("The endTime of requested is null");
-        //        }
         if (requestType.getBeginTime() != null && requestType.getEndTime() != null
                 && requestType.getBeginTime() >= requestType.getEndTime()) {
             return ResponseUtils.parameterInvalidResponse("The beginTime >= endTime from requested");
         }
-        //        if (requestType.getCategory() == null) {
-        //            return ResponseUtils.parameterInvalidResponse("The category of requested is empty");
-        //        }
         return null;
     }
 

@@ -15,5 +15,4 @@ import java.util.List;
 public class PagedResponseType implements Response {
     private ResponseStatusType responseStatusType;
     private List<AREXMocker> records;
-    private Long totalCount;
 }

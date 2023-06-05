@@ -24,12 +24,6 @@ public class PagedRequestType {
      */
     private Boolean filterPastRecordVersion;
 
-    /**
-     * Order by CreationTime.
-     * null:no usage 1:desc 2:asc
-     * default : 2
-     */
-    private Integer creationTimeOrder;
+    private OrderCondition orderCondition;
 
-    private Boolean needTotal;
 }
