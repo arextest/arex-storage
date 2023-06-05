@@ -1,12 +1,11 @@
 package com.arextest.model.replay;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Getter;
 
 @AllArgsConstructor
 @Getter
-public enum OrderMethod {
+public enum OrderMethodEnum {
     ASCENDING(1),
     DESCENDING(2);
 

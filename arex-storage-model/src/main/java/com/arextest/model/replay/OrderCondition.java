@@ -12,7 +12,7 @@ public class OrderCondition {
     private String orderKey;
 
     /**
-     * @see OrderMethod
+     * @see OrderMethodEnum
      * desc or asc
      */
     private Integer orderMethod;

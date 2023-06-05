@@ -4,7 +4,7 @@ import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.model.replay.OrderCondition;
-import com.arextest.model.replay.OrderMethod;
+import com.arextest.model.replay.OrderMethodEnum;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
@@ -105,7 +105,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         if (orderCondition == null) {
             sortBson = CREATE_TIME_ASCENDING_SORT;
         } else {
-            sortBson = Objects.equals(OrderMethod.ASCENDING.getCode(), orderCondition.getOrderMethod())
+            sortBson = Objects.equals(OrderMethodEnum.ASCENDING.getCode(), orderCondition.getOrderMethod())
                     ? Sorts.ascending(orderCondition.getOrderKey())
                     : Sorts.descending(orderCondition.getOrderKey());
         }
