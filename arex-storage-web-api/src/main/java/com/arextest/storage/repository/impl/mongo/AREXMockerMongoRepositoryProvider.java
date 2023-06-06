@@ -25,7 +25,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * The rolling provider used by default,
@@ -101,11 +100,10 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         if (CollectionUtils.isEmpty(sortingOptions)) {
             sorts.add(CREATE_TIME_ASCENDING_SORT);
         } else {
-            sorts.addAll(sortingOptions.stream().map(sortingOption ->
-                            Objects.equals(SortingTypeEnum.ASCENDING.getCode(), sortingOption.getSortingType())
-                                    ? Sorts.ascending(sortingOption.getLabel())
-                                    : Sorts.descending(sortingOption.getLabel()))
-                    .collect(Collectors.toList()));
+            sortingOptions.forEach(sortingOption -> sorts.add(
+                    Objects.equals(SortingTypeEnum.ASCENDING.getCode(), sortingOption.getSortingType())
+                            ? Sorts.ascending(sortingOption.getLabel())
+                            : Sorts.descending(sortingOption.getLabel())));
         }
 
         AREXMocker item = getLastRecordVersionMocker(pagedRequestType, collectionSource);
