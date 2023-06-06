@@ -99,15 +99,15 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
 
         Iterable<AREXMocker> iterable = collectionSource
                 .find(Filters.and(withRecordVersionFilters(pagedRequestType, recordVersion)))
-                .sort(Sorts.orderBy(toSupportSortingOptions(pagedRequestType.getSortingOptions())))
+                .sort(toSupportSortingOptions(pagedRequestType.getSortingOptions()))
                 .skip(pageIndex == null ? 0 : pagedRequestType.getPageSize() * (pageIndex - 1))
                 .limit(Math.min(pagedRequestType.getPageSize(), DEFAULT_MAX_LIMIT_SIZE));
         return new AttachmentCategoryIterable(categoryType, iterable);
     }
 
-    private List<Bson> toSupportSortingOptions(List<SortingOption> sortingOptions) {
+    private Bson toSupportSortingOptions(List<SortingOption> sortingOptions) {
         if (CollectionUtils.isEmpty(sortingOptions)) {
-            return Collections.singletonList(CREATE_TIME_ASCENDING_SORT);
+            return CREATE_TIME_ASCENDING_SORT;
         }
         List<Bson> sorts = new ArrayList<>(sortingOptions.size());
         for (SortingOption sortingOption : sortingOptions) {
@@ -117,7 +117,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
                 sorts.add(Sorts.descending(sortingOption.getLabel()));
             }
         }
-        return sorts;
+        return Sorts.orderBy(sorts);
     }
 
 
