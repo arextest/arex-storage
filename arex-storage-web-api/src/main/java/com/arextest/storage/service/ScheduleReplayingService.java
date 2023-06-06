@@ -128,7 +128,7 @@ public class ScheduleReplayingService {
                 });
         long count = 0;
         for(String operationType : operationTypes) {
-            replayCaseRangeRequest.setCategory(MockCategoryType.create(operationType));
+            replayCaseRangeRequest.setCategory(MockCategoryType.createEntryPoint(operationType));
             count += countSingleCategory(replayCaseRangeRequest);
         }
         return count;
