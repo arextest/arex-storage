@@ -107,15 +107,16 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     }
 
     private List<Bson> toSupportSortingOptions(List<SortingOption> sortingOptions) {
-        List<Bson> sorts = new ArrayList<>();
         if (CollectionUtils.isEmpty(sortingOptions)) {
-            sorts.add(CREATE_TIME_ASCENDING_SORT);
-        } else {
-            sortingOptions.forEach(sortingOption -> sorts.add(
-                    Objects.equals(SortingTypeEnum.ASCENDING.getCode(), sortingOption.getSortingType())
-                            ? Sorts.ascending(sortingOption.getLabel())
-                            : Sorts.descending(sortingOption.getLabel())));
+            return Collections.singletonList(CREATE_TIME_ASCENDING_SORT);
         }
+        List<Bson> sorts = new ArrayList<>(sortingOptions.size());
+        for (SortingOption sortingOption : sortingOptions) {
+            sorts.add(Objects.equals(SortingTypeEnum.ASCENDING.getCode(), sortingOption.getSortingType())
+                    ? Sorts.ascending(sortingOption.getLabel())
+                    : Sorts.descending(sortingOption.getLabel()));
+        }
+
         return sorts;
     }
 
@@ -216,6 +217,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         filters.add(env);
         return filters;
     }
+
     private List<Bson> buildReadRangeFilters(@NotNull PagedRequestType rangeRequestType) {
         List<Bson> filters = this.buildAppIdWithOperationFilters(rangeRequestType.getAppId(),
                 rangeRequestType.getOperation());
