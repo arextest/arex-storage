@@ -8,4 +8,6 @@ import com.arextest.storage.model.dao.ServiceOperationEntity;
  */
 public interface ServiceOperationRepository extends Repository {
     boolean findAndUpdate(ServiceOperationEntity entity);
+
+    Iterable<ServiceOperationEntity> queryServiceOperations(String appId, String operation);
 }

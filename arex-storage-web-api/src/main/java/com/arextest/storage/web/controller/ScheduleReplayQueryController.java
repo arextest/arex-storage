@@ -1,6 +1,5 @@
 package com.arextest.storage.web.controller;
 
-
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.PagedResponseType;
@@ -46,7 +45,7 @@ public class ScheduleReplayQueryController {
     private final PrepareMockResultService prepareMockResultService;
 
     public ScheduleReplayQueryController(ScheduleReplayingService scheduleReplayingService,
-            PrepareMockResultService prepareMockResultService) {
+                                         PrepareMockResultService prepareMockResultService) {
         this.scheduleReplayingService = scheduleReplayingService;
         this.prepareMockResultService = prepareMockResultService;
     }
@@ -108,6 +107,9 @@ public class ScheduleReplayQueryController {
         if (requestType.getPageSize() <= 0) {
             return ResponseUtils.parameterInvalidResponse("The max case size <= 0 from requested");
         }
+        if (requestType.getCategory() == null) {
+            return ResponseUtils.parameterInvalidResponse("The category of requested is empty");
+        }
         try {
             PagedResponseType responseType = new PagedResponseType();
             List<AREXMocker> records = scheduleReplayingService.queryByRange(requestType);
@@ -134,9 +136,6 @@ public class ScheduleReplayQueryController {
         }
         if (requestType.getBeginTime() >= requestType.getEndTime()) {
             return ResponseUtils.parameterInvalidResponse("The beginTime >= endTime from requested");
-        }
-        if (requestType.getCategory() == null) {
-            return ResponseUtils.parameterInvalidResponse("The category of requested is empty");
         }
         return null;
     }
@@ -171,8 +170,8 @@ public class ScheduleReplayQueryController {
     @GetMapping(value = "/viewRecord/")
     @ResponseBody
     public Response viewRecord(String recordId,
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false, defaultValue = ProviderNames.DEFAULT) String srcProvider) {
+                               @RequestParam(required = false) String category,
+                               @RequestParam(required = false, defaultValue = ProviderNames.DEFAULT) String srcProvider) {
         ViewRecordRequestType recordRequestType = new ViewRecordRequestType();
         recordRequestType.setRecordId(recordId);
         recordRequestType.setSourceProvider(srcProvider);

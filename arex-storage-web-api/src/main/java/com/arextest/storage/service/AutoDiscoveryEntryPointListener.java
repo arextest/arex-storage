@@ -29,8 +29,8 @@ public class AutoDiscoveryEntryPointListener implements AgentWorkingListener {
     private static final byte[] EMPTY_BYTE_ARRAY = CacheKeyUtils.toUtf8Bytes(StringUtils.EMPTY);
 
     public AutoDiscoveryEntryPointListener(ServiceRepository serviceRepository,
-            ServiceOperationRepository serviceOperationRepository,
-            CacheProvider cacheProvider) {
+                                           ServiceOperationRepository serviceOperationRepository,
+                                           CacheProvider cacheProvider) {
         this.serviceRepository = serviceRepository;
         this.serviceOperationRepository = serviceOperationRepository;
         this.cacheProvider = cacheProvider;
