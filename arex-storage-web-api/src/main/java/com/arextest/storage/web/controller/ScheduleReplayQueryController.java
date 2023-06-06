@@ -1,6 +1,7 @@
 package com.arextest.storage.web.controller;
 
-import com.arextest.model.mock.AREXMocker;import com.arextest.model.replay.PagedRequestType;
+import com.arextest.model.mock.AREXMocker;
+import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.PagedResponseType;
 import com.arextest.model.replay.QueryCaseCountRequestType;
 import com.arextest.model.replay.QueryCaseCountResponseType;
@@ -44,7 +45,7 @@ public class ScheduleReplayQueryController {
     private final PrepareMockResultService prepareMockResultService;
 
     public ScheduleReplayQueryController(ScheduleReplayingService scheduleReplayingService,
-            PrepareMockResultService prepareMockResultService) {
+                                         PrepareMockResultService prepareMockResultService) {
         this.scheduleReplayingService = scheduleReplayingService;
         this.prepareMockResultService = prepareMockResultService;
     }
@@ -169,8 +170,8 @@ public class ScheduleReplayQueryController {
     @GetMapping(value = "/viewRecord/")
     @ResponseBody
     public Response viewRecord(String recordId,
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false, defaultValue = ProviderNames.DEFAULT) String srcProvider) {
+                               @RequestParam(required = false) String category,
+                               @RequestParam(required = false, defaultValue = ProviderNames.DEFAULT) String srcProvider) {
         ViewRecordRequestType recordRequestType = new ViewRecordRequestType();
         recordRequestType.setRecordId(recordId);
         recordRequestType.setSourceProvider(srcProvider);
