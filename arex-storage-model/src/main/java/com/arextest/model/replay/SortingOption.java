@@ -15,7 +15,7 @@ public class SortingOption {
 
     /**
      * @see SortingTypeEnum
-     * desc or asc
+     * -1:desc or 1:asc
      */
-    private Integer sortingType;
+    private int sortingType;
 }
