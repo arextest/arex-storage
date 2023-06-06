@@ -13,7 +13,7 @@ public class PagedRequestType {
     private Long endTime;
     private Integer env;
     private int pageSize;
-    private Integer pageIndex;
+    private int pageIndex;
     private String operation;
     private MockCategoryType category;
     private String sourceProvider;
