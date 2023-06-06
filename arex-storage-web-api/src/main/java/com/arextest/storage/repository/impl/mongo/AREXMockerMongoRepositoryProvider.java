@@ -24,7 +24,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * The rolling provider used by default,
@@ -112,11 +111,12 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         }
         List<Bson> sorts = new ArrayList<>(sortingOptions.size());
         for (SortingOption sortingOption : sortingOptions) {
-            sorts.add(Objects.equals(SortingTypeEnum.ASCENDING.getCode(), sortingOption.getSortingType())
-                    ? Sorts.ascending(sortingOption.getLabel())
-                    : Sorts.descending(sortingOption.getLabel()));
+            if (SortingTypeEnum.ASCENDING.getCode() == sortingOption.getSortingType()) {
+                sorts.add(Sorts.ascending(sortingOption.getLabel()));
+            } else {
+                sorts.add(Sorts.descending(sortingOption.getLabel()));
+            }
         }
-
         return sorts;
     }
 
