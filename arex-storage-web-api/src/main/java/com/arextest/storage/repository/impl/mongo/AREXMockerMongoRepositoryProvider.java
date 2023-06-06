@@ -19,7 +19,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.bson.conversions.Bson;
 
 import javax.validation.constraints.NotNull;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * The rolling provider used by default,
