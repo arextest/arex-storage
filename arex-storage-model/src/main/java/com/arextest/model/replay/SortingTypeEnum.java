@@ -3,7 +3,7 @@ package com.arextest.model.replay;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
-public enum OrderMethodEnum {
+public enum SortingTypeEnum {
     ASCENDING(1),
     DESCENDING(-1);
 

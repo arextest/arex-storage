@@ -7,15 +7,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class OrderCondition {
+public class SortingOption {
     /**
      * order by.
      */
-    private String orderKey;
+    private String label;
 
     /**
-     * @see OrderMethodEnum
+     * @see SortingTypeEnum
      * desc or asc
      */
-    private Integer orderMethod;
+    private Integer sortingType;
 }

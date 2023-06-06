@@ -3,8 +3,8 @@ package com.arextest.storage.repository.impl.mongo;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
-import com.arextest.model.replay.OrderCondition;
-import com.arextest.model.replay.OrderMethodEnum;
+import com.arextest.model.replay.SortingOption;
+import com.arextest.model.replay.SortingTypeEnum;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * The rolling provider used by default,
@@ -95,14 +96,16 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         Integer pageIndex = pagedRequestType.getPageIndex();
         MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
 
-        Bson sortBson;
-        OrderCondition orderCondition = pagedRequestType.getOrderCondition();
-        if (orderCondition == null) {
-            sortBson = CREATE_TIME_ASCENDING_SORT;
+        List<Bson> sorts = new ArrayList<>();
+        List<SortingOption> sortingOptions = pagedRequestType.getSortingOptions();
+        if (CollectionUtils.isEmpty(sortingOptions)) {
+            sorts.add(CREATE_TIME_ASCENDING_SORT);
         } else {
-            sortBson = Objects.equals(OrderMethodEnum.ASCENDING.getCode(), orderCondition.getOrderMethod())
-                    ? Sorts.ascending(orderCondition.getOrderKey())
-                    : Sorts.descending(orderCondition.getOrderKey());
+            sorts.addAll(sortingOptions.stream().map(sortingOption ->
+                            Objects.equals(SortingTypeEnum.ASCENDING.getCode(), sortingOption.getSortingType())
+                                    ? Sorts.ascending(sortingOption.getLabel())
+                                    : Sorts.descending(sortingOption.getLabel()))
+                    .collect(Collectors.toList()));
         }
 
         AREXMocker item = getLastRecordVersionMocker(pagedRequestType, collectionSource);
@@ -110,7 +113,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
 
         Iterable<AREXMocker> iterable = collectionSource
                 .find(Filters.and(withRecordVersionFilters(pagedRequestType, recordVersion)))
-                .sort(sortBson)
+                .sort(Sorts.orderBy(sorts))
                 .skip(pageIndex == null ? 0 : pagedRequestType.getPageSize() * (pageIndex - 1))
                 .limit(Math.min(pagedRequestType.getPageSize(), DEFAULT_MAX_LIMIT_SIZE));
         return new AttachmentCategoryIterable(categoryType, iterable);
