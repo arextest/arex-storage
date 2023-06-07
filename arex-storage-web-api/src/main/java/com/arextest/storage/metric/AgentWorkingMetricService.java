@@ -34,6 +34,10 @@ public class AgentWorkingMetricService {
     }
 
     public <T extends Mocker> boolean saveRecord(@NotNull T item) {
+        if (CollectionUtils.isEmpty(metricListeners)) {
+            return agentWorkingService.saveRecord(item);
+        }
+
         StopWatch watch = new StopWatch();
         watch.start();
         boolean saveResult = agentWorkingService.saveRecord(item);
@@ -43,6 +47,10 @@ public class AgentWorkingMetricService {
     }
 
     public <T extends Mocker> byte[] queryMockResult(@NotNull T recordItem, MockResultContext context) {
+        if (CollectionUtils.isEmpty(metricListeners)) {
+            return agentWorkingService.queryMockResult(recordItem, context);
+        }
+
         StopWatch watch = new StopWatch();
         watch.start();
         byte[] queryMockResult = agentWorkingService.queryMockResult(recordItem, context);
@@ -52,10 +60,6 @@ public class AgentWorkingMetricService {
     }
 
     private void recordEntryTime(String path, AREXMocker item, long timeMillis) {
-        if (CollectionUtils.isEmpty(metricListeners)) {
-            return;
-        }
-
         Map<String, String> tags = new HashMap<>(5);
         tags.put(CLIENT_APP_ID, item.getAppId());
         tags.put(PATH, path);
