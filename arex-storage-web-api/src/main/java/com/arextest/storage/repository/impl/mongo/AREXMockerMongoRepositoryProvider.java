@@ -3,6 +3,8 @@ package com.arextest.storage.repository.impl.mongo;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
+import com.arextest.model.replay.SortingOption;
+import com.arextest.model.replay.SortingTypeEnum;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
@@ -89,23 +91,43 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     @Override
     public Iterable<AREXMocker> queryByRange(PagedRequestType pagedRequestType) {
         MockCategoryType categoryType = pagedRequestType.getCategory();
+        Integer pageIndex = pagedRequestType.getPageIndex();
         MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
+
         AREXMocker item = getLastRecordVersionMocker(pagedRequestType, collectionSource);
         String recordVersion = item == null ? null : item.getRecordVersion();
+
         Iterable<AREXMocker> iterable = collectionSource
                 .find(Filters.and(withRecordVersionFilters(pagedRequestType, recordVersion)))
-                .sort(CREATE_TIME_ASCENDING_SORT)
+                .sort(toSupportSortingOptions(pagedRequestType.getSortingOptions()))
+                .skip(pageIndex == null ? 0 : pagedRequestType.getPageSize() * (pageIndex - 1))
                 .limit(Math.min(pagedRequestType.getPageSize(), DEFAULT_MAX_LIMIT_SIZE));
         return new AttachmentCategoryIterable(categoryType, iterable);
     }
 
-    private AREXMocker getLastRecordVersionMocker(PagedRequestType pagedRequestType, MongoCollection<AREXMocker> collectionSource) {
-        AREXMocker item = collectionSource
+    private Bson toSupportSortingOptions(List<SortingOption> sortingOptions) {
+        if (CollectionUtils.isEmpty(sortingOptions)) {
+            return CREATE_TIME_ASCENDING_SORT;
+        }
+        List<Bson> sorts = new ArrayList<>(sortingOptions.size());
+        for (SortingOption sortingOption : sortingOptions) {
+            if (SortingTypeEnum.ASCENDING.getCode() == sortingOption.getSortingType()) {
+                sorts.add(Sorts.ascending(sortingOption.getLabel()));
+            } else {
+                sorts.add(Sorts.descending(sortingOption.getLabel()));
+            }
+        }
+        return Sorts.orderBy(sorts);
+    }
+
+
+    private AREXMocker getLastRecordVersionMocker(PagedRequestType pagedRequestType,
+                                                  MongoCollection<AREXMocker> collectionSource) {
+        return collectionSource
                 .find(Filters.and(buildReadRangeFilters(pagedRequestType)))
                 .sort(CREATE_TIME_DESCENDING_SORT)
                 .limit(DEFAULT_MIN_LIMIT_SIZE)
                 .first();
-        return item;
     }
 
     @Override
@@ -195,6 +217,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         filters.add(env);
         return filters;
     }
+
     private List<Bson> buildReadRangeFilters(@NotNull PagedRequestType rangeRequestType) {
         List<Bson> filters = this.buildAppIdWithOperationFilters(rangeRequestType.getAppId(),
                 rangeRequestType.getOperation());

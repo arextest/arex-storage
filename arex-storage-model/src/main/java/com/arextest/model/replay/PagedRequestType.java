@@ -4,6 +4,8 @@ import com.arextest.model.mock.MockCategoryType;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 
 @Getter
 @Setter
@@ -13,7 +15,10 @@ public class PagedRequestType {
     private Long endTime;
     private Integer env;
     private int pageSize;
+    private Integer pageIndex;
     private String operation;
     private MockCategoryType category;
     private String sourceProvider;
+    private List<SortingOption> sortingOptions;
+
 }

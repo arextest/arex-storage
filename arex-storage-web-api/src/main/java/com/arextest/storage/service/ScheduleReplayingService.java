@@ -9,12 +9,14 @@ import com.arextest.model.replay.holder.ListResultHolder;
 import com.arextest.storage.mock.MockResultProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.RepositoryReader;
+import com.arextest.storage.repository.ServiceOperationRepository;
 import com.arextest.storage.trace.MDCTracer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -33,9 +35,14 @@ public class ScheduleReplayingService {
     private final MockResultProvider mockResultProvider;
     private final RepositoryProviderFactory repositoryProviderFactory;
 
-    public ScheduleReplayingService(MockResultProvider mockResultProvider, RepositoryProviderFactory repositoryProviderFactory) {
+    private final ServiceOperationRepository serviceOperationRepository;
+
+    public ScheduleReplayingService(MockResultProvider mockResultProvider,
+                                    RepositoryProviderFactory repositoryProviderFactory,
+                                    ServiceOperationRepository serviceOperationRepository) {
         this.mockResultProvider = mockResultProvider;
         this.repositoryProviderFactory = repositoryProviderFactory;
+        this.serviceOperationRepository = serviceOperationRepository;
     }
 
     public List<ListResultHolder> queryReplayResult(String recordId, String replayResultId) {
@@ -100,6 +107,14 @@ public class ScheduleReplayingService {
     }
 
     public long countByRange(PagedRequestType replayCaseRangeRequest) {
+        if (replayCaseRangeRequest.getCategory() == null) {
+            return countAllEntrypointCategory(replayCaseRangeRequest);
+        } else {
+            return countSingleCategory(replayCaseRangeRequest);
+        }
+    }
+
+    private long countSingleCategory(PagedRequestType replayCaseRangeRequest) {
         RepositoryReader<?> repositoryReader =
                 repositoryProviderFactory.findProvider(replayCaseRangeRequest.getSourceProvider());
         if (repositoryReader != null) {
@@ -108,13 +123,28 @@ public class ScheduleReplayingService {
         return 0;
     }
 
+    private long countAllEntrypointCategory(PagedRequestType replayCaseRangeRequest) {
+        Set<String> operationTypes = new HashSet<>();
+        String appId = replayCaseRangeRequest.getAppId();
+        serviceOperationRepository.queryServiceOperations(appId, null)
+                .forEach(serviceOperationEntity -> {
+                    if (serviceOperationEntity.getOperationTypes() != null)
+                        operationTypes.addAll(serviceOperationEntity.getOperationTypes());
+                });
+        long count = 0;
+        for(String operationType : operationTypes) {
+            replayCaseRangeRequest.setCategory(MockCategoryType.createEntryPoint(operationType));
+            count += countSingleCategory(replayCaseRangeRequest);
+        }
+        return count;
+    }
+
     private List<String> encodeToBase64String(List<byte[]> source) {
         if (CollectionUtils.isEmpty(source)) {
             return Collections.emptyList();
         }
         final List<String> recordResult = new ArrayList<>(source.size());
-        for (int i = 0; i < source.size(); i++) {
-            byte[] values = source.get(i);
+        for (byte[] values : source) {
             String encodeResult = CompressionUtils.encodeToBase64String(values);
             if (encodeResult != null) {
                 recordResult.add(encodeResult);
