@@ -6,6 +6,8 @@ import com.arextest.common.cache.DefaultRedisCacheProvider;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.storage.converter.ZstdJacksonMessageConverter;
+import com.arextest.storage.metric.AgentWorkingMetricService;
+import com.arextest.storage.metric.MetricListener;
 import com.arextest.storage.mock.MockResultProvider;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
@@ -99,6 +101,13 @@ public class StorageAutoConfiguration {
         workingService.setZstdJacksonSerializer(zstdJacksonSerializer);
         workingService.setRecordEnvType(properties.getRecordEnv());
         return workingService;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(AgentWorkingMetricService.class)
+    public AgentWorkingMetricService agentWorkingMetricService(AgentWorkingService agentWorkingService,
+        List<MetricListener> metricListeners) {
+        return new AgentWorkingMetricService(agentWorkingService, metricListeners);
     }
 
     @Bean
