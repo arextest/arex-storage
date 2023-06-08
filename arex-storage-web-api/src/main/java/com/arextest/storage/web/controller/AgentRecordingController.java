@@ -6,6 +6,7 @@ import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.model.mock.Mocker.Target;
 import com.arextest.model.response.Response;
+import com.arextest.storage.metric.AgentWorkingMetricService;
 import com.arextest.storage.mock.MockResultContext;
 import com.arextest.storage.mock.MockResultMatchStrategy;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
@@ -43,6 +44,9 @@ public class AgentRecordingController {
     @Resource
     private AgentWorkingService agentWorkingService;
 
+    @Resource
+    private AgentWorkingMetricService agentWorkingMetricService;
+
 
     /**
      * from agent query,means to save the request and try to find a record item as mock result for return.
@@ -73,7 +77,7 @@ public class AgentRecordingController {
             }
             MDCTracer.addTrace(category, requestType);
             MockResultContext context = new MockResultContext(MockResultMatchStrategy.of(strategyCode));
-            return agentWorkingService.queryMockResult(requestType, context);
+            return agentWorkingMetricService.queryMockResult(requestType, context);
         } catch (Throwable throwable) {
             LOGGER.error("query error:{} from category:{}", throwable.getMessage(), requestType, throwable);
         } finally {
@@ -99,7 +103,7 @@ public class AgentRecordingController {
         try {
             MDCTracer.addTrace(category, requestType);
 
-            boolean saveResult = agentWorkingService.saveRecord(requestType);
+            boolean saveResult = agentWorkingMetricService.saveRecord(requestType);
             LOGGER.info("agent record save result:{},category:{},recordId:{}", saveResult, category,
                     requestType.getRecordId());
             return ResponseUtils.successResponse(saveResult);

@@ -3,6 +3,8 @@ package com.arextest.storage.repository.impl.mongo;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
+import com.arextest.model.replay.SortingOption;
+import com.arextest.model.replay.SortingTypeEnum;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.SortingOption;
 import com.arextest.model.replay.SortingTypeEnum;
