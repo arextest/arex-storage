@@ -12,6 +12,7 @@ import javax.validation.constraints.NotNull;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * created by xinyuan_wang on 2023/6/7
@@ -19,8 +20,8 @@ import java.util.Map;
 @Slf4j
 public class AgentWorkingMetricService {
 
-    private static final String QUERY_MOCK_METHOD_NAME = "/api/storage/record/query";
-    private static final String SAVE_MOCK_METHOD_NAME = "/api/storage/record/save";
+    private static final String QUERY_MOCK_METHOD_NAME = "query";
+    private static final String SAVE_MOCK_METHOD_NAME = "save";
     private static final String METRIC_NAME = "service.entry.request";
     private static final String CLIENT_APP_ID = "clientAppId";
     private static final String PATH = "path";
@@ -38,12 +39,16 @@ public class AgentWorkingMetricService {
             return agentWorkingService.saveRecord(item);
         }
 
-        StopWatch watch = new StopWatch();
-        watch.start();
+        long startTimeNanos = System.nanoTime();
         boolean saveResult = agentWorkingService.saveRecord(item);
-        watch.stop();
-        recordEntryTime(SAVE_MOCK_METHOD_NAME, (AREXMocker) item, watch.getTotalTimeMillis());
+        long totalTimeNanos = System.nanoTime() - startTimeNanos;
+
+        recordEntryTime(SAVE_MOCK_METHOD_NAME, (AREXMocker) item, nanosToMillis(totalTimeNanos));
         return saveResult;
+    }
+
+    private static long nanosToMillis(long duration) {
+        return TimeUnit.NANOSECONDS.toMillis(duration);
     }
 
     public <T extends Mocker> byte[] queryMockResult(@NotNull T recordItem, MockResultContext context) {
@@ -51,11 +56,11 @@ public class AgentWorkingMetricService {
             return agentWorkingService.queryMockResult(recordItem, context);
         }
 
-        StopWatch watch = new StopWatch();
-        watch.start();
+        long startTimeNanos = System.nanoTime();
         byte[] queryMockResult = agentWorkingService.queryMockResult(recordItem, context);
-        watch.stop();
-        recordEntryTime(QUERY_MOCK_METHOD_NAME, (AREXMocker) recordItem, watch.getTotalTimeMillis());
+        long totalTimeNanos = System.nanoTime() - startTimeNanos;
+
+        recordEntryTime(QUERY_MOCK_METHOD_NAME, (AREXMocker) recordItem, nanosToMillis(totalTimeNanos));
         return queryMockResult;
     }
 
