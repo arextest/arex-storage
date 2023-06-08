@@ -13,12 +13,15 @@ import com.arextest.storage.repository.ServiceOperationRepository;
 import com.arextest.storage.trace.MDCTracer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -111,6 +114,50 @@ public class ScheduleReplayingService {
             return countAllEntrypointCategory(replayCaseRangeRequest);
         } else {
             return countSingleCategory(replayCaseRangeRequest);
+        }
+    }
+
+    public Map<String, Long> aggCountByRange(PagedRequestType pagedRequestType) {
+        if (pagedRequestType.getCategory() == null) {
+            return aggCountSingleCategory(pagedRequestType);
+        } else {
+            return aggCountAllEntrypointCategory(pagedRequestType);
+        }
+    }
+
+    private Map<String, Long> aggCountSingleCategory(PagedRequestType pagedRequestType) {
+        RepositoryReader<?> repositoryReader =
+                repositoryProviderFactory.findProvider(pagedRequestType.getSourceProvider());
+        if (repositoryReader != null) {
+            return repositoryReader.aggCountByRange(pagedRequestType);
+        }
+        return new HashMap<>();
+    }
+
+    private Map<String, Long> aggCountAllEntrypointCategory(PagedRequestType pagedRequestType) {
+        Set<String> operationTypes = new HashSet<>();
+        String appId = pagedRequestType.getAppId();
+        serviceOperationRepository.queryServiceOperations(appId, null)
+                .forEach(serviceOperationEntity -> {
+                    if (serviceOperationEntity.getOperationTypes() != null)
+                        operationTypes.addAll(serviceOperationEntity.getOperationTypes());
+                });
+        Map<String, Long> countMap = new HashMap<>();
+        for(String operationType : operationTypes) {
+            pagedRequestType.setCategory(MockCategoryType.createEntryPoint(operationType));
+            mergeMap(countMap, aggCountSingleCategory(pagedRequestType));
+        }
+        return countMap;
+    }
+
+    private void mergeMap(Map<String, Long> source, Map<String, Long> addition) {
+        if (MapUtils.isEmpty(addition)) return;
+        for (Map.Entry<String, Long> entry : addition.entrySet()) {
+            if (source.containsKey(entry.getKey())) {
+                source.put(entry.getKey(), source.get(entry.getKey()) + entry.getValue());
+            } else {
+                source.put(entry.getKey(), entry.getValue());
+            }
         }
     }
 

@@ -63,7 +63,7 @@ public class ServiceOperationRepositoryImpl implements ServiceOperationRepositor
     public Iterable<ServiceOperationEntity> queryServiceOperations(String appId, String operation) {
         List<Bson> filters = new ArrayList<>();
         filters.add(Filters.eq(APP_ID, appId));
-        filters.add(Filters.eq(OPERATION_NAME, operation));
+        if (operation != null) filters.add(Filters.eq(OPERATION_NAME, operation));
         return getCollection().find(Filters.and(filters));
     }
 }

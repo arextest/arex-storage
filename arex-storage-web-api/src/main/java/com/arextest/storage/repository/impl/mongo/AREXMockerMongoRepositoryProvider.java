@@ -3,27 +3,33 @@ package com.arextest.storage.repository.impl.mongo;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
+import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.SortingOption;
 import com.arextest.model.replay.SortingTypeEnum;
-import com.arextest.model.replay.PagedRequestType;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
+import com.mongodb.BasicDBObject;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.result.DeleteResult;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The rolling provider used by default,
@@ -39,6 +45,12 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     private static final String ENV_COLUMN_NAME = "recordEnvironment";
     private static final String OPERATION_COLUMN_NAME = "operationName";
     private static final String COLLECTION_PREFIX = "Mocker";
+    private static final String PLACE_HOLDER = "$";
+    private static final String VALUE_COLUMN = "value";
+
+    private static final String GROUP_OP = "$group";
+    private static final String SUM_OP = "$sum";
+    private static final String PROJECT_OP = "$project";
 
     private static final String AGENT_RECORD_VERSION_COLUMN_NAME = "recordVersion";
     private final static Bson CREATE_TIME_ASCENDING_SORT = Sorts.ascending(CREATE_TIME_COLUMN_NAME);
@@ -64,6 +76,11 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     private MongoCollection<AREXMocker> createOrGetCollection(MockCategoryType category) {
         String categoryName = this.getProviderName() + category.getName() + COLLECTION_PREFIX;
         return mongoDatabase.getCollection(categoryName, this.targetClassType);
+    }
+
+    private MongoCollection<Document> createOrGetDocCollection(MockCategoryType category) {
+        String categoryName = this.getProviderName() + category.getName() + COLLECTION_PREFIX;
+        return mongoDatabase.getCollection(categoryName);
     }
 
     @Override
@@ -130,12 +147,45 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
                 .first();
     }
 
+    private Document getLastRecordVersionDoc(PagedRequestType pagedRequestType,
+                                                  MongoCollection<Document> collectionSource) {
+        return collectionSource
+                .find(Filters.and(buildReadRangeFilters(pagedRequestType)))
+                .sort(CREATE_TIME_DESCENDING_SORT)
+                .limit(DEFAULT_MIN_LIMIT_SIZE)
+                .first();
+    }
+
     @Override
     public long countByRange(PagedRequestType rangeRequestType) {
         MongoCollection<AREXMocker> collectionSource = createOrGetCollection(rangeRequestType.getCategory());
         AREXMocker item = getLastRecordVersionMocker(rangeRequestType, collectionSource);
         String recordVersion = item == null ? null : item.getRecordVersion();
         return collectionSource.countDocuments(Filters.and(withRecordVersionFilters(rangeRequestType, recordVersion)));
+    }
+
+    @Override
+    public Map<String, Long> aggCountByRange(PagedRequestType rangeRequestType) {
+        MongoCollection<Document> collectionSource = createOrGetDocCollection(rangeRequestType.getCategory());
+        Document item = getLastRecordVersionDoc(rangeRequestType, collectionSource);
+        String recordVersion = item == null ? null : item.getString("recordVersion");
+
+        Bson filters = Filters.and(withRecordVersionFilters(rangeRequestType, recordVersion));
+        BasicDBObject basicDBObject = new BasicDBObject(PRIMARY_KEY_COLUMN_NAME, PLACE_HOLDER + OPERATION_COLUMN_NAME);
+        basicDBObject.append(VALUE_COLUMN, new BasicDBObject(SUM_OP, 1L));
+        BasicDBObject group = new BasicDBObject(GROUP_OP, basicDBObject);
+
+        BasicDBObject result = new BasicDBObject();
+        result.append(VALUE_COLUMN, PLACE_HOLDER + VALUE_COLUMN);
+        BasicDBObject project = new BasicDBObject(PROJECT_OP, result);
+
+        List<Bson> pipeline = Arrays.asList(Aggregates.match(filters), group, project);
+        Map<String, Long> resultMap = new HashMap<>();
+        createOrGetDocCollection(rangeRequestType.getCategory()).aggregate(pipeline).forEach(doc -> {
+            String operationName = doc.getString(PRIMARY_KEY_COLUMN_NAME);
+            if (operationName != null) resultMap.put(operationName, doc.getLong(VALUE_COLUMN));
+        });
+        return resultMap;
     }
 
 
