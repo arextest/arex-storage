@@ -19,10 +19,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import javax.validation.constraints.NotNull;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 
 @Component
@@ -56,9 +53,6 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
             if (valueRefKey == null) {
                 continue;
             }
-            if (shouldUseIdOfInstanceToMockResult(category)) {
-                putRecordInstanceId(valueRefKey, value.getId());
-            }
             for (int i = 0; i < mockKeyList.size(); i++) {
                 byte[] mockKeyBytes = mockKeyList.get(i);
                 byte[] key = CacheKeyUtils.buildRecordKey(category, recordIdBytes, mockKeyBytes);
@@ -66,6 +60,11 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
                 if (sequenceKey != null) {
                     size++;
                 }
+            }
+            // if category type is the type to be compared.associate the mock instance id with the related mock key.
+            if (shouldUseIdOfInstanceToMockResult(category)) {
+                putRecordInstanceId(valueRefKey, value.getId());
+                putMockKeyListWithInstanceId(value.getId(), mockKeyList);
             }
         }
         LOGGER.info("put record result to cache size:{} for category:{},record id:{}", size, category, recordId);
@@ -145,6 +144,9 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
 
     /**
      * sequence query for record result,if consume overhead the total,we use last one instead as return.
+     * <p>
+     * if the accurate matches the data, let the fuzzy key related to the mock data increase.
+     * vice versa.
      *
      * @param mockItem The record id from agent produced
      * @return compressed bytes with zstd
@@ -165,21 +167,40 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
             }
             final byte[] recordIdBytes = CacheKeyUtils.toUtf8Bytes(recordId);
             final byte[] replayIdBytes = CacheKeyUtils.toUtf8Bytes(replayId);
-            byte[] result;
+            byte[] result = null;
+            byte[] mockResultId = null;
             byte[] mockKeyBytes;
+            int mockResultIndex = 0;
             int mockKeySize = mockKeyList.size();
+            boolean useInstanceIdToMockResult = shouldUseIdOfInstanceToMockResult(category);
             boolean strictMatch = context.getMockStrategy() == MockResultMatchStrategy.STRICT_MATCH;
+
             for (int i = 0; i < mockKeySize; i++) {
                 mockKeyBytes = mockKeyList.get(i);
                 result = sequenceMockResult(category, recordIdBytes, replayIdBytes, mockKeyBytes, context);
-                if (strictMatch || result != null) {
-                    if (shouldUseIdOfInstanceToMockResult(category)) {
-                        byte[] id = getIdOfRecordInstance(context.getValueRefKey());
-                        mockItem.setId(CacheKeyUtils.fromUtf8Bytes(id));
-                    }
+                // if mock result match strategy is strict match, need get full parameter match data.
+                if (strictMatch) {
                     return result;
                 }
+
+                if (result != null) {
+                    if (useInstanceIdToMockResult) {
+                        // associate the matched mock id with the related replay data.
+                        mockResultId = getIdOfRecordInstance(context.getValueRefKey());
+                        mockItem.setId(CacheKeyUtils.fromUtf8Bytes(mockResultId));
+                        LOGGER.info("get record result from record instance id :{}, operation :{}, accurateMatch :{}, match key index :{}",
+                                CacheKeyUtils.fromUtf8Bytes(mockResultId), mockItem.getOperationName(), i == 0, i);
+                    }
+                    mockResultIndex = i;
+                    break;
+                }
             }
+
+            if (result != null && useInstanceIdToMockResult) {
+                updateConsumeSequence(category, recordIdBytes, replayIdBytes, mockResultId, mockResultIndex, mockKeySize);
+            }
+
+            return result;
         } catch (Throwable throwable) {
             LOGGER.error("from agent's sequence consumeResult error:{} for category:{},recordId:{},replayId:{}",
                     throwable.getMessage(),
@@ -187,6 +208,27 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
                     recordId, replayId, throwable);
         }
         return null;
+    }
+
+    /**
+     * Treat both full parameter and fuzzy matching of recorded data as a set of data,
+     * with one key being consumed and the other keys also consumed
+     * <p>
+     * follows:
+     * 1. if the fuzzy match gets the data, just let other key match increase.
+     * 2. if the full parameter match gets the data, only needs to increase the fuzzy match.
+     */
+    private void updateConsumeSequence(MockCategoryType category, byte[] recordIdBytes, byte[] replayIdBytes,
+                                       byte[] mockResultId, int mockResultIndex, int mockKeySize) {
+        for (int i = 0; i < mockKeySize; i++) {
+            if (mockResultIndex == i) {
+                continue;
+            }
+            byte[] mockKeyWithInstanceId = getMockKeyListWithInstanceId(mockResultId, i);
+            byte[] consumeSource = CacheKeyUtils.buildConsumeKey(category, recordIdBytes, replayIdBytes,
+                    mockKeyWithInstanceId);
+            nextSequence(consumeSource);
+        }
     }
 
     private byte[] sequenceMockResult(MockCategoryType category, final byte[] recordIdBytes, byte[] replayIdBytes,
@@ -235,7 +277,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
         final List<byte[]> recordResult = new ArrayList<>(size);
         for (int sequence = 1; sequence <= size; sequence++) {
             byte[] sequenceKey = createSequenceKey(resultCountKey, sequence);
-            byte[] value =redisCacheProvider.get(sequenceKey);
+            byte[] value = redisCacheProvider.get(sequenceKey);
             if (value != null) {
                 recordResult.add(value);
             }
@@ -277,6 +319,21 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
         redisCacheProvider.put(recordInstanceIdKey, cacheExpiredSeconds, CacheKeyUtils.toUtf8Bytes(id));
     }
 
+    /**
+     * associate the mock instance id with the related mock key.
+     */
+    private void putMockKeyListWithInstanceId(String id, List<byte[]> mockKeyList) {
+        for (int i = 0; i < mockKeyList.size(); i++) {
+            byte[] mockKeyWithInstanceIdKey = createMockKeyWithInstanceIdKey(CacheKeyUtils.toUtf8Bytes(id), i);
+            redisCacheProvider.put(mockKeyWithInstanceIdKey, cacheExpiredSeconds, mockKeyList.get(i));
+        }
+    }
+
+    private byte[] getMockKeyListWithInstanceId(byte[] mockResultId, int index) {
+        byte[] mockKeyWithInstanceIdKey = createMockKeyWithInstanceIdKey(mockResultId, index);
+        return redisCacheProvider.get(mockKeyWithInstanceIdKey);
+    }
+
     private byte[] getIdOfRecordInstance(byte[] valueRefKey) {
         final byte[] recordInstanceIdKey = createRecordInstanceIdKey(valueRefKey);
         return redisCacheProvider.get(recordInstanceIdKey);
@@ -284,5 +341,9 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
 
     private byte[] createRecordInstanceIdKey(byte[] src) {
         return CacheKeyUtils.merge(src, MockResultType.RECORD_INSTANCE_ID.getCodeValue());
+    }
+
+    private byte[] createMockKeyWithInstanceIdKey(byte[] src, int index) {
+        return CacheKeyUtils.merge(src, index);
     }
 }
