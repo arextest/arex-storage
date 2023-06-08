@@ -119,9 +119,9 @@ public class ScheduleReplayingService {
 
     public Map<String, Long> aggCountByRange(PagedRequestType pagedRequestType) {
         if (pagedRequestType.getCategory() == null) {
-            return aggCountSingleCategory(pagedRequestType);
-        } else {
             return aggCountAllEntrypointCategory(pagedRequestType);
+        } else {
+            return aggCountSingleCategory(pagedRequestType);
         }
     }
 
