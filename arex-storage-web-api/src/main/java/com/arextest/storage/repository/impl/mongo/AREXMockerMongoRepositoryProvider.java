@@ -147,6 +147,15 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
                 .first();
     }
 
+    private Document getLastRecordVersionDoc(PagedRequestType pagedRequestType,
+                                                  MongoCollection<Document> collectionSource) {
+        return collectionSource
+                .find(Filters.and(buildReadRangeFilters(pagedRequestType)))
+                .sort(CREATE_TIME_DESCENDING_SORT)
+                .limit(DEFAULT_MIN_LIMIT_SIZE)
+                .first();
+    }
+
     @Override
     public long countByRange(PagedRequestType rangeRequestType) {
         MongoCollection<AREXMocker> collectionSource = createOrGetCollection(rangeRequestType.getCategory());
@@ -157,9 +166,9 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
 
     @Override
     public Map<String, Long> aggCountByRange(PagedRequestType rangeRequestType) {
-        MongoCollection<AREXMocker> collectionSource = createOrGetCollection(rangeRequestType.getCategory());
-        AREXMocker item = getLastRecordVersionMocker(rangeRequestType, collectionSource);
-        String recordVersion = item == null ? null : item.getRecordVersion();
+        MongoCollection<Document> collectionSource = createOrGetDocCollection(rangeRequestType.getCategory());
+        Document item = getLastRecordVersionDoc(rangeRequestType, collectionSource);
+        String recordVersion = item == null ? null : item.getString("recordVersion");
 
         Bson filters = Filters.and(withRecordVersionFilters(rangeRequestType, recordVersion));
         BasicDBObject basicDBObject = new BasicDBObject(PRIMARY_KEY_COLUMN_NAME, PLACE_HOLDER + OPERATION_COLUMN_NAME);
