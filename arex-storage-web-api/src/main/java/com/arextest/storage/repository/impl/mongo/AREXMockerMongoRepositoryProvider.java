@@ -78,11 +78,6 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         return mongoDatabase.getCollection(categoryName, this.targetClassType);
     }
 
-    private MongoCollection<Document> createOrGetDocCollection(MockCategoryType category) {
-        String categoryName = this.getProviderName() + category.getName() + COLLECTION_PREFIX;
-        return mongoDatabase.getCollection(categoryName);
-    }
-
     @Override
     public Iterable<AREXMocker> queryRecordList(MockCategoryType category, String recordId) {
         MongoCollection<AREXMocker> collectionSource = createOrGetCollection(category);
@@ -147,15 +142,6 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
                 .first();
     }
 
-    private Document getLastRecordVersionDoc(PagedRequestType pagedRequestType,
-                                                  MongoCollection<Document> collectionSource) {
-        return collectionSource
-                .find(Filters.and(buildReadRangeFilters(pagedRequestType)))
-                .sort(CREATE_TIME_DESCENDING_SORT)
-                .limit(DEFAULT_MIN_LIMIT_SIZE)
-                .first();
-    }
-
     @Override
     public long countByRange(PagedRequestType rangeRequestType) {
         MongoCollection<AREXMocker> collectionSource = createOrGetCollection(rangeRequestType.getCategory());
@@ -166,9 +152,9 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
 
     @Override
     public Map<String, Long> aggCountByRange(PagedRequestType rangeRequestType) {
-        MongoCollection<Document> collectionSource = createOrGetDocCollection(rangeRequestType.getCategory());
-        Document item = getLastRecordVersionDoc(rangeRequestType, collectionSource);
-        String recordVersion = item == null ? null : item.getString("recordVersion");
+        MongoCollection<AREXMocker> collectionSource = createOrGetCollection(rangeRequestType.getCategory());
+        AREXMocker item = getLastRecordVersionMocker(rangeRequestType, collectionSource);
+        String recordVersion = item == null ? null : item.getRecordVersion();
 
         Bson filters = Filters.and(withRecordVersionFilters(rangeRequestType, recordVersion));
         BasicDBObject basicDBObject = new BasicDBObject(PRIMARY_KEY_COLUMN_NAME, PLACE_HOLDER + OPERATION_COLUMN_NAME);
@@ -181,7 +167,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
 
         List<Bson> pipeline = Arrays.asList(Aggregates.match(filters), group, project);
         Map<String, Long> resultMap = new HashMap<>();
-        createOrGetDocCollection(rangeRequestType.getCategory()).aggregate(pipeline).forEach(doc -> {
+        collectionSource.aggregate(pipeline, Document.class).forEach(doc -> {
             String operationName = doc.getString(PRIMARY_KEY_COLUMN_NAME);
             if (operationName != null) resultMap.put(operationName, doc.getLong(VALUE_COLUMN));
         });
