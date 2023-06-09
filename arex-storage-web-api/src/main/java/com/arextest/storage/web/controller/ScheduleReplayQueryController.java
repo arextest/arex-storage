@@ -1,7 +1,8 @@
 package com.arextest.storage.web.controller;
 
 import com.arextest.model.mock.AREXMocker;
-import com.arextest.model.replay.CountCaseGroupByOperationResponseType;
+import com.arextest.model.replay.CountOperationCaseRequestType;
+import com.arextest.model.replay.CountOperationCaseResponseType;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.PagedResponseType;
 import com.arextest.model.replay.QueryCaseCountRequestType;
@@ -174,13 +175,13 @@ public class ScheduleReplayQueryController {
      */
     @PostMapping(value = "/countByOperationName ")
     @ResponseBody
-    public Response countByOperationName (@RequestBody QueryCaseCountRequestType requestType) {
+    public Response countByOperationName (@RequestBody CountOperationCaseRequestType requestType) {
         Response validateResult = rangeParameterValidate(requestType);
         if (validateResult != null) {
             return validateResult;
         }
         try {
-            CountCaseGroupByOperationResponseType responseType = new CountCaseGroupByOperationResponseType();
+            CountOperationCaseResponseType responseType = new CountOperationCaseResponseType();
             Map<String, Long> countResult = scheduleReplayingService.countByOperationName(requestType);
             responseType.setCountMap(countResult);
             return ResponseUtils.successResponse(responseType);

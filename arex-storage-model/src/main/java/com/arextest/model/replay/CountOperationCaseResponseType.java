@@ -7,7 +7,7 @@ import lombok.Data;
 import java.util.Map;
 
 @Data
-public class CountCaseGroupByOperationResponseType implements Response {
+public class CountOperationCaseResponseType implements Response {
     private ResponseStatusType responseStatusType;
     private Map<String, Long> countMap;
 }
