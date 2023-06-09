@@ -7,18 +7,22 @@ import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.ViewRecordRequestType;
 import com.arextest.model.replay.holder.ListResultHolder;
 import com.arextest.storage.mock.MockResultProvider;
+import com.arextest.storage.model.dao.ServiceOperationEntity;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.RepositoryReader;
 import com.arextest.storage.repository.ServiceOperationRepository;
 import com.arextest.storage.trace.MDCTracer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -114,6 +118,54 @@ public class ScheduleReplayingService {
         }
     }
 
+    public Map<String, Long> countByOperationName(PagedRequestType pagedRequestType) {
+        if (pagedRequestType.getCategory() == null) {
+            return countAllEntrypointCategoryByOperationName(pagedRequestType);
+        } else {
+            return countSingleCategoryByOperationName(pagedRequestType);
+        }
+    }
+
+    private Map<String, Long> countSingleCategoryByOperationName(PagedRequestType pagedRequestType) {
+        RepositoryReader<?> repositoryReader =
+                repositoryProviderFactory.findProvider(pagedRequestType.getSourceProvider());
+        if (repositoryReader != null) {
+            return repositoryReader.countByOperationName(pagedRequestType);
+        }
+        return new HashMap<>();
+    }
+
+    private Map<String, Long> countAllEntrypointCategoryByOperationName(PagedRequestType pagedRequestType) {
+        Set<String> operationTypes = getALlOperationTypes(pagedRequestType.getAppId());
+        Map<String, Long> countMap = new HashMap<>();
+        for(String operationType : operationTypes) {
+            pagedRequestType.setCategory(MockCategoryType.createEntryPoint(operationType));
+            mergeMap(countMap, countSingleCategoryByOperationName(pagedRequestType));
+        }
+        return countMap;
+    }
+
+    private void mergeMap(Map<String, Long> source, Map<String, Long> addition) {
+        if (MapUtils.isEmpty(addition)) return;
+        for (Map.Entry<String, Long> entry : addition.entrySet()) {
+            if (source.containsKey(entry.getKey())) {
+                source.put(entry.getKey(), source.get(entry.getKey()) + entry.getValue());
+            } else {
+                source.put(entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
+    private Set<String> getALlOperationTypes(String appId) {
+        Set<String> operationTypes = new HashSet<>();
+        for (ServiceOperationEntity serviceOperationEntity :
+                serviceOperationRepository.queryServiceOperations(appId, null)) {
+            if (serviceOperationEntity.getOperationTypes() != null)
+                operationTypes.addAll(serviceOperationEntity.getOperationTypes());
+        }
+        return operationTypes;
+    }
+
     private long countSingleCategory(PagedRequestType replayCaseRangeRequest) {
         RepositoryReader<?> repositoryReader =
                 repositoryProviderFactory.findProvider(replayCaseRangeRequest.getSourceProvider());
@@ -124,13 +176,7 @@ public class ScheduleReplayingService {
     }
 
     private long countAllEntrypointCategory(PagedRequestType replayCaseRangeRequest) {
-        Set<String> operationTypes = new HashSet<>();
-        String appId = replayCaseRangeRequest.getAppId();
-        serviceOperationRepository.queryServiceOperations(appId, null)
-                .forEach(serviceOperationEntity -> {
-                    if (serviceOperationEntity.getOperationTypes() != null)
-                        operationTypes.addAll(serviceOperationEntity.getOperationTypes());
-                });
+        Set<String> operationTypes = getALlOperationTypes(replayCaseRangeRequest.getAppId());
         long count = 0;
         for(String operationType : operationTypes) {
             replayCaseRangeRequest.setCategory(MockCategoryType.createEntryPoint(operationType));
