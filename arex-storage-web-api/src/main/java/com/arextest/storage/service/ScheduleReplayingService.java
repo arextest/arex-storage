@@ -118,29 +118,29 @@ public class ScheduleReplayingService {
         }
     }
 
-    public Map<String, Long> countGroupByOperation(PagedRequestType pagedRequestType) {
+    public Map<String, Long> countByOperationName(PagedRequestType pagedRequestType) {
         if (pagedRequestType.getCategory() == null) {
-            return aggCountAllEntrypointCategory(pagedRequestType);
+            return countAllEntrypointCategoryByOperationName(pagedRequestType);
         } else {
-            return aggCountSingleCategory(pagedRequestType);
+            return countSingleCategoryByOperationName(pagedRequestType);
         }
     }
 
-    private Map<String, Long> aggCountSingleCategory(PagedRequestType pagedRequestType) {
+    private Map<String, Long> countSingleCategoryByOperationName(PagedRequestType pagedRequestType) {
         RepositoryReader<?> repositoryReader =
                 repositoryProviderFactory.findProvider(pagedRequestType.getSourceProvider());
         if (repositoryReader != null) {
-            return repositoryReader.countGroupByOperation(pagedRequestType);
+            return repositoryReader.countByOperationName(pagedRequestType);
         }
         return new HashMap<>();
     }
 
-    private Map<String, Long> aggCountAllEntrypointCategory(PagedRequestType pagedRequestType) {
+    private Map<String, Long> countAllEntrypointCategoryByOperationName(PagedRequestType pagedRequestType) {
         Set<String> operationTypes = getALlOperationTypes(pagedRequestType.getAppId());
         Map<String, Long> countMap = new HashMap<>();
         for(String operationType : operationTypes) {
             pagedRequestType.setCategory(MockCategoryType.createEntryPoint(operationType));
-            mergeMap(countMap, aggCountSingleCategory(pagedRequestType));
+            mergeMap(countMap, countSingleCategoryByOperationName(pagedRequestType));
         }
         return countMap;
     }

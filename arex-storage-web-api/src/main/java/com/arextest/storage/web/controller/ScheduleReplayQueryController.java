@@ -172,20 +172,20 @@ public class ScheduleReplayQueryController {
     /**
      * count records cases for each operationName.
      */
-    @PostMapping(value = "/countGroupByOperation")
+    @PostMapping(value = "/countByOperationName ")
     @ResponseBody
-    public Response countGroupByOperationName(@RequestBody QueryCaseCountRequestType requestType) {
+    public Response countByOperationName (@RequestBody QueryCaseCountRequestType requestType) {
         Response validateResult = rangeParameterValidate(requestType);
         if (validateResult != null) {
             return validateResult;
         }
         try {
             CountCaseGroupByOperationResponseType responseType = new CountCaseGroupByOperationResponseType();
-            Map<String, Long> countResult = scheduleReplayingService.countGroupByOperation(requestType);
+            Map<String, Long> countResult = scheduleReplayingService.countByOperationName(requestType);
             responseType.setCountMap(countResult);
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
-            LOGGER.error("countGroupByOperation error:{},request:{}", throwable.getMessage(), requestType, throwable);
+            LOGGER.error("countByOperationName  error:{},request:{}", throwable.getMessage(), requestType, throwable);
             return ResponseUtils.exceptionResponse(throwable.getMessage());
         } finally {
             MDCTracer.clear();

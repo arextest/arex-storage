@@ -151,7 +151,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     }
 
     @Override
-    public Map<String, Long> countGroupByOperation(PagedRequestType rangeRequestType) {
+    public Map<String, Long> countByOperationName(PagedRequestType rangeRequestType) {
         MongoCollection<AREXMocker> collectionSource = createOrGetCollection(rangeRequestType.getCategory());
         AREXMocker item = getLastRecordVersionMocker(rangeRequestType, collectionSource);
         String recordVersion = item == null ? null : item.getRecordVersion();

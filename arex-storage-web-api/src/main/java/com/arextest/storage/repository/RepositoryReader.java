@@ -19,5 +19,5 @@ public interface RepositoryReader<T extends Mocker> {
 
     long countByRange(PagedRequestType rangeRequestType);
 
-    Map<String, Long> countGroupByOperation(PagedRequestType rangeRequestType);
+    Map<String, Long> countByOperationName(PagedRequestType rangeRequestType);
 }
