@@ -151,7 +151,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     }
 
     @Override
-    public Map<String, Long> aggCountByRange(PagedRequestType rangeRequestType) {
+    public Map<String, Long> countGroupByOperation(PagedRequestType rangeRequestType) {
         MongoCollection<AREXMocker> collectionSource = createOrGetCollection(rangeRequestType.getCategory());
         AREXMocker item = getLastRecordVersionMocker(rangeRequestType, collectionSource);
         String recordVersion = item == null ? null : item.getRecordVersion();
@@ -167,10 +167,12 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
 
         List<Bson> pipeline = Arrays.asList(Aggregates.match(filters), group, project);
         Map<String, Long> resultMap = new HashMap<>();
-        collectionSource.aggregate(pipeline, Document.class).forEach(doc -> {
+        for (Document doc : collectionSource.aggregate(pipeline, Document.class)) {
             String operationName = doc.getString(PRIMARY_KEY_COLUMN_NAME);
-            if (operationName != null) resultMap.put(operationName, doc.getLong(VALUE_COLUMN));
-        });
+            if (operationName != null) {
+                resultMap.put(operationName, doc.getLong(VALUE_COLUMN));
+            }
+        }
         return resultMap;
     }
 

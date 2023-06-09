@@ -1,7 +1,7 @@
 package com.arextest.storage.web.controller;
 
 import com.arextest.model.mock.AREXMocker;
-import com.arextest.model.replay.AggQueryCaseCountResponseType;
+import com.arextest.model.replay.CountCaseGroupByOperationResponseType;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.PagedResponseType;
 import com.arextest.model.replay.QueryCaseCountRequestType;
@@ -172,20 +172,20 @@ public class ScheduleReplayQueryController {
     /**
      * count records cases for each operationName.
      */
-    @PostMapping(value = "/aggCountByRange")
+    @PostMapping(value = "/countGroupByOperation")
     @ResponseBody
-    public Response aggCountByRange(@RequestBody QueryCaseCountRequestType requestType) {
+    public Response countGroupByOperationName(@RequestBody QueryCaseCountRequestType requestType) {
         Response validateResult = rangeParameterValidate(requestType);
         if (validateResult != null) {
             return validateResult;
         }
         try {
-            AggQueryCaseCountResponseType responseType = new AggQueryCaseCountResponseType();
-            Map<String, Long> countResult = scheduleReplayingService.aggCountByRange(requestType);
+            CountCaseGroupByOperationResponseType responseType = new CountCaseGroupByOperationResponseType();
+            Map<String, Long> countResult = scheduleReplayingService.countGroupByOperation(requestType);
             responseType.setCountMap(countResult);
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
-            LOGGER.error("replayCaseAggCount error:{},request:{}", throwable.getMessage(), requestType, throwable);
+            LOGGER.error("countGroupByOperation error:{},request:{}", throwable.getMessage(), requestType, throwable);
             return ResponseUtils.exceptionResponse(throwable.getMessage());
         } finally {
             MDCTracer.clear();
