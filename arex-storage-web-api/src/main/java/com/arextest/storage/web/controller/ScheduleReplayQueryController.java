@@ -1,6 +1,8 @@
 package com.arextest.storage.web.controller;
 
 import com.arextest.model.mock.AREXMocker;
+import com.arextest.model.replay.CountOperationCaseRequestType;
+import com.arextest.model.replay.CountOperationCaseResponseType;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.PagedResponseType;
 import com.arextest.model.replay.QueryCaseCountRequestType;
@@ -29,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * this class defined all api list for scheduler replaying
@@ -161,6 +164,29 @@ public class ScheduleReplayQueryController {
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
             LOGGER.error("replayCaseCount error:{},request:{}", throwable.getMessage(), requestType, throwable);
+            return ResponseUtils.exceptionResponse(throwable.getMessage());
+        } finally {
+            MDCTracer.clear();
+        }
+    }
+
+    /**
+     * count records cases for each operationName.
+     */
+    @PostMapping(value = "/countByOperationName ")
+    @ResponseBody
+    public Response countByOperationName (@RequestBody CountOperationCaseRequestType requestType) {
+        Response validateResult = rangeParameterValidate(requestType);
+        if (validateResult != null) {
+            return validateResult;
+        }
+        try {
+            CountOperationCaseResponseType responseType = new CountOperationCaseResponseType();
+            Map<String, Long> countResult = scheduleReplayingService.countByOperationName(requestType);
+            responseType.setCountMap(countResult);
+            return ResponseUtils.successResponse(responseType);
+        } catch (Throwable throwable) {
+            LOGGER.error("countByOperationName  error:{},request:{}", throwable.getMessage(), requestType, throwable);
             return ResponseUtils.exceptionResponse(throwable.getMessage());
         } finally {
             MDCTracer.clear();

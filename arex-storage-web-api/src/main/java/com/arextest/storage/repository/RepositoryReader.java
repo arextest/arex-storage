@@ -4,6 +4,8 @@ import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.model.replay.PagedRequestType;
 
+import java.util.Map;
+
 /**
  * @author jmo
  * @since 2021/11/7
@@ -16,4 +18,6 @@ public interface RepositoryReader<T extends Mocker> {
     Iterable<T> queryByRange(PagedRequestType rangeRequestType);
 
     long countByRange(PagedRequestType rangeRequestType);
+
+    Map<String, Long> countByOperationName(PagedRequestType rangeRequestType);
 }
