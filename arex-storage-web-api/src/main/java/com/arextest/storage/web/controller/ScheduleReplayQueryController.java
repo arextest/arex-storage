@@ -173,7 +173,7 @@ public class ScheduleReplayQueryController {
     /**
      * count records cases for each operationName.
      */
-    @PostMapping(value = "/countByOperationName ")
+    @PostMapping(value = "/countByOperationName")
     @ResponseBody
     public Response countByOperationName (@RequestBody CountOperationCaseRequestType requestType) {
         Response validateResult = rangeParameterValidate(requestType);
