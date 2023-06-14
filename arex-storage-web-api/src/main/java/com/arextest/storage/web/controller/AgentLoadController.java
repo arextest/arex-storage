@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.annotation.Resource;
+import java.util.Map;
 
 /**
  * Created by rchen9 on 2022/10/8.
@@ -38,5 +39,8 @@ public class AgentLoadController {
         private String appId;
         private String host;
         private String recordVersion;
+        private String agentStatus;
+        private Map<String, String> systemEnv;
+        private Map<String, String> systemProperties;
     }
 }
