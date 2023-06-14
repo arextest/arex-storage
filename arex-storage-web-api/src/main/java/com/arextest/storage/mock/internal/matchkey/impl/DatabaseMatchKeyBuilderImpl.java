@@ -82,8 +82,6 @@ final class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
      * 1,db+sql+parameterNameWithValue+operationName
      * 2,db+table+parameterName+operationName
      * 3,db+table+operationName
-     * 4,db+operationName
-     * 5,operationName, as a fallback
      *
      * @param databaseMocker the db mocker
      * @return all mock keys
@@ -101,8 +99,8 @@ final class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
         MessageDigest md5Digest = MessageDigestWriter.getMD5Digest();
         md5Digest.update(dbNameBytes);
         md5Digest.update(operationBytes);
-        // 4,db+operationName
         byte[] dbNameMatchKey = md5Digest.digest();
+
         md5Digest.update(sqlTextBytes);
         md5Digest.update(sqlParameterBytes);
         md5Digest.update(dbNameBytes);
@@ -110,10 +108,12 @@ final class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
         // 1,db+sql+parameterNameWithValue+operationName
         byte[] fullMatchKey = md5Digest.digest();
         keys.add(fullMatchKey);
+
         findTableNameToMd5(sqlText, md5Digest);
         md5Digest.update(dbNameMatchKey);
         // 3,db+table+operationName
         byte[] tableMatchKey = md5Digest.digest();
+
         if (StringUtils.isNotEmpty(sqlParameter) && tryAddParameterWithoutValue(md5Digest, sqlParameter)) {
             md5Digest.update(tableMatchKey);
             byte[] tableWithParametersMatchKey = md5Digest.digest();
@@ -121,9 +121,6 @@ final class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
             keys.add(tableWithParametersMatchKey);
         }
         keys.add(tableMatchKey);
-        keys.add(dbNameMatchKey);
-        // 5,operationName, as a fallback
-        keys.add(operationBytes);
         return keys;
     }
 
