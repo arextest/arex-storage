@@ -13,8 +13,10 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.result.DeleteResult;
+import com.mongodb.lang.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -22,14 +24,7 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import javax.validation.constraints.NotNull;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * The rolling provider used by default,
@@ -51,7 +46,6 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     private static final String GROUP_OP = "$group";
     private static final String SUM_OP = "$sum";
     private static final String PROJECT_OP = "$project";
-
     private static final String AGENT_RECORD_VERSION_COLUMN_NAME = "recordVersion";
     private final static Bson CREATE_TIME_ASCENDING_SORT = Sorts.ascending(CREATE_TIME_COLUMN_NAME);
     private final static Bson CREATE_TIME_DESCENDING_SORT = Sorts.descending(CREATE_TIME_COLUMN_NAME);
@@ -101,7 +95,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     }
 
     @Override
-    public Iterable<AREXMocker> queryByRange(PagedRequestType pagedRequestType) {
+    public Iterable<AREXMocker> queryByRange(PagedRequestType pagedRequestType, @Nullable Set<String> excludeFields) {
         MockCategoryType categoryType = pagedRequestType.getCategory();
         Integer pageIndex = pagedRequestType.getPageIndex();
         MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
@@ -111,6 +105,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
 
         Iterable<AREXMocker> iterable = collectionSource
                 .find(Filters.and(withRecordVersionFilters(pagedRequestType, recordVersion)))
+                .projection(this.buildProjection(excludeFields))
                 .sort(toSupportSortingOptions(pagedRequestType.getSortingOptions()))
                 .skip(pageIndex == null ? 0 : pagedRequestType.getPageSize() * (pageIndex - 1))
                 .limit(Math.min(pagedRequestType.getPageSize(), DEFAULT_MAX_LIMIT_SIZE));
@@ -317,5 +312,12 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
             }
             return item;
         }
+    }
+
+    private @Nullable Bson buildProjection(Set<String> exclusion) {
+        if (CollectionUtils.isEmpty(exclusion)) {
+            return null;
+        }
+        return Projections.exclude(new ArrayList<>(exclusion));
     }
 }

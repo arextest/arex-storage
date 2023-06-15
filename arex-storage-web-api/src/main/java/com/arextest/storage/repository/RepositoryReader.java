@@ -3,8 +3,11 @@ package com.arextest.storage.repository;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.model.replay.PagedRequestType;
+import com.mongodb.lang.Nullable;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author jmo
@@ -15,7 +18,7 @@ public interface RepositoryReader<T extends Mocker> {
 
     T queryRecord(Mocker requestType);
 
-    Iterable<T> queryByRange(PagedRequestType rangeRequestType);
+    Iterable<T> queryByRange(PagedRequestType rangeRequestType, @Nullable Set<String> excludeFields);
 
     long countByRange(PagedRequestType rangeRequestType);
 

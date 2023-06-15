@@ -80,7 +80,17 @@ public class ScheduleReplayingService {
         RepositoryReader<AREXMocker> repositoryReader =
                 repositoryProviderFactory.findProvider(requestType.getSourceProvider());
         if (repositoryReader != null) {
-            return new IterableListWrapper<>(repositoryReader.queryByRange(requestType));
+            return new IterableListWrapper<>(repositoryReader.queryByRange(requestType, null));
+        }
+        return Collections.emptyList();
+    }
+
+    public List<AREXMocker> queryRequestByRange(PagedRequestType requestType) {
+        RepositoryReader<AREXMocker> repositoryReader =
+                repositoryProviderFactory.findProvider(requestType.getSourceProvider());
+        if (repositoryReader != null) {
+            return new IterableListWrapper<>(repositoryReader.queryByRange(requestType,
+                    Collections.singleton(AREXMocker.FIELD_RESPONSE)));
         }
         return Collections.emptyList();
     }

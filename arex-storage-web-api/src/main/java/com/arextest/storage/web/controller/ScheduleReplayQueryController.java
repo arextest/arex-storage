@@ -103,6 +103,17 @@ public class ScheduleReplayQueryController {
     @PostMapping(value = "/replayCase")
     @ResponseBody
     public Response replayCase(@RequestBody PagedRequestType requestType) {
+        return this.caseBaseQuery(requestType, true);
+    }
+
+    @PostMapping(value = "/replayCaseRequest")
+    @ResponseBody
+    public Response replayCaseRequest(@RequestBody PagedRequestType requestType) {
+        return this.caseBaseQuery(requestType, false);
+    }
+
+
+    private Response caseBaseQuery(PagedRequestType requestType, boolean needResponse) {
         Response validateResult = rangeParameterValidate(requestType);
         if (validateResult != null) {
             return validateResult;
@@ -115,8 +126,11 @@ public class ScheduleReplayQueryController {
         }
         try {
             PagedResponseType responseType = new PagedResponseType();
-            List<AREXMocker> records = scheduleReplayingService.queryByRange(requestType);
-            responseType.setRecords(records);
+            if (needResponse) {
+                responseType.setRecords(scheduleReplayingService.queryByRange(requestType));
+            } else {
+                responseType.setRecords(scheduleReplayingService.queryRequestByRange(requestType));
+            }
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
             LOGGER.error("error:{},request:{}", throwable.getMessage(), requestType);
