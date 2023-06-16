@@ -6,7 +6,7 @@ public enum MockerProjectionEnum {
     /**
      * NONE, do not exclude any fields
      */
-    NONE("NONE", ""),
+    NONE("NONE"),
     /**
      * Exclude targetResponse field
      */
