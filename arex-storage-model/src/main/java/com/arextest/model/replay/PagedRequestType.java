@@ -20,4 +20,5 @@ public class PagedRequestType {
     private MockCategoryType category;
     private String sourceProvider;
     private List<SortingOption> sortingOptions;
+    private String mockerProjection;
 }

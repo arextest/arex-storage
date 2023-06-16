@@ -3,6 +3,7 @@ package com.arextest.storage.web.controller;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.replay.CountOperationCaseRequestType;
 import com.arextest.model.replay.CountOperationCaseResponseType;
+import com.arextest.model.replay.MockerProjectionEnum;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.PagedResponseType;
 import com.arextest.model.replay.QueryCaseCountRequestType;
@@ -103,17 +104,20 @@ public class ScheduleReplayQueryController {
     @PostMapping(value = "/replayCase")
     @ResponseBody
     public Response replayCase(@RequestBody PagedRequestType requestType) {
-        return this.caseBaseQuery(requestType, true);
+        return this.caseBaseQuery(requestType);
     }
 
     @PostMapping(value = "/replayCaseRequest")
     @ResponseBody
     public Response replayCaseRequest(@RequestBody PagedRequestType requestType) {
-        return this.caseBaseQuery(requestType, false);
+        if (requestType != null) {
+            requestType.setMockerProjection(MockerProjectionEnum.EXCLUDE_RESPONSE.name());
+        }
+        return this.caseBaseQuery(requestType);
     }
 
 
-    private Response caseBaseQuery(PagedRequestType requestType, boolean needResponse) {
+    private Response caseBaseQuery(PagedRequestType requestType) {
         Response validateResult = rangeParameterValidate(requestType);
         if (validateResult != null) {
             return validateResult;
@@ -126,11 +130,8 @@ public class ScheduleReplayQueryController {
         }
         try {
             PagedResponseType responseType = new PagedResponseType();
-            if (needResponse) {
-                responseType.setRecords(scheduleReplayingService.queryByRange(requestType));
-            } else {
-                responseType.setRecords(scheduleReplayingService.queryRequestByRange(requestType));
-            }
+            List<AREXMocker> records = scheduleReplayingService.queryByRange(requestType);
+            responseType.setRecords(records);
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
             LOGGER.error("error:{},request:{}", throwable.getMessage(), requestType);

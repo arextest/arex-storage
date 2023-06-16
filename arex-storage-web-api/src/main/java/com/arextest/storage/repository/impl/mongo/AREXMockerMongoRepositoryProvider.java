@@ -3,6 +3,7 @@ package com.arextest.storage.repository.impl.mongo;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
+import com.arextest.model.replay.MockerProjectionEnum;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.SortingOption;
 import com.arextest.model.replay.SortingTypeEnum;
@@ -16,7 +17,6 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.result.DeleteResult;
-import com.mongodb.lang.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -24,7 +24,14 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import javax.validation.constraints.NotNull;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * The rolling provider used by default,
@@ -95,7 +102,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     }
 
     @Override
-    public Iterable<AREXMocker> queryByRange(PagedRequestType pagedRequestType, @Nullable Set<String> excludeFields) {
+    public Iterable<AREXMocker> queryByRange(PagedRequestType pagedRequestType) {
         MockCategoryType categoryType = pagedRequestType.getCategory();
         Integer pageIndex = pagedRequestType.getPageIndex();
         MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
@@ -105,7 +112,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
 
         Iterable<AREXMocker> iterable = collectionSource
                 .find(Filters.and(withRecordVersionFilters(pagedRequestType, recordVersion)))
-                .projection(this.buildProjection(excludeFields))
+                .projection(this.buildProjection(pagedRequestType.getMockerProjection()))
                 .sort(toSupportSortingOptions(pagedRequestType.getSortingOptions()))
                 .skip(pageIndex == null ? 0 : pagedRequestType.getPageSize() * (pageIndex - 1))
                 .limit(Math.min(pagedRequestType.getPageSize(), DEFAULT_MAX_LIMIT_SIZE));
@@ -314,10 +321,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         }
     }
 
-    private @Nullable Bson buildProjection(Set<String> exclusion) {
-        if (CollectionUtils.isEmpty(exclusion)) {
-            return null;
-        }
-        return Projections.exclude(new ArrayList<>(exclusion));
+    private Bson buildProjection(String mockerProjection) {
+        return Projections.exclude(MockerProjectionEnum.fromName(mockerProjection).getExcludeFields());
     }
 }

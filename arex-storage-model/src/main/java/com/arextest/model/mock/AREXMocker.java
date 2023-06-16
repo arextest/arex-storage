@@ -34,8 +34,6 @@ public class AREXMocker implements Mocker {
      */
     private long creationTime;
     private Target targetRequest;
-
-    public static final String FIELD_RESPONSE = "targetResponse";
     private Target targetResponse;
     /**
      * the value required and empty allowed
