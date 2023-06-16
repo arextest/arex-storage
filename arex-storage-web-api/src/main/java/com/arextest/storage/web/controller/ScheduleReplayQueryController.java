@@ -3,7 +3,7 @@ package com.arextest.storage.web.controller;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.replay.CountOperationCaseRequestType;
 import com.arextest.model.replay.CountOperationCaseResponseType;
-import com.arextest.model.replay.MockerProjectionEnum;
+import com.arextest.model.replay.MockerQuerySceneEnum;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.PagedResponseType;
 import com.arextest.model.replay.QueryCaseCountRequestType;
@@ -111,7 +111,7 @@ public class ScheduleReplayQueryController {
     @ResponseBody
     public Response replayCaseRequest(@RequestBody PagedRequestType requestType) {
         if (requestType != null) {
-            requestType.setMockerProjection(MockerProjectionEnum.EXCLUDE_RESPONSE.name());
+            requestType.setQueryScene(MockerQuerySceneEnum.EXCLUDE_RESPONSE.name());
         }
         return this.caseBaseQuery(requestType);
     }

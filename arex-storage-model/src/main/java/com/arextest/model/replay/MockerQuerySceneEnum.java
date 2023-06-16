@@ -2,11 +2,11 @@ package com.arextest.model.replay;
 
 import org.apache.commons.lang3.StringUtils;
 
-public enum MockerProjectionEnum {
+public enum MockerQuerySceneEnum {
     /**
      * NONE, do not exclude any fields
      */
-    NONE("NONE"),
+    NORMAL("NONE"),
     /**
      * Exclude targetResponse field
      */
@@ -15,7 +15,7 @@ public enum MockerProjectionEnum {
     private final String name;
     private final String[] excludeFields;
 
-    MockerProjectionEnum(String name, String... excludeFields) {
+    MockerQuerySceneEnum(String name, String... excludeFields) {
         this.name = name;
         this.excludeFields = excludeFields;
     }
@@ -29,16 +29,16 @@ public enum MockerProjectionEnum {
         return excludeFields;
     }
 
-    public static MockerProjectionEnum fromName(String name) {
+    public static MockerQuerySceneEnum fromName(String name) {
         if (StringUtils.isBlank(name)) {
-            return NONE;
+            return NORMAL;
         }
-        if (NONE.getName().equals(name)) {
-            return NONE;
+        if (NORMAL.getName().equals(name)) {
+            return NORMAL;
         }
         if (EXCLUDE_RESPONSE.getName().equals(name)) {
             return EXCLUDE_RESPONSE;
         }
-        return NONE;
+        return NORMAL;
     }
 }

@@ -3,7 +3,7 @@ package com.arextest.storage.repository.impl.mongo;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
-import com.arextest.model.replay.MockerProjectionEnum;
+import com.arextest.model.replay.MockerQuerySceneEnum;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.SortingOption;
 import com.arextest.model.replay.SortingTypeEnum;
@@ -112,7 +112,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
 
         Iterable<AREXMocker> iterable = collectionSource
                 .find(Filters.and(withRecordVersionFilters(pagedRequestType, recordVersion)))
-                .projection(this.buildProjection(pagedRequestType.getMockerProjection()))
+                .projection(this.buildProjection(pagedRequestType.getQueryScene()))
                 .sort(toSupportSortingOptions(pagedRequestType.getSortingOptions()))
                 .skip(pageIndex == null ? 0 : pagedRequestType.getPageSize() * (pageIndex - 1))
                 .limit(Math.min(pagedRequestType.getPageSize(), DEFAULT_MAX_LIMIT_SIZE));
@@ -322,6 +322,6 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     }
 
     private Bson buildProjection(String mockerProjection) {
-        return Projections.exclude(MockerProjectionEnum.fromName(mockerProjection).getExcludeFields());
+        return Projections.exclude(MockerQuerySceneEnum.fromName(mockerProjection).getExcludeFields());
     }
 }
