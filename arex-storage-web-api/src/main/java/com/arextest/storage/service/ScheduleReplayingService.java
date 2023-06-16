@@ -3,6 +3,7 @@ package com.arextest.storage.service;
 import com.arextest.common.utils.CompressionUtils;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
+import com.arextest.model.replay.MockerQuerySceneEnum;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.ViewRecordRequestType;
 import com.arextest.model.replay.holder.ListResultHolder;
@@ -80,7 +81,14 @@ public class ScheduleReplayingService {
         RepositoryReader<AREXMocker> repositoryReader =
                 repositoryProviderFactory.findProvider(requestType.getSourceProvider());
         if (repositoryReader != null) {
-            return new IterableListWrapper<>(repositoryReader.queryByRange(requestType));
+            MockerQuerySceneEnum scene = MockerQuerySceneEnum.fromName(requestType.getQueryScene());
+            switch (scene) {
+                case EXCLUDE_RESPONSE:
+                    return new IterableListWrapper<>(repositoryReader.queryEntryPointByRange(requestType));
+                case NORMAL:
+                default:
+                    return new IterableListWrapper<>(repositoryReader.queryByRange(requestType));
+            }
         }
         return Collections.emptyList();
     }

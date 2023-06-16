@@ -112,7 +112,24 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
 
         Iterable<AREXMocker> iterable = collectionSource
                 .find(Filters.and(withRecordVersionFilters(pagedRequestType, recordVersion)))
-                .projection(this.buildProjection(pagedRequestType.getQueryScene()))
+                .sort(toSupportSortingOptions(pagedRequestType.getSortingOptions()))
+                .skip(pageIndex == null ? 0 : pagedRequestType.getPageSize() * (pageIndex - 1))
+                .limit(Math.min(pagedRequestType.getPageSize(), DEFAULT_MAX_LIMIT_SIZE));
+        return new AttachmentCategoryIterable(categoryType, iterable);
+    }
+
+    @Override
+    public Iterable<AREXMocker> queryEntryPointByRange(PagedRequestType pagedRequestType) {
+        MockCategoryType categoryType = pagedRequestType.getCategory();
+        Integer pageIndex = pagedRequestType.getPageIndex();
+        MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
+
+        AREXMocker item = getLastRecordVersionMocker(pagedRequestType, collectionSource);
+        String recordVersion = item == null ? null : item.getRecordVersion();
+
+        Iterable<AREXMocker> iterable = collectionSource
+                .find(Filters.and(withRecordVersionFilters(pagedRequestType, recordVersion)))
+                .projection(Projections.exclude(MockerQuerySceneEnum.EXCLUDE_RESPONSE.getExcludeFields()))
                 .sort(toSupportSortingOptions(pagedRequestType.getSortingOptions()))
                 .skip(pageIndex == null ? 0 : pagedRequestType.getPageSize() * (pageIndex - 1))
                 .limit(Math.min(pagedRequestType.getPageSize(), DEFAULT_MAX_LIMIT_SIZE));
@@ -319,9 +336,5 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
             }
             return item;
         }
-    }
-
-    private Bson buildProjection(String mockerProjection) {
-        return Projections.exclude(MockerQuerySceneEnum.fromName(mockerProjection).getExcludeFields());
     }
 }
