@@ -115,35 +115,13 @@ public class ScheduleReplayQueryController {
 
         try {
             PagedResponseType responseType = new PagedResponseType();
-            responseType.setRecords(scheduleReplayingService.queryByRange(requestType));
+            responseType.setRecords(scheduleReplayingService.queryEntryPointByRange(requestType));
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
             LOGGER.error("error:{},request:{}", throwable.getMessage(), requestType);
             return ResponseUtils.exceptionResponse(throwable.getMessage());
         }
     }
-
-    @PostMapping(value = "/replayCaseEntry")
-    @ResponseBody
-    public Response replayCaseRequest(@RequestBody PagedRequestType requestType) {
-        Response validateResult = rangeParameterValidate(requestType);
-        if (validateResult != null) {
-            return validateResult;
-        }
-
-        validateResult = pageParameterValidate(requestType);
-        if (validateResult != null) {
-            return validateResult;
-        }
-
-        try {
-            PagedResponseType responseType = new PagedResponseType();
-            responseType.setRecords(scheduleReplayingService.queryEntryPointByRange(requestType));
-            return ResponseUtils.successResponse(responseType);
-        } catch (Throwable throwable) {
-            LOGGER.error("error:{},request:{}", throwable.getMessage(), requestType);
-            return ResponseUtils.exceptionResponse(throwable.getMessage());
-        }    }
 
     private Response rangeParameterValidate(PagedRequestType requestType) {
         if (requestType == null) {
