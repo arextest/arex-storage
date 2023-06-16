@@ -3,7 +3,6 @@ package com.arextest.storage.web.controller;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.replay.CountOperationCaseRequestType;
 import com.arextest.model.replay.CountOperationCaseResponseType;
-import com.arextest.model.replay.MockerQuerySceneEnum;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.PagedResponseType;
 import com.arextest.model.replay.QueryCaseCountRequestType;
@@ -104,40 +103,47 @@ public class ScheduleReplayQueryController {
     @PostMapping(value = "/replayCase")
     @ResponseBody
     public Response replayCase(@RequestBody PagedRequestType requestType) {
-        return this.caseBaseQuery(requestType);
-    }
-
-    @PostMapping(value = "/replayCaseRequest")
-    @ResponseBody
-    public Response replayCaseRequest(@RequestBody PagedRequestType requestType) {
-        if (requestType != null) {
-            requestType.setQueryScene(MockerQuerySceneEnum.EXCLUDE_RESPONSE.name());
-        }
-        return this.caseBaseQuery(requestType);
-    }
-
-
-    private Response caseBaseQuery(PagedRequestType requestType) {
         Response validateResult = rangeParameterValidate(requestType);
         if (validateResult != null) {
             return validateResult;
         }
-        if (requestType.getPageSize() <= 0) {
-            return ResponseUtils.parameterInvalidResponse("The max case size <= 0 from requested");
+
+        validateResult = pageParameterValidate(requestType);
+        if (validateResult != null) {
+            return validateResult;
         }
-        if (requestType.getCategory() == null) {
-            return ResponseUtils.parameterInvalidResponse("The category of requested is empty");
-        }
+
         try {
             PagedResponseType responseType = new PagedResponseType();
-            List<AREXMocker> records = scheduleReplayingService.queryByRange(requestType);
-            responseType.setRecords(records);
+            responseType.setRecords(scheduleReplayingService.queryByRange(requestType));
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
             LOGGER.error("error:{},request:{}", throwable.getMessage(), requestType);
             return ResponseUtils.exceptionResponse(throwable.getMessage());
         }
     }
+
+    @PostMapping(value = "/replayCaseEntry")
+    @ResponseBody
+    public Response replayCaseRequest(@RequestBody PagedRequestType requestType) {
+        Response validateResult = rangeParameterValidate(requestType);
+        if (validateResult != null) {
+            return validateResult;
+        }
+
+        validateResult = pageParameterValidate(requestType);
+        if (validateResult != null) {
+            return validateResult;
+        }
+
+        try {
+            PagedResponseType responseType = new PagedResponseType();
+            responseType.setRecords(scheduleReplayingService.queryEntryPointByRange(requestType));
+            return ResponseUtils.successResponse(responseType);
+        } catch (Throwable throwable) {
+            LOGGER.error("error:{},request:{}", throwable.getMessage(), requestType);
+            return ResponseUtils.exceptionResponse(throwable.getMessage());
+        }    }
 
     private Response rangeParameterValidate(PagedRequestType requestType) {
         if (requestType == null) {
@@ -154,6 +160,16 @@ public class ScheduleReplayQueryController {
         }
         if (requestType.getBeginTime() >= requestType.getEndTime()) {
             return ResponseUtils.parameterInvalidResponse("The beginTime >= endTime from requested");
+        }
+        return null;
+    }
+
+    private Response pageParameterValidate(PagedRequestType requestType) {
+        if (requestType.getPageSize() <= 0) {
+            return ResponseUtils.parameterInvalidResponse("The max case size <= 0 from requested");
+        }
+        if (requestType.getCategory() == null) {
+            return ResponseUtils.parameterInvalidResponse("The category of requested is empty");
         }
         return null;
     }

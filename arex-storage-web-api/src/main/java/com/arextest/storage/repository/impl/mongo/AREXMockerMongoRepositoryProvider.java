@@ -3,7 +3,6 @@ package com.arextest.storage.repository.impl.mongo;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
-import com.arextest.model.replay.MockerQuerySceneEnum;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.SortingOption;
 import com.arextest.model.replay.SortingTypeEnum;
@@ -54,6 +53,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     private static final String SUM_OP = "$sum";
     private static final String PROJECT_OP = "$project";
     private static final String AGENT_RECORD_VERSION_COLUMN_NAME = "recordVersion";
+    private static final String TARGET_RESPONSE_COLUMN_NAME = "targetResponse";
     private final static Bson CREATE_TIME_ASCENDING_SORT = Sorts.ascending(CREATE_TIME_COLUMN_NAME);
     private final static Bson CREATE_TIME_DESCENDING_SORT = Sorts.descending(CREATE_TIME_COLUMN_NAME);
 
@@ -129,7 +129,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
 
         Iterable<AREXMocker> iterable = collectionSource
                 .find(Filters.and(withRecordVersionFilters(pagedRequestType, recordVersion)))
-                .projection(Projections.exclude(MockerQuerySceneEnum.EXCLUDE_RESPONSE.getExcludeFields()))
+                .projection(Projections.exclude(TARGET_RESPONSE_COLUMN_NAME))
                 .sort(toSupportSortingOptions(pagedRequestType.getSortingOptions()))
                 .skip(pageIndex == null ? 0 : pagedRequestType.getPageSize() * (pageIndex - 1))
                 .limit(Math.min(pagedRequestType.getPageSize(), DEFAULT_MAX_LIMIT_SIZE));
