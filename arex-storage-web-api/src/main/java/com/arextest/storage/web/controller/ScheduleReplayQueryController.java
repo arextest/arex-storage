@@ -107,16 +107,15 @@ public class ScheduleReplayQueryController {
         if (validateResult != null) {
             return validateResult;
         }
-        if (requestType.getPageSize() <= 0) {
-            return ResponseUtils.parameterInvalidResponse("The max case size <= 0 from requested");
+
+        validateResult = pageParameterValidate(requestType);
+        if (validateResult != null) {
+            return validateResult;
         }
-        if (requestType.getCategory() == null) {
-            return ResponseUtils.parameterInvalidResponse("The category of requested is empty");
-        }
+
         try {
             PagedResponseType responseType = new PagedResponseType();
-            List<AREXMocker> records = scheduleReplayingService.queryByRange(requestType);
-            responseType.setRecords(records);
+            responseType.setRecords(scheduleReplayingService.queryEntryPointByRange(requestType));
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
             LOGGER.error("error:{},request:{}", throwable.getMessage(), requestType);
@@ -139,6 +138,16 @@ public class ScheduleReplayQueryController {
         }
         if (requestType.getBeginTime() >= requestType.getEndTime()) {
             return ResponseUtils.parameterInvalidResponse("The beginTime >= endTime from requested");
+        }
+        return null;
+    }
+
+    private Response pageParameterValidate(PagedRequestType requestType) {
+        if (requestType.getPageSize() <= 0) {
+            return ResponseUtils.parameterInvalidResponse("The max case size <= 0 from requested");
+        }
+        if (requestType.getCategory() == null) {
+            return ResponseUtils.parameterInvalidResponse("The category of requested is empty");
         }
         return null;
     }

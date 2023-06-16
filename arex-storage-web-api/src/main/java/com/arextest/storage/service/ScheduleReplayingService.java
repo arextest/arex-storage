@@ -85,6 +85,16 @@ public class ScheduleReplayingService {
         return Collections.emptyList();
     }
 
+    public List<AREXMocker> queryEntryPointByRange(PagedRequestType requestType) {
+        RepositoryReader<AREXMocker> repositoryReader =
+                repositoryProviderFactory.findProvider(requestType.getSourceProvider());
+        if (repositoryReader != null) {
+            return new IterableListWrapper<>(repositoryReader.queryEntryPointByRange(requestType));
+        }
+        return Collections.emptyList();
+    }
+
+
     public List<AREXMocker> queryRecordList(ViewRecordRequestType viewRecordRequestType) {
         String sourceProvider = viewRecordRequestType.getSourceProvider();
         String recordId = viewRecordRequestType.getRecordId();

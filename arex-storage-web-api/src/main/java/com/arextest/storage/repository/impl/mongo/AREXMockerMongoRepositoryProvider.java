@@ -13,6 +13,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.result.DeleteResult;
 import lombok.extern.slf4j.Slf4j;
@@ -51,8 +52,8 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     private static final String GROUP_OP = "$group";
     private static final String SUM_OP = "$sum";
     private static final String PROJECT_OP = "$project";
-
     private static final String AGENT_RECORD_VERSION_COLUMN_NAME = "recordVersion";
+    private static final String TARGET_RESPONSE_COLUMN_NAME = "targetResponse";
     private final static Bson CREATE_TIME_ASCENDING_SORT = Sorts.ascending(CREATE_TIME_COLUMN_NAME);
     private final static Bson CREATE_TIME_DESCENDING_SORT = Sorts.descending(CREATE_TIME_COLUMN_NAME);
 
@@ -111,6 +112,24 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
 
         Iterable<AREXMocker> iterable = collectionSource
                 .find(Filters.and(withRecordVersionFilters(pagedRequestType, recordVersion)))
+                .sort(toSupportSortingOptions(pagedRequestType.getSortingOptions()))
+                .skip(pageIndex == null ? 0 : pagedRequestType.getPageSize() * (pageIndex - 1))
+                .limit(Math.min(pagedRequestType.getPageSize(), DEFAULT_MAX_LIMIT_SIZE));
+        return new AttachmentCategoryIterable(categoryType, iterable);
+    }
+
+    @Override
+    public Iterable<AREXMocker> queryEntryPointByRange(PagedRequestType pagedRequestType) {
+        MockCategoryType categoryType = pagedRequestType.getCategory();
+        Integer pageIndex = pagedRequestType.getPageIndex();
+        MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
+
+        AREXMocker item = getLastRecordVersionMocker(pagedRequestType, collectionSource);
+        String recordVersion = item == null ? null : item.getRecordVersion();
+
+        Iterable<AREXMocker> iterable = collectionSource
+                .find(Filters.and(withRecordVersionFilters(pagedRequestType, recordVersion)))
+                .projection(Projections.exclude(TARGET_RESPONSE_COLUMN_NAME))
                 .sort(toSupportSortingOptions(pagedRequestType.getSortingOptions()))
                 .skip(pageIndex == null ? 0 : pagedRequestType.getPageSize() * (pageIndex - 1))
                 .limit(Math.min(pagedRequestType.getPageSize(), DEFAULT_MAX_LIMIT_SIZE));

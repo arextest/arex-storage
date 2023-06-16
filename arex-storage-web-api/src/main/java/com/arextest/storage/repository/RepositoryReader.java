@@ -16,6 +16,7 @@ public interface RepositoryReader<T extends Mocker> {
     T queryRecord(Mocker requestType);
 
     Iterable<T> queryByRange(PagedRequestType rangeRequestType);
+    Iterable<T> queryEntryPointByRange(PagedRequestType rangeRequestType);
 
     long countByRange(PagedRequestType rangeRequestType);
 
