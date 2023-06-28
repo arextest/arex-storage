@@ -7,6 +7,7 @@ import com.arextest.storage.mock.MockResultContext;
 import com.arextest.storage.mock.MockResultMatchStrategy;
 import com.arextest.storage.mock.MockResultProvider;
 import com.arextest.storage.model.RecordEnvType;
+import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.RepositoryReader;
@@ -27,7 +28,7 @@ import java.util.List;
  * @since 2021/11/11
  */
 @Slf4j
-public final class AgentWorkingService {
+public class AgentWorkingService {
     private final MockResultProvider mockResultProvider;
     private final RepositoryProviderFactory repositoryProviderFactory;
     @Setter
