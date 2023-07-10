@@ -29,6 +29,17 @@ public interface Mocker {
 
     long getCreationTime();
 
+    void setUpdateTime(long updateTime);
+
+    long getUpdateTime();
+
+    void setExpirationTime(long expirationTime);
+
+    /**
+     * MongoDB TTL Index
+     */
+    long getExpirationTime();
+
     void setId(String id);
 
     String getId();

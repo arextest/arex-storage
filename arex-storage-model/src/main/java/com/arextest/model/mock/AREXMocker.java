@@ -33,6 +33,8 @@ public class AREXMocker implements Mocker {
      * millis from utc format without timezone
      */
     private long creationTime;
+    private long updateTime;
+    private long expirationTime;
     private Target targetRequest;
     private Target targetResponse;
     /**

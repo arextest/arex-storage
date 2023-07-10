@@ -30,6 +30,7 @@ public class MockSourceEditionService {
 
     public <T extends Mocker> boolean update(String providerName, T item) {
         RepositoryProvider<T> repositoryWriter = providerFactory.findProvider(providerName);
+        item.setUpdateTime(System.currentTimeMillis());
         return repositoryWriter != null && repositoryWriter.update(item);
     }
 

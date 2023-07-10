@@ -40,6 +40,8 @@ import java.util.Map;
 public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<AREXMocker> {
 
     static final String CREATE_TIME_COLUMN_NAME = "creationTime";
+    static final String UPDATE_TIME_COLUMN_NAME = "updateTime";
+    static final String EXPIRATION_TIME_COLUMN_NAME = "expirationTime";
     public static final String PRIMARY_KEY_COLUMN_NAME = "_id";
     static final String RECORD_ID_COLUMN_NAME = "recordId";
     private static final String APP_ID_COLUMN_NAME = "appId";
