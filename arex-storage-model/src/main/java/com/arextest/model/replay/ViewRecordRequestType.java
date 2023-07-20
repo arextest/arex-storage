@@ -2,6 +2,7 @@ package com.arextest.model.replay;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 /**
  * @author jmo
@@ -9,6 +10,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@ToString
 public class ViewRecordRequestType {
     private String recordId;
     private String sourceProvider;
