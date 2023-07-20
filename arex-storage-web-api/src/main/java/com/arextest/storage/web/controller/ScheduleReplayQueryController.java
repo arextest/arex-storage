@@ -236,12 +236,12 @@ public class ScheduleReplayQueryController {
             ViewRecordResponseType responseType = new ViewRecordResponseType();
             List<AREXMocker> allReadableResult = scheduleReplayingService.queryRecordList(requestType);
             if (CollectionUtils.isEmpty(allReadableResult)) {
-                LOGGER.info("could not found any resources for recordId: {} ,request: {}", recordId, requestType);
+                LOGGER.info("could not found any resources for request: {}", requestType);
             }
             responseType.setRecordResult(allReadableResult);
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
-            LOGGER.error("viewRecord error:{},request:{}", throwable.getMessage(), requestType);
+            LOGGER.error("viewRecord error:{}, request:{}", throwable.getMessage(), requestType);
             return ResponseUtils.exceptionResponse(throwable.getMessage());
         } finally {
             MDCTracer.clear();
