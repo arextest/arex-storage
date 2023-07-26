@@ -107,6 +107,19 @@ public final class HttpWepServiceApiClient {
         return null;
     }
 
+    public <TRequest, TResponse> ResponseEntity<TResponse> responsePost(String url, TRequest request, Class<TResponse> responseType, String headerValue) {
+        try {
+            return restTemplate.postForEntity(url, wrapJsonContentTypeWithHeader(request,headerValue), responseType);
+        } catch (Throwable throwable) {
+            try {
+                LOGGER.error("http post url: {} ,error: {} ,request: {}", url, throwable.getMessage(),
+                        objectMapper.writeValueAsString(request), throwable);
+            } catch (JsonProcessingException e) {
+                LOGGER.error(e.getMessage(), e);
+            }
+        }
+        return null;
+    }
     @SuppressWarnings("unchecked")
     private <TRequest> HttpEntity<TRequest> wrapJsonContentType(TRequest request) {
         HttpEntity<TRequest> httpJsonEntity;
@@ -114,6 +127,18 @@ public final class HttpWepServiceApiClient {
             httpJsonEntity = (HttpEntity<TRequest>) request;
         } else {
             HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            httpJsonEntity = new HttpEntity<>(request, headers);
+        }
+        return httpJsonEntity;
+    }
+    private <TRequest> HttpEntity<TRequest> wrapJsonContentTypeWithHeader(TRequest request, String headerValue) {
+        HttpEntity<TRequest> httpJsonEntity;
+        if (request instanceof HttpEntity) {
+            httpJsonEntity = (HttpEntity<TRequest>) request;
+        } else {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("If-Modified-Since", headerValue);
             headers.setContentType(MediaType.APPLICATION_JSON);
             httpJsonEntity = new HttpEntity<>(request, headers);
         }
