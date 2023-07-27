@@ -4,11 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -107,6 +103,19 @@ public final class HttpWepServiceApiClient {
         return null;
     }
 
+    public <TRequest, TResponse> ResponseEntity<TResponse> responsePost(String url, TRequest request, Class<TResponse> responseType, String headerValue) {
+        try {
+            return restTemplate.postForEntity(url, wrapJsonContentTypeWithHeader(request,headerValue), responseType);
+        } catch (Throwable throwable) {
+            try {
+                LOGGER.error("http post url: {} ,error: {} ,request: {}", url, throwable.getMessage(),
+                        objectMapper.writeValueAsString(request), throwable);
+            } catch (JsonProcessingException e) {
+                LOGGER.error(e.getMessage(), e);
+            }
+        }
+        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+    }
     @SuppressWarnings("unchecked")
     private <TRequest> HttpEntity<TRequest> wrapJsonContentType(TRequest request) {
         HttpEntity<TRequest> httpJsonEntity;
@@ -114,6 +123,18 @@ public final class HttpWepServiceApiClient {
             httpJsonEntity = (HttpEntity<TRequest>) request;
         } else {
             HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            httpJsonEntity = new HttpEntity<>(request, headers);
+        }
+        return httpJsonEntity;
+    }
+    private <TRequest> HttpEntity<TRequest> wrapJsonContentTypeWithHeader(TRequest request, String headerValue) {
+        HttpEntity<TRequest> httpJsonEntity;
+        if (request instanceof HttpEntity) {
+            httpJsonEntity = (HttpEntity<TRequest>) request;
+        } else {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("If-Modified-Since", headerValue);
             headers.setContentType(MediaType.APPLICATION_JSON);
             httpJsonEntity = new HttpEntity<>(request, headers);
         }

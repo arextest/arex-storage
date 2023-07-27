@@ -12,3 +12,4 @@ arex:
   url:
     report:
       agentload: ${arex.report.config.agent.url}/api/config/agent/load
+      agentStatus: ${arex.report.config.agent.url}/api/config/agent/agentStatus
