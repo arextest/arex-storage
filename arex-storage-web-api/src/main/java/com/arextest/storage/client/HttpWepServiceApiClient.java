@@ -59,7 +59,7 @@ public final class HttpWepServiceApiClient {
     public <TResponse> TResponse get(String url, Map<String, ?> urlVariables, Class<TResponse> responseType) {
         try {
             return restTemplate.getForObject(url, responseType, urlVariables);
-        } catch (Throwable throwable) {
+        } catch (RuntimeException throwable) {
             LOGGER.error("http get url: {} ,error: {} , urlVariables: {}", url, throwable.getMessage(), urlVariables,
                     throwable);
         }
@@ -69,7 +69,7 @@ public final class HttpWepServiceApiClient {
     public <TResponse> ResponseEntity<TResponse> get(String url, Map<String, ?> urlVariables, ParameterizedTypeReference<TResponse> responseType) {
         try {
             return restTemplate.exchange(url, HttpMethod.GET, null, responseType, urlVariables);
-        } catch (Throwable throwable) {
+        } catch (RuntimeException throwable) {
             LOGGER.error("http get url: {} ,error: {} , urlVariables: {}", url, throwable.getMessage(), urlVariables,
                     throwable);
         }
@@ -81,7 +81,7 @@ public final class HttpWepServiceApiClient {
         try {
             HttpEntity<?> request = new HttpEntity<>(headers);
             return restTemplate.exchange(url, HttpMethod.GET, request, responseType, urlVariables).getBody();
-        } catch (Throwable throwable) {
+        } catch (RuntimeException throwable) {
             LOGGER.error("http get url: {} ,error: {} , urlVariables: {} ,headers: {}", url, throwable.getMessage(),
                     urlVariables, headers,
                     throwable);
@@ -92,7 +92,7 @@ public final class HttpWepServiceApiClient {
     public <TRequest, TResponse> TResponse jsonPost(String url, TRequest request, Class<TResponse> responseType) {
         try {
             return restTemplate.postForObject(url, wrapJsonContentType(request), responseType);
-        } catch (Throwable throwable) {
+        } catch (RuntimeException throwable) {
             try {
                 LOGGER.error("http post url: {} ,error: {} ,request: {}", url, throwable.getMessage(),
                         objectMapper.writeValueAsString(request), throwable);
@@ -106,7 +106,7 @@ public final class HttpWepServiceApiClient {
     public <TRequest, TResponse> ResponseEntity<TResponse> responsePost(String url, TRequest request, Class<TResponse> responseType, String headerValue) {
         try {
             return restTemplate.postForEntity(url, wrapJsonContentTypeWithHeader(request,headerValue), responseType);
-        } catch (Throwable throwable) {
+        } catch (RuntimeException throwable) {
             try {
                 LOGGER.error("http post url: {} ,error: {} ,request: {}", url, throwable.getMessage(),
                         objectMapper.writeValueAsString(request), throwable);
