@@ -18,4 +18,5 @@ public interface RepositoryWriter<T extends Mocker> {
 
     boolean update(T value);
 
+    void setTTLIndex();
 }

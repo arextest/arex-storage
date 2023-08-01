@@ -1,6 +1,5 @@
 package com.arextest.storage.web.controller;
 
-
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.response.Response;
@@ -171,6 +170,14 @@ public class MockSourceEditionController {
     protected static class CopyResponseType implements Response {
         private ResponseStatusType responseStatusType;
         private int copied;
+    }
+
+    // TODO: 2023/8/1 temporary method, need to remove
+    @GetMapping(value = "/setTTLIndex/")
+    @ResponseBody
+    public Response setTTLIndex() {
+        editableService.setTTLIndex();
+        return ResponseUtils.successResponse(true);
     }
 
 }
