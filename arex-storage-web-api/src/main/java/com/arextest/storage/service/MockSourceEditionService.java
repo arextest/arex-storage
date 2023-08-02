@@ -4,7 +4,6 @@ import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
-import com.arextest.storage.repository.impl.mongo.AREXMockerMongoRepositoryProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -117,12 +116,5 @@ public class MockSourceEditionService {
             targetList.add(value);
         }
         return targetList;
-    }
-
-    public void setTTLIndex() {
-        RepositoryProvider<?> repositoryWriter = providerFactory.findProvider(null);
-        if (repositoryWriter instanceof AREXMockerMongoRepositoryProvider) {
-            repositoryWriter.setTTLIndex();
-        }
     }
 }
