@@ -96,10 +96,11 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         String categoryName = this.getProviderName() + category.getName() + COLLECTION_PREFIX;
         MongoCollection<AREXMocker> collection = mongoDatabase.getCollection(categoryName, this.targetClassType);
 
-        // set expirationTime for all records which not set expirationTime
-        collection.updateMany(Filters.exists(EXPIRATION_TIME_COLUMN_NAME, false),
-            new Document("$set", new Document(EXPIRATION_TIME_COLUMN_NAME,
-                new Date(System.currentTimeMillis() + EXPIRATION_MILLISECONDS))));
+        // set expirationTime for all records which not set expirationTime or expirationTime is 0
+        Bson filter = Filters.or(Filters.eq(EXPIRATION_TIME_COLUMN_NAME, 0),
+            Filters.exists(EXPIRATION_TIME_COLUMN_NAME, false));
+        Bson update = new BasicDBObject("$set", new BasicDBObject(EXPIRATION_TIME_COLUMN_NAME, EXPIRATION_MILLISECONDS));
+        collection.updateMany(filter, update);
 
         // check if the index has been set
         ListIndexesIterable<Document> indexes = collection.listIndexes();
