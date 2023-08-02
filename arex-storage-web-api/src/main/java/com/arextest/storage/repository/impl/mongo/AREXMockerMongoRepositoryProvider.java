@@ -259,7 +259,8 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         try {
             MockCategoryType category = valueList.get(0).getCategoryType();
             MongoCollection<AREXMocker> collectionSource = createOrGetCollection(category);
-            valueList.forEach(item -> item.setExpirationTime(System.currentTimeMillis() + EXPIRATION_MILLISECONDS));
+            long currentTimeMillis = System.currentTimeMillis();
+            valueList.forEach(item -> item.setExpirationTime(currentTimeMillis + EXPIRATION_MILLISECONDS));
             collectionSource.insertMany(valueList);
         } catch (Throwable ex) {
             LOGGER.error("save List error:{} , size:{}", ex.getMessage(), valueList.size(), ex);
