@@ -47,7 +47,7 @@ public class MockCategoryType {
         this.entryPoint = entryPoint;
         this.skipComparison = skipComparison;
         // default value.
-        this.expirationTime = 4 * ONE_DAY;
+        this.expirationTime = 4L * ONE_DAY;
     }
 
     public static MockCategoryType createDependency(String name) {
@@ -69,7 +69,7 @@ public class MockCategoryType {
     public static final MockCategoryType SERVLET = MockCategoryType.createEntryPoint("Servlet");
     public static final MockCategoryType DATABASE = MockCategoryType.createDependency("Database");
     public static final MockCategoryType HTTP_CLIENT = MockCategoryType.createDependency("HttpClient");
-    public static final MockCategoryType CONFIG_FILE = MockCategoryType.createSkipComparison("ConfigFile", 40 * ONE_DAY);
+    public static final MockCategoryType CONFIG_FILE = MockCategoryType.createSkipComparison("ConfigFile", 40L * ONE_DAY);
     public static final MockCategoryType DYNAMIC_CLASS = MockCategoryType.createSkipComparison("DynamicClass");
     public static final MockCategoryType REDIS = MockCategoryType.createDependency("Redis");
     public static final MockCategoryType DUBBO_PROVIDER = MockCategoryType.createEntryPoint("DubboProvider");
