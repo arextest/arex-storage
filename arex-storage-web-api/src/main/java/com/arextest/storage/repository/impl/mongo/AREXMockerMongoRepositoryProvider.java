@@ -9,14 +9,14 @@ import com.arextest.model.replay.SortingTypeEnum;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.mongodb.BasicDBObject;
-import com.mongodb.client.ListIndexesIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.Projections;
+import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.client.model.Sorts;
+import com.mongodb.client.model.WriteModel;
 import com.mongodb.client.result.DeleteResult;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -24,7 +24,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
-import javax.annotation.PostConstruct;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,7 +65,6 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     private static final int DEFAULT_MIN_LIMIT_SIZE = 1;
     private static final int DEFAULT_MAX_LIMIT_SIZE = 1000;
     private static final int DEFAULT_BSON_WHERE_SIZE = 8;
-    private static final int EXPIRATION_MILLISECONDS = 4 * 24 * 60 * 60 * 1000;
     protected final MongoDatabase mongoDatabase;
     private final String providerName;
 
@@ -79,47 +77,6 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         this.mongoDatabase = mongoDatabase;
         this.providerName = providerName;
     }
-
-    @PostConstruct
-    public void init() {
-        setTTLIndex();
-    }
-
-    private void setTTLIndex() {
-        for (MockCategoryType category : MockCategoryType.DEFAULTS) {
-            setTTLIndex(category);
-        }
-    }
-
-    // set TTL index on expirationTime of collection
-    private void setTTLIndex(MockCategoryType category) {
-        String categoryName = this.getProviderName() + category.getName() + COLLECTION_PREFIX;
-        MongoCollection<AREXMocker> collection = mongoDatabase.getCollection(categoryName, this.targetClassType);
-
-        // set expirationTime for all records which not set expirationTime or expirationTime is 0
-        Bson filter = Filters.or(Filters.eq(EXPIRATION_TIME_COLUMN_NAME, 0),
-            Filters.exists(EXPIRATION_TIME_COLUMN_NAME, false));
-        Bson update = new BasicDBObject("$set", new BasicDBObject(EXPIRATION_TIME_COLUMN_NAME, EXPIRATION_MILLISECONDS));
-        collection.updateMany(filter, update);
-
-        // check if the index has been set
-        ListIndexesIterable<Document> indexes = collection.listIndexes();
-        boolean hasIndex = false;
-        for (Document index : indexes) {
-            if (index.get(EXPIRATION_TIME_COLUMN_NAME) != null) {
-                hasIndex = true;
-                break;
-            }
-        }
-        if (hasIndex) {
-            return;
-        }
-        Bson index = new BasicDBObject(EXPIRATION_TIME_COLUMN_NAME, 1);
-        IndexOptions options = new IndexOptions().expireAfter(0L, java.util.concurrent.TimeUnit.SECONDS);
-        collection.createIndex(index, options);
-    }
-
-
 
     private MongoCollection<AREXMocker> createOrGetCollection(MockCategoryType category) {
         String categoryName = this.getProviderName() + category.getName() + COLLECTION_PREFIX;
@@ -248,7 +205,6 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         if (value == null) {
             return false;
         }
-        value.setExpirationTime(System.currentTimeMillis() + EXPIRATION_MILLISECONDS);
         return this.saveList(Collections.singletonList(value));
     }
 
@@ -261,7 +217,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
             MockCategoryType category = valueList.get(0).getCategoryType();
             MongoCollection<AREXMocker> collectionSource = createOrGetCollection(category);
             long currentTimeMillis = System.currentTimeMillis();
-            valueList.forEach(item -> item.setExpirationTime(currentTimeMillis + EXPIRATION_MILLISECONDS));
+            valueList.forEach(item -> item.setExpirationTime(currentTimeMillis + category.getExpirationTime()));
             collectionSource.insertMany(valueList);
         } catch (Throwable ex) {
             LOGGER.error("save List error:{} , size:{}", ex.getMessage(), valueList.size(), ex);
@@ -286,6 +242,21 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         } catch (Exception e) {
             LOGGER.error("update record error:{} ", e.getMessage(), e);
             return false;
+        }
+    }
+
+    @Override
+    public void updateList(List<AREXMocker> valueList) {
+        if (CollectionUtils.isEmpty(valueList)) {
+            return;
+        }
+        try {
+            MongoCollection<AREXMocker> collectionSource = createOrGetCollection(valueList.get(0).getCategoryType());
+            List<WriteModel<AREXMocker>> writeModelList = new ArrayList<>(valueList.size());
+            valueList.forEach(item -> writeModelList.add(new ReplaceOneModel<>(buildPrimaryKeyFilter(item), item)));
+            collectionSource.bulkWrite(writeModelList);
+        } catch (Throwable ex) {
+            LOGGER.error("update List error:{} , size:{}", ex.getMessage(), valueList.size(), ex);
         }
     }
 

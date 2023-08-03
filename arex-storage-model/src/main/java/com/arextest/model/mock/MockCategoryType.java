@@ -17,9 +17,13 @@ import java.util.Set;
 @AllArgsConstructor
 @EqualsAndHashCode(of = "name")
 public class MockCategoryType {
+    private static final long ONE_DAY = 24 * 60 * 60 * 1000;
+
     private String name;
     private boolean entryPoint;
     private boolean skipComparison;
+    // milliseconds.
+    private long expirationTime;
 
     @Override
     public String toString() {
@@ -32,6 +36,17 @@ public class MockCategoryType {
 
     public static MockCategoryType createSkipComparison(String name) {
         return new MockCategoryType(name, false, true);
+    }
+
+    public static MockCategoryType createSkipComparison(String name, long expirationTime) {
+        return new MockCategoryType(name, false, true, expirationTime);
+    }
+
+    public MockCategoryType(String name, boolean entryPoint, boolean skipComparison) {
+        this.name = name;
+        this.entryPoint = entryPoint;
+        this.skipComparison = skipComparison;
+        this.expirationTime = 4 * ONE_DAY;
     }
 
     public static MockCategoryType createDependency(String name) {
@@ -53,7 +68,7 @@ public class MockCategoryType {
     public static final MockCategoryType SERVLET = MockCategoryType.createEntryPoint("Servlet");
     public static final MockCategoryType DATABASE = MockCategoryType.createDependency("Database");
     public static final MockCategoryType HTTP_CLIENT = MockCategoryType.createDependency("HttpClient");
-    public static final MockCategoryType CONFIG_FILE = MockCategoryType.createSkipComparison("ConfigFile");
+    public static final MockCategoryType CONFIG_FILE = MockCategoryType.createSkipComparison("ConfigFile", 40 * ONE_DAY);
     public static final MockCategoryType DYNAMIC_CLASS = MockCategoryType.createSkipComparison("DynamicClass");
     public static final MockCategoryType REDIS = MockCategoryType.createDependency("Redis");
     public static final MockCategoryType DUBBO_PROVIDER = MockCategoryType.createEntryPoint("DubboProvider");

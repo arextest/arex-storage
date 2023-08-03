@@ -17,12 +17,20 @@ import com.arextest.storage.repository.ServiceRepository;
 import com.arextest.storage.repository.impl.mongo.AREXMockerMongoRepositoryProvider;
 import com.arextest.storage.repository.impl.mongo.MongoDbUtils;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
-import com.arextest.storage.service.*;
+import com.arextest.storage.service.AgentWorkingListener;
+import com.arextest.storage.service.AgentWorkingService;
+import com.arextest.storage.service.AutoDiscoveryEntryPointListener;
+import com.arextest.storage.service.MockSourceEditionService;
+import com.arextest.storage.service.PrepareMockResultService;
+import com.arextest.storage.service.ScheduleReplayingService;
 import com.arextest.storage.web.controller.MockSourceEditionController;
 import com.arextest.storage.web.controller.ScheduleReplayQueryController;
+import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.IndexOptions;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.bson.Document;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.http.HttpMessageConverters;
@@ -33,11 +41,14 @@ import org.springframework.core.annotation.Order;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties({StorageConfigurationProperties.class})
 public class StorageAutoConfiguration {
     private final StorageConfigurationProperties properties;
+    private static final String COLLECTION_PREFIX = "Mocker";
+    static final String EXPIRATION_TIME_COLUMN_NAME = "expirationTime";
 
     public StorageAutoConfiguration(StorageConfigurationProperties configurationProperties) {
         properties = configurationProperties;
@@ -46,7 +57,18 @@ public class StorageAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(MongoDatabase.class)
     public MongoDatabase mongoDatabase() {
-        return MongoDbUtils.create(properties.getMongodbUri());
+        MongoDatabase database = MongoDbUtils.create(properties.getMongodbUri());
+        for (MockCategoryType category : MockCategoryType.DEFAULTS) {
+            setTTLIndex(category, database);
+        }
+        return database;
+    }
+
+    private void setTTLIndex(MockCategoryType category, MongoDatabase mongoDatabase) {
+        String categoryName = ProviderNames.DEFAULT + category.getName() + COLLECTION_PREFIX;
+        MongoCollection<AREXMocker> collection = mongoDatabase.getCollection(categoryName, AREXMocker.class);
+        collection.createIndex(new Document(EXPIRATION_TIME_COLUMN_NAME, 1),
+            new IndexOptions().expireAfter(0L, TimeUnit.SECONDS));
     }
 
     @Bean

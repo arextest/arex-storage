@@ -17,4 +17,6 @@ public interface RepositoryWriter<T extends Mocker> {
     long removeBy(MockCategoryType categoryType, String recordId);
 
     boolean update(T value);
+
+    void updateList(List<T> valueList);
 }
