@@ -46,6 +46,7 @@ public class MockCategoryType {
         this.name = name;
         this.entryPoint = entryPoint;
         this.skipComparison = skipComparison;
+        // default value.
         this.expirationTime = 4 * ONE_DAY;
     }
 
