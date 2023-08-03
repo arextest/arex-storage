@@ -44,7 +44,7 @@ public class ScheduleReplayingService {
     private final ServiceOperationRepository serviceOperationRepository;
 
     // Allow rerun within x day after CreatPlan
-    private static final long ALLOWED_RERUN_DAYS = 1 * TimeUtils.ONE_DAY;
+    private static final long ALLOWED_RERUN_DAYS = 1L * TimeUtils.ONE_DAY;
 
     public ScheduleReplayingService(MockResultProvider mockResultProvider,
                                     RepositoryProviderFactory repositoryProviderFactory,

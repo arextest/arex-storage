@@ -17,7 +17,7 @@ import java.util.Set;
 @AllArgsConstructor
 @EqualsAndHashCode(of = "name")
 public class MockCategoryType {
-    private static final long ONE_DAY = 24 * 60 * 60 * 1000;
+    private static final int ONE_DAY = 24 * 60 * 60 * 1000;
 
     private String name;
     private boolean entryPoint;
