@@ -5,8 +5,8 @@ package com.arextest.storage.utils;
  * @created 2023/8/3 20:12
  */
 public class TimeUtils {
-    public static final int ONE_DAY = 24 * 60 * 60 * 1000;
-    public static final int ONE_HOUR = 60 * 60 * 1000;
+    public static final long ONE_DAY = 24 * 60 * 60 * 1000;
+    public static final long ONE_HOUR = 60 * 60 * 1000;
     public static final int ZERO_TIMESTAMP_HOURS = 8;
 
     public static long getLastMillis(long timestamp) {

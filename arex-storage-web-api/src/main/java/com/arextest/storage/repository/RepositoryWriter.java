@@ -2,6 +2,7 @@ package com.arextest.storage.repository;
 
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
+import com.arextest.model.replay.PagedRequestType;
 
 import java.util.List;
 
@@ -18,5 +19,5 @@ public interface RepositoryWriter<T extends Mocker> {
 
     boolean update(T value);
 
-    void updateList(List<T> valueList);
+    void batchUpdateExpirationTime(PagedRequestType request);
 }

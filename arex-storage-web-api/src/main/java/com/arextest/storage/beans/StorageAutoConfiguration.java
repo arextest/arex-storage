@@ -1,6 +1,5 @@
 package com.arextest.storage.beans;
 
-
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.common.cache.DefaultRedisCacheProvider;
 import com.arextest.model.mock.AREXMocker;
@@ -58,13 +57,17 @@ public class StorageAutoConfiguration {
     @ConditionalOnMissingBean(MongoDatabase.class)
     public MongoDatabase mongoDatabase() {
         MongoDatabase database = MongoDbUtils.create(properties.getMongodbUri());
-        for (MockCategoryType category : MockCategoryType.DEFAULTS) {
-            setTTLIndex(category, database);
-        }
+        setTtlIndexes(database);
         return database;
     }
 
-    private void setTTLIndex(MockCategoryType category, MongoDatabase mongoDatabase) {
+    private void setTtlIndexes(MongoDatabase mongoDatabase) {
+        for (MockCategoryType category : MockCategoryType.DEFAULTS) {
+            setTTLIndexInMockerCollection(category, mongoDatabase);
+        }
+    }
+
+    private void setTTLIndexInMockerCollection(MockCategoryType category, MongoDatabase mongoDatabase) {
         String categoryName = ProviderNames.DEFAULT + category.getName() + COLLECTION_PREFIX;
         MongoCollection<AREXMocker> collection = mongoDatabase.getCollection(categoryName, AREXMocker.class);
         collection.createIndex(new Document(EXPIRATION_TIME_COLUMN_NAME, 1),

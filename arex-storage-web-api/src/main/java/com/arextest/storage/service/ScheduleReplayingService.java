@@ -13,7 +13,6 @@ import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.RepositoryReader;
 import com.arextest.storage.repository.ServiceOperationRepository;
 import com.arextest.storage.trace.MDCTracer;
-import com.arextest.storage.utils.TimeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -42,9 +41,6 @@ public class ScheduleReplayingService {
     private final RepositoryProviderFactory repositoryProviderFactory;
 
     private final ServiceOperationRepository serviceOperationRepository;
-
-    // Allow rerun within x day after CreatPlan
-    private static final long ALLOWED_RERUN_DAYS = 1L * TimeUtils.ONE_DAY;
 
     public ScheduleReplayingService(MockResultProvider mockResultProvider,
                                     RepositoryProviderFactory repositoryProviderFactory,
@@ -91,39 +87,15 @@ public class ScheduleReplayingService {
     }
 
     public List<AREXMocker> queryEntryPointByRange(PagedRequestType requestType) {
-        RepositoryProvider<AREXMocker> repositoryReader =
+        RepositoryProvider<AREXMocker> repositoryProvider =
                 repositoryProviderFactory.findProvider(requestType.getSourceProvider());
-        if (repositoryReader != null) {
-            Iterable<AREXMocker> iterable = repositoryReader.queryEntryPointByRange(requestType);
-            List<AREXMocker> result = new ArrayList<>();
-            iterable.forEach(result::add);
-            updateExpirationTime(result, repositoryReader);
-            return result;
+        if (repositoryProvider != null) {
+            // update expiration time and them query.
+            repositoryProvider.batchUpdateExpirationTime(requestType);
+            return new IterableListWrapper<>(repositoryProvider.queryEntryPointByRange(requestType));
+
         }
         return Collections.emptyList();
-    }
-
-    private void updateExpirationTime(List<AREXMocker> mockerList, RepositoryProvider<AREXMocker> repositoryWriter) {
-        if (CollectionUtils.isEmpty(mockerList)) {
-            return;
-        }
-        List<AREXMocker> updatesList = new ArrayList<>(mockerList.size());
-        long currentTimeMillis = System.currentTimeMillis();
-        long todayLastMillis = TimeUtils.getLastMillis(currentTimeMillis);
-
-        for (AREXMocker mocker : mockerList) {
-            if ((mocker.getExpirationTime() - todayLastMillis) < ALLOWED_RERUN_DAYS) {
-                // Add different minute to avoid the same expiration time
-                mocker.setExpirationTime(todayLastMillis + ALLOWED_RERUN_DAYS
-                    + mocker.getExpirationTime() % TimeUtils.ONE_HOUR);
-                mocker.setUpdateTime(currentTimeMillis);
-                updatesList.add(mocker);
-            }
-        }
-        if (CollectionUtils.isEmpty(updatesList)) {
-            return;
-        }
-        repositoryWriter.updateList(updatesList);
     }
 
 

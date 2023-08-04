@@ -8,15 +8,15 @@ import com.arextest.model.replay.SortingOption;
 import com.arextest.model.replay.SortingTypeEnum;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
+import com.arextest.storage.utils.TimeUtils;
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Projections;
-import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.client.model.Sorts;
-import com.mongodb.client.model.WriteModel;
+import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -246,18 +246,20 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     }
 
     @Override
-    public void updateList(List<AREXMocker> valueList) {
-        if (CollectionUtils.isEmpty(valueList)) {
-            return;
-        }
-        try {
-            MongoCollection<AREXMocker> collectionSource = createOrGetCollection(valueList.get(0).getCategoryType());
-            List<WriteModel<AREXMocker>> writeModelList = new ArrayList<>(valueList.size());
-            valueList.forEach(item -> writeModelList.add(new ReplaceOneModel<>(buildPrimaryKeyFilter(item), item)));
-            collectionSource.bulkWrite(writeModelList);
-        } catch (Throwable ex) {
-            LOGGER.error("update List error:{} , size:{}", ex.getMessage(), valueList.size(), ex);
-        }
+    public void batchUpdateExpirationTime(PagedRequestType request) {
+        MongoCollection<AREXMocker> collectionSource = createOrGetCollection(request.getCategory());
+        AREXMocker item = getLastRecordVersionMocker(request, collectionSource);
+        String recordVersion = item == null ? null : item.getRecordVersion();
+        List<Bson> bsons = withRecordVersionFilters(request, recordVersion);
+
+        long currentTimeMillis = System.currentTimeMillis();
+        long todayLastMillis = TimeUtils.getLastMillis(currentTimeMillis);
+        bsons.add(Filters.lt(EXPIRATION_TIME_COLUMN_NAME, todayLastMillis));
+
+        Bson filters = Filters.and(bsons);
+        // Add different minute to avoid the same expiration time
+        Bson update = Updates.set(EXPIRATION_TIME_COLUMN_NAME, todayLastMillis + currentTimeMillis % TimeUtils.ONE_HOUR);
+        collectionSource.updateMany(filters, update);
     }
 
     @Override
