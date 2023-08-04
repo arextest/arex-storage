@@ -90,10 +90,7 @@ public class ScheduleReplayingService {
         RepositoryProvider<AREXMocker> repositoryProvider =
                 repositoryProviderFactory.findProvider(requestType.getSourceProvider());
         if (repositoryProvider != null) {
-            // update expiration time and them query.
-            repositoryProvider.batchUpdateExpirationTime(requestType);
             return new IterableListWrapper<>(repositoryProvider.queryEntryPointByRange(requestType));
-
         }
         return Collections.emptyList();
     }

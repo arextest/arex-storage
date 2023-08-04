@@ -25,13 +25,13 @@ public class MockCategoryType {
     private boolean entryPoint;
     private boolean skipComparison;
     // milliseconds.
-    private long expirationTime;
+    private long expirationDuration;
 
-    public long getExpirationTime() {
-        if (this.expirationTime == 0) {
+    public long getExpirationDuration() {
+        if (this.expirationDuration == 0) {
             return EXPIRATION_TIME_MAP.get(this.name);
         }
-        return expirationTime;
+        return expirationDuration;
     }
 
     @Override
@@ -56,7 +56,7 @@ public class MockCategoryType {
         this.entryPoint = entryPoint;
         this.skipComparison = skipComparison;
         // default value.
-        this.expirationTime = 4L * ONE_DAY;
+        this.expirationDuration = 4L * ONE_DAY;
     }
 
     public static MockCategoryType createDependency(String name) {
@@ -100,7 +100,7 @@ public class MockCategoryType {
         internalSet.add(DUBBO_CONSUMER);
         DEFAULTS = Collections.unmodifiableSet(internalSet);
         for (MockCategoryType categoryType : DEFAULTS) {
-            EXPIRATION_TIME_MAP.put(categoryType.name, categoryType.expirationTime);
+            EXPIRATION_TIME_MAP.put(categoryType.name, categoryType.expirationDuration);
         }
     }
 }
