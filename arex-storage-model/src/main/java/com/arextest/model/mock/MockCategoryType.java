@@ -7,7 +7,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -24,6 +26,13 @@ public class MockCategoryType {
     private boolean skipComparison;
     // milliseconds.
     private long expirationTime;
+
+    public long getExpirationTime() {
+        if (this.expirationTime == 0) {
+            return EXPIRATION_TIME_MAP.get(this.name);
+        }
+        return expirationTime;
+    }
 
     @Override
     public String toString() {
@@ -75,6 +84,8 @@ public class MockCategoryType {
     public static final MockCategoryType DUBBO_PROVIDER = MockCategoryType.createEntryPoint("DubboProvider");
     public static final MockCategoryType DUBBO_CONSUMER = MockCategoryType.createDependency("DubboConsumer");
 
+    private static final Map<String, Long> EXPIRATION_TIME_MAP = new HashMap<>();
+
     static {
         HashSet<MockCategoryType> internalSet = new HashSet<>();
         internalSet.add(Q_MESSAGE_CONSUMER);
@@ -88,5 +99,8 @@ public class MockCategoryType {
         internalSet.add(DUBBO_PROVIDER);
         internalSet.add(DUBBO_CONSUMER);
         DEFAULTS = Collections.unmodifiableSet(internalSet);
+        for (MockCategoryType categoryType : DEFAULTS) {
+            EXPIRATION_TIME_MAP.put(categoryType.name, categoryType.expirationTime);
+        }
     }
 }
