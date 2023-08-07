@@ -7,9 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -19,20 +17,10 @@ import java.util.Set;
 @AllArgsConstructor
 @EqualsAndHashCode(of = "name")
 public class MockCategoryType {
-    private static final long ONE_DAY = 24 * 60 * 60 * 1000L;
 
     private String name;
     private boolean entryPoint;
     private boolean skipComparison;
-    // milliseconds.
-    private long expirationDuration;
-
-    public long getExpirationDuration() {
-        if (this.expirationDuration == 0) {
-            return EXPIRATION_TIME_MAP.get(this.name);
-        }
-        return expirationDuration;
-    }
 
     @Override
     public String toString() {
@@ -45,18 +33,6 @@ public class MockCategoryType {
 
     public static MockCategoryType createSkipComparison(String name) {
         return new MockCategoryType(name, false, true);
-    }
-
-    public static MockCategoryType createSkipComparison(String name, long expirationTime) {
-        return new MockCategoryType(name, false, true, expirationTime);
-    }
-
-    public MockCategoryType(String name, boolean entryPoint, boolean skipComparison) {
-        this.name = name;
-        this.entryPoint = entryPoint;
-        this.skipComparison = skipComparison;
-        // default value.
-        this.expirationDuration = 4L * ONE_DAY;
     }
 
     public static MockCategoryType createDependency(String name) {
@@ -78,13 +54,11 @@ public class MockCategoryType {
     public static final MockCategoryType SERVLET = MockCategoryType.createEntryPoint("Servlet");
     public static final MockCategoryType DATABASE = MockCategoryType.createDependency("Database");
     public static final MockCategoryType HTTP_CLIENT = MockCategoryType.createDependency("HttpClient");
-    public static final MockCategoryType CONFIG_FILE = MockCategoryType.createSkipComparison("ConfigFile", 40L * ONE_DAY);
+    public static final MockCategoryType CONFIG_FILE = MockCategoryType.createSkipComparison("ConfigFile");
     public static final MockCategoryType DYNAMIC_CLASS = MockCategoryType.createSkipComparison("DynamicClass");
     public static final MockCategoryType REDIS = MockCategoryType.createDependency("Redis");
     public static final MockCategoryType DUBBO_PROVIDER = MockCategoryType.createEntryPoint("DubboProvider");
     public static final MockCategoryType DUBBO_CONSUMER = MockCategoryType.createDependency("DubboConsumer");
-
-    private static final Map<String, Long> EXPIRATION_TIME_MAP = new HashMap<>();
 
     static {
         HashSet<MockCategoryType> internalSet = new HashSet<>();
@@ -99,8 +73,5 @@ public class MockCategoryType {
         internalSet.add(DUBBO_PROVIDER);
         internalSet.add(DUBBO_CONSUMER);
         DEFAULTS = Collections.unmodifiableSet(internalSet);
-        for (MockCategoryType categoryType : DEFAULTS) {
-            EXPIRATION_TIME_MAP.put(categoryType.name, categoryType.expirationDuration);
-        }
     }
 }

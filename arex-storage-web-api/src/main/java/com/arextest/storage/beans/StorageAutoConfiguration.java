@@ -160,12 +160,12 @@ public class StorageAutoConfiguration {
     @Bean
     @Order(2)
     public RepositoryProvider<AREXMocker> pinnedMockerProvider(MongoDatabase mongoDatabase) {
-        return new AREXMockerMongoRepositoryProvider(ProviderNames.PINNED, mongoDatabase);
+        return new AREXMockerMongoRepositoryProvider(ProviderNames.PINNED, mongoDatabase, properties);
     }
 
     @Bean
     @Order(1)
     public RepositoryProvider<AREXMocker> defaultMockerProvider(MongoDatabase mongoDatabase) {
-        return new AREXMockerMongoRepositoryProvider(mongoDatabase);
+        return new AREXMockerMongoRepositoryProvider(mongoDatabase, properties);
     }
 }

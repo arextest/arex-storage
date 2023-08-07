@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.Map;
 import java.util.Set;
 
 @ConfigurationProperties(prefix = "arex.storage")
@@ -19,6 +20,8 @@ public class StorageConfigurationProperties {
     private boolean enableAutoDiscoveryEntryPoint = true;
 
     private RecordEnvType recordEnv;
+    private Map<String, Long> expirationDurationMap;
+    private Long defaultExpirationDuration;
 
     @Getter
     @Setter

@@ -5,6 +5,9 @@ arex:
     enableDiscoveryEntryPoint: true
     mongodbUri: ${arex.storage.mongo.host:mongodb://arex:iLoveArex@mongodb:27017/arex_storage_db}
     recordEnv: PRO
+    expirationDurationMap:
+      ConfigFile: 3456000000
+    defaultExpirationDuration: 345600000
   report:
     config:
       agent:
