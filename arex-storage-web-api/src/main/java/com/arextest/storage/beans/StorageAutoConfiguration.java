@@ -24,12 +24,14 @@ import com.arextest.storage.service.PrepareMockResultService;
 import com.arextest.storage.service.ScheduleReplayingService;
 import com.arextest.storage.web.controller.MockSourceEditionController;
 import com.arextest.storage.web.controller.ScheduleReplayQueryController;
+import com.mongodb.MongoCommandException;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.IndexOptions;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.http.HttpMessageConverters;
@@ -70,8 +72,15 @@ public class StorageAutoConfiguration {
     private void setTTLIndexInMockerCollection(MockCategoryType category, MongoDatabase mongoDatabase) {
         String categoryName = ProviderNames.DEFAULT + category.getName() + COLLECTION_PREFIX;
         MongoCollection<AREXMocker> collection = mongoDatabase.getCollection(categoryName, AREXMocker.class);
-        collection.createIndex(new Document(EXPIRATION_TIME_COLUMN_NAME, 1),
-            new IndexOptions().expireAfter(0L, TimeUnit.SECONDS));
+        Bson index = new Document(EXPIRATION_TIME_COLUMN_NAME, 1);
+        IndexOptions indexOptions = new IndexOptions().expireAfter(0L, TimeUnit.SECONDS);
+        try {
+            collection.createIndex(index, indexOptions);
+        } catch (MongoCommandException e) {
+            // ignore
+            collection.dropIndex(index);
+            collection.createIndex(index, indexOptions);
+        }
     }
 
     @Bean
