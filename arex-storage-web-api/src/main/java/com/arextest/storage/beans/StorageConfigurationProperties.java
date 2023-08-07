@@ -22,6 +22,7 @@ public class StorageConfigurationProperties {
     private RecordEnvType recordEnv;
     private Map<String, Long> expirationDurationMap;
     private Long defaultExpirationDuration;
+    private int allowReRunDays;
 
     @Getter
     @Setter

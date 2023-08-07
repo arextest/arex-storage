@@ -8,6 +8,7 @@ arex:
     expirationDurationMap:
       ConfigFile: 3456000000
     defaultExpirationDuration: 345600000
+    allowReRunDays: 1
   report:
     config:
       agent:

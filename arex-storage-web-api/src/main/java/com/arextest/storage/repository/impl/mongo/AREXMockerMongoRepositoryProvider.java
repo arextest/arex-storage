@@ -166,14 +166,15 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
 
     private void updateExpirationTime(List<Bson> bsons, MongoCollection<AREXMocker> collectionSource) {
         long currentTimeMillis = System.currentTimeMillis();
-        long todayLastMillis = TimeUtils.getLastMillis(currentTimeMillis);
+        long allowedLastMills = TimeUtils.getFirstMills(currentTimeMillis) +
+            properties.getAllowReRunDays() * TimeUtils.ONE_DAY;
         Bson filters = Filters.and(Filters.and(bsons),
-            Filters.or(Filters.lt(EXPIRATION_TIME_COLUMN_NAME, new Date(todayLastMillis)),
+            Filters.or(Filters.lt(EXPIRATION_TIME_COLUMN_NAME, new Date(allowedLastMills)),
             Filters.exists(EXPIRATION_TIME_COLUMN_NAME, false)));
         // Add different minutes to avoid the same expiration time
         Bson update = Updates.combine(
             Updates.set(EXPIRATION_TIME_COLUMN_NAME,
-                new Date(todayLastMillis + currentTimeMillis % TimeUtils.ONE_HOUR)),
+                new Date(allowedLastMills + currentTimeMillis % TimeUtils.ONE_HOUR)),
             Updates.set(UPDATE_TIME_COLUMN_NAME, new Date(currentTimeMillis)));
         collectionSource.updateMany(filters, update);
     }
