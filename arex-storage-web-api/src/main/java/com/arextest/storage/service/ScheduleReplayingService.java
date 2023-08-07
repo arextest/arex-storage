@@ -8,6 +8,7 @@ import com.arextest.model.replay.ViewRecordRequestType;
 import com.arextest.model.replay.holder.ListResultHolder;
 import com.arextest.storage.mock.MockResultProvider;
 import com.arextest.storage.model.dao.ServiceOperationEntity;
+import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.RepositoryReader;
 import com.arextest.storage.repository.ServiceOperationRepository;
@@ -86,10 +87,10 @@ public class ScheduleReplayingService {
     }
 
     public List<AREXMocker> queryEntryPointByRange(PagedRequestType requestType) {
-        RepositoryReader<AREXMocker> repositoryReader =
+        RepositoryProvider<AREXMocker> repositoryProvider =
                 repositoryProviderFactory.findProvider(requestType.getSourceProvider());
-        if (repositoryReader != null) {
-            return new IterableListWrapper<>(repositoryReader.queryEntryPointByRange(requestType));
+        if (repositoryProvider != null) {
+            return new IterableListWrapper<>(repositoryProvider.queryEntryPointByRange(requestType));
         }
         return Collections.emptyList();
     }
