@@ -6,8 +6,10 @@ import com.arextest.model.mock.Mocker;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.SortingOption;
 import com.arextest.model.replay.SortingTypeEnum;
+import com.arextest.storage.beans.StorageConfigurationProperties;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
+import com.arextest.storage.utils.TimeUtils;
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
@@ -15,12 +17,14 @@ import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.Sorts;
+import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
@@ -37,6 +41,7 @@ import java.util.Map;
  * which means auto deleted the records after TTL index created on creationTime of collection
  */
 @Slf4j
+@EnableConfigurationProperties({StorageConfigurationProperties.class})
 public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<AREXMocker> {
 
     static final String CREATE_TIME_COLUMN_NAME = "creationTime";
@@ -65,12 +70,15 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     private static final int DEFAULT_BSON_WHERE_SIZE = 8;
     protected final MongoDatabase mongoDatabase;
     private final String providerName;
+    private final StorageConfigurationProperties properties;
 
-    public AREXMockerMongoRepositoryProvider(MongoDatabase mongoDatabase) {
-        this(ProviderNames.DEFAULT, mongoDatabase);
+    public AREXMockerMongoRepositoryProvider(MongoDatabase mongoDatabase, StorageConfigurationProperties properties) {
+        this(ProviderNames.DEFAULT, mongoDatabase, properties);
     }
 
-    public AREXMockerMongoRepositoryProvider(String providerName, MongoDatabase mongoDatabase) {
+    public AREXMockerMongoRepositoryProvider(String providerName, MongoDatabase mongoDatabase,
+                                             StorageConfigurationProperties properties) {
+        this.properties = properties;
         this.targetClassType = AREXMocker.class;
         this.mongoDatabase = mongoDatabase;
         this.providerName = providerName;
@@ -129,8 +137,11 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         AREXMocker item = getLastRecordVersionMocker(pagedRequestType, collectionSource);
         String recordVersion = item == null ? null : item.getRecordVersion();
 
+        List<Bson> bsons = withRecordVersionFilters(pagedRequestType, recordVersion);
+        updateExpirationTime(bsons, collectionSource);
+
         Iterable<AREXMocker> iterable = collectionSource
-                .find(Filters.and(withRecordVersionFilters(pagedRequestType, recordVersion)))
+                .find(Filters.and(bsons))
                 .projection(Projections.exclude(TARGET_RESPONSE_COLUMN_NAME))
                 .sort(toSupportSortingOptions(pagedRequestType.getSortingOptions()))
                 .skip(pageIndex == null ? 0 : pagedRequestType.getPageSize() * (pageIndex - 1))
@@ -151,6 +162,20 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
             }
         }
         return Sorts.orderBy(sorts);
+    }
+
+    private void updateExpirationTime(List<Bson> bsons, MongoCollection<AREXMocker> collectionSource) {
+        long currentTimeMillis = System.currentTimeMillis();
+        long allowedLastMills = TimeUtils.getTodayFirstMills() + properties.getAllowReRunDays() * TimeUtils.ONE_DAY;
+        Bson filters = Filters.and(Filters.and(bsons),
+            Filters.or(Filters.lt(EXPIRATION_TIME_COLUMN_NAME, new Date(allowedLastMills)),
+            Filters.exists(EXPIRATION_TIME_COLUMN_NAME, false)));
+        // Add different minutes to avoid the same expiration time
+        Bson update = Updates.combine(
+            Updates.set(EXPIRATION_TIME_COLUMN_NAME,
+                new Date(allowedLastMills + currentTimeMillis % TimeUtils.ONE_HOUR)),
+            Updates.set(UPDATE_TIME_COLUMN_NAME, new Date(currentTimeMillis)));
+        collectionSource.updateMany(filters, update);
     }
 
 
@@ -214,6 +239,9 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         try {
             MockCategoryType category = valueList.get(0).getCategoryType();
             MongoCollection<AREXMocker> collectionSource = createOrGetCollection(category);
+            long currentTimeMillis = System.currentTimeMillis();
+            valueList.forEach(item -> item.setExpirationTime(currentTimeMillis
+                    + properties.getExpirationDurationMap().getOrDefault(category.getName(), properties.getDefaultExpirationDuration())));
             collectionSource.insertMany(valueList);
         } catch (Throwable ex) {
             LOGGER.error("save List error:{} , size:{}", ex.getMessage(), valueList.size(), ex);

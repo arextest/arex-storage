@@ -17,6 +17,7 @@ import java.util.Set;
 @AllArgsConstructor
 @EqualsAndHashCode(of = "name")
 public class MockCategoryType {
+
     private String name;
     private boolean entryPoint;
     private boolean skipComparison;
