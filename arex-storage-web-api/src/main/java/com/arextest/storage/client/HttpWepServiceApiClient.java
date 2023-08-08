@@ -103,7 +103,7 @@ public final class HttpWepServiceApiClient {
         return null;
     }
 
-    public <TRequest, TResponse> ResponseEntity<TResponse> responsePost(String url, TRequest request, Class<TResponse> responseType, String headerValue) {
+    public <TRequest, TResponse> ResponseEntity<TResponse> responsePost(String url, TRequest request, Class<TResponse> responseType, HttpHeaders headerValue) {
         try {
             return restTemplate.postForEntity(url, wrapJsonContentTypeWithHeader(request,headerValue), responseType);
         } catch (Throwable throwable) {
@@ -128,15 +128,12 @@ public final class HttpWepServiceApiClient {
         }
         return httpJsonEntity;
     }
-    private <TRequest> HttpEntity<TRequest> wrapJsonContentTypeWithHeader(TRequest request, String headerValue) {
+    private <TRequest> HttpEntity<TRequest> wrapJsonContentTypeWithHeader(TRequest request, HttpHeaders headerValue) {
         HttpEntity<TRequest> httpJsonEntity;
         if (request instanceof HttpEntity) {
             httpJsonEntity = (HttpEntity<TRequest>) request;
         } else {
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("If-Modified-Since", headerValue);
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            httpJsonEntity = new HttpEntity<>(request, headers);
+            httpJsonEntity = new HttpEntity<>(request, headerValue);
         }
         return httpJsonEntity;
     }
