@@ -4,6 +4,7 @@ import com.arextest.storage.client.HttpWepServiceApiClient;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -14,7 +15,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.Collections;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Created by rchen9 on 2022/10/8.
@@ -40,8 +44,15 @@ public class AgentLoadController {
     @PostMapping(value = "/agentStatus", produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     public ResponseEntity<String> agentStatus(HttpServletRequest httpServletRequest, @RequestBody AgentStatusRequest request) {
-        String headerValue = httpServletRequest.getHeader("If-Modified-Since");
-        return httpWepServiceApiClient.responsePost(agentStatusUrl, request, String.class, headerValue);
+        HttpHeaders httpHeaders = Collections.list(httpServletRequest.getHeaderNames())
+                .stream()
+                .collect(Collectors.toMap(
+                        Function.identity(),
+                        h -> Collections.list(httpServletRequest.getHeaders(h)),
+                        (oldValue, newValue) -> newValue,
+                        HttpHeaders::new
+                ));
+        return httpWepServiceApiClient.responsePost(agentStatusUrl, request, String.class, httpHeaders);
     }
     @Data
     private static final class AgentRemoteConfigurationRequest {
