@@ -6,7 +6,7 @@ arex:
       uri:
     enableDiscoveryEntryPoint: true
     #  mongodbUri: mongodb://arex:iLoveArex@10.3.2.42:27017/arex_storage_db
-    recordEnv: PRO
+    recordEnv: TEST
   report:
     config:
       agent:
