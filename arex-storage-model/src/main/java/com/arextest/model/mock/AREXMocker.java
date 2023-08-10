@@ -3,9 +3,11 @@ package com.arextest.model.mock;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.FieldNameConstants;
 
 @Getter
 @Setter
+@FieldNameConstants
 public class AREXMocker implements Mocker {
 
     public AREXMocker() {

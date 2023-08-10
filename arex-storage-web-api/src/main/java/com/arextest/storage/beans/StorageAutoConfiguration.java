@@ -28,6 +28,7 @@ import com.mongodb.MongoCommandException;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.IndexOptions;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
@@ -46,9 +47,10 @@ import java.util.concurrent.TimeUnit;
 
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties({StorageConfigurationProperties.class})
+@Slf4j
 public class StorageAutoConfiguration {
     private final StorageConfigurationProperties properties;
-    private static final String COLLECTION_PREFIX = "Mocker";
+    private static final String COLLECTION_SUFFIX = "Mocker";
     static final String EXPIRATION_TIME_COLUMN_NAME = "expirationTime";
 
     public StorageAutoConfiguration(StorageConfigurationProperties configurationProperties) {
@@ -60,7 +62,31 @@ public class StorageAutoConfiguration {
     public MongoDatabase mongoDatabase() {
         MongoDatabase database = MongoDbUtils.create(properties.getMongodbUri());
         setTtlIndexes(database);
+        ensureMockerQueryIndex(database);
         return database;
+    }
+
+    private void ensureMockerQueryIndex(MongoDatabase database) {
+        for (MockCategoryType category : MockCategoryType.DEFAULTS) {
+            MongoCollection<AREXMocker> collection = database.getCollection(getCollectionName(category), AREXMocker.class);
+            try {
+                Document index = new Document();
+                index.append(AREXMocker.FIELD_RECORD_ID, 1);
+                index.append(AREXMocker.FIELD_CREATION_TIME, -1);
+                collection.createIndex(index);
+            } catch (MongoCommandException e) {
+                LOGGER.info("create index failed for {}", category.getName(), e);
+            }
+
+            try {
+                Document index = new Document();
+                index.append(AREXMocker.FIELD_APP_ID, 1);
+                index.append(AREXMocker.FIELD_OPERATION_NAME, 1);
+                collection.createIndex(index);
+            } catch (MongoCommandException e) {
+                LOGGER.info("create index failed for {}", category.getName(), e);
+            }
+        }
     }
 
     private void setTtlIndexes(MongoDatabase mongoDatabase) {
@@ -70,7 +96,7 @@ public class StorageAutoConfiguration {
     }
 
     private void setTTLIndexInMockerCollection(MockCategoryType category, MongoDatabase mongoDatabase) {
-        String categoryName = ProviderNames.DEFAULT + category.getName() + COLLECTION_PREFIX;
+        String categoryName = getCollectionName(category);
         MongoCollection<AREXMocker> collection = mongoDatabase.getCollection(categoryName, AREXMocker.class);
         Bson index = new Document(EXPIRATION_TIME_COLUMN_NAME, 1);
         IndexOptions indexOptions = new IndexOptions().expireAfter(0L, TimeUnit.SECONDS);
@@ -81,6 +107,10 @@ public class StorageAutoConfiguration {
             collection.dropIndex(index);
             collection.createIndex(index, indexOptions);
         }
+    }
+
+    private static String getCollectionName(MockCategoryType category) {
+        return ProviderNames.DEFAULT + category.getName() + COLLECTION_SUFFIX;
     }
 
     @Bean
