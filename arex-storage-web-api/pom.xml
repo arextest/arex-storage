@@ -19,6 +19,10 @@
             <groupId>com.arextest</groupId>
             <artifactId>arex-common</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.arextest</groupId>
+            <artifactId>arex-desensitization-extension</artifactId>
+        </dependency>
         <!-- mongodb-driver-sync -->
         <dependency>
             <groupId>org.mongodb</groupId>
