@@ -102,7 +102,7 @@
             <dependency>
                 <groupId>com.arextest</groupId>
                 <artifactId>arex-common</artifactId>
-                <version>0.1.5</version>
+                <version>0.1.9-SNAPSHOT</version>
                 <exclusions>
                     <exclusion>
                         <artifactId>commons-io</artifactId>
@@ -112,7 +112,7 @@
             </dependency>
             <dependency>
                 <groupId>com.arextest</groupId>
-                <artifactId>arex-desensitization-extension</artifactId>
+                <artifactId>arex-extension</artifactId>
                 <version>0.0.1-SNAPSHOT</version>
             </dependency>
             <dependency>

@@ -13,3 +13,4 @@ arex:
     report:
       agentload: ${arex.report.config.agent.url}/api/config/agent/load
       agentStatus: ${arex.report.config.agent.url}/api/config/agent/agentStatus
+      desensitization: ${arex.report.config.agent.url}/api/desensitization/listJar

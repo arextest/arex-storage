@@ -21,7 +21,7 @@
         </dependency>
         <dependency>
             <groupId>com.arextest</groupId>
-            <artifactId>arex-desensitization-extension</artifactId>
+            <artifactId>arex-extension</artifactId>
         </dependency>
         <!-- mongodb-driver-sync -->
         <dependency>
