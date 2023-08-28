@@ -1,18 +1,13 @@
 package com.arextest.storage.service;
 
-import java.net.MalformedURLException;
 import java.util.List;
 
 import javax.annotation.Resource;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 
@@ -24,6 +19,7 @@ import com.arextest.model.response.ResponseStatusType;
 import com.arextest.storage.client.HttpWepServiceApiClient;
 
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
@@ -41,8 +37,7 @@ public class DesensitizeService {
             return dataDesensitization;
         }
         try {
-            RemoteJarClassLoader remoteJarClassLoader = RemoteJarLoaderUtils
-                .loadJar("./lib/arex-desensitization-core-0.0.0-SNAPSHOT-jar-with-dependencies.jar");
+            RemoteJarClassLoader remoteJarClassLoader = RemoteJarLoaderUtils.loadJar(remoteJarUrl);
             List<DataDesensitization> dataDesensitizations =
                 RemoteJarLoaderUtils.loadService(DataDesensitization.class, remoteJarClassLoader);
             dataDesensitization = dataDesensitizations.get(0);
@@ -56,12 +51,8 @@ public class DesensitizeService {
     @Retryable(value = {NullPointerException.class}, maxAttempts = 3, backoff = @Backoff(delay = 1000))
     public String getRemoteJarUrl() {
         String result = null;
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Access-Token",
-                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpbmZvIjoidGVzdCJ9.YeLmUW--fqrtmag1QTDmL8U7RVZlb34xPAAxorxSCPM");
-        HttpEntity<?> request = new HttpEntity<>(headers);
         DesensitizationResponse response =
-                httpWepServiceApiClient.jsonPost(desensitizationUrl, request, DesensitizationResponse.class);
+            httpWepServiceApiClient.jsonPost(desensitizationUrl, null, DesensitizationResponse.class);
         List<DesensitizationJar> desensitizationJars = response.getBody();
         if (CollectionUtils.isEmpty(desensitizationJars)) {
             return result;
@@ -78,10 +69,6 @@ public class DesensitizeService {
     @Data
     private static final class DesensitizationJar {
         private String jarUrl;
-    }
-
-    public static void main(String[] args) {
-
     }
 
 }
