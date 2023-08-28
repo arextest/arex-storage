@@ -7,9 +7,13 @@ import javax.annotation.Resource;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 
 import com.arextest.common.model.classloader.RemoteJarClassLoader;
@@ -31,39 +35,38 @@ public class DesensitizeService {
     @Value("${arex.url.report.desensitization}")
     private String desensitizationUrl;
 
-    public DataDesensitization loadDesensitization() {
+    public DataDesensitization loadDesensitization(String remoteJarUrl) {
         DataDesensitization dataDesensitization = new DefaultDataDesensitization();
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Access-Token",
-            "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpbmZvIjoidGVzdCJ9.YeLmUW--fqrtmag1QTDmL8U7RVZlb34xPAAxorxSCPM");
-        HttpEntity<?> request = new HttpEntity<>(headers);
-        DesensitizationResponse response =
-            httpWepServiceApiClient.jsonPost(desensitizationUrl, request, DesensitizationResponse.class);
-        List<DesensitizationJar> desensitizationJars = response.getBody();
-        if (CollectionUtils.isEmpty(desensitizationJars)) {
+        if (StringUtils.isEmpty(remoteJarUrl)) {
             return dataDesensitization;
         }
-
-        String jarUrl = desensitizationJars.get(0).jarUrl;
-
         try {
-            // RemoteJarClassLoader remoteJarClassLoader = RemoteJarLoaderUtils.loadJar(jarUrl);
-
             RemoteJarClassLoader remoteJarClassLoader = RemoteJarLoaderUtils
                 .loadJar("./lib/arex-desensitization-core-0.0.0-SNAPSHOT-jar-with-dependencies.jar");
             List<DataDesensitization> dataDesensitizations =
                 RemoteJarLoaderUtils.loadService(DataDesensitization.class, remoteJarClassLoader);
-
-            // desensitization = dataDesensitizations.get(0);
-            // String origin = "nihao";
-            // String encrypt = desensitization.encrypt(origin);
-            // System.out.println(encrypt);
             dataDesensitization = dataDesensitizations.get(0);
         } catch (Exception e) {
             LOGGER.error("load desensitization error", e);
             throw new RuntimeException(e);
         }
         return dataDesensitization;
+    }
+
+    @Retryable(value = {NullPointerException.class}, maxAttempts = 3, backoff = @Backoff(delay = 1000))
+    public String getRemoteJarUrl() {
+        String result = null;
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Access-Token",
+                "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpbmZvIjoidGVzdCJ9.YeLmUW--fqrtmag1QTDmL8U7RVZlb34xPAAxorxSCPM");
+        HttpEntity<?> request = new HttpEntity<>(headers);
+        DesensitizationResponse response =
+                httpWepServiceApiClient.jsonPost(desensitizationUrl, request, DesensitizationResponse.class);
+        List<DesensitizationJar> desensitizationJars = response.getBody();
+        if (CollectionUtils.isEmpty(desensitizationJars)) {
+            return result;
+        }
+        return desensitizationJars.get(0).jarUrl;
     }
 
     @Data

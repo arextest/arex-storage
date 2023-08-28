@@ -17,10 +17,9 @@ final class CompressionCodecImpl<T> implements Codec<T> {
     private static DataDesensitization desensitization = null;
 
     static {
-        // DesensitizeService desensitizeService = new DesensitizeService();
-        // desensitization = desensitizeService.loadDesensitization();
         DesensitizeService desensitizeService = GetBeanFromIOC.getBean(DesensitizeService.class);
-        desensitization = desensitizeService.loadDesensitization();
+        String remoteJarUrl = desensitizeService.getRemoteJarUrl();
+        desensitization = desensitizeService.loadDesensitization(remoteJarUrl);
     }
 
     CompressionCodecImpl(Class<T> target) {
