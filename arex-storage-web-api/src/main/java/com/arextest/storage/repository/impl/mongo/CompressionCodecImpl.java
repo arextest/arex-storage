@@ -1,5 +1,6 @@
 package com.arextest.storage.repository.impl.mongo;
 
+import lombok.extern.slf4j.Slf4j;
 import org.bson.BsonReader;
 import org.bson.BsonWriter;
 import org.bson.codecs.Codec;
@@ -11,6 +12,7 @@ import com.arextest.extension.desensitization.DataDesensitization;
 import com.arextest.storage.beans.GetBeanFromIOC;
 import com.arextest.storage.service.DesensitizeService;
 
+@Slf4j
 final class CompressionCodecImpl<T> implements Codec<T> {
     private final Class<T> target;
 
@@ -33,6 +35,7 @@ final class CompressionCodecImpl<T> implements Codec<T> {
         try {
             encodeWithDecryptString = desensitization.decrypt(encodeWithEncryptString);
         } catch (Exception e) {
+            LOGGER.error("Data decrypt failed", e);
         }
         return SerializationUtils.useZstdDeserialize(encodeWithDecryptString, this.target);
 
@@ -44,6 +47,7 @@ final class CompressionCodecImpl<T> implements Codec<T> {
         try {
             base64Result = desensitization.encrypt(base64Result);
         } catch (Exception e) {
+            LOGGER.error("Data encrypt failed", e);
         }
         writer.writeString(base64Result);
     }
