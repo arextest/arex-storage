@@ -8,7 +8,12 @@ import org.springframework.stereotype.Component;
 public class GetBeanFromIOC implements ApplicationContextAware {
     public static ApplicationContext applicationContext;
 
-    // Spring 容器会在创建该 Bean 时，自动调用该 Bean 的setApplicationContext方法，并把 ApplicationContext 传过来
+    /**
+     * When the Spring container creates the bean, it will automatically call the setApplicationContext method of the
+     * bean and pass the ApplicationContext
+     * 
+     * @param applicationContext
+     */
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) {
         if (GetBeanFromIOC.applicationContext == null) {
