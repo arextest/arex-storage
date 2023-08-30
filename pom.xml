@@ -102,13 +102,18 @@
             <dependency>
                 <groupId>com.arextest</groupId>
                 <artifactId>arex-common</artifactId>
-                <version>0.1.8</version>
+                <version>0.1.9</version>
                 <exclusions>
                     <exclusion>
                         <artifactId>commons-io</artifactId>
                         <groupId>commons-io</groupId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.arextest</groupId>
+                <artifactId>arex-extension</artifactId>
+                <version>0.0.1</version>
             </dependency>
             <dependency>
                 <groupId>javax.annotation</groupId>
