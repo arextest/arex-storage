@@ -19,6 +19,7 @@ import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.UpdateResult;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -222,6 +223,19 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         return resultMap;
     }
 
+    @Override
+    public boolean exist(MockCategoryType categoryType, String recordId) {
+        MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
+        return collectionSource.countDocuments(buildRecordIdFilter(categoryType, recordId)) > 0;
+    }
+
+    @Override
+    public AREXMocker findOneAndReplace(MockCategoryType categoryType, String appId, String operationName, AREXMocker value) {
+        MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
+        Bson filters = Filters.and(Filters.eq(APP_ID_COLUMN_NAME, appId),
+                Filters.eq(OPERATION_COLUMN_NAME, operationName));
+        return collectionSource.findOneAndReplace(filters, value);
+    }
 
     @Override
     public boolean save(AREXMocker value) {

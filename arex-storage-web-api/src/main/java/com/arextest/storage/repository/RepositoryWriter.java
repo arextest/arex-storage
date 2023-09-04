@@ -10,6 +10,7 @@ import java.util.List;
  * @since 2021/11/7
  */
 public interface RepositoryWriter<T extends Mocker> {
+    T findOneAndReplace(MockCategoryType categoryType, String appId, String operationName, T value);
     boolean save(T value);
 
     boolean saveList(List<T> valueList);

@@ -21,4 +21,5 @@ public interface RepositoryReader<T extends Mocker> {
     long countByRange(PagedRequestType rangeRequestType);
 
     Map<String, Long> countByOperationName(PagedRequestType rangeRequestType);
+    boolean exist(MockCategoryType categoryType, String recordId);
 }

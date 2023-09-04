@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import com.arextest.storage.service.mockerhandlers.MockerHandlerFactory;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
@@ -147,10 +148,11 @@ public class StorageAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(AgentWorkingService.class)
     public AgentWorkingService agentWorkingService(MockResultProvider mockResultProvider,
-        RepositoryProviderFactory repositoryProviderFactory, ZstdJacksonSerializer zstdJacksonSerializer,
-        PrepareMockResultService prepareMockResultService, List<AgentWorkingListener> agentWorkingListeners) {
+                                                   RepositoryProviderFactory repositoryProviderFactory, MockerHandlerFactory mockerHandlerFactory,
+                                                   ZstdJacksonSerializer zstdJacksonSerializer, PrepareMockResultService prepareMockResultService,
+                                                   List<AgentWorkingListener> agentWorkingListeners) {
         AgentWorkingService workingService =
-            new AgentWorkingService(mockResultProvider, repositoryProviderFactory, agentWorkingListeners);
+            new AgentWorkingService(mockResultProvider, repositoryProviderFactory, mockerHandlerFactory, agentWorkingListeners);
         workingService.setPrepareMockResultService(prepareMockResultService);
         workingService.setZstdJacksonSerializer(zstdJacksonSerializer);
         workingService.setRecordEnvType(properties.getRecordEnv());
@@ -189,6 +191,12 @@ public class StorageAutoConfiguration {
     @ConditionalOnMissingBean(DesensitizeService.class)
     public DesensitizeService desensitizeService() {
         return new DesensitizeService();
+    }
+
+    @Bean
+    @Order(3)
+    public RepositoryProvider<AREXMocker> autoPinnedMockerProvider(MongoDatabase mongoDatabase) {
+        return new AREXMockerMongoRepositoryProvider(ProviderNames.AUTO_PINNED, mongoDatabase, properties);
     }
 
     @Bean

@@ -7,4 +7,5 @@ public final class ProviderNames {
      */
     public static final String DEFAULT = "Rolling";
     public static final String PINNED = "Pinned";
+    public static final String AUTO_PINNED = "AutoPinned";
 }

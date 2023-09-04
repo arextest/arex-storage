@@ -7,16 +7,18 @@ import com.arextest.storage.mock.MockResultContext;
 import com.arextest.storage.mock.MockResultMatchStrategy;
 import com.arextest.storage.mock.MockResultProvider;
 import com.arextest.storage.model.RecordEnvType;
-import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.RepositoryReader;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
+import com.arextest.storage.service.mockerhandlers.MockerHandlerFactory;
+import com.arextest.storage.service.mockerhandlers.MockerSaveHandler;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.annotation.Resource;
 import javax.validation.constraints.NotNull;
 import java.util.List;
 
@@ -31,6 +33,8 @@ import java.util.List;
 public class AgentWorkingService {
     private final MockResultProvider mockResultProvider;
     private final RepositoryProviderFactory repositoryProviderFactory;
+    private final MockerHandlerFactory mockerHandlerFactory;
+
     @Setter
     private ZstdJacksonSerializer zstdJacksonSerializer;
     @Setter
@@ -42,15 +46,13 @@ public class AgentWorkingService {
     private RecordEnvType recordEnvType;
 
     public AgentWorkingService(MockResultProvider mockResultProvider,
-                               RepositoryProviderFactory repositoryProviderFactory, List<AgentWorkingListener> agentWorkingListeners) {
+                               RepositoryProviderFactory repositoryProviderFactory,
+                               MockerHandlerFactory mockerHandlerFactory,
+                               List<AgentWorkingListener> agentWorkingListeners) {
         this.mockResultProvider = mockResultProvider;
         this.repositoryProviderFactory = repositoryProviderFactory;
         this.agentWorkingListeners = agentWorkingListeners;
-    }
-
-    public AgentWorkingService(MockResultProvider mockResultProvider,
-                               RepositoryProviderFactory repositoryProviderFactory) {
-        this(mockResultProvider, repositoryProviderFactory, null);
+        this.mockerHandlerFactory = mockerHandlerFactory;
     }
 
     /**
@@ -68,8 +70,14 @@ public class AgentWorkingService {
             LOGGER.warn("switch not open, skip save record data");
             return false;
         }
-        RepositoryProvider<T> repositoryWriter = repositoryProviderFactory.defaultProvider();
 
+        MockerSaveHandler handler = mockerHandlerFactory.getHandler(item.getCategoryType());
+        if (handler != null) {
+            handler.handle(item);
+            return true;
+        }
+
+        RepositoryProvider<T> repositoryWriter = repositoryProviderFactory.defaultProvider();
         return repositoryWriter != null && repositoryWriter.save(item);
     }
 
