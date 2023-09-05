@@ -126,7 +126,7 @@ public class DynamicClassConfigurationRepositoryImpl implements ConfigRepository
         DynamicClassCollection dynamicClassCollection = DynamicClassMapper.INSTANCE.daoFromDto(configuration);
         InsertOneResult insertOneResult = mongoCollection.insertOne(dynamicClassCollection);
         if (insertOneResult.getInsertedId() != null) {
-            configuration.setId(insertOneResult.getInsertedId().toString());
+            configuration.setId(dynamicClassCollection.getId());
         }
         return insertOneResult.getInsertedId() != null;
     }

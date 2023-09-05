@@ -17,4 +17,5 @@ public class ApplicationOperationConfiguration extends AbstractConfiguration imp
     @Deprecated
     private String operationType;
     private Set<String> operationTypes;
+    private Integer recordedCaseCount;
 }

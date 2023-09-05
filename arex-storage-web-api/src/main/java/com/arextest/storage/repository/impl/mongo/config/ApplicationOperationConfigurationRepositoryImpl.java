@@ -118,24 +118,10 @@ public class ApplicationOperationConfigurationRepositoryImpl
             ServiceOperationMapper.INSTANCE.daoFromDto(configuration);
         InsertOneResult insertOneResult = mongoCollection.insertOne(serviceOperationCollection);
         if (insertOneResult.getInsertedId() != null) {
-            // TODO：verify the id type
-            configuration.setId(insertOneResult.getInsertedId().toString());
+            configuration.setId(serviceOperationCollection.getId());
         }
         return insertOneResult.getInsertedId() != null;
 
-    }
-
-    public ApplicationOperationConfiguration listByOperationId(String operationId) {
-        // Query query = Query.query(Criteria.where(DASH_ID).is(operationId));
-        // ServiceOperationCollection serviceOperationCollection =
-        // mongoTemplate.findOne(query, ServiceOperationCollection.class);
-        // return serviceOperationCollection == null ? null
-        // : ServiceOperationMapper.INSTANCE.dtoFromDao(serviceOperationCollection);
-
-        Bson filter = Filters.eq(BaseEntity.Fields.id, operationId);
-        // TODO: verify the result
-        ServiceOperationCollection document = mongoCollection.find(filter).first();
-        return document == null ? null : ServiceOperationMapper.INSTANCE.dtoFromDao(document);
     }
 
     // the search of operation's based—info by serviceId

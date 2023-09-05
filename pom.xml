@@ -24,7 +24,6 @@
         <jmockit.version>1.49</jmockit.version>
         <lombok.version>1.18.6</lombok.version>
         <arex.storage.model.version>1.0.4</arex.storage.model.version>
-        <guava.version>31.1-jre</guava.version>
 
         <jacoco-maven-plugin.version>0.7.5.201505241946</jacoco-maven-plugin.version>
         <!-- single jacoco.exec file relative to root directory of the project -->

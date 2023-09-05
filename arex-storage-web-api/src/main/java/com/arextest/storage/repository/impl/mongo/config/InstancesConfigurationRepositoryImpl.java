@@ -127,7 +127,7 @@ public class InstancesConfigurationRepositoryImpl implements ConfigRepositoryPro
         InstancesCollection instancesCollection = InstancesMapper.INSTANCE.daoFromDto(configuration);
         InsertOneResult insertOneResult = mongoCollection.insertOne(instancesCollection);
         if (insertOneResult.getInsertedId() != null) {
-            configuration.setId(insertOneResult.getInsertedId().toString());
+            configuration.setId(instancesCollection.getId());
         }
         return insertOneResult.getInsertedId() != null;
 

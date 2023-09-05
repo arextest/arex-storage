@@ -119,8 +119,7 @@ public class ApplicationServiceConfigurationRepositoryImpl
         ServiceCollection serviceCollection = ServiceMapper.INSTANCE.daoFromDto(configuration);
         InsertOneResult insertOneResult = mongoCollection.insertOne(serviceCollection);
         if (insertOneResult.getInsertedId() != null) {
-            // TODO：verify the id type
-            configuration.setId(insertOneResult.getInsertedId().toString());
+            configuration.setId(serviceCollection.getId());
         }
         return insertOneResult.getInsertedId() != null;
     }
