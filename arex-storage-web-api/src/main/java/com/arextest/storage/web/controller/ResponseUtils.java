@@ -14,6 +14,7 @@ final class ResponseUtils {
     private static final String REQUESTED_BODY_EMPTY = "requested body empty";
     private static final String REQUESTED_RECORD_ID_EMPTY = "The recordId of requested is empty";
     private static final String REQUESTED_REPLAY_RESULT_ID_EMPTY = "The replayResultId of requested is empty";
+    private static final String REQUESTED_TYPE_INVALID = "The requested type is invalid";
     private static final String SUCCESS = "success";
 
     private ResponseUtils() {
@@ -23,7 +24,9 @@ final class ResponseUtils {
     static Response emptyRecordIdResponse() {
         return parameterInvalidResponse(REQUESTED_RECORD_ID_EMPTY);
     }
-
+    static Response invalidTypeResponse(){
+        return parameterInvalidResponse(REQUESTED_TYPE_INVALID);
+    }
     static Response emptyReplayResultIdResponse() {
         return parameterInvalidResponse(REQUESTED_REPLAY_RESULT_ID_EMPTY);
     }

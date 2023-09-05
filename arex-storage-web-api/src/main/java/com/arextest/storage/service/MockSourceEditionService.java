@@ -35,6 +35,10 @@ public class MockSourceEditionService {
     }
 
     public boolean removeAll(String providerName, String recordId) {
+        if (StringUtils.isBlank(recordId)) {
+            LOGGER.warn("The recordId is empty");
+            return false;
+        }
         RepositoryProvider<?> repositoryWriter = providerFactory.findProvider(providerName);
         if (repositoryWriter == null) {
             LOGGER.warn("Could not found provider for {}", providerName);
@@ -43,6 +47,44 @@ public class MockSourceEditionService {
         Set<MockCategoryType> categoryTypes = providerFactory.getCategoryTypes();
         for (MockCategoryType categoryType : categoryTypes) {
             repositoryWriter.removeBy(categoryType, recordId);
+        }
+        return true;
+    }
+
+    public boolean removeAllByAppId(String providerName, String appId) {
+        if (StringUtils.isBlank(appId)) {
+            LOGGER.warn("The appId is empty");
+            return false;
+        }
+        RepositoryProvider<?> repositoryWriter = providerFactory.findProvider(providerName);
+        if (repositoryWriter == null) {
+            LOGGER.warn("Could not found provider for {}", providerName);
+            return false;
+        }
+        Set<MockCategoryType> categoryTypes = providerFactory.getCategoryTypes();
+        for (MockCategoryType categoryType : categoryTypes) {
+            repositoryWriter.removeByAppId(categoryType, appId);
+        }
+        return true;
+    }
+
+    public boolean removeAllByOperationNameAndAppId(String providerName, String operationName, String appId) {
+        RepositoryProvider<?> repositoryWriter = providerFactory.findProvider(providerName);
+        if (StringUtils.isBlank(appId)) {
+            LOGGER.warn("The appId is empty");
+            return false;
+        }
+        if (StringUtils.isBlank(operationName)) {
+            LOGGER.warn("The operationName is empty");
+            return false;
+        }
+        if (repositoryWriter == null) {
+            LOGGER.warn("Could not found provider for {}", providerName);
+            return false;
+        }
+        Set<MockCategoryType> categoryTypes = providerFactory.getCategoryTypes();
+        for (MockCategoryType categoryType : categoryTypes) {
+            repositoryWriter.removeByOperationNameAndAppId(categoryType, operationName, appId);
         }
         return true;
     }

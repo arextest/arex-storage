@@ -258,6 +258,19 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     }
 
     @Override
+    public long removeByAppId(MockCategoryType categoryType, String appId) {
+        MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
+        DeleteResult deleteResult = collectionSource.deleteMany(Filters.eq(APP_ID_COLUMN_NAME, appId));
+        return deleteResult.getDeletedCount();
+    }
+
+    @Override
+    public long removeByOperationNameAndAppId(MockCategoryType categoryType, String operationName, String appId){
+        MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
+        DeleteResult deleteResult = collectionSource.deleteMany(Filters.and(Filters.eq(OPERATION_COLUMN_NAME,operationName), Filters.eq(APP_ID_COLUMN_NAME,appId)));
+        return deleteResult.getDeletedCount();
+    }
+    @Override
     public boolean update(AREXMocker value) {
         Bson primaryKeyFilter = buildPrimaryKeyFilter(value);
         try {
