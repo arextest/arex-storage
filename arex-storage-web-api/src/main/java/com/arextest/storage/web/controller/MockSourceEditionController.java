@@ -30,6 +30,11 @@ public class MockSourceEditionController {
 
     private final PrepareMockResultService storageCache;
 
+    private final String PROVIDER_ROLLING = "Rolling";
+    private final int REMOVE_BY_APPID = 1;
+    private final int REMOVE_BY_APPID_AND_OPERATIONNAME = 2;
+    private final int REMOVE_BY_RECORDID = 3;
+
     public MockSourceEditionController(MockSourceEditionService editableService, PrepareMockResultService storageCache) {
         this.editableService = editableService;
         this.storageCache = storageCache;
@@ -70,6 +75,22 @@ public class MockSourceEditionController {
         }
         return ResponseUtils.successResponse(editableService.removeAll(srcProviderName, recordId));
     }
+
+    @PostMapping (value = "/removeBy/")
+    @ResponseBody
+    public Response removeAllBy( @RequestBody MockRequest request){
+        if ( request.getType()==REMOVE_BY_APPID ) {
+            return ResponseUtils.successResponse(editableService.removeAllByAppId(PROVIDER_ROLLING, request.getAppId()));
+        }
+        if ( request.getType()==REMOVE_BY_APPID_AND_OPERATIONNAME ) {
+            return ResponseUtils.successResponse(editableService.removeAllByOperationNameAndAppId(PROVIDER_ROLLING, request.getOperationName(),request.getAppId()));
+        }
+        if ( request.getType()==REMOVE_BY_RECORDID ) {
+            return ResponseUtils.successResponse(editableService.removeAll(PROVIDER_ROLLING, request.getRecordId()));
+        }
+        return ResponseUtils.invalidTypeResponse();
+    }
+
 
     @GetMapping(value = "/remove/")
     @ResponseBody
