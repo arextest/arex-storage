@@ -24,9 +24,15 @@ import com.arextest.storage.converter.ZstdJacksonMessageConverter;
 import com.arextest.storage.metric.AgentWorkingMetricService;
 import com.arextest.storage.metric.MetricListener;
 import com.arextest.storage.mock.MockResultProvider;
-import com.arextest.storage.repository.*;
+import com.arextest.storage.model.dto.config.application.ApplicationOperationConfiguration;
+import com.arextest.storage.repository.ConfigRepositoryProvider;
+import com.arextest.storage.repository.ProviderNames;
+import com.arextest.storage.repository.RepositoryProvider;
+import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.impl.mongo.AREXMockerMongoRepositoryProvider;
 import com.arextest.storage.repository.impl.mongo.MongoDbUtils;
+import com.arextest.storage.repository.impl.mongo.config.ApplicationOperationConfigurationRepositoryImpl;
+import com.arextest.storage.repository.impl.mongo.config.ApplicationServiceConfigurationRepositoryImpl;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.*;
 import com.arextest.storage.web.controller.MockSourceEditionController;
@@ -65,8 +71,8 @@ public class StorageAutoConfiguration {
                 database.getCollection(getCollectionName(category), AREXMocker.class);
             try {
                 Document index = new Document();
-                index.append(AREXMocker.FIELD_RECORD_ID, 1);
-                index.append(AREXMocker.FIELD_CREATION_TIME, -1);
+                index.append(AREXMocker.Fields.recordId, 1);
+                index.append(AREXMocker.Fields.creationTime, -1);
                 collection.createIndex(index);
             } catch (MongoCommandException e) {
                 LOGGER.info("create index failed for {}", category.getName(), e);
@@ -74,8 +80,8 @@ public class StorageAutoConfiguration {
 
             try {
                 Document index = new Document();
-                index.append(AREXMocker.FIELD_APP_ID, 1);
-                index.append(AREXMocker.FIELD_OPERATION_NAME, 1);
+                index.append(AREXMocker.Fields.appId, 1);
+                index.append(AREXMocker.Fields.operationName, 1);
                 collection.createIndex(index);
             } catch (MongoCommandException e) {
                 LOGGER.info("create index failed for {}", category.getName(), e);
@@ -139,8 +145,9 @@ public class StorageAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(prefix = "arex.storage", name = "enableDiscoveryEntryPoint", havingValue = "true")
-    public AgentWorkingListener autoDiscoveryEntryPointListener(ServiceRepository serviceRepository,
-        ServiceOperationRepository serviceOperationRepository, CacheProvider cacheProvider) {
+    public AgentWorkingListener autoDiscoveryEntryPointListener(
+        ApplicationServiceConfigurationRepositoryImpl serviceRepository,
+        ApplicationOperationConfigurationRepositoryImpl serviceOperationRepository, CacheProvider cacheProvider) {
         return new AutoDiscoveryEntryPointListener(serviceRepository, serviceOperationRepository, cacheProvider);
     }
 
@@ -174,7 +181,8 @@ public class StorageAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(ScheduleReplayingService.class)
     public ScheduleReplayingService scheduleReplayingService(MockResultProvider mockResultProvider,
-        RepositoryProviderFactory repositoryProviderFactory, ServiceOperationRepository serviceOperationRepository) {
+        RepositoryProviderFactory repositoryProviderFactory,
+        ConfigRepositoryProvider<ApplicationOperationConfiguration> serviceOperationRepository) {
         return new ScheduleReplayingService(mockResultProvider, repositoryProviderFactory, serviceOperationRepository);
     }
 
