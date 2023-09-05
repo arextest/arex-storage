@@ -16,20 +16,15 @@ import javax.annotation.Resource;
 
 @Component
 @Slf4j
-public class CoverageMockerHandler implements MockerSaveHandler {
+public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
     @Resource
     private RepositoryProviderFactory repositoryProviderFactory;
     @Resource
     private MockSourceEditionService mockSourceEditionService;
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
-
-    @Data
-    private static class CoverageData {
-        private String key;
-        private String caseId;
-        private String type;
-    }
+    private final RepositoryProvider<Mocker> pinedProvider = repositoryProviderFactory.findProvider(ProviderNames.AUTO_PINNED);
+    private final RepositoryProvider<Mocker> rollingProvider = repositoryProviderFactory.findProvider(ProviderNames.DEFAULT);
+    private final RepositoryProvider<Mocker> coverageProvider = repositoryProviderFactory.findProvider(ProviderNames.DEFAULT);
 
     @Override
     public MockCategoryType getMockCategoryType() {
@@ -37,39 +32,46 @@ public class CoverageMockerHandler implements MockerSaveHandler {
     }
 
     /**
-     * 如果为自动固化的Case:
+     * 自动固化的Case:
      *      更新数据
      *
-     * 为新记录的Case:
+     * 新记录的Case:
      *      判断是否存在相同Key，相同则删除原自动固化Case，更新为新Case（每次回放只更新一次），不存在则自动固化
      */
     @Override
-    public void handle(AREXMocker item) {
+    public void handle(AREXMocker coverageMocker) {
         try {
-            final RepositoryProvider<Mocker> mockerProvider = repositoryProviderFactory.findProvider(ProviderNames.AUTO_PINNED);
-            final RepositoryProvider<Mocker> coverageProvider = repositoryProviderFactory.findProvider(ProviderNames.DEFAULT);
-            assert mockerProvider != null;
+            assert pinedProvider != null;
             assert coverageProvider != null;
 
-            CoverageData data = objectMapper.readValue(item.getTargetResponse().getBody(), CoverageData.class);
-            MockCategoryType entryType = MockCategoryType.createEntryPoint(data.getType());
+            String newCaseId = coverageMocker.getRecordId();
+            Mocker pinned = pinedProvider.findEntryFromAllType(newCaseId);
+            // Mocker rolling = rollingProvider.findEntryFromAllType(newCaseId);
 
-            if (mockerProvider.exist(entryType, data.getCaseId())) {
+            if (pinned != null) {
                 // todo
                 return;
             } else {
-                Mocker oldCoverageData = coverageProvider.findOneAndReplace(MockCategoryType.COVERAGE, item.getAppId(), data.getKey(), item);
-                if (oldCoverageData != null) {
-                    // clear old entry with the same path (calculated to key)
-                    CoverageData oldData = objectMapper.readValue(oldCoverageData.getTargetResponse().getBody(), CoverageData.class);
-                    MockCategoryType oldEntryType = MockCategoryType.createEntryPoint(oldData.getType());
-                    mockerProvider.removeBy(oldEntryType, oldCoverageData.getId());
+                Mocker oldCoverageMocker = coverageProvider.findOneAndReplace(MockCategoryType.COVERAGE,
+                        coverageMocker.getAppId(),
+                        coverageMocker.getOperationName(),
+                        coverageMocker);
 
-                    // save new entry
-                    mockSourceEditionService.copyTo(ProviderNames.DEFAULT, data.getCaseId(), ProviderNames.AUTO_PINNED, data.getCaseId());
+                // there is an existing AutoPinnedMocker with the same key, delete the related AutoPinnedMocker
+                if (oldCoverageMocker != null) {
+                    String oldCaseId = oldCoverageMocker.getRecordId();
+                    boolean removed = mockSourceEditionService.removeEntry(ProviderNames.AUTO_PINNED, oldCaseId);
+                    if (!removed) {
+                        LOGGER.error("remove old auto pinned failed, caseId:{}", oldCaseId);
+                    }
+                }
+
+                // move entry to auto pinned
+                boolean moved = mockSourceEditionService.moveEntryTo(ProviderNames.DEFAULT, newCaseId, ProviderNames.AUTO_PINNED);
+                if (!moved) {
+                    LOGGER.error("move entry to auto pinned failed, caseId:{}", newCaseId);
                 }
             }
-
         } catch (Exception e) {
             LOGGER.error("CoverageMockerHandler handle error", e);
         }

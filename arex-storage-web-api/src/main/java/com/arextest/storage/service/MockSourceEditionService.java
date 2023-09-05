@@ -9,10 +9,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -101,6 +98,37 @@ public class MockSourceEditionService {
         return count;
     }
 
+    public boolean moveEntryTo(String srcProviderName, String srcRecordId, String targetProviderName) {
+        if (StringUtils.equals(srcProviderName, targetProviderName)) {
+            return false;
+        }
+        RepositoryProvider<Mocker> srcProvider = providerFactory.findProvider(srcProviderName);
+        RepositoryProvider<Mocker> targetProvider = providerFactory.findProvider(targetProviderName);
+        if (srcProvider == null || targetProvider == null) {
+            LOGGER.warn("could not found provider for {} or {}", srcProvider, targetProvider);
+            return false;
+        }
+
+        Mocker source = srcProvider.findEntryFromAllType(srcRecordId);
+        if (source == null) return false;
+        srcProvider.removeBy(source.getCategoryType(), srcRecordId);
+        source.setCreationTime(System.currentTimeMillis());
+        targetProvider.save(source);
+        return true;
+    }
+
+    public boolean removeEntry(String providerName, String recordId) {
+        RepositoryProvider<?> repositoryWriter = providerFactory.findProvider(providerName);
+        if (repositoryWriter == null) {
+            LOGGER.warn("Could not found provider for {}", providerName);
+            return false;
+        }
+        Set<MockCategoryType> categoryTypes = MockCategoryType.ENTRY_POINTS;
+        for (MockCategoryType categoryType : categoryTypes) {
+            repositoryWriter.removeBy(categoryType, recordId);
+        }
+        return true;
+    }
 
     private List<Mocker> createTargetList(Iterable<Mocker> srcItemIterable, String targetRecordId) {
         Iterator<Mocker> valueIterator = srcItemIterable.iterator();

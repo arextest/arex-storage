@@ -11,13 +11,10 @@ import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.utils.TimeUtils;
 import com.mongodb.BasicDBObject;
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.Aggregates;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Projections;
-import com.mongodb.client.model.Sorts;
-import com.mongodb.client.model.Updates;
+import com.mongodb.client.model.*;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import lombok.extern.slf4j.Slf4j;
@@ -224,17 +221,31 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     }
 
     @Override
-    public boolean exist(MockCategoryType categoryType, String recordId) {
-        MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
-        return collectionSource.countDocuments(buildRecordIdFilter(categoryType, recordId)) > 0;
+    public AREXMocker findEntryFromAllType(String recordId) {
+        // todo detect mocker type from header
+        // MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
+        for (MockCategoryType category : MockCategoryType.ENTRY_POINTS) {
+            MongoCollection<AREXMocker> collectionSource = createOrGetCollection(category);
+            FindIterable<AREXMocker> res = collectionSource.find(Filters.eq(PRIMARY_KEY_COLUMN_NAME, recordId), AREXMocker.class);
+            Iterator<AREXMocker> iterator = res.iterator();
+            if (iterator.hasNext()) {
+                AREXMocker resItem = iterator.next();
+                resItem.setCategoryType(category);
+                return resItem;
+            }
+        }
+        return null;
     }
 
     @Override
     public AREXMocker findOneAndReplace(MockCategoryType categoryType, String appId, String operationName, AREXMocker value) {
         MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
-        Bson filters = Filters.and(Filters.eq(APP_ID_COLUMN_NAME, appId),
-                Filters.eq(OPERATION_COLUMN_NAME, operationName));
-        return collectionSource.findOneAndReplace(filters, value);
+        Bson filters = Filters.and(Filters.eq(APP_ID_COLUMN_NAME, appId), Filters.eq(OPERATION_COLUMN_NAME, operationName));
+        // update record id, todo expire
+        Bson update = Updates.set(RECORD_ID_COLUMN_NAME, value.getRecordId());
+        FindOneAndUpdateOptions opt = new FindOneAndUpdateOptions();
+        opt.upsert(true);
+        return collectionSource.findOneAndUpdate(filters, update, opt);
     }
 
     @Override

@@ -12,6 +12,7 @@ import java.util.Map;
  */
 public interface RepositoryReader<T extends Mocker> {
     Iterable<T> queryRecordList(MockCategoryType categoryType, String recordId);
+    T findEntryFromAllType(String recordId);
 
     T queryRecord(Mocker requestType);
 
@@ -21,5 +22,4 @@ public interface RepositoryReader<T extends Mocker> {
     long countByRange(PagedRequestType rangeRequestType);
 
     Map<String, Long> countByOperationName(PagedRequestType rangeRequestType);
-    boolean exist(MockCategoryType categoryType, String recordId);
 }
