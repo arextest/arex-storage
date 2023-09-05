@@ -22,10 +22,6 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
     @Resource
     private MockSourceEditionService mockSourceEditionService;
 
-    private final RepositoryProvider<Mocker> pinedProvider = repositoryProviderFactory.findProvider(ProviderNames.AUTO_PINNED);
-    private final RepositoryProvider<Mocker> rollingProvider = repositoryProviderFactory.findProvider(ProviderNames.DEFAULT);
-    private final RepositoryProvider<Mocker> coverageProvider = repositoryProviderFactory.findProvider(ProviderNames.DEFAULT);
-
     @Override
     public MockCategoryType getMockCategoryType() {
         return MockCategoryType.COVERAGE;
@@ -41,6 +37,8 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
     @Override
     public void handle(AREXMocker coverageMocker) {
         try {
+            final RepositoryProvider<Mocker> pinedProvider = repositoryProviderFactory.findProvider(ProviderNames.AUTO_PINNED);
+            final RepositoryProvider<Mocker> coverageProvider = repositoryProviderFactory.findProvider(ProviderNames.DEFAULT);
             assert pinedProvider != null;
             assert coverageProvider != null;
 
