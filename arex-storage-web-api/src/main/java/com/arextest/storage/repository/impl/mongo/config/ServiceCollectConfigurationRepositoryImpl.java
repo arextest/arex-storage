@@ -10,7 +10,6 @@ import javax.annotation.Resource;
 import org.bson.conversions.Bson;
 import org.springframework.stereotype.Repository;
 
-import com.arextest.model.dao.config.AppCollection;
 import com.arextest.model.dao.config.RecordServiceConfigCollection;
 import com.arextest.storage.model.dto.config.record.ServiceCollectConfiguration;
 import com.arextest.storage.model.mapper.RecordServiceConfigMapper;
@@ -52,7 +51,7 @@ public class ServiceCollectConfigurationRepositoryImpl
 
     @Override
     public String getCollectionName() {
-        return AppCollection.DOCUMENT_NAME;
+        return RecordServiceConfigCollection.DOCUMENT_NAME;
     }
 
     @Override
