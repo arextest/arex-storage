@@ -7,10 +7,10 @@ import java.util.ServiceLoader;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.arextest.storage.model.dto.config.application.ApplicationConfiguration;
-import com.arextest.storage.model.dto.config.application.ApplicationDescription;
-import com.arextest.storage.model.dto.config.application.OperationDescription;
-import com.arextest.storage.model.dto.config.application.ServiceDescription;
+import com.arextest.config.model.dto.application.ApplicationConfiguration;
+import com.arextest.config.model.dto.application.ApplicationDescription;
+import com.arextest.config.model.dto.application.OperationDescription;
+import com.arextest.config.model.dto.application.ServiceDescription;
 import com.arextest.storage.service.config.provider.ApplicationDescriptionProvider;
 import com.arextest.storage.service.config.provider.ApplicationServiceDescriptionProvider;
 

@@ -18,21 +18,18 @@ import org.springframework.core.annotation.Order;
 
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.common.cache.DefaultRedisCacheProvider;
+import com.arextest.config.repository.impl.*;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.storage.converter.ZstdJacksonMessageConverter;
 import com.arextest.storage.metric.AgentWorkingMetricService;
 import com.arextest.storage.metric.MetricListener;
 import com.arextest.storage.mock.MockResultProvider;
-import com.arextest.storage.model.dto.config.application.ApplicationOperationConfiguration;
-import com.arextest.storage.repository.ConfigRepositoryProvider;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.impl.mongo.AREXMockerMongoRepositoryProvider;
 import com.arextest.storage.repository.impl.mongo.MongoDbUtils;
-import com.arextest.storage.repository.impl.mongo.config.ApplicationOperationConfigurationRepositoryImpl;
-import com.arextest.storage.repository.impl.mongo.config.ApplicationServiceConfigurationRepositoryImpl;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.*;
 import com.arextest.storage.web.controller.MockSourceEditionController;
@@ -182,7 +179,7 @@ public class StorageAutoConfiguration {
     @ConditionalOnMissingBean(ScheduleReplayingService.class)
     public ScheduleReplayingService scheduleReplayingService(MockResultProvider mockResultProvider,
         RepositoryProviderFactory repositoryProviderFactory,
-        ConfigRepositoryProvider<ApplicationOperationConfiguration> serviceOperationRepository) {
+        ApplicationOperationConfigurationRepositoryImpl serviceOperationRepository) {
         return new ScheduleReplayingService(mockResultProvider, repositoryProviderFactory, serviceOperationRepository);
     }
 
@@ -197,6 +194,41 @@ public class StorageAutoConfiguration {
     @ConditionalOnMissingBean(DesensitizeService.class)
     public DesensitizeService desensitizeService() {
         return new DesensitizeService();
+    }
+
+    // the bean about config to register
+    @Bean
+    public ApplicationConfigurationRepositoryImpl applicationConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
+        return new ApplicationConfigurationRepositoryImpl(mongoDatabase);
+    }
+
+    @Bean
+    public ApplicationServiceConfigurationRepositoryImpl
+        applicationServiceConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
+        return new ApplicationServiceConfigurationRepositoryImpl(mongoDatabase);
+    }
+
+    @Bean
+    public ApplicationOperationConfigurationRepositoryImpl
+        applicationOperationConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
+        return new ApplicationOperationConfigurationRepositoryImpl(mongoDatabase);
+    }
+
+    @Bean
+    public InstancesConfigurationRepositoryImpl instancesConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
+        return new InstancesConfigurationRepositoryImpl(mongoDatabase);
+    }
+
+    @Bean
+    public ServiceCollectConfigurationRepositoryImpl
+        serviceCollectConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
+        return new ServiceCollectConfigurationRepositoryImpl(mongoDatabase);
+    }
+
+    @Bean
+    public DynamicClassConfigurationRepositoryImpl
+        dynamicClassConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
+        return new DynamicClassConfigurationRepositoryImpl(mongoDatabase);
     }
 
     @Bean

@@ -4,12 +4,12 @@ import java.util.List;
 
 import javax.annotation.Resource;
 
+import com.arextest.config.repository.ConfigRepositoryProvider;
+import com.arextest.config.repository.impl.InstancesConfigurationRepositoryImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.arextest.storage.model.dto.config.application.InstancesConfiguration;
-import com.arextest.storage.repository.ConfigRepositoryProvider;
-import com.arextest.storage.repository.impl.mongo.config.InstancesConfigurationRepositoryImpl;
+import com.arextest.config.model.dto.application.InstancesConfiguration;
 import com.arextest.storage.service.config.AbstractConfigurableHandler;
 
 import lombok.extern.slf4j.Slf4j;

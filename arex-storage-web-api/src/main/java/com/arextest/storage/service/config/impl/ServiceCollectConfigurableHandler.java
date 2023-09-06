@@ -12,8 +12,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
-import com.arextest.storage.model.dto.config.record.ServiceCollectConfiguration;
-import com.arextest.storage.repository.ConfigRepositoryProvider;
+import com.arextest.config.model.dto.record.ServiceCollectConfiguration;
+import com.arextest.config.repository.ConfigRepositoryProvider;
 import com.arextest.storage.service.config.AbstractConfigurableHandler;
 
 import lombok.extern.slf4j.Slf4j;

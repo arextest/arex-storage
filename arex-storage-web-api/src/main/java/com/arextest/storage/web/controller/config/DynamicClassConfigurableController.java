@@ -11,8 +11,8 @@
 //import org.springframework.web.bind.annotation.ResponseBody;
 //
 //import com.arextest.common.model.response.Response;
-//import com.arextest.storage.model.dto.config.ModifyType;
-//import com.arextest.storage.model.dto.config.record.DynamicClassConfiguration;
+//import com.arextest.config.model.dto.ModifyType;
+//import com.arextest.config.model.dto.record.DynamicClassConfiguration;
 //import com.arextest.storage.service.config.ConfigurableHandler;
 //
 ///**

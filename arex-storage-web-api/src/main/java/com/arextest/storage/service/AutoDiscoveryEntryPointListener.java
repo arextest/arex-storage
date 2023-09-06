@@ -5,6 +5,9 @@ import java.util.List;
 
 import javax.validation.constraints.NotNull;
 
+import com.arextest.config.model.dto.StatusType;
+import com.arextest.config.repository.impl.ApplicationOperationConfigurationRepositoryImpl;
+import com.arextest.config.repository.impl.ApplicationServiceConfigurationRepositoryImpl;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -12,11 +15,8 @@ import com.arextest.common.cache.CacheProvider;
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.cache.CacheKeyUtils;
 import com.arextest.storage.mock.MockResultContext;
-import com.arextest.storage.model.dto.config.StatusType;
-import com.arextest.storage.model.dto.config.application.ApplicationOperationConfiguration;
-import com.arextest.storage.model.dto.config.application.ApplicationServiceConfiguration;
-import com.arextest.storage.repository.impl.mongo.config.ApplicationOperationConfigurationRepositoryImpl;
-import com.arextest.storage.repository.impl.mongo.config.ApplicationServiceConfigurationRepositoryImpl;
+import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
+import com.arextest.config.model.dto.application.ApplicationServiceConfiguration;
 
 import lombok.extern.slf4j.Slf4j;
 

@@ -1,7 +1,7 @@
 package com.arextest.storage.service.config.impl;
 
-import com.arextest.storage.model.dto.config.record.DynamicClassConfiguration;
-import com.arextest.storage.repository.ConfigRepositoryProvider;
+import com.arextest.config.model.dto.record.DynamicClassConfiguration;
+import com.arextest.config.repository.ConfigRepositoryProvider;
 import com.arextest.storage.service.config.AbstractConfigurableHandler;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;

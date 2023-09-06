@@ -7,7 +7,7 @@
 //import org.springframework.stereotype.Controller;
 //import org.springframework.web.bind.annotation.RequestMapping;
 //
-//import com.arextest.storage.model.dto.config.record.ServiceCollectConfiguration;
+//import com.arextest.config.model.dto.record.ServiceCollectConfiguration;
 //import com.arextest.storage.service.config.ConfigurableHandler;
 //
 ///**

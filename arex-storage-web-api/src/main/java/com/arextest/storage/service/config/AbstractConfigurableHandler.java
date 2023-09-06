@@ -2,7 +2,7 @@ package com.arextest.storage.service.config;
 
 import java.util.List;
 
-import com.arextest.storage.repository.ConfigRepositoryProvider;
+import com.arextest.config.repository.ConfigRepositoryProvider;
 import org.apache.commons.collections4.CollectionUtils;
 
 /**

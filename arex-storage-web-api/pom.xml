@@ -23,6 +23,10 @@
             <groupId>com.arextest</groupId>
             <artifactId>arex-extension</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.arextest</groupId>
+            <artifactId>arex-storage-config</artifactId>
+        </dependency>
         <!-- mongodb-driver-sync -->
         <dependency>
             <groupId>org.mongodb</groupId>

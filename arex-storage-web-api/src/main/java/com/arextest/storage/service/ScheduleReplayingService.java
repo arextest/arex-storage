@@ -2,6 +2,7 @@ package com.arextest.storage.service;
 
 import java.util.*;
 
+import com.arextest.config.repository.ConfigRepositoryProvider;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 
@@ -12,8 +13,7 @@ import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.ViewRecordRequestType;
 import com.arextest.model.replay.holder.ListResultHolder;
 import com.arextest.storage.mock.MockResultProvider;
-import com.arextest.storage.model.dto.config.application.ApplicationOperationConfiguration;
-import com.arextest.storage.repository.ConfigRepositoryProvider;
+import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.RepositoryReader;
