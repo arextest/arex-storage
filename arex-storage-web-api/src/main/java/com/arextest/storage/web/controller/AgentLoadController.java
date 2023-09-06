@@ -43,7 +43,7 @@ public class AgentLoadController {
 
     @PostMapping(value = "/agentStatus", produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
-    public ResponseEntity<String> agentStatus(HttpServletRequest httpServletRequest, @RequestBody AgentStatusRequest request) {
+    public ResponseEntity<Object> agentStatus(HttpServletRequest httpServletRequest, @RequestBody AgentStatusRequest request) {
         HttpHeaders httpHeaders = Collections.list(httpServletRequest.getHeaderNames())
                 .stream()
                 .collect(Collectors.toMap(
@@ -52,7 +52,7 @@ public class AgentLoadController {
                         (oldValue, newValue) -> newValue,
                         HttpHeaders::new
                 ));
-        return httpWepServiceApiClient.responsePost(agentStatusUrl, request, String.class, httpHeaders);
+        return httpWepServiceApiClient.responsePost(agentStatusUrl, request, Object.class, httpHeaders);
     }
     @Data
     private static final class AgentRemoteConfigurationRequest {
