@@ -21,6 +21,7 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
 
 import lombok.extern.slf4j.Slf4j;
+import org.bson.types.ObjectId;
 
 @Slf4j
 public class InstancesConfigurationRepositoryImpl implements ConfigRepositoryProvider<InstancesConfiguration> {
@@ -85,7 +86,7 @@ public class InstancesConfigurationRepositoryImpl implements ConfigRepositoryPro
             return Collections.emptyList();
         }
         Bson filter = Filters.eq(InstancesCollection.Fields.appId, appId);
-        Bson sort = Sorts.ascending(BaseEntity.Fields.id);
+        Bson sort = Sorts.ascending(DASH_ID);
         List<InstancesConfiguration> instancesDTOList = new ArrayList<>();
         try (MongoCursor<InstancesCollection> cursor = mongoCollection.find(filter).sort(sort).limit(top).iterator()) {
             while (cursor.hasNext()) {
@@ -117,7 +118,7 @@ public class InstancesConfigurationRepositoryImpl implements ConfigRepositoryPro
         // Query query = Query.query(Criteria.where(DASH_ID).is(configuration.getId()));
         // DeleteResult remove = mongoTemplate.remove(query, InstancesCollection.class);
         // return remove.getDeletedCount() > 0;
-        Bson filter = Filters.eq(BaseEntity.Fields.id, configuration.getId());
+        Bson filter = Filters.eq(DASH_ID, new ObjectId(configuration.getId()));
         DeleteResult deleteResult = mongoCollection.deleteMany(filter);
         return deleteResult.getDeletedCount() > 0;
     }

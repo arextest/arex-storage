@@ -22,6 +22,7 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
+import org.bson.types.ObjectId;
 
 public class ApplicationServiceConfigurationRepositoryImpl
     implements ConfigRepositoryProvider<ApplicationServiceConfiguration> {
@@ -77,7 +78,7 @@ public class ApplicationServiceConfigurationRepositoryImpl
         // update.set(STATUS, configuration.getStatus());
         // UpdateResult updateResult = mongoTemplate.updateMulti(query, update, ServiceCollection.class);
         // return updateResult.getModifiedCount() > 0;
-        Bson filter = Filters.eq(BaseEntity.Fields.id, configuration.getId());
+        Bson filter = Filters.eq(DASH_ID, new ObjectId(configuration.getId()));
 
         List<Bson> updateList = Arrays.asList(MongoHelper.getUpdate(),
             Updates.set(ServiceCollection.Fields.status, configuration.getStatus()));
@@ -92,7 +93,7 @@ public class ApplicationServiceConfigurationRepositoryImpl
         // DeleteResult remove = mongoTemplate.remove(query, ServiceCollection.class);
         //
         // return remove.getDeletedCount() > 0;
-        Bson filter = Filters.eq(BaseEntity.Fields.id, configuration.getId());
+        Bson filter = Filters.eq(DASH_ID, new ObjectId(configuration.getId()));
         DeleteResult deleteResult = mongoCollection.deleteMany(filter);
         return deleteResult.getDeletedCount() > 0;
     }

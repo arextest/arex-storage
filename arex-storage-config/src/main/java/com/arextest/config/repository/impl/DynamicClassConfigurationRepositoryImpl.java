@@ -22,6 +22,7 @@ import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
 import com.mongodb.client.result.UpdateResult;
+import org.bson.types.ObjectId;
 
 public class DynamicClassConfigurationRepositoryImpl implements ConfigRepositoryProvider<DynamicClassConfiguration> {
 
@@ -92,7 +93,7 @@ public class DynamicClassConfigurationRepositoryImpl implements ConfigRepository
         // UpdateResult updateResult = mongoTemplate.updateMulti(query, update, DynamicClassCollection.class);
         // return updateResult.getModifiedCount() > 0;
         // return false;
-        Bson filter = Filters.eq(BaseEntity.Fields.id, configuration.getId());
+        Bson filter = Filters.eq(DASH_ID, new ObjectId(configuration.getId()));
 
         List<Bson> updateList = Arrays.asList(MongoHelper.getUpdate(),
             MongoHelper.getSpecifiedProperties(configuration, DynamicClassCollection.Fields.fullClassName,
@@ -109,7 +110,7 @@ public class DynamicClassConfigurationRepositoryImpl implements ConfigRepository
         // DeleteResult remove = mongoTemplate.remove(query, DynamicClassCollection.class);
         // return remove.getDeletedCount() > 0;
         // return false;
-        Bson filter = Filters.eq(BaseEntity.Fields.id, configuration.getId());
+        Bson filter = Filters.eq(DASH_ID, new ObjectId(configuration.getId()));
         DeleteResult deleteResult = mongoCollection.deleteMany(filter);
         return deleteResult.getDeletedCount() > 0;
     }

@@ -6,6 +6,7 @@ import java.util.List;
 
 import javax.annotation.PostConstruct;
 
+import com.mongodb.client.result.UpdateResult;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.conversions.Bson;
 
@@ -24,6 +25,7 @@ import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
+import org.bson.types.ObjectId;
 
 public class ApplicationOperationConfigurationRepositoryImpl
     implements ConfigRepositoryProvider<ApplicationOperationConfiguration> {
@@ -36,7 +38,7 @@ public class ApplicationOperationConfigurationRepositoryImpl
     }
 
     @PostConstruct
-    public void init() {
+    private void init() {
         this.mongoCollection =
             mongoDatabase.getCollection(ServiceOperationCollection.DOCUMENT_NAME, ServiceOperationCollection.class);
     }
@@ -75,7 +77,7 @@ public class ApplicationOperationConfigurationRepositoryImpl
         // UpdateResult updateResult = mongoTemplate.updateMulti(query, update, ServiceOperationCollection.class);
         // return updateResult.getModifiedCount() > 0;
 
-        Bson filter = Filters.eq(BaseEntity.Fields.id, configuration.getId());
+        Bson filter = Filters.eq(DASH_ID, new ObjectId(configuration.getId()));
         List<Bson> updateList = Arrays.asList(MongoHelper.getUpdate(),
             MongoHelper.getSpecifiedProperties(configuration, ServiceOperationCollection.Fields.status));
         Bson updateCombine = Updates.combine(updateList);
@@ -88,7 +90,7 @@ public class ApplicationOperationConfigurationRepositoryImpl
         // Query query = Query.query(Criteria.where(DASH_ID).is(configuration.getId()));
         // DeleteResult remove = mongoTemplate.remove(query, ServiceOperationCollection.class);
         // return remove.getDeletedCount() > 0;
-        Bson filter = Filters.eq(BaseEntity.Fields.id, configuration.getId());
+        Bson filter = Filters.eq(DASH_ID, new ObjectId(configuration.getId()));
         return mongoCollection.deleteMany(filter).getDeletedCount() > 0;
     }
 

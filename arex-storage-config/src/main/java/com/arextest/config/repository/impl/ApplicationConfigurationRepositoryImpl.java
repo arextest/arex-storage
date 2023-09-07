@@ -7,22 +7,23 @@ import java.util.List;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 
+import org.apache.commons.lang3.StringUtils;
+import org.bson.conversions.Bson;
+
 import com.arextest.config.mapper.AppMapper;
-import com.arextest.config.model.dao.BaseEntity;
 import com.arextest.config.model.dao.config.AppCollection;
 import com.arextest.config.model.dto.application.ApplicationConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
 import com.arextest.config.utils.MongoHelper;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
-import org.apache.commons.lang3.StringUtils;
-import org.bson.conversions.Bson;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
+
 public class ApplicationConfigurationRepositoryImpl implements ConfigRepositoryProvider<ApplicationConfiguration> {
     private MongoDatabase mongoDatabase;
 
@@ -36,17 +37,17 @@ public class ApplicationConfigurationRepositoryImpl implements ConfigRepositoryP
     }
 
     @PostConstruct
-    public void init() {
-        mongoCollection = this.getCollection();
+    private void init() {
+        this.mongoCollection = mongoDatabase.getCollection(AppCollection.DOCUMENT_NAME, AppCollection.class);
     }
 
-    public String getCollectionName() {
-        return AppCollection.DOCUMENT_NAME;
-    }
-
-    public MongoCollection<AppCollection> getCollection() {
-        return mongoDatabase.getCollection(this.getCollectionName(), AppCollection.class);
-    }
+    // public String getCollectionName() {
+    // return AppCollection.DOCUMENT_NAME;
+    // }
+    //
+    // public MongoCollection<AppCollection> getCollection() {
+    // return mongoDatabase.getCollection(this.getCollectionName(), AppCollection.class);
+    // }
 
     @Override
     public List<ApplicationConfiguration> list() {
@@ -55,7 +56,7 @@ public class ApplicationConfigurationRepositoryImpl implements ConfigRepositoryP
         // List<AppCollection> appCollections = mongoTemplate.find(query, AppCollection.class);
         // return appCollections.stream().map(AppMapper.INSTANCE::dtoFromDao).collect(Collectors.toList());
 
-        Bson sort = Sorts.descending(BaseEntity.Fields.id);
+        Bson sort = Sorts.descending(DASH_ID);
         List<ApplicationConfiguration> applicationConfigurations = new ArrayList<>();
         try (MongoCursor<AppCollection> cursor = mongoCollection.find().sort(sort).iterator()) {
             while (cursor.hasNext()) {
