@@ -14,7 +14,6 @@ public class AppCollection extends BaseEntity {
     public static final String DOCUMENT_NAME = "App";
 
     @NonNull
-    // @Indexed(unique = true)
     private String appId;
 
     private int features;

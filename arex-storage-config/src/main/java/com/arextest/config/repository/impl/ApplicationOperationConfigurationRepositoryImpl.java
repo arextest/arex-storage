@@ -6,17 +6,17 @@ import java.util.List;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.commons.lang3.StringUtils;
+import org.bson.conversions.Bson;
+
 import com.arextest.config.mapper.ServiceOperationMapper;
 import com.arextest.config.model.dao.BaseEntity;
 import com.arextest.config.model.dao.config.ServiceOperationCollection;
+import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
 import com.arextest.config.utils.MongoHelper;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
-import org.apache.commons.lang3.StringUtils;
-import org.bson.conversions.Bson;
-
-import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.FindOneAndUpdateOptions;
@@ -37,17 +37,8 @@ public class ApplicationOperationConfigurationRepositoryImpl
 
     @PostConstruct
     public void init() {
-        mongoCollection = this.getCollection();
-    }
-
-    @Override
-    public String getCollectionName() {
-        return ServiceOperationCollection.DOCUMENT_NAME;
-    }
-
-    @Override
-    public MongoCollection<ServiceOperationCollection> getCollection() {
-        return mongoDatabase.getCollection(this.getCollectionName(), ServiceOperationCollection.class);
+        this.mongoCollection =
+            mongoDatabase.getCollection(ServiceOperationCollection.DOCUMENT_NAME, ServiceOperationCollection.class);
     }
 
     @Override
@@ -119,6 +110,17 @@ public class ApplicationOperationConfigurationRepositoryImpl
         }
         return insertOneResult.getInsertedId() != null;
 
+    }
+
+    public ApplicationOperationConfiguration listByOperationId(String operationId) {
+        // Query query = Query.query(Criteria.where(DASH_ID).is(operationId));
+        // ServiceOperationCollection serviceOperationCollection =
+        // mongoTemplate.findOne(query, ServiceOperationCollection.class);
+
+        Bson filter = Filters.eq(DASH_ID, operationId);
+        ServiceOperationCollection serviceOperationCollection = mongoCollection.find(filter).first();
+        return serviceOperationCollection == null ? null
+            : ServiceOperationMapper.INSTANCE.dtoFromDao(serviceOperationCollection);
     }
 
     // the search of operation's based—info by serviceId

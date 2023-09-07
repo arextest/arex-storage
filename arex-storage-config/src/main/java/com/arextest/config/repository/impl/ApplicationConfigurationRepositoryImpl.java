@@ -40,12 +40,10 @@ public class ApplicationConfigurationRepositoryImpl implements ConfigRepositoryP
         mongoCollection = this.getCollection();
     }
 
-    @Override
     public String getCollectionName() {
         return AppCollection.DOCUMENT_NAME;
     }
 
-    @Override
     public MongoCollection<AppCollection> getCollection() {
         return mongoDatabase.getCollection(this.getCollectionName(), AppCollection.class);
     }

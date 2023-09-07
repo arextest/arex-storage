@@ -6,15 +6,15 @@ import java.util.List;
 
 import javax.annotation.PostConstruct;
 
+import org.bson.conversions.Bson;
+
 import com.arextest.config.mapper.RecordServiceConfigMapper;
 import com.arextest.config.model.dao.config.RecordServiceConfigCollection;
+import com.arextest.config.model.dto.record.ServiceCollectConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
 import com.arextest.config.utils.MongoHelper;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
-import org.bson.conversions.Bson;
-
-import com.arextest.config.model.dto.record.ServiceCollectConfiguration;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
@@ -45,18 +45,19 @@ public class ServiceCollectConfigurationRepositoryImpl
 
     @PostConstruct
     public void init() {
-        mongoCollection = this.getCollection();
+        this.mongoCollection = mongoDatabase.getCollection(RecordServiceConfigCollection.DOCUMENT_NAME,
+            RecordServiceConfigCollection.class);
     }
 
-    @Override
-    public String getCollectionName() {
-        return RecordServiceConfigCollection.DOCUMENT_NAME;
-    }
-
-    @Override
-    public MongoCollection<RecordServiceConfigCollection> getCollection() {
-        return mongoDatabase.getCollection(this.getCollectionName(), RecordServiceConfigCollection.class);
-    }
+    // @Override
+    // public String getCollectionName() {
+    // return RecordServiceConfigCollection.DOCUMENT_NAME;
+    // }
+    //
+    // @Override
+    // public MongoCollection<RecordServiceConfigCollection> getCollection() {
+    // return mongoDatabase.getCollection(this.getCollectionName(), RecordServiceConfigCollection.class);
+    // }
 
     @Override
     public List<ServiceCollectConfiguration> list() {

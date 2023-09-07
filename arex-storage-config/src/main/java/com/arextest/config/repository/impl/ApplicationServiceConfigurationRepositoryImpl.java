@@ -38,17 +38,7 @@ public class ApplicationServiceConfigurationRepositoryImpl
 
     @PostConstruct
     public void init() {
-        mongoCollection = this.getCollection();
-    }
-
-    @Override
-    public String getCollectionName() {
-        return ServiceCollection.DOCUMENT_NAME;
-    }
-
-    @Override
-    public MongoCollection<ServiceCollection> getCollection() {
-        return mongoDatabase.getCollection(this.getCollectionName(), ServiceCollection.class);
+        this.mongoCollection = mongoDatabase.getCollection(ServiceCollection.DOCUMENT_NAME, ServiceCollection.class);
     }
 
     @Override

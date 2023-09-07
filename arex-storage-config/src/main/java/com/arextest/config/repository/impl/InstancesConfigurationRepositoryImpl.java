@@ -35,18 +35,19 @@ public class InstancesConfigurationRepositoryImpl implements ConfigRepositoryPro
 
     @PostConstruct
     public void init() {
-        mongoCollection = this.getCollection();
+        this.mongoCollection =
+            mongoDatabase.getCollection(InstancesCollection.DOCUMENT_NAME, InstancesCollection.class);
     }
 
-    @Override
-    public String getCollectionName() {
-        return InstancesCollection.DOCUMENT_NAME;
-    }
-
-    @Override
-    public MongoCollection<InstancesCollection> getCollection() {
-        return mongoDatabase.getCollection(this.getCollectionName(), InstancesCollection.class);
-    }
+    // @Override
+    // public String getCollectionName() {
+    // return InstancesCollection.DOCUMENT_NAME;
+    // }
+    //
+    // @Override
+    // public MongoCollection<InstancesCollection> getCollection() {
+    // return mongoDatabase.getCollection(this.getCollectionName(), InstancesCollection.class);
+    // }
 
     @Override
     public List<InstancesConfiguration> list() {
@@ -142,6 +143,13 @@ public class InstancesConfigurationRepositoryImpl implements ConfigRepositoryPro
         Bson filter = Filters.eq(InstancesCollection.Fields.appId, appId);
         DeleteResult deleteResult = mongoCollection.deleteMany(filter);
         return deleteResult.getDeletedCount() > 0;
+    }
+
+    public boolean removeByAppIdAndHost(String appId, String host) {
+        Bson filterCombine = Filters.and(Filters.eq(InstancesCollection.Fields.appId, appId),
+            Filters.eq(InstancesCollection.Fields.host, host));
+        DeleteResult remove = mongoCollection.deleteMany(filterCombine);
+        return remove.getDeletedCount() > 0;
     }
 
 }

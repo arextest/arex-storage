@@ -17,7 +17,6 @@ public class RecordServiceConfigCollection extends BaseEntity {
     public static final String DOCUMENT_NAME = "RecordServiceConfig";
 
     @NonNull
-    // @Indexed(unique = true)
     private String appId;
 
     private int sampleRate;

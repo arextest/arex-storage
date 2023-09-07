@@ -5,7 +5,7 @@
     <parent>
         <artifactId>arex-storage-service</artifactId>
         <groupId>com.arextest</groupId>
-        <version>1.0.21</version>
+        <version>0.0.0-corydev-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>arex-storage-web-api</artifactId>
@@ -81,52 +81,5 @@
         </dependency>
 
     </dependencies>
-    <profiles>
-        <profile>
-            <id>war</id>
-            <properties>
-                <packagingType>war</packagingType>
-            </properties>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <build>
-                <finalName>arex-storage-web-api</finalName>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>jar</id>
-            <properties>
-                <packagingType>jar</packagingType>
-            </properties>
-            <build>
-                <resources>
-                    <resource>
-                        <directory>arex-storage</directory>
-                        <excludes>
-                            <exclude>**/application*.properties</exclude>
-                        </excludes>
-                    </resource>
-                </resources>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <configuration>
-                            <excludes>
-                                <exclude>**/WebSpringBootServletInitializer.java</exclude>
-                            </excludes>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 
 </project>

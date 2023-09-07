@@ -35,18 +35,19 @@ public class DynamicClassConfigurationRepositoryImpl implements ConfigRepository
 
     @PostConstruct
     public void init() {
-        mongoCollection = this.getCollection();
+        this.mongoCollection =
+            mongoDatabase.getCollection(DynamicClassCollection.DOCUMENT_NAME, DynamicClassCollection.class);
     }
 
-    @Override
-    public String getCollectionName() {
-        return DynamicClassCollection.DOCUMENT_NAME;
-    }
-
-    @Override
-    public MongoCollection<DynamicClassCollection> getCollection() {
-        return mongoDatabase.getCollection(this.getCollectionName(), DynamicClassCollection.class);
-    }
+    // @Override
+    // public String getCollectionName() {
+    // return DynamicClassCollection.DOCUMENT_NAME;
+    // }
+    //
+    // @Override
+    // public MongoCollection<DynamicClassCollection> getCollection() {
+    // return mongoDatabase.getCollection(this.getCollectionName(), DynamicClassCollection.class);
+    // }
 
     @Override
     public List<DynamicClassConfiguration> list() {

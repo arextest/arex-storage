@@ -2,12 +2,11 @@ package com.arextest.storage.beans;
 
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
+
+import javax.annotation.Resource;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.bson.Document;
-import org.bson.conversions.Bson;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.http.HttpMessageConverters;
@@ -18,7 +17,8 @@ import org.springframework.core.annotation.Order;
 
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.common.cache.DefaultRedisCacheProvider;
-import com.arextest.config.repository.impl.*;
+import com.arextest.config.repository.impl.ApplicationOperationConfigurationRepositoryImpl;
+import com.arextest.config.repository.impl.ApplicationServiceConfigurationRepositoryImpl;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.storage.converter.ZstdJacksonMessageConverter;
@@ -34,10 +34,7 @@ import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.*;
 import com.arextest.storage.web.controller.MockSourceEditionController;
 import com.arextest.storage.web.controller.ScheduleReplayQueryController;
-import com.mongodb.MongoCommandException;
-import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.IndexOptions;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -45,9 +42,11 @@ import lombok.extern.slf4j.Slf4j;
 @EnableConfigurationProperties({StorageConfigurationProperties.class})
 @Slf4j
 public class StorageAutoConfiguration {
+
     private final StorageConfigurationProperties properties;
-    private static final String COLLECTION_SUFFIX = "Mocker";
-    static final String EXPIRATION_TIME_COLUMN_NAME = "expirationTime";
+
+    @Resource
+    IndexsSettingConfiguration indexsSettingConfiguration;
 
     public StorageAutoConfiguration(StorageConfigurationProperties configurationProperties) {
         properties = configurationProperties;
@@ -57,57 +56,10 @@ public class StorageAutoConfiguration {
     @ConditionalOnMissingBean(MongoDatabase.class)
     public MongoDatabase mongoDatabase() {
         MongoDatabase database = MongoDbUtils.create(properties.getMongodbUri());
-        setTtlIndexes(database);
-        ensureMockerQueryIndex(database);
+        indexsSettingConfiguration.setTtlIndexes(database);
+        indexsSettingConfiguration.ensureMockerQueryIndex(database);
+        indexsSettingConfiguration.setIndexAboutConfig(database);
         return database;
-    }
-
-    private void ensureMockerQueryIndex(MongoDatabase database) {
-        for (MockCategoryType category : MockCategoryType.DEFAULTS) {
-            MongoCollection<AREXMocker> collection =
-                database.getCollection(getCollectionName(category), AREXMocker.class);
-            try {
-                Document index = new Document();
-                index.append(AREXMocker.Fields.recordId, 1);
-                index.append(AREXMocker.Fields.creationTime, -1);
-                collection.createIndex(index);
-            } catch (MongoCommandException e) {
-                LOGGER.info("create index failed for {}", category.getName(), e);
-            }
-
-            try {
-                Document index = new Document();
-                index.append(AREXMocker.Fields.appId, 1);
-                index.append(AREXMocker.Fields.operationName, 1);
-                collection.createIndex(index);
-            } catch (MongoCommandException e) {
-                LOGGER.info("create index failed for {}", category.getName(), e);
-            }
-        }
-    }
-
-    private void setTtlIndexes(MongoDatabase mongoDatabase) {
-        for (MockCategoryType category : MockCategoryType.DEFAULTS) {
-            setTTLIndexInMockerCollection(category, mongoDatabase);
-        }
-    }
-
-    private void setTTLIndexInMockerCollection(MockCategoryType category, MongoDatabase mongoDatabase) {
-        String categoryName = getCollectionName(category);
-        MongoCollection<AREXMocker> collection = mongoDatabase.getCollection(categoryName, AREXMocker.class);
-        Bson index = new Document(EXPIRATION_TIME_COLUMN_NAME, 1);
-        IndexOptions indexOptions = new IndexOptions().expireAfter(0L, TimeUnit.SECONDS);
-        try {
-            collection.createIndex(index, indexOptions);
-        } catch (MongoCommandException e) {
-            // ignore
-            collection.dropIndex(index);
-            collection.createIndex(index, indexOptions);
-        }
-    }
-
-    private static String getCollectionName(MockCategoryType category) {
-        return ProviderNames.DEFAULT + category.getName() + COLLECTION_SUFFIX;
     }
 
     @Bean
@@ -194,41 +146,6 @@ public class StorageAutoConfiguration {
     @ConditionalOnMissingBean(DesensitizeService.class)
     public DesensitizeService desensitizeService() {
         return new DesensitizeService();
-    }
-
-    // the bean about config to register
-    @Bean
-    public ApplicationConfigurationRepositoryImpl applicationConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
-        return new ApplicationConfigurationRepositoryImpl(mongoDatabase);
-    }
-
-    @Bean
-    public ApplicationServiceConfigurationRepositoryImpl
-        applicationServiceConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
-        return new ApplicationServiceConfigurationRepositoryImpl(mongoDatabase);
-    }
-
-    @Bean
-    public ApplicationOperationConfigurationRepositoryImpl
-        applicationOperationConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
-        return new ApplicationOperationConfigurationRepositoryImpl(mongoDatabase);
-    }
-
-    @Bean
-    public InstancesConfigurationRepositoryImpl instancesConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
-        return new InstancesConfigurationRepositoryImpl(mongoDatabase);
-    }
-
-    @Bean
-    public ServiceCollectConfigurationRepositoryImpl
-        serviceCollectConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
-        return new ServiceCollectConfigurationRepositoryImpl(mongoDatabase);
-    }
-
-    @Bean
-    public DynamicClassConfigurationRepositoryImpl
-        dynamicClassConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
-        return new DynamicClassConfigurationRepositoryImpl(mongoDatabase);
     }
 
     @Bean

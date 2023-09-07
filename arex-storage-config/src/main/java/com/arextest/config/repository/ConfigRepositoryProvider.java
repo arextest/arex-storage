@@ -44,5 +44,17 @@ public interface ConfigRepositoryProvider<T> extends ConfigRepository {
     default long count(String appId) {
         return 0;
     }
+    
+    default T queryById(String id) {
+        return null;
+    }
+
+    default List<T> queryByInterfaceIdAndOperationId(String interfaceId, String operationId) {
+        return null;
+    }
+
+    default List<T> listBy(String appId, String operationId) {
+        return null;
+    }
 
 }
