@@ -22,13 +22,13 @@ public class AppCollection extends BaseEntity {
     private String groupName;
     @NonNull
     private String groupId;
-    @NonNull
+
     private String agentVersion;
-    @NonNull
+
     private String agentExtVersion;
     @NonNull
     private String appName;
-    @NonNull
+
     private String description;
     @NonNull
     private String category;

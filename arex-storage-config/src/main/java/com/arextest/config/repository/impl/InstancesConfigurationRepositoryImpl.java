@@ -20,9 +20,6 @@ import com.mongodb.client.model.*;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class InstancesConfigurationRepositoryImpl implements ConfigRepositoryProvider<InstancesConfiguration> {
 
     private MongoDatabase mongoDatabase;
