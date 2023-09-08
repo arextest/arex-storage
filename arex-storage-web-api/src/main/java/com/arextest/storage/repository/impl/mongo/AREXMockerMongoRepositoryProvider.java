@@ -93,6 +93,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     public Iterable<AREXMocker> queryRecordList(MockCategoryType category, String recordId) {
         MongoCollection<AREXMocker> collectionSource = createOrGetCollection(category);
         Bson recordIdFilter = buildRecordIdFilter(category, recordId);
+        updateExpirationTime(Collections.singletonList(recordIdFilter), collectionSource);
         Iterable<AREXMocker> iterable = collectionSource
                 .find(recordIdFilter)
                 .sort(CREATE_TIME_ASCENDING_SORT);
