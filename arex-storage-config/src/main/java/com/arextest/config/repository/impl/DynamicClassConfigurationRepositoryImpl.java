@@ -39,37 +39,13 @@ public class DynamicClassConfigurationRepositoryImpl implements ConfigRepository
             mongoDatabase.getCollection(DynamicClassCollection.DOCUMENT_NAME, DynamicClassCollection.class);
     }
 
-    // @Override
-    // public String getCollectionName() {
-    // return DynamicClassCollection.DOCUMENT_NAME;
-    // }
-    //
-    // @Override
-    // public MongoCollection<DynamicClassCollection> getCollection() {
-    // return mongoDatabase.getCollection(this.getCollectionName(), DynamicClassCollection.class);
-    // }
-
     @Override
     public List<DynamicClassConfiguration> list() {
-        // Query query = new Query();
-        // List<DynamicClassCollection> dynamicClassCollections = mongoTemplate.find(query,
-        // DynamicClassCollection.class);
-        // return
-        // dynamicClassCollections.stream().map(DynamicClassMapper.INSTANCE::dtoFromDao).collect(Collectors.toList());
-        // return null;
         throw new UnsupportedOperationException("this method is not implemented");
     }
 
     @Override
     public List<DynamicClassConfiguration> listBy(String appId) {
-        // Query query = Query.query(Criteria.where(appId).is(appId));
-        // List<DynamicClassCollection> dynamicClassCollections = mongoTemplate.find(query,
-        // DynamicClassCollection.class);
-        // return
-        // dynamicClassCollections.stream().map(DynamicClassMapper.INSTANCE::dtoFromDao).collect(Collectors.toList());
-        // return null;
-
-        // MongoCollection<Document> collection = mongoTemplate.getCollection("dynamicClassCollection");
         Bson filter = Filters.eq(DynamicClassCollection.Fields.appId, appId);
         List<DynamicClassConfiguration> dtos = new ArrayList<>();
         try (MongoCursor<DynamicClassCollection> cursor = mongoCollection.find(filter).iterator()) {
@@ -84,14 +60,6 @@ public class DynamicClassConfigurationRepositoryImpl implements ConfigRepository
 
     @Override
     public boolean update(DynamicClassConfiguration configuration) {
-        // Query query = Query.query(Criteria.where(DASH_ID).is(configuration.getId()));
-        // Update update = MongoHelper.getConfigUpdate();
-        // update.set(FULL_CLASS_NAME, configuration.getFullClassName());
-        // update.set(METHOD_NAME, configuration.getMethodName());
-        // update.set(PARAMETER_TYPES, configuration.getParameterTypes());
-        // UpdateResult updateResult = mongoTemplate.updateMulti(query, update, DynamicClassCollection.class);
-        // return updateResult.getModifiedCount() > 0;
-        // return false;
         Bson filter = Filters.eq(DASH_ID, new ObjectId(configuration.getId()));
 
         List<Bson> updateList = Arrays.asList(MongoHelper.getUpdate(),
@@ -105,10 +73,6 @@ public class DynamicClassConfigurationRepositoryImpl implements ConfigRepository
 
     @Override
     public boolean remove(DynamicClassConfiguration configuration) {
-        // Query query = Query.query(Criteria.where(DASH_ID).is(configuration.getId()));
-        // DeleteResult remove = mongoTemplate.remove(query, DynamicClassCollection.class);
-        // return remove.getDeletedCount() > 0;
-        // return false;
         Bson filter = Filters.eq(DASH_ID, new ObjectId(configuration.getId()));
         DeleteResult deleteResult = mongoCollection.deleteMany(filter);
         return deleteResult.getDeletedCount() > 0;
@@ -116,12 +80,6 @@ public class DynamicClassConfigurationRepositoryImpl implements ConfigRepository
 
     @Override
     public boolean insert(DynamicClassConfiguration configuration) {
-        // DynamicClassCollection dynamicClassConfiguration = DynamicClassMapper.INSTANCE.daoFromDto(configuration);
-        // DynamicClassCollection insert = mongoTemplate.insert(dynamicClassConfiguration);
-        // if (insert.getId() != null) {
-        // configuration.setId(insert.getId());
-        // }
-        // return insert.getId() != null;
         DynamicClassCollection dynamicClassCollection = DynamicClassMapper.INSTANCE.daoFromDto(configuration);
         InsertOneResult insertOneResult = mongoCollection.insertOne(dynamicClassCollection);
         if (insertOneResult.getInsertedId() != null) {
@@ -132,9 +90,6 @@ public class DynamicClassConfigurationRepositoryImpl implements ConfigRepository
 
     @Override
     public boolean removeByAppId(String appId) {
-        // Query query = Query.query(Criteria.where(appId).is(appId));
-        // DeleteResult remove = mongoTemplate.remove(query, DynamicClassCollection.class);
-        // return remove.getDeletedCount() > 0;
         Bson filter = Filters.eq(DynamicClassCollection.Fields.appId, appId);
         DeleteResult deleteResult = mongoCollection.deleteMany(filter);
         return deleteResult.getDeletedCount() > 0;

@@ -6,7 +6,7 @@
     <groupId>com.arextest</groupId>
     <artifactId>arex-storage-service</artifactId>
     <packaging>pom</packaging>
-    <version>0.0.0-corydev-SNAPSHOT</version>
+    <version>1.0.21</version>
 
     <name>${project.groupId}:${project.artifactId}</name>
     <description>Arex-storage is used for data storage.</description>
@@ -202,12 +202,6 @@
                 </plugin>
             </plugins>
         </pluginManagement>
-        <!--        <plugins>-->
-        <!--            <plugin>-->
-        <!--                <groupId>org.apache.maven.plugins</groupId>-->
-        <!--                <artifactId>maven-compiler-plugin</artifactId>-->
-        <!--            </plugin>-->
-        <!--        </plugins>-->
     </build>
 
     <distributionManagement>
@@ -220,19 +214,6 @@
             <url>${snapshots.repo}</url>
         </snapshotRepository>
     </distributionManagement>
-
-
-    <!--    <distributionManagement>-->
-    <!--        <snapshotRepository>-->
-    <!--            <id>ossrh</id>-->
-    <!--            <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>-->
-    <!--        </snapshotRepository>-->
-    <!--        <repository>-->
-    <!--            <id>ossrh</id>-->
-    <!--            <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>-->
-    <!--        </repository>-->
-    <!--    </distributionManagement>-->
-
 
     <licenses>
         <license>

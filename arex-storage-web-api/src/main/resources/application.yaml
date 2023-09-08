@@ -20,8 +20,6 @@ arex:
       provider: ''
       service:
         provider: ''
-        update:
-          delaySeconds: 60
     default:
       # default for service collect settings
       schedule:

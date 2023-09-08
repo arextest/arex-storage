@@ -48,12 +48,6 @@ public class ApplicationOperationConfigurationRepositoryImpl
 
     @Override
     public List<ApplicationOperationConfiguration> listBy(String appId) {
-        // Query query = Query.query(Criteria.where(APP_ID).is(appId));
-        // List<ServiceOperationCollection> serviceOperationCollections =
-        // mongoTemplate.find(query, ServiceOperationCollection.class);
-        // return serviceOperationCollections.stream().map(ServiceOperationMapper.INSTANCE::dtoFromDao)
-        // .collect(Collectors.toList());
-
         Bson filter = Filters.eq(ServiceOperationCollection.Fields.appId, appId);
         List<ApplicationOperationConfiguration> dtos = new ArrayList<>();
         try (MongoCursor<ServiceOperationCollection> cursor = mongoCollection.find(filter).iterator()) {
@@ -68,13 +62,6 @@ public class ApplicationOperationConfigurationRepositoryImpl
 
     @Override
     public boolean update(ApplicationOperationConfiguration configuration) {
-        // Query query = Query.query(Criteria.where(DASH_ID).is(configuration.getId()));
-        // Update update = MongoHelper.getConfigUpdate();
-        // MongoHelper.appendSpecifiedProperties(update, configuration, STATUS, RECORDED_CASE_COUNT,
-        // OPERATION_RESPONSE);
-        // UpdateResult updateResult = mongoTemplate.updateMulti(query, update, ServiceOperationCollection.class);
-        // return updateResult.getModifiedCount() > 0;
-
         Bson filter = Filters.eq(DASH_ID, new ObjectId(configuration.getId()));
         List<Bson> updateList = Arrays.asList(MongoHelper.getUpdate(),
             MongoHelper.getSpecifiedProperties(configuration, ServiceOperationCollection.Fields.status));
@@ -85,22 +72,12 @@ public class ApplicationOperationConfigurationRepositoryImpl
 
     @Override
     public boolean remove(ApplicationOperationConfiguration configuration) {
-        // Query query = Query.query(Criteria.where(DASH_ID).is(configuration.getId()));
-        // DeleteResult remove = mongoTemplate.remove(query, ServiceOperationCollection.class);
-        // return remove.getDeletedCount() > 0;
         Bson filter = Filters.eq(DASH_ID, new ObjectId(configuration.getId()));
         return mongoCollection.deleteMany(filter).getDeletedCount() > 0;
     }
 
     @Override
     public boolean insert(ApplicationOperationConfiguration configuration) {
-        // ServiceOperationCollection serviceOperationCollection =
-        // ServiceOperationMapper.INSTANCE.daoFromDto(configuration);
-        // ServiceOperationCollection insert = mongoTemplate.insert(serviceOperationCollection);
-        // if (insert.getId() != null) {
-        // configuration.setId(insert.getId());
-        // }
-        // return insert.getId() != null;
 
         ServiceOperationCollection serviceOperationCollection =
             ServiceOperationMapper.INSTANCE.daoFromDto(configuration);
@@ -113,9 +90,6 @@ public class ApplicationOperationConfigurationRepositoryImpl
     }
 
     public ApplicationOperationConfiguration listByOperationId(String operationId) {
-        // Query query = Query.query(Criteria.where(DASH_ID).is(operationId));
-        // ServiceOperationCollection serviceOperationCollection =
-        // mongoTemplate.findOne(query, ServiceOperationCollection.class);
 
         Bson filter = Filters.eq(DASH_ID, operationId);
         ServiceOperationCollection serviceOperationCollection = mongoCollection.find(filter).first();
@@ -125,11 +99,6 @@ public class ApplicationOperationConfigurationRepositoryImpl
 
     // the search of operation's based—info by serviceId
     public List<ApplicationOperationConfiguration> operationBaseInfoList(String serviceId) {
-        // Query query = Query.query(Criteria.where(SERVICE_ID).is(serviceId));
-        // List<ServiceOperationCollection> serviceOperationCollections =
-        // mongoTemplate.find(query, ServiceOperationCollection.class);
-        // return serviceOperationCollections.stream().map(ServiceOperationMapper.INSTANCE::baseInfoFromDao)
-        // .collect(Collectors.toList());
 
         Bson filter = Filters.eq(ServiceOperationCollection.Fields.serviceId, serviceId);
         List<ApplicationOperationConfiguration> dtos = new ArrayList<>();
@@ -145,9 +114,6 @@ public class ApplicationOperationConfigurationRepositoryImpl
 
     @Override
     public boolean removeByAppId(String appId) {
-        // Query query = Query.query(Criteria.where(APP_ID).is(appId));
-        // DeleteResult remove = mongoTemplate.remove(query, ServiceOperationCollection.class);
-        // return remove.getDeletedCount() > 0;
 
         Bson filter = Filters.eq(ServiceOperationCollection.Fields.appId, appId);
         DeleteResult deleteResult = mongoCollection.deleteMany(filter);

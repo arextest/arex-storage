@@ -14,8 +14,9 @@ import com.arextest.config.mapper.InstancesMapper;
 import com.arextest.config.model.vo.AgentRemoteConfigurationRequest;
 import com.arextest.config.model.vo.AgentRemoteConfigurationResponse;
 import com.arextest.config.model.vo.AgentStatusRequest;
+import com.arextest.config.model.vo.AgentStatusType;
+import com.arextest.storage.service.config.impl.ServiceCollectConfigurableHandler;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -57,20 +58,12 @@ public final class AgentRemoteConfigurationController {
     @Resource
     private ConfigurableHandler<ApplicationConfiguration> applicationHandler;
     @Resource
-    private ConfigurableHandler<ServiceCollectConfiguration> serviceCollectHandler;
-    @Resource
     private ApplicationInstancesConfigurableHandler applicationInstancesConfigurableHandler;
     @Resource
     private ApplicationServiceConfigurableHandler applicationServiceHandler;
-    // private ScheduledExecutorService executorService;
 
-    @Value("${arex.config.application.service.update.delaySeconds:30}")
-    private long delayUpdateServiceSeconds;
-
-    // @PostConstruct
-    // private void init() {
-    // executorService = Executors.newSingleThreadScheduledExecutor();
-    // }
+    @Resource
+    private ServiceCollectConfigurableHandler serviceCollectHandler;
 
     @PostMapping("/load")
     @ResponseBody
@@ -127,19 +120,25 @@ public final class AgentRemoteConfigurationController {
 
             MDCTracer.addAppId(appId);
             LOGGER.info("from appId: {} , load agentStatus", request.getAppId());
-            // update the instance
-            InstancesConfiguration instancesConfiguration = InstancesMapper.INSTANCE.dtoFromContract(request);
-            applicationInstancesConfigurableHandler.createOrUpdate(instancesConfiguration);
-
-            // get the latest time
-            ServiceCollectConfiguration serviceConfig = serviceCollectHandler.useResult(appId);
 
             String modifiedTime = EMPTY_TIME;
-            if (serviceConfig.getModifiedTime() != null) {
-                SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z");
-                dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-                modifiedTime = dateFormat.format(serviceConfig.getModifiedTime());
+            // update the instance
+            InstancesConfiguration instancesConfiguration = InstancesMapper.INSTANCE.dtoFromContract(request);
+            if (AgentStatusType.SHUTDOWN.equalsIgnoreCase(instancesConfiguration.getAgentStatus())) {
+                applicationInstancesConfigurableHandler.deleteByAppIdAndHost(instancesConfiguration.getAppId(),
+                        instancesConfiguration.getHost());
+            } else {
+                applicationInstancesConfigurableHandler.createOrUpdate(instancesConfiguration);
+                // get the latest time
+                ServiceCollectConfiguration serviceConfig =
+                        serviceCollectHandler.useResult(instancesConfiguration.getAppId());
+                if (serviceConfig.getModifiedTime() != null) {
+                    SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z");
+                    dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+                    modifiedTime = dateFormat.format(serviceConfig.getModifiedTime());
+                }
             }
+
             HttpStatus httpStatus = HttpStatus.OK;
             String ifModifiedSinceValue = httpServletRequest.getHeader(LAST_MODIFY_TIME);
             if (StringUtils.equals(ifModifiedSinceValue, modifiedTime)) {

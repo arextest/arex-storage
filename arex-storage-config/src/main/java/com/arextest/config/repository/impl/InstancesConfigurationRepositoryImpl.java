@@ -36,29 +36,13 @@ public class InstancesConfigurationRepositoryImpl implements ConfigRepositoryPro
             mongoDatabase.getCollection(InstancesCollection.DOCUMENT_NAME, InstancesCollection.class);
     }
 
-    // @Override
-    // public String getCollectionName() {
-    // return InstancesCollection.DOCUMENT_NAME;
-    // }
-    //
-    // @Override
-    // public MongoCollection<InstancesCollection> getCollection() {
-    // return mongoDatabase.getCollection(this.getCollectionName(), InstancesCollection.class);
-    // }
-
     @Override
     public List<InstancesConfiguration> list() {
-        // Query query = new Query();
-        // List<InstancesCollection> instancesCollections = mongoTemplate.find(query, InstancesCollection.class);
-        // return instancesCollections.stream().map(InstancesMapper.INSTANCE::dtoFromDao).collect(Collectors.toList());
         throw new UnsupportedOperationException("this method is not implemented");
     }
 
     @Override
     public List<InstancesConfiguration> listBy(String appId) {
-        // Query query = Query.query(Criteria.where(appId).is(appId));
-        // List<InstancesCollection> instancesCollections = mongoTemplate.find(query, InstancesCollection.class);
-        // return instancesCollections.stream().map(InstancesMapper.INSTANCE::dtoFromDao).collect(Collectors.toList());
         Bson filter = Filters.eq(DynamicClassCollection.Fields.appId, appId);
         List<InstancesConfiguration> dtos = new ArrayList<>();
         try (MongoCursor<InstancesCollection> cursor = mongoCollection.find(filter).iterator()) {
@@ -72,12 +56,6 @@ public class InstancesConfigurationRepositoryImpl implements ConfigRepositoryPro
     }
 
     public List<InstancesConfiguration> listBy(String appId, int top) {
-        // if (top == 0) {
-        // return Collections.emptyList();
-        // }
-        // Query query = Query.query(Criteria.where(appId).is(appId)).limit(top).with(Sort.by(DASH_ID).ascending());
-        // List<InstancesCollection> instancesCollections = mongoTemplate.find(query, InstancesCollection.class);
-        // return instancesCollections.stream().map(InstancesMapper.INSTANCE::dtoFromDao).collect(Collectors.toList());
         if (top == 0) {
             return Collections.emptyList();
         }
@@ -111,9 +89,6 @@ public class InstancesConfigurationRepositoryImpl implements ConfigRepositoryPro
 
     @Override
     public boolean remove(InstancesConfiguration configuration) {
-        // Query query = Query.query(Criteria.where(DASH_ID).is(configuration.getId()));
-        // DeleteResult remove = mongoTemplate.remove(query, InstancesCollection.class);
-        // return remove.getDeletedCount() > 0;
         Bson filter = Filters.eq(DASH_ID, new ObjectId(configuration.getId()));
         DeleteResult deleteResult = mongoCollection.deleteMany(filter);
         return deleteResult.getDeletedCount() > 0;
@@ -133,9 +108,6 @@ public class InstancesConfigurationRepositoryImpl implements ConfigRepositoryPro
 
     @Override
     public boolean removeByAppId(String appId) {
-        // Query query = Query.query(Criteria.where(appId).is(appId));
-        // DeleteResult remove = mongoTemplate.remove(query, InstancesCollection.class);
-        // return remove.getDeletedCount() > 0;
 
         Bson filter = Filters.eq(InstancesCollection.Fields.appId, appId);
         DeleteResult deleteResult = mongoCollection.deleteMany(filter);

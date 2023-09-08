@@ -41,20 +41,8 @@ public class ApplicationConfigurationRepositoryImpl implements ConfigRepositoryP
         this.mongoCollection = mongoDatabase.getCollection(AppCollection.DOCUMENT_NAME, AppCollection.class);
     }
 
-    // public String getCollectionName() {
-    // return AppCollection.DOCUMENT_NAME;
-    // }
-    //
-    // public MongoCollection<AppCollection> getCollection() {
-    // return mongoDatabase.getCollection(this.getCollectionName(), AppCollection.class);
-    // }
-
     @Override
     public List<ApplicationConfiguration> list() {
-        // Query query = new Query();
-        // query.with(Sort.by(Sort.Order.desc(DASH_ID)));
-        // List<AppCollection> appCollections = mongoTemplate.find(query, AppCollection.class);
-        // return appCollections.stream().map(AppMapper.INSTANCE::dtoFromDao).collect(Collectors.toList());
 
         Bson sort = Sorts.descending(DASH_ID);
         List<ApplicationConfiguration> applicationConfigurations = new ArrayList<>();
@@ -70,9 +58,6 @@ public class ApplicationConfigurationRepositoryImpl implements ConfigRepositoryP
 
     @Override
     public List<ApplicationConfiguration> listBy(String appId) {
-        // Query query = Query.query(Criteria.where(appId).is(appId));
-        // List<AppCollection> appCollections = mongoTemplate.find(query, AppCollection.class);
-        // return appCollections.stream().map(AppMapper.INSTANCE::dtoFromDao).collect(Collectors.toList());
 
         Bson filter = Filters.eq(AppCollection.Fields.appId, appId);
         List<ApplicationConfiguration> applicationConfigurations = new ArrayList<>();
@@ -88,18 +73,6 @@ public class ApplicationConfigurationRepositoryImpl implements ConfigRepositoryP
 
     @Override
     public boolean update(ApplicationConfiguration configuration) {
-        // Query query = Query.query(Criteria.where(appId).is(configuration.getAppId()));
-        // Update update = MongoHelper.getConfigUpdate();
-        // MongoHelper.assertNull("update parameter is null", configuration.getAgentVersion(),
-        // configuration.getAgentExtVersion(), configuration.getStatus());
-
-        // update.set(AGENT_VERSION, configuration.getAgentVersion());
-        // update.set(AGENT_EXT_VERSION, configuration.getAgentExtVersion());
-        // update.set(STATUS, configuration.getStatus());
-        // update.set(FEATURES, configuration.getFeatures());
-
-        // UpdateResult updateResult = mongoTemplate.updateMulti(query, update, AppCollection.class);
-        // return updateResult.getModifiedCount() > 0;
 
         Bson filter = Filters.eq(AppCollection.Fields.appId, configuration.getAppId());
 
@@ -119,10 +92,6 @@ public class ApplicationConfigurationRepositoryImpl implements ConfigRepositoryP
         for (ConfigRepositoryProvider configRepositoryProvider : configRepositoryProviders) {
             configRepositoryProvider.removeByAppId(configuration.getAppId());
         }
-
-        // Query query = Query.query(Criteria.where(appId).is(configuration.getAppId()));
-        // DeleteResult remove = mongoTemplate.remove(query, AppCollection.class);
-        // return remove.getDeletedCount() > 0;
         Bson filter = Filters.eq(AppCollection.Fields.appId, configuration.getAppId());
         DeleteResult deleteResult = mongoCollection.deleteMany(filter);
         return deleteResult.getDeletedCount() > 0;
@@ -130,9 +99,6 @@ public class ApplicationConfigurationRepositoryImpl implements ConfigRepositoryP
 
     @Override
     public boolean insert(ApplicationConfiguration configuration) {
-        // AppCollection appCollection = AppMapper.INSTANCE.daoFromDto(configuration);
-        // AppCollection insert = mongoTemplate.insert(appCollection);
-        // return insert.getId() != null;
         AppCollection appCollection = AppMapper.INSTANCE.daoFromDto(configuration);
         InsertOneResult insertOneResult = mongoCollection.insertOne(appCollection);
         return insertOneResult.getInsertedId() != null;

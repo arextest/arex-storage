@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-final class ServiceCollectConfigurableHandler extends AbstractConfigurableHandler<ServiceCollectConfiguration> {
+public final class ServiceCollectConfigurableHandler extends AbstractConfigurableHandler<ServiceCollectConfiguration> {
 
     @Resource
     private ServiceCollectConfiguration globalDefaultConfiguration;
@@ -71,6 +71,11 @@ final class ServiceCollectConfigurableHandler extends AbstractConfigurableHandle
         }
         source.addAll(globalValues);
         return source;
+    }
+
+    public void updateServiceCollectTime(String appId) {
+        ServiceCollectConfiguration serviceCollectConfiguration = this.useResult(appId);
+        this.update(serviceCollectConfiguration);
     }
 
     @Configuration
