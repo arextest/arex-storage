@@ -6,12 +6,11 @@ import java.util.List;
 
 import javax.annotation.PostConstruct;
 
-import com.mongodb.client.result.UpdateResult;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.conversions.Bson;
+import org.bson.types.ObjectId;
 
 import com.arextest.config.mapper.ServiceOperationMapper;
-import com.arextest.config.model.dao.BaseEntity;
 import com.arextest.config.model.dao.config.ServiceOperationCollection;
 import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
@@ -25,7 +24,6 @@ import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
-import org.bson.types.ObjectId;
 
 public class ApplicationOperationConfigurationRepositoryImpl
     implements ConfigRepositoryProvider<ApplicationOperationConfiguration> {

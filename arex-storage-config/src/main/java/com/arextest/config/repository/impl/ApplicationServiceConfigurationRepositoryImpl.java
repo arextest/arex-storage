@@ -8,9 +8,9 @@ import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 
 import org.bson.conversions.Bson;
+import org.bson.types.ObjectId;
 
 import com.arextest.config.mapper.ServiceMapper;
-import com.arextest.config.model.dao.BaseEntity;
 import com.arextest.config.model.dao.config.ServiceCollection;
 import com.arextest.config.model.dto.application.ApplicationServiceConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
@@ -22,7 +22,6 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
-import org.bson.types.ObjectId;
 
 public class ApplicationServiceConfigurationRepositoryImpl
     implements ConfigRepositoryProvider<ApplicationServiceConfiguration> {

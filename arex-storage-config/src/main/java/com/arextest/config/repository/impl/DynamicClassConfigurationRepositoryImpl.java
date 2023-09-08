@@ -7,9 +7,9 @@ import java.util.List;
 import javax.annotation.PostConstruct;
 
 import org.bson.conversions.Bson;
+import org.bson.types.ObjectId;
 
 import com.arextest.config.mapper.DynamicClassMapper;
-import com.arextest.config.model.dao.BaseEntity;
 import com.arextest.config.model.dao.config.DynamicClassCollection;
 import com.arextest.config.model.dto.record.DynamicClassConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
@@ -22,7 +22,6 @@ import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
 import com.mongodb.client.result.UpdateResult;
-import org.bson.types.ObjectId;
 
 public class DynamicClassConfigurationRepositoryImpl implements ConfigRepositoryProvider<DynamicClassConfiguration> {
 

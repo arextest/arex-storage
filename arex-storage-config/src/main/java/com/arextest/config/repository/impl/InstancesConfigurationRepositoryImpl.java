@@ -5,9 +5,9 @@ import java.util.*;
 import javax.annotation.PostConstruct;
 
 import org.bson.conversions.Bson;
+import org.bson.types.ObjectId;
 
 import com.arextest.config.mapper.InstancesMapper;
-import com.arextest.config.model.dao.BaseEntity;
 import com.arextest.config.model.dao.config.DynamicClassCollection;
 import com.arextest.config.model.dao.config.InstancesCollection;
 import com.arextest.config.model.dto.application.InstancesConfiguration;
@@ -21,7 +21,6 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
 
 import lombok.extern.slf4j.Slf4j;
-import org.bson.types.ObjectId;
 
 @Slf4j
 public class InstancesConfigurationRepositoryImpl implements ConfigRepositoryProvider<InstancesConfiguration> {
