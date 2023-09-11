@@ -91,7 +91,7 @@ public class ApplicationOperationConfigurationRepositoryImpl
 
     public ApplicationOperationConfiguration listByOperationId(String operationId) {
 
-        Bson filter = Filters.eq(DASH_ID, operationId);
+        Bson filter = Filters.eq(DASH_ID, new ObjectId(operationId));
         ServiceOperationCollection serviceOperationCollection = mongoCollection.find(filter).first();
         return serviceOperationCollection == null ? null
             : ServiceOperationMapper.INSTANCE.dtoFromDao(serviceOperationCollection);
