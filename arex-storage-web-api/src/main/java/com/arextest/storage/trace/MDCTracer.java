@@ -1,9 +1,10 @@
 package com.arextest.storage.trace;
 
-import com.arextest.model.mock.MockCategoryType;
-import com.arextest.model.mock.Mocker;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.MDC;
+
+import com.arextest.model.mock.MockCategoryType;
+import com.arextest.model.mock.Mocker;
 
 /**
  * @author jmo
@@ -54,6 +55,11 @@ public final class MDCTracer {
         if (category != null) {
             put(CATEGORY, category.getName());
         }
+    }
+
+    public static void addAppId(String appId) {
+        addAppType();
+        put("appId", appId);
     }
 
     public static void removeCategory() {
