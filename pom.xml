@@ -6,7 +6,7 @@
     <groupId>com.arextest</groupId>
     <artifactId>arex-storage-service</artifactId>
     <packaging>pom</packaging>
-    <version>1.0.22</version>
+    <version>0.0.0-zhitao-dev-SNAPSHOT</version>
 
     <name>${project.groupId}:${project.artifactId}</name>
     <description>Arex-storage is used for data storage.</description>
@@ -353,6 +353,8 @@
             <id>jar-local</id>
             <properties>
                 <packagingType>jar</packagingType>
+                <releases.repo>http://maven.release.ctripcorp.com/nexus/content/repositories/flightrelease</releases.repo>
+                <snapshots.repo>http://maven.release.ctripcorp.com/nexus/content/repositories/flightsnapshot</snapshots.repo>
             </properties>
             <build>
                 <resources>

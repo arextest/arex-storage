@@ -1,6 +1,7 @@
 package com.arextest.config.model.dto.record;
 
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -54,4 +55,6 @@ public class ServiceCollectConfiguration extends AbstractConfiguration {
      * Extended content for user-defined
      */
     private Map<String, String> extendField;
+
+    private List<SerializeSkipInfoConfiguration> serializeSkipInfoList;
 }
