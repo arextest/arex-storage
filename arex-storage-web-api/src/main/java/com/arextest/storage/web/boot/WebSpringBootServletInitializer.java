@@ -1,11 +1,14 @@
 package com.arextest.storage.web.boot;
 
+import com.arextest.common.metrics.PrometheusConfiguration;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.retry.annotation.EnableRetry;
 
+import javax.annotation.PostConstruct;
 import java.awt.*;
 import java.net.URI;
 
@@ -39,5 +42,11 @@ public class WebSpringBootServletInitializer extends SpringBootServletInitialize
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+    @Value("${arex.prometheus.port}")
+    String prometheusPort;
+    @PostConstruct
+    public void init() {
+        PrometheusConfiguration.initMetrics(prometheusPort);
     }
 }
