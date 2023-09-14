@@ -34,3 +34,5 @@ arex:
           allowTimeOfDayTo: '23:59'
           sampleRate: 1
           timeMock: true
+  prometheus:
+    port: 20093
