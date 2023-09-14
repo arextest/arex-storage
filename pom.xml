@@ -353,7 +353,6 @@
             <id>jar-local</id>
             <properties>
                 <packagingType>jar</packagingType>
-                <snapshots.repo>http://maven.release.ctripcorp.com/nexus/content/repositories/flightsnapshot</snapshots.repo>
             </properties>
             <build>
                 <resources>
