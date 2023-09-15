@@ -2,13 +2,12 @@ package com.arextest.storage.beans;
 
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
+
+import javax.annotation.Resource;
 
 import com.arextest.storage.service.mockerhandlers.MockerHandlerFactory;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.bson.Document;
-import org.bson.conversions.Bson;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.http.HttpMessageConverters;
@@ -19,23 +18,24 @@ import org.springframework.core.annotation.Order;
 
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.common.cache.DefaultRedisCacheProvider;
+import com.arextest.config.repository.impl.ApplicationOperationConfigurationRepositoryImpl;
+import com.arextest.config.repository.impl.ApplicationServiceConfigurationRepositoryImpl;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.storage.converter.ZstdJacksonMessageConverter;
 import com.arextest.storage.metric.AgentWorkingMetricService;
 import com.arextest.storage.metric.MetricListener;
 import com.arextest.storage.mock.MockResultProvider;
-import com.arextest.storage.repository.*;
+import com.arextest.storage.repository.ProviderNames;
+import com.arextest.storage.repository.RepositoryProvider;
+import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.impl.mongo.AREXMockerMongoRepositoryProvider;
 import com.arextest.storage.repository.impl.mongo.MongoDbUtils;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.*;
 import com.arextest.storage.web.controller.MockSourceEditionController;
 import com.arextest.storage.web.controller.ScheduleReplayQueryController;
-import com.mongodb.MongoCommandException;
-import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.IndexOptions;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -43,9 +43,11 @@ import lombok.extern.slf4j.Slf4j;
 @EnableConfigurationProperties({StorageConfigurationProperties.class})
 @Slf4j
 public class StorageAutoConfiguration {
+
     private final StorageConfigurationProperties properties;
-    private static final String COLLECTION_SUFFIX = "Mocker";
-    static final String EXPIRATION_TIME_COLUMN_NAME = "expirationTime";
+
+    @Resource
+    IndexsSettingConfiguration indexsSettingConfiguration;
 
     public StorageAutoConfiguration(StorageConfigurationProperties configurationProperties) {
         properties = configurationProperties;
@@ -55,57 +57,10 @@ public class StorageAutoConfiguration {
     @ConditionalOnMissingBean(MongoDatabase.class)
     public MongoDatabase mongoDatabase() {
         MongoDatabase database = MongoDbUtils.create(properties.getMongodbUri());
-        setTtlIndexes(database);
-        ensureMockerQueryIndex(database);
+        indexsSettingConfiguration.setTtlIndexes(database);
+        indexsSettingConfiguration.ensureMockerQueryIndex(database);
+        indexsSettingConfiguration.setIndexAboutConfig(database);
         return database;
-    }
-
-    private void ensureMockerQueryIndex(MongoDatabase database) {
-        for (MockCategoryType category : MockCategoryType.DEFAULTS) {
-            MongoCollection<AREXMocker> collection =
-                database.getCollection(getCollectionName(category), AREXMocker.class);
-            try {
-                Document index = new Document();
-                index.append(AREXMocker.FIELD_RECORD_ID, 1);
-                index.append(AREXMocker.FIELD_CREATION_TIME, -1);
-                collection.createIndex(index);
-            } catch (MongoCommandException e) {
-                LOGGER.info("create index failed for {}", category.getName(), e);
-            }
-
-            try {
-                Document index = new Document();
-                index.append(AREXMocker.FIELD_APP_ID, 1);
-                index.append(AREXMocker.FIELD_OPERATION_NAME, 1);
-                collection.createIndex(index);
-            } catch (MongoCommandException e) {
-                LOGGER.info("create index failed for {}", category.getName(), e);
-            }
-        }
-    }
-
-    private void setTtlIndexes(MongoDatabase mongoDatabase) {
-        for (MockCategoryType category : MockCategoryType.DEFAULTS) {
-            setTTLIndexInMockerCollection(category, mongoDatabase);
-        }
-    }
-
-    private void setTTLIndexInMockerCollection(MockCategoryType category, MongoDatabase mongoDatabase) {
-        String categoryName = getCollectionName(category);
-        MongoCollection<AREXMocker> collection = mongoDatabase.getCollection(categoryName, AREXMocker.class);
-        Bson index = new Document(EXPIRATION_TIME_COLUMN_NAME, 1);
-        IndexOptions indexOptions = new IndexOptions().expireAfter(0L, TimeUnit.SECONDS);
-        try {
-            collection.createIndex(index, indexOptions);
-        } catch (MongoCommandException e) {
-            // ignore
-            collection.dropIndex(index);
-            collection.createIndex(index, indexOptions);
-        }
-    }
-
-    private static String getCollectionName(MockCategoryType category) {
-        return ProviderNames.DEFAULT + category.getName() + COLLECTION_SUFFIX;
     }
 
     @Bean
@@ -140,8 +95,9 @@ public class StorageAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(prefix = "arex.storage", name = "enableDiscoveryEntryPoint", havingValue = "true")
-    public AgentWorkingListener autoDiscoveryEntryPointListener(ServiceRepository serviceRepository,
-        ServiceOperationRepository serviceOperationRepository, CacheProvider cacheProvider) {
+    public AgentWorkingListener autoDiscoveryEntryPointListener(
+        ApplicationServiceConfigurationRepositoryImpl serviceRepository,
+        ApplicationOperationConfigurationRepositoryImpl serviceOperationRepository, CacheProvider cacheProvider) {
         return new AutoDiscoveryEntryPointListener(serviceRepository, serviceOperationRepository, cacheProvider);
     }
 
@@ -176,7 +132,8 @@ public class StorageAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(ScheduleReplayingService.class)
     public ScheduleReplayingService scheduleReplayingService(MockResultProvider mockResultProvider,
-        RepositoryProviderFactory repositoryProviderFactory, ServiceOperationRepository serviceOperationRepository) {
+        RepositoryProviderFactory repositoryProviderFactory,
+        ApplicationOperationConfigurationRepositoryImpl serviceOperationRepository) {
         return new ScheduleReplayingService(mockResultProvider, repositoryProviderFactory, serviceOperationRepository);
     }
 

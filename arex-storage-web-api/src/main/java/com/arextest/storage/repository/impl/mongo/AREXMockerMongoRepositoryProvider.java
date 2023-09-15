@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * The rolling provider used by default,
@@ -91,6 +92,9 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     public Iterable<AREXMocker> queryRecordList(MockCategoryType category, String recordId) {
         MongoCollection<AREXMocker> collectionSource = createOrGetCollection(category);
         Bson recordIdFilter = buildRecordIdFilter(category, recordId);
+        if (Objects.equals(this.providerName, ProviderNames.DEFAULT)) {
+            updateExpirationTime(Collections.singletonList(recordIdFilter), collectionSource);
+        }
         Iterable<AREXMocker> iterable = collectionSource
                 .find(recordIdFilter)
                 .sort(CREATE_TIME_ASCENDING_SORT);
@@ -136,7 +140,9 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         String recordVersion = item == null ? null : item.getRecordVersion();
 
         List<Bson> bsons = withRecordVersionFilters(pagedRequestType, recordVersion);
-        updateExpirationTime(bsons, collectionSource);
+        if (Objects.equals(this.providerName, ProviderNames.DEFAULT)) {
+            updateExpirationTime(bsons, collectionSource);
+        }
 
         Iterable<AREXMocker> iterable = collectionSource
                 .find(Filters.and(bsons))

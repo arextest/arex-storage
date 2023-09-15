@@ -17,9 +17,11 @@
         </RollingFile>
         <NoSql name="Mongo4">
             <ArexMongoDb4 capped="true" collectionSize="104857600"
-                      connection="${sys:arex.storage.mongo.host}"
+                          connection="${sys:arex.storage.mongo.host}"
             />
         </NoSql>
+        <PrometheusAppender name="Prometheus" project="arex-storage">
+        </PrometheusAppender>
     </Appenders>
 
     <Loggers>
@@ -28,6 +30,7 @@
         </Root>
         <Logger name="com.arextest.storage" level="INFO">
             <AppenderRef ref="Mongo4"/>
+            <AppenderRef ref="Prometheus"/>
         </Logger>
     </Loggers>
 </Configuration>

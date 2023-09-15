@@ -7,10 +7,32 @@ spring:
     default-property-inclusion: non_null
   profiles:
     active: docker
-#for report
+# for report
 arex:
   url:
     report:
       agentload: ${arex.report.config.agent.url}/api/config/agent/load
       agentStatus: ${arex.report.config.agent.url}/api/config/agent/agentStatus
       desensitization: ${arex.report.config.agent.url}/api/desensitization/listJar
+  config:
+    # default for application settings
+    application:
+      provider: ''
+      service:
+        provider: ''
+    default:
+      # default for service collect settings
+      schedule:
+        offsetDays: 1
+        sendMaxQps: 20
+        targetEnv: ''
+      # default for replay schedule settings
+      service:
+        collect:
+          allowDayOfWeeks: 127
+          allowTimeOfDayFrom: 00:01
+          allowTimeOfDayTo: '23:59'
+          sampleRate: 1
+          timeMock: true
+  prometheus:
+    port: 20093
