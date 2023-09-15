@@ -41,7 +41,7 @@ public final class MongoDbUtils {
     }
 
     /**
-     * any custom item should be first except pojo¬
+     * any custom item should be first except pojo
      *
      * @return the combinatorial CodecRegistry
      */
