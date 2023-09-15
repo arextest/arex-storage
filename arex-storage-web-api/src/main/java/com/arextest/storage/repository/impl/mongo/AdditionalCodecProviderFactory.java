@@ -24,6 +24,8 @@ public class AdditionalCodecProviderFactory {
 
     private static final String DESENSITIZATION_JAR = "DesensitizationJar";
 
+    private static final String JAR_URL = "jarUrl";
+
     private MongoDatabase mongoDatabase;
 
     public List<CodecProvider> get() {
@@ -50,7 +52,7 @@ public class AdditionalCodecProviderFactory {
         }
         Document document = collection.find().first();
         if (document != null) {
-            return document.getString("jarUrl");
+            return document.getString(JAR_URL);
         }
         return null;
     }
