@@ -1,5 +1,7 @@
 package com.arextest.storage.repository.impl.mongo;
 
+import com.arextest.extension.desensitization.DataDesensitization;
+import com.arextest.extension.desensitization.DefaultDataDesensitization;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.BsonReader;
 import org.bson.BsonWriter;
@@ -8,24 +10,20 @@ import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
 
 import com.arextest.common.utils.SerializationUtils;
-import com.arextest.extension.desensitization.DataDesensitization;
-import com.arextest.storage.beans.GetBeanFromIOC;
-import com.arextest.storage.service.DesensitizeService;
 
 @Slf4j
 final class CompressionCodecImpl<T> implements Codec<T> {
     private final Class<T> target;
 
-    private static DataDesensitization desensitization = null;
-
-    static {
-        DesensitizeService desensitizeService = GetBeanFromIOC.getBean(DesensitizeService.class);
-        String remoteJarUrl = desensitizeService.getRemoteJarUrl();
-        desensitization = desensitizeService.loadDesensitization(remoteJarUrl);
-    }
+    private DataDesensitization desensitization = new DefaultDataDesensitization();
 
     CompressionCodecImpl(Class<T> target) {
         this.target = target;
+    }
+
+    CompressionCodecImpl(Class<T> target, DataDesensitization desensitization) {
+        this.target = target;
+        this.desensitization = desensitization;
     }
 
     @Override
