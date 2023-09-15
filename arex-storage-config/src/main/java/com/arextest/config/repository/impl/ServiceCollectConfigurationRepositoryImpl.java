@@ -68,7 +68,9 @@ public class ServiceCollectConfigurationRepositoryImpl
                 RecordServiceConfigCollection.Fields.allowTimeOfDayFrom,
                 RecordServiceConfigCollection.Fields.allowTimeOfDayTo,
                 RecordServiceConfigCollection.Fields.excludeServiceOperationSet,
-                RecordServiceConfigCollection.Fields.timeMock, RecordServiceConfigCollection.Fields.extendField),
+                RecordServiceConfigCollection.Fields.timeMock,
+                    RecordServiceConfigCollection.Fields.extendField,
+                    RecordServiceConfigCollection.Fields.serializeSkipInfoList),
             Updates.set(RecordServiceConfigCollection.Fields.recordMachineCountLimit,
                 configuration.getRecordMachineCountLimit() == null ? 1 : configuration.getRecordMachineCountLimit())
 
