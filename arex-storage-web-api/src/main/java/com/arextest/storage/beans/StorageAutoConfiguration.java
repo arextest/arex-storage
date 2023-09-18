@@ -30,6 +30,7 @@ import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.impl.mongo.AREXMockerMongoRepositoryProvider;
+import com.arextest.storage.repository.impl.mongo.AdditionalCodecProviderFactory;
 import com.arextest.storage.repository.impl.mongo.MongoDbUtils;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.*;
@@ -55,12 +56,18 @@ public class StorageAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(MongoDatabase.class)
-    public MongoDatabase mongoDatabase() {
-        MongoDatabase database = MongoDbUtils.create(properties.getMongodbUri());
+    public MongoDatabase mongoDatabase(AdditionalCodecProviderFactory additionalCodecProviderFactory) {
+        MongoDatabase database = MongoDbUtils.create(properties.getMongodbUri(), additionalCodecProviderFactory);
         indexsSettingConfiguration.setTtlIndexes(database);
         indexsSettingConfiguration.ensureMockerQueryIndex(database);
         indexsSettingConfiguration.setIndexAboutConfig(database);
         return database;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(AdditionalCodecProviderFactory.class)
+    public AdditionalCodecProviderFactory additionalCodecProviderFactory() {
+        return new AdditionalCodecProviderFactory();
     }
 
     @Bean
@@ -142,12 +149,6 @@ public class StorageAutoConfiguration {
     public MockSourceEditionController mockSourceEditionController(MockSourceEditionService editableService,
         PrepareMockResultService storageCache) {
         return new MockSourceEditionController(editableService, storageCache);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean(DesensitizeService.class)
-    public DesensitizeService desensitizeService() {
-        return new DesensitizeService();
     }
 
     @Bean
