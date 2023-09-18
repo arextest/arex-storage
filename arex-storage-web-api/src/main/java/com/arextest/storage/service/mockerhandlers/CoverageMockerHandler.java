@@ -6,9 +6,8 @@ import com.arextest.model.mock.Mocker;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
+import com.arextest.storage.repository.impl.mongo.CoverageRepository;
 import com.arextest.storage.service.MockSourceEditionService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -21,6 +20,8 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
     private RepositoryProviderFactory repositoryProviderFactory;
     @Resource
     private MockSourceEditionService mockSourceEditionService;
+    @Resource
+    private CoverageRepository coverageRepository;
 
     @Override
     public MockCategoryType getMockCategoryType() {
@@ -38,19 +39,16 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
     public void handle(AREXMocker coverageMocker) {
         try {
             final RepositoryProvider<Mocker> pinedProvider = repositoryProviderFactory.findProvider(ProviderNames.AUTO_PINNED);
-            final RepositoryProvider<Mocker> coverageProvider = repositoryProviderFactory.findProvider(ProviderNames.DEFAULT);
             assert pinedProvider != null;
-            assert coverageProvider != null;
 
-            String newCaseId = coverageMocker.getRecordId();
-            Mocker pinned = pinedProvider.findEntryFromAllType(newCaseId);
+            String incomingCaseId = coverageMocker.getRecordId();
+            Mocker pinned = pinedProvider.findEntryFromAllType(incomingCaseId);
             // Mocker rolling = rollingProvider.findEntryFromAllType(newCaseId);
 
             if (pinned != null) {
-                // todo
-                return;
+                coverageRepository.updatePathKeyByRecordId(incomingCaseId, coverageMocker.getOperationName());
             } else {
-                Mocker oldCoverageMocker = coverageProvider.findOneAndReplace(MockCategoryType.COVERAGE,
+                Mocker oldCoverageMocker = coverageRepository.upsertOne(
                         coverageMocker.getAppId(),
                         coverageMocker.getOperationName(),
                         coverageMocker);
@@ -65,9 +63,9 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
                 }
 
                 // move entry to auto pinned
-                boolean moved = mockSourceEditionService.moveEntryTo(ProviderNames.DEFAULT, newCaseId, ProviderNames.AUTO_PINNED);
+                boolean moved = mockSourceEditionService.moveEntryTo(ProviderNames.DEFAULT, incomingCaseId, ProviderNames.AUTO_PINNED);
                 if (!moved) {
-                    LOGGER.error("move entry to auto pinned failed, caseId:{}", newCaseId);
+                    LOGGER.error("move entry to auto pinned failed, caseId:{}", incomingCaseId);
                 }
             }
         } catch (Exception e) {

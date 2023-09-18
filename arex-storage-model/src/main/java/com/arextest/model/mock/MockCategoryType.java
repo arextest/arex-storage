@@ -51,7 +51,6 @@ public class MockCategoryType {
     }
 
     public static final Set<MockCategoryType> DEFAULTS;
-    public static final Set<MockCategoryType> ENTRY_POINTS;
     public static final MockCategoryType Q_MESSAGE_CONSUMER = MockCategoryType.createEntryPoint("QMessageConsumer");
     public static final MockCategoryType Q_MESSAGE_PRODUCER = MockCategoryType.createDependency("QMessageProducer");
     public static final MockCategoryType SERVLET = MockCategoryType.createEntryPoint("Servlet");
@@ -63,14 +62,6 @@ public class MockCategoryType {
     public static final MockCategoryType DUBBO_PROVIDER = MockCategoryType.createEntryPoint("DubboProvider");
     public static final MockCategoryType DUBBO_CONSUMER = MockCategoryType.createDependency("DubboConsumer");
     public static final MockCategoryType COVERAGE = MockCategoryType.createCoverage("Coverage");
-
-    static {
-        HashSet<MockCategoryType> entryPoints = new HashSet<>();
-        entryPoints.add(Q_MESSAGE_CONSUMER);
-        entryPoints.add(SERVLET);
-        entryPoints.add(DUBBO_PROVIDER);
-        ENTRY_POINTS = entryPoints;
-    }
 
     static {
         HashSet<MockCategoryType> internalSet = new HashSet<>();

@@ -2,6 +2,7 @@ package com.arextest.storage.beans;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.Resource;
 
@@ -89,6 +90,11 @@ public class StorageAutoConfiguration {
         return customCategoryTypes;
     }
 
+    @Bean
+    public Set<MockCategoryType> entryPointTypes(Set<MockCategoryType> categoryTypes) {
+        return categoryTypes.stream().filter(MockCategoryType::isEntryPoint).collect(Collectors.toSet());
+    }
+
     /**
      * used for web api provider how to decode the request before processing. we add a zstd-jackson converter.
      *
@@ -153,19 +159,19 @@ public class StorageAutoConfiguration {
 
     @Bean
     @Order(3)
-    public RepositoryProvider<AREXMocker> autoPinnedMockerProvider(MongoDatabase mongoDatabase) {
-        return new AREXMockerMongoRepositoryProvider(ProviderNames.AUTO_PINNED, mongoDatabase, properties);
+    public RepositoryProvider<AREXMocker> autoPinnedMockerProvider(MongoDatabase mongoDatabase, Set<MockCategoryType> entryPointTypes) {
+        return new AREXMockerMongoRepositoryProvider(ProviderNames.AUTO_PINNED, mongoDatabase, properties, entryPointTypes);
     }
 
     @Bean
     @Order(2)
-    public RepositoryProvider<AREXMocker> pinnedMockerProvider(MongoDatabase mongoDatabase) {
-        return new AREXMockerMongoRepositoryProvider(ProviderNames.PINNED, mongoDatabase, properties);
+    public RepositoryProvider<AREXMocker> pinnedMockerProvider(MongoDatabase mongoDatabase, Set<MockCategoryType> entryPointTypes) {
+        return new AREXMockerMongoRepositoryProvider(ProviderNames.PINNED, mongoDatabase, properties, entryPointTypes);
     }
 
     @Bean
     @Order(1)
-    public RepositoryProvider<AREXMocker> defaultMockerProvider(MongoDatabase mongoDatabase) {
-        return new AREXMockerMongoRepositoryProvider(mongoDatabase, properties);
+    public RepositoryProvider<AREXMocker> defaultMockerProvider(MongoDatabase mongoDatabase, Set<MockCategoryType> entryPointTypes) {
+        return new AREXMockerMongoRepositoryProvider(mongoDatabase, properties, entryPointTypes);
     }
 }

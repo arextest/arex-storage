@@ -15,9 +15,10 @@ import java.util.*;
 @Service
 public class MockSourceEditionService {
     private final RepositoryProviderFactory providerFactory;
-
-    public MockSourceEditionService(RepositoryProviderFactory providerFactory) {
+    private final Set<MockCategoryType> entryPointTypes;
+    public MockSourceEditionService(RepositoryProviderFactory providerFactory, Set<MockCategoryType> entryPointTypes) {
         this.providerFactory = providerFactory;
+        this.entryPointTypes = entryPointTypes;
     }
 
     public <T extends Mocker> boolean add(String providerName, T item) {
@@ -165,8 +166,7 @@ public class MockSourceEditionService {
             LOGGER.warn("Could not found provider for {}", providerName);
             return false;
         }
-        Set<MockCategoryType> categoryTypes = MockCategoryType.ENTRY_POINTS;
-        for (MockCategoryType categoryType : categoryTypes) {
+        for (MockCategoryType categoryType : entryPointTypes) {
             repositoryWriter.removeBy(categoryType, recordId);
         }
         return true;
