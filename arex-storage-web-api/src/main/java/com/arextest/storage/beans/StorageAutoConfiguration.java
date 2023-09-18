@@ -1,5 +1,6 @@
 package com.arextest.storage.beans;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -91,8 +92,15 @@ public class StorageAutoConfiguration {
     }
 
     @Bean
-    public Set<MockCategoryType> entryPointTypes(Set<MockCategoryType> categoryTypes) {
-        return categoryTypes.stream().filter(MockCategoryType::isEntryPoint).collect(Collectors.toSet());
+    public Set<MockCategoryType> entryPointTypes() {
+        Set<MockCategoryType> entryPoints = new LinkedHashSet<>();
+        Set<MockCategoryType> customCategoryTypes = properties.getCategoryTypes();
+        // order matters here, we want all custom entry points to be added first
+        if (CollectionUtils.isNotEmpty(customCategoryTypes)) {
+            entryPoints.addAll(customCategoryTypes.stream().filter(MockCategoryType::isEntryPoint).collect(Collectors.toSet()));
+        }
+        entryPoints.addAll(MockCategoryType.DEFAULTS.stream().filter(MockCategoryType::isEntryPoint).collect(Collectors.toSet()));
+        return entryPoints;
     }
 
     /**
