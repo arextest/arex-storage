@@ -12,6 +12,12 @@ public class ResultCodeGroup {
     @Data
     public static class CategoryGroup {
         private String categoryName;
-        private List<String> recordIds;
+        private List<IdPair> resultIds;
+    }
+
+    @Data
+    public static class IdPair {
+        private String recordId;
+        private String targetId;
     }
 }

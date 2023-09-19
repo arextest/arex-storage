@@ -16,7 +16,6 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.*;
 import com.mongodb.client.result.DeleteResult;
-import com.mongodb.client.result.UpdateResult;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -288,6 +287,21 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         DeleteResult deleteResult = collectionSource.deleteMany(Filters.and(Filters.eq(OPERATION_COLUMN_NAME,operationName), Filters.eq(APP_ID_COLUMN_NAME,appId)));
         return deleteResult.getDeletedCount();
     }
+
+    @Override
+    public void updateResponse(MockCategoryType categoryType, String id, Mocker.Target response) {
+        MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
+        collectionSource.updateOne(Filters.eq(PRIMARY_KEY_COLUMN_NAME, id),
+                Updates.set(AREXMocker.Fields.targetResponse, response));
+    }
+
+    @Override
+    public void updateRequest(MockCategoryType categoryType, String recordId, Mocker.Target request) {
+        MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
+        collectionSource.updateOne(Filters.eq(RECORD_ID_COLUMN_NAME, recordId),
+                Updates.set(AREXMocker.Fields.targetRequest, request));
+    }
+
     @Override
     public boolean update(AREXMocker value) {
         Bson primaryKeyFilter = buildPrimaryKeyFilter(value);
