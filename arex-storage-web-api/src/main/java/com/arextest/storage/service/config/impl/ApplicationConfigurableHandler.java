@@ -1,19 +1,18 @@
 package com.arextest.storage.service.config.impl;
 
-import java.util.Collections;
-import java.util.List;
-
-import javax.annotation.Resource;
-
 import com.arextest.config.model.dto.StatusType;
 import com.arextest.config.model.dto.application.ApplicationConfiguration;
 import com.arextest.config.model.dto.application.ApplicationDescription;
 import com.arextest.config.repository.ConfigRepositoryProvider;
-import com.arextest.storage.service.config.provider.ApplicationDescriptionProvider;
 import com.arextest.storage.service.config.AbstractConfigurableHandler;
+import com.arextest.storage.service.config.provider.ApplicationDescriptionProvider;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.Resource;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author jmo
@@ -50,6 +49,7 @@ class ApplicationConfigurableHandler extends AbstractConfigurableHandler<Applica
     @Override
     protected List<ApplicationConfiguration> createFromGlobalDefault(String appId) {
         ApplicationConfiguration applicationConfiguration = new ApplicationConfiguration();
+        applicationConfiguration.setAppName(appId);
         applicationConfiguration.setAppId(appId);
         applicationConfiguration.setAgentVersion(StringUtils.EMPTY);
         applicationConfiguration.setAgentExtVersion(StringUtils.EMPTY);

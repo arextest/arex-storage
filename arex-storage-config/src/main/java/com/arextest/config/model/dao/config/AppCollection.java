@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.experimental.FieldNameConstants;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @FieldNameConstants
@@ -34,6 +36,7 @@ public class AppCollection extends BaseEntity {
     private String category;
     @NonNull
     private String owner;
+    private List<String> owners;
     @NonNull
     private String organizationName;
     @NonNull
