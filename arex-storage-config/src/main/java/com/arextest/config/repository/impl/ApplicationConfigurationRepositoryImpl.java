@@ -61,7 +61,9 @@ public class ApplicationConfigurationRepositoryImpl implements ConfigRepositoryP
                 bulkUpdateOps.add(new UpdateManyModel<>(filter2, update));
             }
         }
-        BulkWriteResult result = mongoCollection.bulkWrite(bulkUpdateOps);
+        if (bulkUpdateOps.size() > 0) {
+            BulkWriteResult result = mongoCollection.bulkWrite(bulkUpdateOps);
+        }
     }
 
     @Override

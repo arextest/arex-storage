@@ -12,7 +12,7 @@ import java.util.Random;
  */
 @Slf4j
 public class RandomUtils {
-    private static final int ID_LENGTH = 20;
+    private static final int ID_LENGTH = 16;
 
     public static String generateRandomId(String identifier) {
         String sourceString = System.currentTimeMillis() + "-" + new Random().nextInt() + "-" + identifier;
@@ -22,9 +22,6 @@ public class RandomUtils {
             StringBuilder sb = new StringBuilder();
             for (byte b : bytes) {
                 String hexString = Integer.toHexString(b & 0xff);
-                if (hexString.length() == 1) {
-                    sb.append("0");
-                }
                 sb.append(hexString);
             }
             return sb.substring(0, ID_LENGTH);
