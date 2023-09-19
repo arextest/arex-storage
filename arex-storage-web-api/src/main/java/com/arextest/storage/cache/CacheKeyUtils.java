@@ -39,6 +39,10 @@ public final class CacheKeyUtils {
         return buildSourceKey(MockResultType.RECORD_RESULT, category, recordIdBytes);
     }
 
+    public static byte[] buildRecordOperationKey(MockCategoryType category, String recordId, String operation) {
+        return buildSourceKey(MockResultType.RECORD_WITH_OPERATION, category, toUtf8Bytes(recordId + operation));
+    }
+
     public static byte[] buildConsumeKey(MockCategoryType category, byte[] recordIdBytes, byte[] replayIdBytes,
                                          byte[] mockKeyBytes) {
         byte[] value = categoryBytes(MockResultType.CONSUME_RESULT, category);

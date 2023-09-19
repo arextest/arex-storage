@@ -29,7 +29,12 @@ public enum MockResultType {
     /**
      * the id of record mock
      */
-    RECORD_INSTANCE_ID(4);
+    RECORD_INSTANCE_ID(4),
+    /**
+     * the record data with operation
+     */
+    RECORD_WITH_OPERATION(5),
+    ;
 
 
     @Getter

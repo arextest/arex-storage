@@ -7,7 +7,6 @@ import com.arextest.storage.mock.MockResultContext;
 import com.arextest.storage.mock.MockResultMatchStrategy;
 import com.arextest.storage.mock.MockResultProvider;
 import com.arextest.storage.model.RecordEnvType;
-import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.RepositoryReader;
@@ -134,10 +133,10 @@ public class AgentWorkingService {
                 result = mockResultProvider.getRecordResult(recordItem, context);
             }
             if (result == null) {
-                if (MockResultMatchStrategy.STRICT_MATCH == context.getMockStrategy() ||
-                        (MockResultMatchStrategy.BREAK_RECORDED_COUNT == context.getMockStrategy() && context.isLastOfResult())) {
+                if (MockResultMatchStrategy.STRICT_MATCH == context.getMockStrategy()) {
                     return ZstdJacksonSerializer.EMPTY_INSTANCE;
                 }
+                
                 mockResultProvider.putReplayResult(recordItem);
                 LOGGER.info("reload fetch replay mock record empty from cache,record id:{},replay id:{}, " +
                                 "reloadResult:{}",
