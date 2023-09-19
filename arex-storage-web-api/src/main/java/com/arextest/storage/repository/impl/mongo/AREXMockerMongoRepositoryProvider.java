@@ -43,7 +43,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     private static final String APP_ID_COLUMN_NAME = "appId";
     private static final String ENV_COLUMN_NAME = "recordEnvironment";
     private static final String OPERATION_COLUMN_NAME = "operationName";
-    private static final String COLLECTION_PREFIX = "Mocker";
+    protected static final String COLLECTION_PREFIX = "Mocker";
     private static final String PLACE_HOLDER = "$";
     private static final String VALUE_COLUMN = "value";
 
@@ -81,7 +81,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         this.entryPointTypes = entryPointTypes;
     }
 
-    private MongoCollection<AREXMocker> createOrGetCollection(MockCategoryType category) {
+    MongoCollection<AREXMocker> createOrGetCollection(MockCategoryType category) {
         String categoryName = this.getProviderName() + category.getName() + COLLECTION_PREFIX;
         return mongoDatabase.getCollection(categoryName, this.targetClassType);
     }

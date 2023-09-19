@@ -6,10 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 @Getter
 @Setter
@@ -64,16 +61,17 @@ public class MockCategoryType {
     public static final MockCategoryType COVERAGE = MockCategoryType.createCoverage("Coverage");
 
     static {
-        HashSet<MockCategoryType> internalSet = new HashSet<>();
-        internalSet.add(Q_MESSAGE_CONSUMER);
-        internalSet.add(Q_MESSAGE_PRODUCER);
+        Set<MockCategoryType> internalSet = new LinkedHashSet<>();
         internalSet.add(SERVLET);
+        internalSet.add(DUBBO_PROVIDER);
+        internalSet.add(Q_MESSAGE_CONSUMER);
+
+        internalSet.add(Q_MESSAGE_PRODUCER);
         internalSet.add(DATABASE);
         internalSet.add(HTTP_CLIENT);
         internalSet.add(CONFIG_FILE);
         internalSet.add(DYNAMIC_CLASS);
         internalSet.add(REDIS);
-        internalSet.add(DUBBO_PROVIDER);
         internalSet.add(DUBBO_CONSUMER);
         DEFAULTS = Collections.unmodifiableSet(internalSet);
     }

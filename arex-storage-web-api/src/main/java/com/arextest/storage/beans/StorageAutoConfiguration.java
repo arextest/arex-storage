@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Resource;
 
+import com.arextest.storage.repository.impl.mongo.AutoPinedMockerRepository;
 import com.arextest.storage.service.mockerhandlers.MockerHandlerFactory;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -97,9 +98,9 @@ public class StorageAutoConfiguration {
         Set<MockCategoryType> customCategoryTypes = properties.getCategoryTypes();
         // order matters here, we want all custom entry points to be added first
         if (CollectionUtils.isNotEmpty(customCategoryTypes)) {
-            entryPoints.addAll(customCategoryTypes.stream().filter(MockCategoryType::isEntryPoint).collect(Collectors.toSet()));
+            customCategoryTypes.stream().filter(MockCategoryType::isEntryPoint).forEach(entryPoints::add);
         }
-        entryPoints.addAll(MockCategoryType.DEFAULTS.stream().filter(MockCategoryType::isEntryPoint).collect(Collectors.toSet()));
+        MockCategoryType.DEFAULTS.stream().filter(MockCategoryType::isEntryPoint).forEach(entryPoints::add);
         return entryPoints;
     }
 
@@ -168,7 +169,7 @@ public class StorageAutoConfiguration {
     @Bean
     @Order(3)
     public RepositoryProvider<AREXMocker> autoPinnedMockerProvider(MongoDatabase mongoDatabase, Set<MockCategoryType> entryPointTypes) {
-        return new AREXMockerMongoRepositoryProvider(ProviderNames.AUTO_PINNED, mongoDatabase, properties, entryPointTypes);
+        return new AutoPinedMockerRepository(mongoDatabase, properties, entryPointTypes);
     }
 
     @Bean
