@@ -34,7 +34,6 @@ public class AppCollection extends BaseEntity {
     private String description;
     @NonNull
     private String category;
-    @NonNull
     private String owner;
     private Set<String> owners;
     @NonNull

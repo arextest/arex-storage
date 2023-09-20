@@ -34,6 +34,14 @@ public class ApplicationService {
         applicationConfiguration.setRecordedCaseCount(0);
         applicationConfiguration.setStatus(StatusType.RECORD.getMask() | StatusType.REPLAY.getMask());
         applicationConfiguration.setOwners(request.getOwners());
+
+        applicationConfiguration.setOrganizationName("unknown organization name");
+        applicationConfiguration.setGroupName("unknown group name");
+        applicationConfiguration.setGroupId("unknown group id");
+        applicationConfiguration.setOrganizationId("unknown organization id");
+        applicationConfiguration.setDescription("unknown description");
+        applicationConfiguration.setCategory("unknown category");
+
         String appId = RandomUtils.generateRandomId(request.getAppName());
         applicationConfiguration.setAppId(appId);
 
@@ -53,8 +61,8 @@ public class ApplicationService {
         if (request.getAppName() != null) {
             applicationConfiguration.setAppName(request.getAppName());
         }
-        if (request.getAppOwners() != null) {
-            applicationConfiguration.setOwners(request.getAppOwners());
+        if (request.getOwners() != null) {
+            applicationConfiguration.setOwners(request.getOwners());
         }
         return applicationConfigurationRepository.update(applicationConfiguration);
     }

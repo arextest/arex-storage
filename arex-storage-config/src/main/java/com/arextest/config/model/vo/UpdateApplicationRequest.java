@@ -14,5 +14,5 @@ public class UpdateApplicationRequest {
     @NotNull
     private String appId;
     private String appName;
-    private Set<String> appOwners;
+    private Set<String> owners;
 }
