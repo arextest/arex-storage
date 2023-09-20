@@ -31,7 +31,9 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     @Value("${arex.storage.cache.expired.seconds:7200}")
     private long cacheExpiredSeconds;
     private static final int EMPTY_SIZE = 0;
-    private static final int SINGLE_RECORD_SIZE = 1;
+    private static final String CALL_REPLAY_MAX = "callReplayMax";
+    private static final String DUBBO_PREFIX = "Dubbo";
+
     @Resource
     private CacheProvider redisCacheProvider;
     @Resource
@@ -39,40 +41,78 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     @Resource
     private MatchKeyFactory matchKeyFactory;
 
+    /**
+     * 1. Store recorded data and matching keys in redis
+     * 2. The mock type associated with dubbo, which needs to record the maximum number of replays
+     */
     @Override
     public <T extends Mocker> boolean putRecordResult(MockCategoryType category, String recordId, Iterable<T> values) {
         final byte[] recordIdBytes = CacheKeyUtils.toUtf8Bytes(recordId);
         Iterator<T> valueIterator = values.iterator();
         int size = 0;
         byte[] recordKey = CacheKeyUtils.buildRecordKey(category, recordIdBytes);
-        while (valueIterator.hasNext()) {
-            final T value = valueIterator.next();
-            List<byte[]> mockKeyList = matchKeyFactory.build(value);
-            final byte[] zstdValue = serializer.serialize(value);
-            byte[] valueRefKey = sequencePut(recordKey, zstdValue);
-            if (valueRefKey == null) {
-                continue;
+
+        boolean shouldRecordCallReplayMax = shouldRecordCallReplayMax(category);
+        // Records the maximum number of operations corresponding to recorded data
+        if (shouldRecordCallReplayMax) {
+            List<T> mockList = new ArrayList<>();
+            // Obtain the number of the same interfaces in recorded data
+            while (valueIterator.hasNext()) {
+                T value = valueIterator.next();
+                byte[] recordOperationKey = CacheKeyUtils.buildRecordOperationKey(category, recordId, value.getOperationName());
+                nextSequence(recordOperationKey);
+                mockList.add(value);
             }
-            for (int i = 0; i < mockKeyList.size(); i++) {
-                byte[] mockKeyBytes = mockKeyList.get(i);
-                byte[] key = CacheKeyUtils.buildRecordKey(category, recordIdBytes, mockKeyBytes);
-                byte[] sequenceKey = sequencePut(key, valueRefKey);
-                if (sequenceKey != null) {
-                    size++;
+
+            for (T value : mockList) {
+                // Place the maximum number of playback times corresponding to the operations into the recorded data
+                byte[] recordOperationKey = CacheKeyUtils.buildRecordOperationKey(category, recordId, value.getOperationName());
+                int count = resultCount(recordOperationKey);
+                Mocker.Target targetResponse = value.getTargetResponse();
+                if (targetResponse != null) {
+                    targetResponse.setAttribute(CALL_REPLAY_MAX, count);
                 }
+                size = sequencePutRecordData(category, recordIdBytes, size, recordKey, value);
             }
-            // if category type is the type to be compared.associate the mock instance id with the related mock key.
-            if (shouldUseIdOfInstanceToMockResult(category)) {
-                putRecordInstanceId(valueRefKey, value.getId());
-                putMockKeyListWithInstanceId(value.getId(), mockKeyList);
+        } else {
+            while (valueIterator.hasNext()) {
+                T value = valueIterator.next();
+                size = sequencePutRecordData(category, recordIdBytes, size, recordKey, value);
             }
         }
         LOGGER.info("put record result to cache size:{} for category:{},record id:{}", size, category, recordId);
         return size > EMPTY_SIZE;
     }
 
+    private <T extends Mocker> int sequencePutRecordData(MockCategoryType category, byte[] recordIdBytes, int size, byte[] recordKey, T value) {
+        List<byte[]> mockKeyList = matchKeyFactory.build(value);
+        final byte[] zstdValue = serializer.serialize(value);
+        byte[] valueRefKey = sequencePut(recordKey, zstdValue);
+        if (valueRefKey == null) {
+            return size;
+        }
+        for (int i = 0; i < mockKeyList.size(); i++) {
+            byte[] mockKeyBytes = mockKeyList.get(i);
+            byte[] key = CacheKeyUtils.buildRecordKey(category, recordIdBytes, mockKeyBytes);
+            byte[] sequenceKey = sequencePut(key, valueRefKey);
+            if (sequenceKey != null) {
+                size++;
+            }
+        }
+        // if category type is the type to be compared.associate the mock instance id with the related mock key.
+        if (shouldUseIdOfInstanceToMockResult(category)) {
+            putRecordInstanceId(valueRefKey, value.getId());
+            putMockKeyListWithInstanceId(value.getId(), mockKeyList);
+        }
+        return size;
+    }
+
     private boolean shouldUseIdOfInstanceToMockResult(MockCategoryType category) {
         return !category.isEntryPoint() && !category.isSkipComparison();
+    }
+
+    private boolean shouldRecordCallReplayMax(MockCategoryType category) {
+        return shouldUseIdOfInstanceToMockResult(category) && category.getName().startsWith(DUBBO_PREFIX);
     }
 
     @Override
