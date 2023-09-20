@@ -27,14 +27,6 @@ public class ApplicationService {
     public AddApplicationResponse addApplication(AddApplicationRequest request) {
         AddApplicationResponse response = new AddApplicationResponse();
 
-        List<ApplicationConfiguration> applicationConfigurationList =
-            applicationConfigurationRepository.listByName(request.getAppName());
-        if (CollectionUtils.isNotEmpty(applicationConfigurationList)) {
-            response.setSuccess(false);
-            response.setMsg("Duplicate appName!");
-            return response;
-        }
-
         ApplicationConfiguration applicationConfiguration = new ApplicationConfiguration();
         applicationConfiguration.setAppName(request.getAppName());
         applicationConfiguration.setAgentVersion(StringUtils.EMPTY);
@@ -53,7 +45,7 @@ public class ApplicationService {
 
     public boolean modifyApplication(UpdateApplicationRequest request) {
         List<ApplicationConfiguration> applicationConfigurationList =
-            applicationConfigurationRepository.listByName(request.getAppId());
+            applicationConfigurationRepository.listBy(request.getAppId());
         if (CollectionUtils.isEmpty(applicationConfigurationList)) {
             return false;
         }

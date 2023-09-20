@@ -3,7 +3,7 @@ package com.arextest.config.model.vo;
 import lombok.Data;
 
 import javax.validation.constraints.NotNull;
-import java.util.List;
+import java.util.Set;
 
 /**
  * @author wildeslam.
@@ -14,5 +14,5 @@ public class UpdateApplicationRequest {
     @NotNull
     private String appId;
     private String appName;
-    private List<String> appOwners;
+    private Set<String> appOwners;
 }

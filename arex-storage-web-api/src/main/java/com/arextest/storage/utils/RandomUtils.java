@@ -13,9 +13,10 @@ import java.util.Random;
 @Slf4j
 public class RandomUtils {
     private static final int ID_LENGTH = 16;
+    private static final Random RANDOM = new Random();
 
     public static String generateRandomId(String identifier) {
-        String sourceString = System.currentTimeMillis() + "-" + new Random().nextInt() + "-" + identifier;
+        String sourceString = System.currentTimeMillis() + "-" + RANDOM.nextInt() + "-" + identifier;
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             byte[] bytes = md.digest((sourceString).getBytes());

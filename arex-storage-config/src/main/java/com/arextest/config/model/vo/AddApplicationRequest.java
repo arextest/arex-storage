@@ -4,7 +4,7 @@ import lombok.Data;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-import java.util.List;
+import java.util.Set;
 
 /**
  * @author wildeslam.
@@ -15,5 +15,5 @@ public class AddApplicationRequest {
     @NotNull
     private String appName;
     @NotEmpty
-    private List<String> owners;
+    private Set<String> owners;
 }

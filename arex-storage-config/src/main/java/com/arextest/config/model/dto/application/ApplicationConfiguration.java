@@ -6,7 +6,7 @@ import com.arextest.config.model.dto.FeatureType;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
+import java.util.Set;
 
 /**
  * @author jmo
@@ -35,7 +35,7 @@ public class ApplicationConfiguration extends AbstractConfiguration implements A
     private String category;
     @Deprecated
     private String owner;
-    private List<String> owners;
+    private Set<String> owners;
     private String organizationName;
     private Integer recordedCaseCount;
     private String defaultFormatter;
