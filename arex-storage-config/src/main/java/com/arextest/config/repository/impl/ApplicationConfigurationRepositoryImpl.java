@@ -96,20 +96,6 @@ public class ApplicationConfigurationRepositoryImpl implements ConfigRepositoryP
         return applicationConfigurations;
     }
 
-    public List<ApplicationConfiguration> listByName(String appName) {
-
-        Bson filter = Filters.eq(AppCollection.Fields.appName, appName);
-        List<ApplicationConfiguration> applicationConfigurations = new ArrayList<>();
-        try (MongoCursor<AppCollection> cursor = mongoCollection.find(filter).iterator()) {
-            while (cursor.hasNext()) {
-                AppCollection document = cursor.next();
-                ApplicationConfiguration dto = AppMapper.INSTANCE.dtoFromDao(document);
-                applicationConfigurations.add(dto);
-            }
-        }
-        return applicationConfigurations;
-    }
-
     @Override
     public boolean update(ApplicationConfiguration configuration) {
 

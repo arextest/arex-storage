@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.validation.Valid;
+
 /**
  * @author wildeslam.
  * @create 2023/9/15 14:20
@@ -28,14 +30,14 @@ public class ApplicationController {
 
     @PostMapping("/add")
     @ResponseBody
-    public Response load(@RequestBody AddApplicationRequest request) {
+    public Response load(@RequestBody @Valid AddApplicationRequest request) {
         AddApplicationResponse response = applicationService.addApplication(request);
         return ResponseUtils.successResponse(response);
     }
 
     @PostMapping("/modify")
     @ResponseBody
-    public Response modify(@RequestBody UpdateApplicationRequest request) {
+    public Response modify(@RequestBody @Valid UpdateApplicationRequest request) {
         return ResponseUtils.successResponse(applicationService.modifyApplication(request));
     }
 }
