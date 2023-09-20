@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Random;
+import java.security.SecureRandom;
 
 /**
  * @author wildeslam.
@@ -13,12 +13,12 @@ import java.util.Random;
 @Slf4j
 public class RandomUtils {
     private static final int ID_LENGTH = 16;
-    private static final Random RANDOM = new Random();
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     public static String generateRandomId(String identifier) {
         String sourceString = System.currentTimeMillis() + "-" + RANDOM.nextInt() + "-" + identifier;
         try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
+            MessageDigest md = MessageDigest.getInstance("SHA-512");
             byte[] bytes = md.digest((sourceString).getBytes());
             StringBuilder sb = new StringBuilder();
             for (byte b : bytes) {
