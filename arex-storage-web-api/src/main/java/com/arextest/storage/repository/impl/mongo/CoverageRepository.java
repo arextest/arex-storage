@@ -26,10 +26,12 @@ public class CoverageRepository {
                 AREXMocker.class);
     }
 
-    public AREXMocker upsertOne(String appId, String pathKey, AREXMocker value) {
-        Bson filters = Filters.and(Filters.eq(AREXMocker.Fields.appId, appId), Filters.eq(AREXMocker.Fields.operationName, pathKey));
+    public AREXMocker upsertOne(AREXMocker value) {
+        Bson filters = Filters.and(Filters.eq(AREXMocker.Fields.appId, value.getAppId()), Filters.eq(AREXMocker.Fields.operationName, value.getOperationName()));
         // update record id, todo expire
-        Bson update = Updates.combine(Updates.set(AREXMocker.Fields.recordId, value.getRecordId()), Updates.setOnInsert("_id", new ObjectId().toString()));
+        Bson update = Updates.combine(Updates.set(AREXMocker.Fields.recordId, value.getRecordId()),
+                Updates.set(AREXMocker.Fields.targetRequest, value.getTargetRequest()),
+                Updates.setOnInsert("_id", new ObjectId().toString()));
         FindOneAndUpdateOptions opt = new FindOneAndUpdateOptions();
         opt.upsert(true);
         try {

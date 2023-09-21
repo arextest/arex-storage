@@ -54,10 +54,7 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
             if (pinned != null) {
                 coverageRepository.updatePathKeyByRecordId(incomingCaseId, coverageMocker.getOperationName());
             } else {
-                Mocker oldCoverageMocker = coverageRepository.upsertOne(
-                        coverageMocker.getAppId(),
-                        coverageMocker.getOperationName(),
-                        coverageMocker);
+                Mocker oldCoverageMocker = coverageRepository.upsertOne(coverageMocker);
 
                 // there is an existing AutoPinnedMocker with the same key, delete the related AutoPinnedMocker
                 if (oldCoverageMocker != null) {
