@@ -74,10 +74,6 @@ public class MockSourceEditionService {
             LOGGER.warn("The appId is empty");
             return false;
         }
-        if (StringUtils.isBlank(operationName)) {
-            LOGGER.warn("The operationName is empty");
-            return false;
-        }
         if (repositoryWriter == null) {
             LOGGER.warn("Could not found provider for {}", providerName);
             return false;
