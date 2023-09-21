@@ -22,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -103,10 +105,12 @@ public class ScheduleReplayQueryController {
             PagedResponseType responseType = new PagedResponseType();
             if (requestType.getSourceProvider().equals(ProviderNames.DEFAULT)) {
                 requestType.setSourceProvider(ProviderNames.AUTO_PINNED);
-                List<AREXMocker> res = scheduleReplayingService.queryByRange(requestType);
-
+                List<AREXMocker> res = new ArrayList<>();
+                Iterator<AREXMocker> iter = scheduleReplayingService.queryByRange(requestType).iterator();
+                iter.forEachRemaining(res::add);
                 requestType.setSourceProvider(ProviderNames.DEFAULT);
-                res.addAll(scheduleReplayingService.queryByRange(requestType));
+                iter = scheduleReplayingService.queryByRange(requestType).iterator();
+                iter.forEachRemaining(res::add);
                 responseType.setRecords(res);
             } else {
                 responseType.setRecords(scheduleReplayingService.queryByRange(requestType));
