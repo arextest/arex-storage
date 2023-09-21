@@ -136,6 +136,9 @@ public class ScheduleReplayQueryController {
         if (requestType.getBeginTime() >= requestType.getEndTime()) {
             return ResponseUtils.parameterInvalidResponse("The beginTime >= endTime from requested");
         }
+        if (StringUtils.isEmpty(requestType.getSourceProvider())) {
+            requestType.setSourceProvider(ProviderNames.DEFAULT);
+        }
         return null;
     }
 
