@@ -1,5 +1,6 @@
 package com.arextest.storage.service.mockerhandlers;
 
+import com.arextest.common.cache.CacheProvider;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
@@ -23,6 +24,8 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
     private MockSourceEditionService mockSourceEditionService;
     @Resource
     private CoverageRepository coverageRepository;
+    @Resource
+    private CacheProvider cacheProvider;
 
     @Override
     public MockCategoryType getMockCategoryType() {
@@ -54,25 +57,36 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
             if (pinned != null) {
                 coverageRepository.updatePathKeyByRecordId(incomingCaseId, coverageMocker.getOperationName());
             } else {
-                Mocker oldCoverageMocker = coverageRepository.upsertOne(coverageMocker);
+                boolean locked = cacheProvider.putIfAbsent((coverageMocker.getAppId() + coverageMocker.getOperationName()).getBytes(),
+                        60 * 24 * 12,
+                        coverageMocker.getRecordId().getBytes());
 
-                // there is an existing AutoPinnedMocker with the same key, delete the related AutoPinnedMocker
-                if (oldCoverageMocker != null) {
-                    String oldCaseId = oldCoverageMocker.getRecordId();
-                    boolean removed = mockSourceEditionService.removeEntry(ProviderNames.AUTO_PINNED, oldCaseId);
-                    if (!removed) {
-                        LOGGER.error("remove old auto pinned failed, caseId:{}", oldCaseId);
-                    }
-                }
-
-                // move entry to auto pinned
-                boolean moved = mockSourceEditionService.moveEntryTo(ProviderNames.DEFAULT, incomingCaseId, ProviderNames.AUTO_PINNED);
-                if (!moved) {
-                    LOGGER.error("move entry to auto pinned failed, caseId:{}", incomingCaseId);
+                if (locked) {
+                    transferEntry(coverageMocker, incomingCaseId);
+                } else {
+                    mockSourceEditionService.removeEntry(ProviderNames.AUTO_PINNED, incomingCaseId);
                 }
             }
         } catch (Exception e) {
             LOGGER.error("CoverageMockerHandler handle error", e);
+        }
+    }
+
+    private void transferEntry(AREXMocker coverageMocker, String incomingCaseId) {
+        Mocker oldCoverageMocker = coverageRepository.upsertOne(coverageMocker);
+        // there is an existing AutoPinnedMocker with the same key, delete the related AutoPinnedMocker
+        if (oldCoverageMocker != null) {
+            String oldCaseId = oldCoverageMocker.getRecordId();
+            boolean removed = mockSourceEditionService.removeEntry(ProviderNames.AUTO_PINNED, oldCaseId);
+            if (!removed) {
+                LOGGER.error("remove old auto pinned failed, caseId:{}", oldCaseId);
+            }
+        }
+
+        // move entry to auto pinned
+        boolean moved = mockSourceEditionService.moveEntryTo(ProviderNames.DEFAULT, incomingCaseId, ProviderNames.AUTO_PINNED);
+        if (!moved) {
+            LOGGER.error("move entry to auto pinned failed, caseId:{}", incomingCaseId);
         }
     }
 }
