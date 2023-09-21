@@ -101,6 +101,17 @@ public class ScheduleReplayQueryController {
 
         try {
             PagedResponseType responseType = new PagedResponseType();
+            if (requestType.getSourceProvider().equals(ProviderNames.DEFAULT)) {
+                requestType.setSourceProvider(ProviderNames.AUTO_PINNED);
+                List<AREXMocker> res = scheduleReplayingService.queryByRange(requestType);
+
+                requestType.setSourceProvider(ProviderNames.DEFAULT);
+                res.addAll(scheduleReplayingService.queryByRange(requestType));
+                responseType.setRecords(res);
+            } else {
+                responseType.setRecords(scheduleReplayingService.queryByRange(requestType));
+            }
+
             responseType.setRecords(scheduleReplayingService.queryEntryPointByRange(requestType));
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
@@ -155,6 +166,12 @@ public class ScheduleReplayQueryController {
         try {
             QueryCaseCountResponseType responseType = new QueryCaseCountResponseType();
             long countResult = scheduleReplayingService.countByRange(requestType);
+            // combine count of autoPined & rolling
+            if (ProviderNames.DEFAULT.equals(requestType.getSourceProvider())) {
+                requestType.setSourceProvider(ProviderNames.AUTO_PINNED);
+                countResult += scheduleReplayingService.countByRange(requestType);
+            }
+
             responseType.setCount(countResult);
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
