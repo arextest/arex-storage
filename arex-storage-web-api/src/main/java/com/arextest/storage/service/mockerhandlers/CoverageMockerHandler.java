@@ -64,7 +64,7 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
                 if (locked) {
                     transferEntry(coverageMocker, incomingCaseId);
                 } else {
-                    mockSourceEditionService.removeEntry(ProviderNames.AUTO_PINNED, incomingCaseId);
+                    mockSourceEditionService.removeEntry(ProviderNames.DEFAULT, incomingCaseId);
                 }
             }
         } catch (Exception e) {
