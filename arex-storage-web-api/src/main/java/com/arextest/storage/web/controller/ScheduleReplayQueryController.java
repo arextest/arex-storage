@@ -106,17 +106,15 @@ public class ScheduleReplayQueryController {
             if (requestType.getSourceProvider().equals(ProviderNames.DEFAULT)) {
                 requestType.setSourceProvider(ProviderNames.AUTO_PINNED);
                 List<AREXMocker> res = new ArrayList<>();
-                Iterator<AREXMocker> iter = scheduleReplayingService.queryByRange(requestType).iterator();
+                Iterator<AREXMocker> iter = scheduleReplayingService.queryEntryPointByRange(requestType).iterator();
                 iter.forEachRemaining(res::add);
                 requestType.setSourceProvider(ProviderNames.DEFAULT);
                 iter = scheduleReplayingService.queryByRange(requestType).iterator();
                 iter.forEachRemaining(res::add);
                 responseType.setRecords(res);
             } else {
-                responseType.setRecords(scheduleReplayingService.queryByRange(requestType));
+                responseType.setRecords(scheduleReplayingService.queryEntryPointByRange(requestType));
             }
-
-            responseType.setRecords(scheduleReplayingService.queryEntryPointByRange(requestType));
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
             LOGGER.error("error:{},request:{}", throwable.getMessage(), requestType);
