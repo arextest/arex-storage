@@ -1,33 +1,37 @@
 package com.arextest.config.repository.impl;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
-
-import org.apache.commons.lang3.StringUtils;
-import org.bson.conversions.Bson;
-
 import com.arextest.config.mapper.AppMapper;
 import com.arextest.config.model.dao.config.AppCollection;
 import com.arextest.config.model.dto.application.ApplicationConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
 import com.arextest.config.utils.MongoHelper;
+import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Sorts;
+import com.mongodb.client.model.UpdateManyModel;
 import com.mongodb.client.model.Updates;
+import com.mongodb.client.model.WriteModel;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
+import org.apache.commons.lang3.StringUtils;
+import org.bson.conversions.Bson;
+import org.bson.types.ObjectId;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class ApplicationConfigurationRepositoryImpl implements ConfigRepositoryProvider<ApplicationConfiguration> {
     private MongoDatabase mongoDatabase;
 
     private MongoCollection<AppCollection> mongoCollection;
+
+    private static final String UNKNOWN_APP_NAME = "unknown app name";
 
     @Resource
     private List<ConfigRepositoryProvider> configRepositoryProviders;
@@ -39,6 +43,27 @@ public class ApplicationConfigurationRepositoryImpl implements ConfigRepositoryP
     @PostConstruct
     private void init() {
         this.mongoCollection = mongoDatabase.getCollection(AppCollection.DOCUMENT_NAME, AppCollection.class);
+        // flush appName
+        flushAppName();
+    }
+
+    private void flushAppName() {
+        Bson filter = Filters.eq(AppCollection.Fields.appName, UNKNOWN_APP_NAME);
+        List<WriteModel<AppCollection>> bulkUpdateOps = new ArrayList<>();
+        try (MongoCursor<AppCollection> cursor = mongoCollection.find(filter).iterator()) {
+            while (cursor.hasNext()) {
+                AppCollection document = cursor.next();
+                document.setAppName(document.getAppId());
+
+                Bson filter2 = Filters.eq(DASH_ID, new ObjectId(document.getId()));
+                Bson update = Updates.combine(Arrays.asList(MongoHelper.getUpdate(),
+                        MongoHelper.getSpecifiedProperties(document, AppCollection.Fields.appName)));
+                bulkUpdateOps.add(new UpdateManyModel<>(filter2, update));
+            }
+        }
+        if (bulkUpdateOps.size() > 0) {
+            BulkWriteResult result = mongoCollection.bulkWrite(bulkUpdateOps);
+        }
     }
 
     @Override
@@ -78,7 +103,8 @@ public class ApplicationConfigurationRepositoryImpl implements ConfigRepositoryP
 
         List<Bson> updateList = Arrays.asList(MongoHelper.getUpdate(),
             MongoHelper.getSpecifiedProperties(configuration, AppCollection.Fields.agentVersion,
-                AppCollection.Fields.agentExtVersion, AppCollection.Fields.status, AppCollection.Fields.features));
+                AppCollection.Fields.agentExtVersion, AppCollection.Fields.status, AppCollection.Fields.features,
+                AppCollection.Fields.appName, AppCollection.Fields.owners));
         Bson updateCombine = Updates.combine(updateList);
 
         return mongoCollection.updateMany(filter, updateCombine).getModifiedCount() > 0;

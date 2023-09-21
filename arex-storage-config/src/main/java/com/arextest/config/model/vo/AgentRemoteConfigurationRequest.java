@@ -1,8 +1,8 @@
 package com.arextest.config.model.vo;
 
-import java.util.Map;
-
 import lombok.Data;
+
+import java.util.Map;
 
 /**
  * @author b_yu
