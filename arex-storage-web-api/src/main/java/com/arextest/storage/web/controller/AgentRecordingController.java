@@ -92,7 +92,7 @@ public class AgentRecordingController {
      * @param requestType the record content of request
      * @return response for save result
      */
-    @PostMapping(value = "/save", produces = {MediaType.APPLICATION_JSON_VALUE})
+    @PostMapping(value = "/save")
     @ResponseBody
     public Response save(@RequestBody AREXMocker requestType) {
         MockCategoryType category = requestType.getCategoryType();
