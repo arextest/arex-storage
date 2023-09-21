@@ -1,6 +1,5 @@
 package com.arextest.storage.web.controller;
 
-import com.arextest.common.metrics.PrometheusConfiguration;
 import com.arextest.common.model.response.Response;
 import com.arextest.common.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +19,6 @@ public class CheckHealthController {
     @GetMapping(value = "/health", produces = "application/json")
     @ResponseBody
     public Response checkHealth() {
-        LOGGER.error("test error checkHealth");
         return ResponseUtils.successResponse(true);
     }
 }
