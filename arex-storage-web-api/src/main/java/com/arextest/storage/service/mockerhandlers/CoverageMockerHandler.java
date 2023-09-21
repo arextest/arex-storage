@@ -9,6 +9,7 @@ import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.impl.mongo.CoverageRepository;
 import com.arextest.storage.service.MockSourceEditionService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -37,6 +38,11 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
      */
     @Override
     public void handle(AREXMocker coverageMocker) {
+        // todo
+        if (StringUtils.isEmpty(coverageMocker.getOperationName()) || coverageMocker.getOperationName().equals("0")) {
+            LOGGER.warn("CoverageMockerHandler handle error, operationName is empty, recordId:{}", coverageMocker.getRecordId());
+            return;
+        }
         try {
             final RepositoryProvider<Mocker> pinedProvider = repositoryProviderFactory.findProvider(ProviderNames.AUTO_PINNED);
             assert pinedProvider != null;
