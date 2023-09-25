@@ -107,7 +107,7 @@ public class ResultProcessService {
                         continue;
                     } else {
                         AREXMocker recordedMocker = recordedMockers.get(0);
-                        recordedMocker.setTargetRequest(replayResults.get(0).getTargetResponse());
+                        recordedMocker.setTargetResponse(replayResults.get(0).getTargetResponse());
                         recordedMocker.setContinuousFailCount(entry.getContinuousFailCount());
                         categoryProvider.update(recordedMocker);
                     }
