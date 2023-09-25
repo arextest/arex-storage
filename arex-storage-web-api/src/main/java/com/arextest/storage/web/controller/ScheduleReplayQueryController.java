@@ -273,10 +273,18 @@ public class ScheduleReplayQueryController {
         if (StringUtils.isEmpty(recordId)) {
             return ResponseUtils.emptyRecordIdResponse();
         }
+        if (StringUtils.isEmpty(requestType.getSourceProvider())) {
+            requestType.setSourceProvider(ProviderNames.DEFAULT);
+        }
+
         MDCTracer.addRecordId(recordId);
         long beginTime = System.currentTimeMillis();
         try {
-            return toResponse(prepareMockResultService.preloadAll(requestType.getSourceProvider(), recordId));
+            if (requestType.getSourceProvider().equals(ProviderNames.DEFAULT)) {
+                return toResponse(prepareMockResultService.preloadAll(ProviderNames.DEFAULT, recordId) &&
+                        prepareMockResultService.preloadAll(ProviderNames.AUTO_PINNED, recordId));
+            }
+            return  toResponse(prepareMockResultService.preloadAll(requestType.getSourceProvider(), recordId));
         } catch (Throwable throwable) {
             LOGGER.error("QueryMockCache error:{},request:{}", throwable.getMessage(), requestType);
             return ResponseUtils.exceptionResponse(throwable.getMessage());
