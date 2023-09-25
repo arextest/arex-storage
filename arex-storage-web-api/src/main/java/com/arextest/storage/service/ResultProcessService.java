@@ -106,8 +106,10 @@ public class ResultProcessService {
                     if (recordedMockers.size() != 1 || replayResults.size() != 1) {
                         continue;
                     } else {
-                        entry.setTargetRequest(replayResults.get(0).getTargetResponse());
-                        categoryProvider.update(entry);
+                        AREXMocker recordedMocker = recordedMockers.get(0);
+                        recordedMocker.setTargetRequest(replayResults.get(0).getTargetResponse());
+                        recordedMocker.setContinuousFailCount(entry.getContinuousFailCount());
+                        categoryProvider.update(recordedMocker);
                     }
                 }
 
