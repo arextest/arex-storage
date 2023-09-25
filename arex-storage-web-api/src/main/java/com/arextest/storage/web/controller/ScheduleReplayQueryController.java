@@ -281,8 +281,9 @@ public class ScheduleReplayQueryController {
         long beginTime = System.currentTimeMillis();
         try {
             if (requestType.getSourceProvider().equals(ProviderNames.DEFAULT)) {
-                return toResponse(prepareMockResultService.preloadAll(ProviderNames.DEFAULT, recordId) &&
-                        prepareMockResultService.preloadAll(ProviderNames.AUTO_PINNED, recordId));
+                boolean res = prepareMockResultService.preloadAll(ProviderNames.AUTO_PINNED, recordId);
+                res &= prepareMockResultService.preloadAll(ProviderNames.DEFAULT, recordId);
+                return toResponse(res);
             }
             return  toResponse(prepareMockResultService.preloadAll(requestType.getSourceProvider(), recordId));
         } catch (Throwable throwable) {
