@@ -141,22 +141,9 @@ public class MockSourceEditionService {
         return count;
     }
 
-    public boolean moveEntryTo(String srcProviderName, String srcRecordId, String targetProviderName) {
-        if (StringUtils.equals(srcProviderName, targetProviderName)) {
-            return false;
-        }
-        RepositoryProvider<Mocker> srcProvider = providerFactory.findProvider(srcProviderName);
-        RepositoryProvider<Mocker> targetProvider = providerFactory.findProvider(targetProviderName);
-        if (srcProvider == null || targetProvider == null) {
-            LOGGER.warn("could not found provider for {} or {}", srcProvider, targetProvider);
-            return false;
-        }
-
-        Mocker source = srcProvider.findEntryFromAllType(srcRecordId);
-        if (source == null) return false;
-        srcProvider.removeBy(source.getCategoryType(), srcRecordId);
-        source.setCreationTime(System.currentTimeMillis());
-        targetProvider.save(source);
+    public boolean moveTo(String srcProviderName, String srcRecordId, String targetProviderName) {
+        copyTo(srcProviderName, srcRecordId, targetProviderName, srcRecordId);
+        removeEntry(srcProviderName, srcRecordId);
         return true;
     }
 

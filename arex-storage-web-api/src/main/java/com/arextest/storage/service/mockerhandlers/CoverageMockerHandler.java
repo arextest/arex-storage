@@ -84,7 +84,7 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
         }
 
         // move entry to auto pinned
-        boolean moved = mockSourceEditionService.moveEntryTo(ProviderNames.DEFAULT, incomingCaseId, ProviderNames.AUTO_PINNED);
+        boolean moved = mockSourceEditionService.moveTo(ProviderNames.DEFAULT, incomingCaseId, ProviderNames.AUTO_PINNED);
         if (!moved) {
             LOGGER.error("move entry to auto pinned failed, caseId:{}", incomingCaseId);
         }

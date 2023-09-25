@@ -35,10 +35,6 @@ public final class PrepareMockResultService {
         }
         boolean result = false;
         for (MockCategoryType categoryType : providerFactory.getCategoryTypes()) {
-            // auto pin mockers only contain entrypoint
-            if (sourceProvider.equals(ProviderNames.AUTO_PINNED) && !categoryType.isEntryPoint()) {
-                continue;
-            }
             result = preload(repositoryProvider, categoryType, recordId);
             LOGGER.info("preload cache result:{},category:{},record id:{}", result, categoryType, recordId);
         }
