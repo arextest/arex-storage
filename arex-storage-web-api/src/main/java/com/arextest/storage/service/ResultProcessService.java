@@ -97,7 +97,7 @@ public class ResultProcessService {
             List<ListResultHolder> results = scheduleReplayingService.queryReplayResult(idPair.getRecordId(), idPair.getTargetId());
             for (ListResultHolder result : results) {
                 MockCategoryType category = result.getCategoryType();
-                RepositoryProvider<Mocker> categoryProvider = repositoryProviderFactory.findProvider(category.getName());
+                RepositoryProvider<Mocker> categoryProvider = repositoryProviderFactory.findProvider(ProviderNames.AUTO_PINNED);
 
                 List<AREXMocker> recordedMockers = zstdDeserialize(result.getRecord());
                 List<AREXMocker> replayResults = zstdDeserialize(result.getReplayResult());
