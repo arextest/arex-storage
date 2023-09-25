@@ -13,11 +13,11 @@ import com.mongodb.client.model.Updates;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 @Slf4j
 public class AutoPinedMockerRepository extends AREXMockerMongoRepositoryProvider {
+    private static final long THIRTY_DAY_MILLIS = 30 * 24 * 60 * 60 * 1000L;
     public AutoPinedMockerRepository(MongoDatabase mongoDatabase,
                                      StorageConfigurationProperties properties,
                                      Set<MockCategoryType> entryPointTypes) {
@@ -43,11 +43,12 @@ public class AutoPinedMockerRepository extends AREXMockerMongoRepositoryProvider
         collection.deleteMany(Filters.in("_id", caseIds));
     }
 
-    public void resetFailCount(MockCategoryType categoryType, String caseId) {
+    public void resetFailCount(MockCategoryType categoryType, List<String> caseIds) {
         MongoCollection<AREXMocker> collection = createOrGetCollection(categoryType);
         collection.findOneAndUpdate(
-                Filters.eq("_id", caseId),
-                Updates.set("continuousFailCount", 0)
+                Filters.eq("_id", caseIds),
+                Updates.combine(Updates.set(AREXMocker.Fields.continuousFailCount, 0),
+                        Updates.set(AREXMocker.Fields.expirationTime, System.currentTimeMillis() + THIRTY_DAY_MILLIS))
         );
     }
 }

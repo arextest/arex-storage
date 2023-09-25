@@ -136,11 +136,8 @@ public class ResultProcessService {
 
         for (ResultCodeGroup.CategoryGroup categoryGroup : categoryGroups) {
             MockCategoryType category = MockCategoryType.create(categoryGroup.getCategoryName());
-            if (!category.isEntryPoint()) continue;
-            for (ResultCodeGroup.IdPair idPair : categoryGroup.getResultIds()) {
-                String recordId = idPair.getRecordId();
-                autoPinedMockerRepository.resetFailCount(category, recordId);
-            }
+            List<String> allIds = categoryGroup.getResultIds().stream().map(ResultCodeGroup.IdPair::getRecordId).collect(Collectors.toList());
+            autoPinedMockerRepository.resetFailCount(category, allIds);
         }
     }
 
