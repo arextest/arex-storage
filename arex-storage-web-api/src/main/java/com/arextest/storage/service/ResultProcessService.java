@@ -6,6 +6,7 @@ import com.arextest.model.mock.Mocker;
 import com.arextest.model.replay.holder.ListResultHolder;
 import com.arextest.model.replay.result.PostProcessResultRequestType;
 import com.arextest.model.replay.result.ResultCodeGroup;
+import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.impl.mongo.AutoPinedMockerRepository;
@@ -81,7 +82,7 @@ public class ResultProcessService {
                         updated.getCreationTime() < getExpirationMillis()) {
                     needDelete.add(updated);
                 } else if (updated != null) {
-                    updateMocker(idPair);
+                    updateMocker(idPair, updated);
                 }
             }
             if (!CollectionUtils.isEmpty(needDelete)) {
@@ -91,7 +92,7 @@ public class ResultProcessService {
         }
     }
 
-    private void updateMocker(ResultCodeGroup.IdPair idPair) {
+    private void updateMocker(ResultCodeGroup.IdPair idPair, AREXMocker entry) {
         try {
             List<ListResultHolder> results = scheduleReplayingService.queryReplayResult(idPair.getRecordId(), idPair.getTargetId());
             for (ListResultHolder result : results) {
@@ -105,7 +106,8 @@ public class ResultProcessService {
                     if (recordedMockers.size() != 1 || replayResults.size() != 1) {
                         continue;
                     } else {
-                        categoryProvider.updateResponse(category, recordedMockers.get(0).getId(), replayResults.get(0).getTargetResponse());
+                        entry.setTargetRequest(replayResults.get(0).getTargetResponse());
+                        categoryProvider.update(entry);
                     }
                 }
 
@@ -120,7 +122,8 @@ public class ResultProcessService {
                         if (recordedMocker == null) {
                             continue;
                         }
-                        categoryProvider.updateRequest(category, recordedMocker.getId(), replayResult.getTargetRequest());
+                        recordedMocker.setTargetRequest(replayResult.getTargetRequest());
+                        categoryProvider.update(recordedMocker);
                     }
                 }
             }
