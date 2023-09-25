@@ -289,20 +289,6 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     }
 
     @Override
-    public void updateResponse(MockCategoryType categoryType, String id, Mocker.Target response) {
-        MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
-        collectionSource.updateOne(Filters.eq(PRIMARY_KEY_COLUMN_NAME, id),
-                Updates.set(AREXMocker.Fields.targetResponse, response));
-    }
-
-    @Override
-    public void updateRequest(MockCategoryType categoryType, String recordId, Mocker.Target request) {
-        MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
-        collectionSource.updateOne(Filters.eq(RECORD_ID_COLUMN_NAME, recordId),
-                Updates.set(AREXMocker.Fields.targetRequest, request));
-    }
-
-    @Override
     public boolean update(AREXMocker value) {
         Bson primaryKeyFilter = buildPrimaryKeyFilter(value);
         try {
