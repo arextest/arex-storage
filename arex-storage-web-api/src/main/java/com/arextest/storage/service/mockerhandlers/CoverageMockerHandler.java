@@ -58,7 +58,7 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
                 coverageRepository.updatePathKeyByRecordId(incomingCaseId, coverageMocker.getOperationName());
             } else {
                 boolean locked = cacheProvider.putIfAbsent((coverageMocker.getAppId() + coverageMocker.getOperationName()).getBytes(),
-                        60 * 24 * 12,
+                        60 * 24 * 12L,
                         coverageMocker.getRecordId().getBytes());
 
                 if (locked) {
