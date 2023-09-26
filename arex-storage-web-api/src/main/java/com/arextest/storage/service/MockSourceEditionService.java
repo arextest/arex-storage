@@ -15,10 +15,8 @@ import java.util.*;
 @Service
 public class MockSourceEditionService {
     private final RepositoryProviderFactory providerFactory;
-    private final Set<MockCategoryType> entryPointTypes;
     public MockSourceEditionService(RepositoryProviderFactory providerFactory, Set<MockCategoryType> entryPointTypes) {
         this.providerFactory = providerFactory;
-        this.entryPointTypes = entryPointTypes;
     }
 
     public <T extends Mocker> boolean add(String providerName, T item) {
@@ -143,20 +141,19 @@ public class MockSourceEditionService {
 
     public boolean moveTo(String srcProviderName, String srcRecordId, String targetProviderName) {
         copyTo(srcProviderName, srcRecordId, targetProviderName, srcRecordId);
-        removeEntry(srcProviderName, srcRecordId);
+        removeByRecordId(srcProviderName, srcRecordId);
         return true;
     }
 
-    public boolean removeEntry(String providerName, String recordId) {
+    public boolean removeByRecordId(String providerName, String recordId) {
         RepositoryProvider<?> repositoryWriter = providerFactory.findProvider(providerName);
         if (repositoryWriter == null) {
             LOGGER.warn("Could not found provider for {}", providerName);
             return false;
         }
-        for (MockCategoryType categoryType : entryPointTypes) {
+        for (MockCategoryType categoryType : providerFactory.getCategoryTypes()) {
             repositoryWriter.removeBy(categoryType, recordId);
         }
-        // todo remove dependency
         return true;
     }
 

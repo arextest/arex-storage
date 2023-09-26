@@ -64,7 +64,7 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
                 if (locked) {
                     transferEntry(coverageMocker, incomingCaseId);
                 } else {
-                    mockSourceEditionService.removeEntry(ProviderNames.DEFAULT, incomingCaseId);
+                    mockSourceEditionService.removeByRecordId(ProviderNames.DEFAULT, incomingCaseId);
                 }
             }
         } catch (Exception e) {
@@ -77,7 +77,7 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
         // there is an existing AutoPinnedMocker with the same key, delete the related AutoPinnedMocker
         if (oldCoverageMocker != null) {
             String oldCaseId = oldCoverageMocker.getRecordId();
-            boolean removed = mockSourceEditionService.removeEntry(ProviderNames.AUTO_PINNED, oldCaseId);
+            boolean removed = mockSourceEditionService.removeByRecordId(ProviderNames.AUTO_PINNED, oldCaseId);
             if (!removed) {
                 LOGGER.error("remove old auto pinned failed, caseId:{}", oldCaseId);
             }
