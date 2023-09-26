@@ -156,6 +156,7 @@ public class MockSourceEditionService {
         for (MockCategoryType categoryType : entryPointTypes) {
             repositoryWriter.removeBy(categoryType, recordId);
         }
+        // todo remove dependency
         return true;
     }
 
