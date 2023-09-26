@@ -201,6 +201,14 @@ public class ScheduleReplayQueryController {
             CountOperationCaseResponseType responseType = new CountOperationCaseResponseType();
             Map<String, Long> countResult = scheduleReplayingService.countByOperationName(requestType);
             responseType.setCountMap(countResult);
+            if (ProviderNames.DEFAULT.equals(requestType.getSourceProvider())) {
+                requestType.setSourceProvider(ProviderNames.AUTO_PINNED);
+                Map<String, Long> autoPinedCountRes = scheduleReplayingService.countByOperationName(requestType);
+                for (Map.Entry<String, Long> entry : autoPinedCountRes.entrySet()) {
+                    countResult.merge(entry.getKey(), entry.getValue(), Long::sum);
+                }
+            }
+
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
             LOGGER.error("countByOperationName  error:{},request:{}", throwable.getMessage(), requestType, throwable);

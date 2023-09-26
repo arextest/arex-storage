@@ -36,6 +36,8 @@ public class ResultProcessService {
     ZstdJacksonSerializer zstdJacksonSerializer;
     @Resource
     RepositoryProviderFactory repositoryProviderFactory;
+    @Resource
+    PrepareMockResultService prepareMockResultService;
     public static final int COMPARED_WITHOUT_DIFFERENCE = 0;
     public static final int COMPARED_WITH_DIFFERENCE = 1;
     public static final int COMPARED_INTERNAL_EXCEPTION = 2;
@@ -111,23 +113,24 @@ public class ResultProcessService {
                         recordedMocker.setContinuousFailCount(entry.getContinuousFailCount());
                         categoryProvider.update(recordedMocker);
                     }
-                }
+                } else {
+                    // dependencies
+                    Map<String, AREXMocker> recordIdMap = recordedMockers.stream().collect(Collectors.toMap(AREXMocker::getId, i -> i));
+                    for (AREXMocker replayResult : replayResults) {
+                        // new call todo
+                        if (StringUtils.isEmpty(replayResult.getId())) {
 
-                // dependencies
-                Map<String, AREXMocker> recordIdMap = recordedMockers.stream().collect(Collectors.toMap(AREXMocker::getId, i -> i));
-                for (AREXMocker replayResult : replayResults) {
-                    // new call todo
-                    if (StringUtils.isEmpty(replayResult.getId())) {
-
-                    } else {
-                        AREXMocker recordedMocker = recordIdMap.get(replayResult.getId());
-                        if (recordedMocker == null) {
-                            continue;
+                        } else {
+                            AREXMocker recordedMocker = recordIdMap.get(replayResult.getId());
+                            if (recordedMocker == null) {
+                                continue;
+                            }
+                            recordedMocker.setTargetRequest(replayResult.getTargetRequest());
+                            categoryProvider.update(recordedMocker);
                         }
-                        recordedMocker.setTargetRequest(replayResult.getTargetRequest());
-                        categoryProvider.update(recordedMocker);
                     }
                 }
+                prepareMockResultService.removeAll(idPair.getRecordId());
             }
         } catch (Exception e) {
             LOGGER.error("update mocker error:{}", e.getMessage(), e);
