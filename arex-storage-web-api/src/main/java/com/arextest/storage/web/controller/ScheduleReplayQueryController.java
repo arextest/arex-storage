@@ -185,7 +185,8 @@ public class ScheduleReplayQueryController {
                 requestType.setSourceProvider(ProviderNames.AUTO_PINNED);
                 setAutoPinRange(requestType);
                 long apCount = scheduleReplayingService.countByRange(requestType);
-                LOGGER.info("app: {}, counted autopined: {}, rolling: {} ", requestType.getAppId(), apCount, countResult);
+                LOGGER.info("app: {} operation: {}, counted autopined: {}, rolling: {} ",
+                        requestType.getAppId(), requestType.getOperation(), apCount, countResult);
                 countResult += apCount;
             }
 
