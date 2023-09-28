@@ -55,7 +55,8 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
             // Mocker rolling = rollingProvider.findEntryFromAllType(newCaseId);
 
             if (pinned != null) {
-                coverageRepository.updatePathKeyByRecordId(incomingCaseId, coverageMocker.getOperationName());
+                coverageRepository.updatePathByRecordId(incomingCaseId, coverageMocker);
+                LOGGER.info("CoverageMockerHandler handle update, recordId:{}, pathKey: {}", incomingCaseId, coverageMocker.getOperationName());
             } else {
                 boolean locked = cacheProvider.putIfAbsent((coverageMocker.getAppId() + coverageMocker.getOperationName()).getBytes(),
                         60 * 24 * 12L,
@@ -63,8 +64,10 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
 
                 if (locked) {
                     transferEntry(coverageMocker, incomingCaseId);
+                    LOGGER.info("CoverageMockerHandler handle transfer, recordId:{}, pathKey: {}", incomingCaseId, coverageMocker.getOperationName());
                 } else {
                     mockSourceEditionService.removeByRecordId(ProviderNames.DEFAULT, incomingCaseId);
+                    LOGGER.info("CoverageMockerHandler handle remove, recordId:{}, pathKey: {}", incomingCaseId, coverageMocker.getOperationName());
                 }
             }
         } catch (Exception e) {
