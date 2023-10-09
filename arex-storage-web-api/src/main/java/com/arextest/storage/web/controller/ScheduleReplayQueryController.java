@@ -103,27 +103,7 @@ public class ScheduleReplayQueryController {
 
         try {
             PagedResponseType responseType = new PagedResponseType();
-            // rolling replay needs to shift in auto pinned
-            if (requestType.getSourceProvider().equals(ProviderNames.DEFAULT)) {
-                // add full range of auto pined
-                requestType.setSourceProvider(ProviderNames.AUTO_PINNED);
-                Long from = requestType.getBeginTime();
-                Long to = requestType.getEndTime();
-                setAutoPinRange(requestType);
-                List<AREXMocker> res = new ArrayList<>();
-                Iterator<AREXMocker> iter = scheduleReplayingService.queryEntryPointByRange(requestType).iterator();
-                iter.forEachRemaining(res::add);
-
-                // add normal requested range cases
-                requestType.setSourceProvider(ProviderNames.DEFAULT);
-                requestType.setBeginTime(from);
-                requestType.setEndTime(to);
-                iter = scheduleReplayingService.queryByRange(requestType).iterator();
-                iter.forEachRemaining(res::add);
-                responseType.setRecords(res);
-            } else {
-                responseType.setRecords(scheduleReplayingService.queryEntryPointByRange(requestType));
-            }
+            responseType.setRecords(scheduleReplayingService.queryEntryPointByRange(requestType));
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
             LOGGER.error("error:{},request:{}", throwable.getMessage(), requestType);
@@ -180,16 +160,6 @@ public class ScheduleReplayQueryController {
         try {
             QueryCaseCountResponseType responseType = new QueryCaseCountResponseType();
             long countResult = scheduleReplayingService.countByRange(requestType);
-            // combine count of autoPined & rolling
-            if (ProviderNames.DEFAULT.equals(requestType.getSourceProvider())) {
-                requestType.setSourceProvider(ProviderNames.AUTO_PINNED);
-                setAutoPinRange(requestType);
-                long apCount = scheduleReplayingService.countByRange(requestType);
-                LOGGER.info("app: {} operation: {}, counted autopined: {}, rolling: {} ",
-                        requestType.getAppId(), requestType.getOperation(), apCount, countResult);
-                countResult += apCount;
-            }
-
             responseType.setCount(countResult);
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
@@ -198,11 +168,6 @@ public class ScheduleReplayQueryController {
         } finally {
             MDCTracer.clear();
         }
-    }
-
-    private static void setAutoPinRange(PagedRequestType requestType) {
-        requestType.setBeginTime(System.currentTimeMillis() - 30 * 24 * 60 * 60 * 1000L);
-        requestType.setEndTime(System.currentTimeMillis() + 10 * 60 * 60 * 1000L);
     }
 
     /**
@@ -219,14 +184,6 @@ public class ScheduleReplayQueryController {
             CountOperationCaseResponseType responseType = new CountOperationCaseResponseType();
             Map<String, Long> countResult = scheduleReplayingService.countByOperationName(requestType);
             responseType.setCountMap(countResult);
-            if (ProviderNames.DEFAULT.equals(requestType.getSourceProvider())) {
-                requestType.setSourceProvider(ProviderNames.AUTO_PINNED);
-                Map<String, Long> autoPinedCountRes = scheduleReplayingService.countByOperationName(requestType);
-                for (Map.Entry<String, Long> entry : autoPinedCountRes.entrySet()) {
-                    countResult.merge(entry.getKey(), entry.getValue(), Long::sum);
-                }
-            }
-
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
             LOGGER.error("countByOperationName  error:{},request:{}", throwable.getMessage(), requestType, throwable);
@@ -306,11 +263,6 @@ public class ScheduleReplayQueryController {
         MDCTracer.addRecordId(recordId);
         long beginTime = System.currentTimeMillis();
         try {
-            if (requestType.getSourceProvider().equals(ProviderNames.DEFAULT)) {
-                boolean res = prepareMockResultService.preloadAll(ProviderNames.AUTO_PINNED, recordId);
-                res &= prepareMockResultService.preloadAll(ProviderNames.DEFAULT, recordId);
-                return toResponse(res);
-            }
             return  toResponse(prepareMockResultService.preloadAll(requestType.getSourceProvider(), recordId));
         } catch (Throwable throwable) {
             LOGGER.error("QueryMockCache error:{},request:{}", throwable.getMessage(), requestType);

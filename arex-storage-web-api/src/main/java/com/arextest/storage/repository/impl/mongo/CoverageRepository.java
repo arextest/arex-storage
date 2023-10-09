@@ -14,6 +14,8 @@ import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Repository;
 
+import java.util.Date;
+
 
 @Repository
 public class CoverageRepository {
@@ -30,7 +32,9 @@ public class CoverageRepository {
         Bson filters = Filters.and(Filters.eq(AREXMocker.Fields.appId, value.getAppId()), Filters.eq(AREXMocker.Fields.operationName, value.getOperationName()));
         // update record id, todo expire
         Bson update = Updates.combine(Updates.set(AREXMocker.Fields.recordId, value.getRecordId()),
-                Updates.set(AREXMocker.Fields.targetRequest, value.getTargetResponse()),
+                Updates.set(AREXMocker.Fields.targetResponse, value.getTargetResponse()),
+                Updates.set(AREXMocker.Fields.updateTime, new Date()),
+                Updates.setOnInsert(AREXMocker.Fields.creationTime, new Date(value.getCreationTime())),
                 Updates.setOnInsert("_id", new ObjectId().toString()));
         FindOneAndUpdateOptions opt = new FindOneAndUpdateOptions();
         opt.upsert(true);
