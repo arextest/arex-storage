@@ -1,5 +1,7 @@
 package com.arextest.storage.web.controller;
 
+import com.arextest.common.annotation.AppAuth;
+import com.arextest.common.enums.AuthRejectStrategy;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.replay.CountOperationCaseRequestType;
 import com.arextest.model.replay.CountOperationCaseResponseType;
@@ -204,6 +206,7 @@ public class ScheduleReplayQueryController {
 
     @GetMapping(value = "/viewRecord/")
     @ResponseBody
+    @AppAuth(rejectStrategy = AuthRejectStrategy.DOWNGRADE)
     public Response viewRecord(String recordId,
                                @RequestParam(required = false) String category,
                                @RequestParam(required = false, defaultValue = ProviderNames.DEFAULT) String srcProvider) {
@@ -223,6 +226,7 @@ public class ScheduleReplayQueryController {
      */
     @PostMapping("/viewRecord")
     @ResponseBody
+    @AppAuth(rejectStrategy = AuthRejectStrategy.DOWNGRADE)
     public Response viewRecord(@RequestBody ViewRecordRequestType requestType) {
         if (requestType == null) {
             return ResponseUtils.requestBodyEmptyResponse();

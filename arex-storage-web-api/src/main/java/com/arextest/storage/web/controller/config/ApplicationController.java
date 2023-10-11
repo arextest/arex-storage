@@ -1,5 +1,6 @@
 package com.arextest.storage.web.controller.config;
 
+import com.arextest.common.annotation.AppAuth;
 import com.arextest.common.model.response.Response;
 import com.arextest.common.utils.ResponseUtils;
 import com.arextest.config.model.vo.AddApplicationRequest;
@@ -30,6 +31,7 @@ public class ApplicationController {
 
     @PostMapping("/add")
     @ResponseBody
+    @AppAuth
     public Response load(@RequestBody @Valid AddApplicationRequest request) {
         AddApplicationResponse response = applicationService.addApplication(request);
         return ResponseUtils.successResponse(response);
@@ -37,6 +39,7 @@ public class ApplicationController {
 
     @PostMapping("/modify")
     @ResponseBody
+    @AppAuth
     public Response modify(@RequestBody @Valid UpdateApplicationRequest request) {
         return ResponseUtils.successResponse(applicationService.modifyApplication(request));
     }

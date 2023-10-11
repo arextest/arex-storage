@@ -9,6 +9,9 @@ spring:
     active: docker
 # for report
 arex:
+  app:
+    auth:
+      switch: false
   url:
     report:
       agentload: ${arex.report.config.agent.url}/api/config/agent/load
