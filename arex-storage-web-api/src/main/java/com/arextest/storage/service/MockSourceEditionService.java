@@ -169,6 +169,7 @@ public class MockSourceEditionService {
             value.setRecordId(targetRecordId);
             value.setId(null);
             value.setCreationTime(now);
+            value.setExpirationTime(null);
             targetList.add(value);
         }
         return targetList;
