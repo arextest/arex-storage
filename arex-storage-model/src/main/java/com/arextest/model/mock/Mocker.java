@@ -33,12 +33,12 @@ public interface Mocker {
 
     long getUpdateTime();
 
-    void setExpirationTime(Long expirationTime);
+    void setExpirationTime(long expirationTime);
 
     /**
      * MongoDB TTL Index
      */
-    Long getExpirationTime();
+    long getExpirationTime();
 
     void setId(String id);
 

@@ -12,6 +12,7 @@ import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.client.model.Updates;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -48,7 +49,7 @@ public class AutoPinedMockerRepository extends AREXMockerMongoRepositoryProvider
         collection.updateMany(
                 Filters.in("_id", caseIds),
                 Updates.combine(Updates.set(AREXMocker.Fields.continuousFailCount, 0),
-                        Updates.set(AREXMocker.Fields.expirationTime, System.currentTimeMillis() + THIRTY_DAY_MILLIS))
+                        Updates.set(AREXMocker.Fields.expirationTime, new Date(System.currentTimeMillis() + THIRTY_DAY_MILLIS)))
         );
     }
 }
