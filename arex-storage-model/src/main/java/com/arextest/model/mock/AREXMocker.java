@@ -36,7 +36,7 @@ public class AREXMocker implements Mocker {
      */
     private long creationTime;
     private long updateTime;
-    private long expirationTime;
+    private Long expirationTime;
     private Target targetRequest;
     private Target targetResponse;
     /**
