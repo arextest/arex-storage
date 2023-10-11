@@ -41,9 +41,12 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
      */
     @Override
     public void handle(AREXMocker coverageMocker) {
-        // todo
         if (StringUtils.isEmpty(coverageMocker.getOperationName()) || coverageMocker.getOperationName().equals("0")) {
             LOGGER.warn("CoverageMockerHandler handle error, operationName is empty, recordId:{}", coverageMocker.getRecordId());
+            if (!StringUtils.isEmpty(coverageMocker.getRecordId())) {
+                // getting operationName(Coverage key) as 0 but having recordId, meaning this is an extremely simple and meaningless case, remove it
+                mockSourceEditionService.removeByRecordId(ProviderNames.DEFAULT, coverageMocker.getRecordId());
+            }
             return;
         }
         try {
