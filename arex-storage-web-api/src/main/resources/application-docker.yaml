@@ -1,18 +1,18 @@
 arex:
   storage:
     cache:
-      uri: ${arex.storage.cache.url:redis://redis:6379/}
+      uri: ${arex.redis.uri:redis://redis:6379/}
     enableDiscoveryEntryPoint: true
-    mongodbUri: ${arex.storage.mongo.host:mongodb://arex:iLoveArex@mongodb:27017/arex_storage_db}
+    mongodbUri: ${arex.mongo.uri:mongodb://arex:iLoveArex@mongodb:27017/arex_storage_db}
     recordEnv: TEST
     expirationDurationMap:
       ConfigFile: 3456000000
     defaultExpirationDuration: 345600000
     allowReRunDays: 1
-  report:
+  api:
     config:
       agent:
-        url: ${arex.report.service.api:http://arex-report-service:8080}
+        url: ${arex.api.service.api:http://arex-api-service:8080}
 #    categoryTypes:
 #      - name: Hi
 #        entryPoint: true

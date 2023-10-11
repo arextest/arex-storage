@@ -98,7 +98,7 @@
     example for `Redis` & `mongodb` connection:
     ```
     arex.storage.cache.redis.host=redis://10.3.2.42:6379/
-    arex.storage.mongo.host=mongodb://arex:iLoveArex@10.3.2.42:27017/arex_storage_db
+    arex.mongo.uri=mongodb://arex:iLoveArex@10.3.2.42:27017/arex_storage_db
     ```
  1. **Extends your providers**
    
