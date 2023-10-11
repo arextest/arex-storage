@@ -45,8 +45,8 @@ public class AutoPinedMockerRepository extends AREXMockerMongoRepositoryProvider
 
     public void resetFailCount(MockCategoryType categoryType, List<String> caseIds) {
         MongoCollection<AREXMocker> collection = createOrGetCollection(categoryType);
-        collection.findOneAndUpdate(
-                Filters.eq("_id", caseIds),
+        collection.updateMany(
+                Filters.in("_id", caseIds),
                 Updates.combine(Updates.set(AREXMocker.Fields.continuousFailCount, 0),
                         Updates.set(AREXMocker.Fields.expirationTime, System.currentTimeMillis() + THIRTY_DAY_MILLIS))
         );
