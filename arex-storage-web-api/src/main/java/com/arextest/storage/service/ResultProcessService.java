@@ -78,7 +78,7 @@ public class ResultProcessService {
     private void clearAllCache(ResultCodeGroup diffResult) {
         for (ResultCodeGroup.CategoryGroup categoryGroup : diffResult.getCategoryGroups()) {
             for (ResultCodeGroup.IdPair idPair : categoryGroup.getResultIds()) {
-                prepareMockResultService.removeAll(idPair.getRecordId());
+                prepareMockResultService.removeAll(idPair.getRecordId(), idPair.getTargetId());
             }
         }
     }

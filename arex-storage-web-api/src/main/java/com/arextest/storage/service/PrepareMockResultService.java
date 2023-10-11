@@ -3,7 +3,6 @@ package com.arextest.storage.service;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.mock.MockResultProvider;
-import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.trace.MDCTracer;
@@ -72,16 +71,31 @@ public final class PrepareMockResultService {
         return false;
     }
 
-    public boolean removeAll(String recordId) {
+    public boolean removeAllRecordCache(String recordId) {
         boolean result = false;
         for (MockCategoryType categoryType : providerFactory.getCategoryTypes()) {
-            result = remove(categoryType, recordId);
+            result = removeRecord(categoryType, recordId);
         }
         return result;
     }
 
-    public boolean remove(MockCategoryType category, String recordId) {
+    public boolean removeRecord(MockCategoryType category, String recordId) {
         return mockResultProvider.removeRecordResult(category, recordId);
     }
 
+    public boolean removeAllResultCache(String resultId) {
+        boolean result = false;
+        for (MockCategoryType categoryType : providerFactory.getCategoryTypes()) {
+            result = removeResult(categoryType, resultId);
+        }
+        return result;
+    }
+
+    public boolean removeResult(MockCategoryType category, String resultId) {
+        return mockResultProvider.removeReplayResult(category, resultId);
+    }
+
+    public boolean removeAll(String recordId, String resultId) {
+        return removeAllRecordCache(recordId) && removeAllResultCache(resultId);
+    }
 }

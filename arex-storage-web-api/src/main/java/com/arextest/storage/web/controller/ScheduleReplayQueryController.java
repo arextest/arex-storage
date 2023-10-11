@@ -3,11 +3,9 @@ package com.arextest.storage.web.controller;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.replay.*;
 import com.arextest.model.replay.holder.ListResultHolder;
-import com.arextest.model.replay.result.PostProcessResultRequestType;
 import com.arextest.model.response.Response;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.service.PrepareMockResultService;
-import com.arextest.storage.service.ResultProcessService;
 import com.arextest.storage.service.ScheduleReplayingService;
 import com.arextest.storage.trace.MDCTracer;
 import lombok.AllArgsConstructor;
@@ -22,8 +20,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -292,7 +288,7 @@ public class ScheduleReplayQueryController {
         }
         MDCTracer.addRecordId(recordId);
         try {
-            return toResponse(prepareMockResultService.removeAll(recordId));
+            return toResponse(prepareMockResultService.removeAllRecordCache(recordId));
         } catch (Throwable throwable) {
             LOGGER.error("QueryMockCache error:{},request:{}", throwable.getMessage(), requestType);
             return ResponseUtils.exceptionResponse(throwable.getMessage());
