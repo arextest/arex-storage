@@ -38,29 +38,47 @@ public class ResultProcessService {
     RepositoryProviderFactory repositoryProviderFactory;
     @Resource
     PrepareMockResultService prepareMockResultService;
-    public static final int COMPARED_WITHOUT_DIFFERENCE = 0;
-    public static final int COMPARED_WITH_DIFFERENCE = 1;
-    public static final int COMPARED_INTERNAL_EXCEPTION = 2;
+    private static final int COMPARED_WITHOUT_DIFFERENCE = 0;
+    private static final int COMPARED_WITH_DIFFERENCE = 1;
+    private static final int COMPARED_INTERNAL_EXCEPTION = 2;
+    private static final int NORMAL_FINISH_CODE = 2;
 
     public void handleResult(PostProcessResultRequestType requestType) {
         List<ResultCodeGroup> diffResults = requestType.getResults();
         if (CollectionUtils.isEmpty(diffResults)) {
             return;
         }
-
         for (ResultCodeGroup diffResult : diffResults) {
-            int diffCode = diffResult.getResultCode();
-            switch (diffCode) {
-                case COMPARED_WITHOUT_DIFFERENCE:
-                    resetFailCount(diffResult.getCategoryGroups());
-                    break;
-                case COMPARED_WITH_DIFFERENCE:
-                    increaseFailCount(diffResult.getCategoryGroups());
-                    break;
-                case COMPARED_INTERNAL_EXCEPTION:
-                default:
-                    // do nothing
-                    break;
+            if (requestType.getReplayStatusCode() == NORMAL_FINISH_CODE) {
+                handleAutoPin(diffResult);
+                LOGGER.info("Auto pin modification done for plan {}", requestType.getReplayPlanId());
+            }
+
+            clearAllCache(diffResult);
+            LOGGER.info("Clear cache done for plan {}", requestType.getReplayPlanId());
+        }
+    }
+
+    private void handleAutoPin(ResultCodeGroup diffResult) {
+        int diffCode = diffResult.getResultCode();
+        switch (diffCode) {
+            case COMPARED_WITHOUT_DIFFERENCE:
+                resetFailCount(diffResult.getCategoryGroups());
+                break;
+            case COMPARED_WITH_DIFFERENCE:
+                increaseFailCount(diffResult.getCategoryGroups());
+                break;
+            case COMPARED_INTERNAL_EXCEPTION:
+            default:
+                // do nothing
+                break;
+        }
+    }
+
+    private void clearAllCache(ResultCodeGroup diffResult) {
+        for (ResultCodeGroup.CategoryGroup categoryGroup : diffResult.getCategoryGroups()) {
+            for (ResultCodeGroup.IdPair idPair : categoryGroup.getResultIds()) {
+                prepareMockResultService.removeAll(idPair.getRecordId());
             }
         }
     }
@@ -130,7 +148,6 @@ public class ResultProcessService {
                         }
                     }
                 }
-                prepareMockResultService.removeAll(idPair.getRecordId());
             }
         } catch (Exception e) {
             LOGGER.error("update mocker error:{}", e.getMessage(), e);
