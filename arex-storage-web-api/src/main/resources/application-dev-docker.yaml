@@ -7,10 +7,10 @@ arex:
     enableDiscoveryEntryPoint: true
     #  mongodbUri: mongodb://arex:iLoveArex@10.3.2.42:27017/arex_storage_db
     recordEnv: TEST
-  report:
+  api:
     config:
       agent:
-        url: ${arex.report.service.api:http://arex-report-service:8080}
+        url: ${arex.api.service.api:http://arex-api-service:8080}
     # categoryTypes:
     #   - name: Hi
     #     entryPoint: true
