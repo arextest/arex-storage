@@ -1,39 +1,28 @@
 package com.arextest.storage.web.controller;
 
 import com.arextest.common.annotation.AppAuth;
+import com.arextest.common.context.ArexContext;
 import com.arextest.common.enums.AuthRejectStrategy;
+import com.arextest.common.utils.JsonTraverseUtils;
 import com.arextest.model.mock.AREXMocker;
-import com.arextest.model.replay.CountOperationCaseRequestType;
-import com.arextest.model.replay.CountOperationCaseResponseType;
-import com.arextest.model.replay.PagedRequestType;
-import com.arextest.model.replay.PagedResponseType;
-import com.arextest.model.replay.QueryCaseCountRequestType;
-import com.arextest.model.replay.QueryCaseCountResponseType;
-import com.arextest.model.replay.QueryMockCacheRequestType;
-import com.arextest.model.replay.QueryMockCacheResponseType;
-import com.arextest.model.replay.QueryReplayResultRequestType;
-import com.arextest.model.replay.QueryReplayResultResponseType;
-import com.arextest.model.replay.ViewRecordRequestType;
-import com.arextest.model.replay.ViewRecordResponseType;
+import com.arextest.model.mock.Mocker;
+import com.arextest.model.replay.*;
 import com.arextest.model.replay.holder.ListResultHolder;
 import com.arextest.model.response.Response;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.service.PrepareMockResultService;
 import com.arextest.storage.service.ScheduleReplayingService;
 import com.arextest.storage.trace.MDCTracer;
+import com.arextest.storage.utils.JsonUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * this class defined all api list for scheduler replaying
@@ -204,8 +193,8 @@ public class ScheduleReplayQueryController {
         }
     }
 
-    @GetMapping(value = "/viewRecord/")
     @ResponseBody
+    @GetMapping(value = "/viewRecord/")
     @AppAuth(rejectStrategy = AuthRejectStrategy.DOWNGRADE)
     public Response viewRecord(String recordId,
                                @RequestParam(required = false) String category,
@@ -243,6 +232,7 @@ public class ScheduleReplayQueryController {
                 LOGGER.info("could not found any resources for request: {}", requestType);
             }
             responseType.setRecordResult(allReadableResult);
+            responseDesensitization(responseType, allReadableResult);
             return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
             LOGGER.error("viewRecord error:{}, request:{}", throwable.getMessage(), requestType);
@@ -250,7 +240,32 @@ public class ScheduleReplayQueryController {
         } finally {
             MDCTracer.clear();
         }
+    }
 
+    private static void responseDesensitization(ViewRecordResponseType responseType, List<AREXMocker> allReadableResult) {
+        if (!Boolean.TRUE.equals(ArexContext.getContext().getPassAuth())) {
+            try {
+                responseType.setDesensitized(true);
+                for (AREXMocker arexMocker : allReadableResult) {
+                    Mocker.Target request = arexMocker.getTargetRequest();
+                    Mocker.Target response = arexMocker.getTargetResponse();
+
+                    if (JsonUtil.isJsonStr(request.getBody())) {
+                        request.setBody(JsonTraverseUtils.trimAllLeaves(request.getBody()));
+                    }
+                    if (JsonUtil.isJsonStr(response.getBody())) {
+                        response.setBody(JsonTraverseUtils.trimAllLeaves(response.getBody()));
+                    }
+                    Optional.ofNullable(response.getAttributes())
+                            .ifPresent(attributes -> attributes.entrySet().forEach(entry -> entry.setValue(null)));
+                    Optional.ofNullable(request.getAttributes())
+                            .ifPresent(attributes -> attributes.entrySet().forEach(entry -> entry.setValue(null)));
+                }
+            } catch (Exception e) {
+                responseType.setDesensitized(false);
+                LOGGER.error("trimAllLeaves error", e);
+            }
+        }
     }
 
     /**
