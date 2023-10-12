@@ -15,11 +15,13 @@ import org.bson.types.ObjectId;
 import org.springframework.stereotype.Repository;
 
 import java.util.Date;
+import java.util.List;
 
 
 @Repository
 public class CoverageRepository {
     private static final String COLLECTION_SUFFIX = "Mocker";
+    private static final String DASH_ID = "_id";
     private final MongoCollection<AREXMocker> coverageCollection;
 
     public CoverageRepository(MongoDatabase mongoDatabase) {
@@ -43,7 +45,7 @@ public class CoverageRepository {
             return coverageCollection.findOneAndUpdate(filters, update, opt);
         } catch (DuplicateKeyException e) {
             // todo optimize
-            update = Updates.combine(Updates.set(AREXMocker.Fields.recordId, value.getRecordId()), Updates.setOnInsert("_id", new ObjectId().toString()));
+            update = Updates.combine(Updates.set(AREXMocker.Fields.recordId, value.getRecordId()), Updates.setOnInsert(DASH_ID, new ObjectId().toString()));
             return coverageCollection.findOneAndUpdate(filters, update, opt);
         }
     }
@@ -56,5 +58,10 @@ public class CoverageRepository {
                 Updates.set(AREXMocker.Fields.targetResponse, response));
 
         coverageCollection.updateOne(filters, updates);
+    }
+
+    public void deleteByIds(List<String> ids) {
+        Bson filters = Filters.in(DASH_ID, ids);
+        coverageCollection.deleteMany(filters);
     }
 }

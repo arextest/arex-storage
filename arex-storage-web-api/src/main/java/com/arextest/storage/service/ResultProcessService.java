@@ -10,6 +10,7 @@ import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.impl.mongo.AutoPinedMockerRepository;
+import com.arextest.storage.repository.impl.mongo.CoverageRepository;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -38,6 +39,8 @@ public class ResultProcessService {
     RepositoryProviderFactory repositoryProviderFactory;
     @Resource
     PrepareMockResultService prepareMockResultService;
+    @Resource
+    CoverageRepository coverageRepository;
     private static final int COMPARED_WITHOUT_DIFFERENCE = 0;
     private static final int COMPARED_WITH_DIFFERENCE = 1;
     private static final int COMPARED_INTERNAL_EXCEPTION = 2;
@@ -111,6 +114,7 @@ public class ResultProcessService {
             }
             if (!CollectionUtils.isEmpty(needDelete)) {
                 autoPinedMockerRepository.deleteMany(category, needDelete.stream().map(AREXMocker::getId).collect(Collectors.toList()));
+                coverageRepository.deleteByIds(needDelete.stream().map(AREXMocker::getId).collect(Collectors.toList()));
                 needDelete = new ArrayList<>();
             }
         }
