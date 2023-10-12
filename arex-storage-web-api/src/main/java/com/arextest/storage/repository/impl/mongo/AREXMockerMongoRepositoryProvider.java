@@ -42,7 +42,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     private static final String APP_ID_COLUMN_NAME = "appId";
     private static final String ENV_COLUMN_NAME = "recordEnvironment";
     private static final String OPERATION_COLUMN_NAME = "operationName";
-    protected static final String COLLECTION_PREFIX = "Mocker";
+    private static final String COLLECTION_PREFIX = "Mocker";
     private static final String PLACE_HOLDER = "$";
     private static final String VALUE_COLUMN = "value";
 
@@ -169,19 +169,19 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         long currentTimeMillis = System.currentTimeMillis();
         long allowedLastMills = TimeUtils.getTodayFirstMills() + properties.getAllowReRunDays() * TimeUtils.ONE_DAY;
         Bson filters = Filters.and(Filters.and(bsons),
-            Filters.or(Filters.lt(EXPIRATION_TIME_COLUMN_NAME, new Date(allowedLastMills)),
-            Filters.exists(EXPIRATION_TIME_COLUMN_NAME, false)));
+                Filters.or(Filters.lt(EXPIRATION_TIME_COLUMN_NAME, new Date(allowedLastMills)),
+                        Filters.exists(EXPIRATION_TIME_COLUMN_NAME, false)));
         // Add different minutes to avoid the same expiration time
         Bson update = Updates.combine(
-            Updates.set(EXPIRATION_TIME_COLUMN_NAME,
-                new Date(allowedLastMills + currentTimeMillis % TimeUtils.ONE_HOUR)),
-            Updates.set(UPDATE_TIME_COLUMN_NAME, new Date(currentTimeMillis)));
+                Updates.set(EXPIRATION_TIME_COLUMN_NAME,
+                        new Date(allowedLastMills + currentTimeMillis % TimeUtils.ONE_HOUR)),
+                Updates.set(UPDATE_TIME_COLUMN_NAME, new Date(currentTimeMillis)));
         collectionSource.updateMany(filters, update);
     }
 
 
     private AREXMocker getLastRecordVersionMocker(PagedRequestType pagedRequestType,
-                                                  MongoCollection<AREXMocker> collectionSource) {
+            MongoCollection<AREXMocker> collectionSource) {
         return collectionSource
                 .find(Filters.and(buildReadRangeFilters(pagedRequestType)))
                 .sort(CREATE_TIME_DESCENDING_SORT)
@@ -258,7 +258,8 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
             MongoCollection<AREXMocker> collectionSource = createOrGetCollection(category);
             long currentTimeMillis = System.currentTimeMillis();
             valueList.forEach(item -> item.setExpirationTime(currentTimeMillis
-                    + properties.getExpirationDurationMap().getOrDefault(category.getName(), properties.getDefaultExpirationDuration())));
+                    + properties.getExpirationDurationMap()
+                    .getOrDefault(category.getName(), properties.getDefaultExpirationDuration())));
             collectionSource.insertMany(valueList);
         } catch (Throwable ex) {
             LOGGER.error("save List error:{} , size:{}", ex.getMessage(), valueList.size(), ex);
@@ -282,9 +283,12 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     }
 
     @Override
-    public long removeByOperationNameAndAppId(MockCategoryType categoryType, String operationName, String appId){
+    public long removeByOperationNameAndAppId(MockCategoryType categoryType, String operationName, String appId) {
         MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
-        DeleteResult deleteResult = collectionSource.deleteMany(Filters.and(Filters.eq(OPERATION_COLUMN_NAME,operationName), Filters.eq(APP_ID_COLUMN_NAME,appId)));
+        DeleteResult deleteResult =
+                collectionSource.deleteMany(Filters.and(Filters.eq(OPERATION_COLUMN_NAME,
+                                operationName == null ? "" : operationName),
+                        Filters.eq(APP_ID_COLUMN_NAME, appId)));
         return deleteResult.getDeletedCount();
     }
 

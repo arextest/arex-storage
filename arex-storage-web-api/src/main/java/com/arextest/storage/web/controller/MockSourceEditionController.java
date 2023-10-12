@@ -35,7 +35,8 @@ public class MockSourceEditionController {
     private final int REMOVE_BY_APPID_AND_OPERATIONNAME = 2;
     private final int REMOVE_BY_RECORDID = 3;
 
-    public MockSourceEditionController(MockSourceEditionService editableService, PrepareMockResultService storageCache) {
+    public MockSourceEditionController(MockSourceEditionService editableService,
+            PrepareMockResultService storageCache) {
         this.editableService = editableService;
         this.storageCache = storageCache;
     }
@@ -48,7 +49,10 @@ public class MockSourceEditionController {
 
     @GetMapping(value = "/copy/")
     @ResponseBody
-    public Response copyTo(String srcProviderName, String srcRecordId, String targetProviderName, String targetRecordId) {
+    public Response copyTo(String srcProviderName,
+            String srcRecordId,
+            String targetProviderName,
+            String targetRecordId) {
         if (StringUtils.isEmpty(srcProviderName)) {
             return ResponseUtils.parameterInvalidResponse("The srcProviderName of requested is empty");
         }
@@ -69,23 +73,28 @@ public class MockSourceEditionController {
 
     @GetMapping(value = "/removeAll/")
     @ResponseBody
-    public Response removeAll(@RequestParam(required = false, defaultValue = ProviderNames.DEFAULT) String srcProviderName, String recordId) {
+    public Response removeAll(
+            @RequestParam(required = false, defaultValue = ProviderNames.DEFAULT) String srcProviderName,
+            String recordId) {
         if (StringUtils.isEmpty(recordId)) {
             return ResponseUtils.emptyRecordIdResponse();
         }
         return ResponseUtils.successResponse(editableService.removeAll(srcProviderName, recordId));
     }
 
-    @PostMapping (value = "/removeBy/")
+    @PostMapping(value = "/removeBy/")
     @ResponseBody
-    public Response removeAllBy( @RequestBody MockRequest request){
-        if ( request.getType()==REMOVE_BY_APPID ) {
-            return ResponseUtils.successResponse(editableService.removeAllByAppId(PROVIDER_ROLLING, request.getAppId()));
+    public Response removeAllBy(@RequestBody MockRequest request) {
+        if (request.getType() == REMOVE_BY_APPID) {
+            return ResponseUtils.successResponse(editableService.removeAllByAppId(PROVIDER_ROLLING,
+                    request.getAppId()));
         }
-        if ( request.getType()==REMOVE_BY_APPID_AND_OPERATIONNAME ) {
-            return ResponseUtils.successResponse(editableService.removeAllByOperationNameAndAppId(PROVIDER_ROLLING, request.getOperationName(),request.getAppId()));
+        if (request.getType() == REMOVE_BY_APPID_AND_OPERATIONNAME) {
+            return ResponseUtils.successResponse(editableService.removeAllByOperationNameAndAppId(PROVIDER_ROLLING,
+                    request.getOperationName(),
+                    request.getAppId()));
         }
-        if ( request.getType()==REMOVE_BY_RECORDID ) {
+        if (request.getType() == REMOVE_BY_RECORDID) {
             return ResponseUtils.successResponse(editableService.removeAll(PROVIDER_ROLLING, request.getRecordId()));
         }
         return ResponseUtils.invalidTypeResponse();
@@ -95,8 +104,8 @@ public class MockSourceEditionController {
     @GetMapping(value = "/remove/")
     @ResponseBody
     public Response remove(@RequestParam(required = false, defaultValue = ProviderNames.DEFAULT) String srcProviderName,
-                           String category,
-                           String recordId) {
+            String category,
+            String recordId) {
         if (StringUtils.isEmpty(recordId)) {
             return ResponseUtils.emptyRecordIdResponse();
         }
