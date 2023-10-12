@@ -7,6 +7,7 @@ import com.arextest.common.utils.JwtUtil;
 import com.arextest.common.utils.ResponseUtils;
 import com.arextest.config.model.dto.application.ApplicationConfiguration;
 import com.arextest.config.repository.impl.ApplicationConfigurationRepositoryImpl;
+import com.arextest.storage.service.config.ApplicationService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -21,6 +22,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author wildeslam.
@@ -37,6 +39,8 @@ public class AppAuthAspect {
 
     @Resource
     private ApplicationConfigurationRepositoryImpl applicationConfigurationRepository;
+    @Resource
+    private ApplicationService applicationService;
 
     @Pointcut("@annotation(com.arextest.common.annotation.AppAuth)")
     public void appAuth(){}
@@ -55,18 +59,25 @@ public class AppAuthAspect {
             LOGGER.error("header has no appId");
             return reject(point, auth, NO_APPID);
         }
-        List<ApplicationConfiguration> applications = applicationConfigurationRepository.listBy(context.getAppId());
-        if (CollectionUtils.isEmpty(applications)) {
-            LOGGER.error("error appId");
-            return reject(point, auth, ERROR_APPID);
+
+        Set<String> owners = applicationService.getAppOwnersCache(appId);
+        if (owners == null) {
+            List<ApplicationConfiguration> applications = applicationConfigurationRepository.listBy(context.getAppId());
+            if (CollectionUtils.isEmpty(applications)) {
+                LOGGER.error("error appId");
+                return reject(point, auth, ERROR_APPID);
+            }
+            ApplicationConfiguration application = applications.get(0);
+            if (application.getOwners() == null) {
+                LOGGER.error("The app:{} has no owners", appId);
+                return reject(point, auth, NO_PERMISSION);
+            }
+            owners = application.getOwners();
         }
-        ApplicationConfiguration application = applications.get(0);
-        if (application.getOwners() == null) {
-            LOGGER.error("The app:{} has no owners", appId);
-            return reject(point, auth, NO_PERMISSION);
-        }
+
+
         Object result;
-        if (application.getOwners().contains(userName)) {
+        if (owners.contains(userName)) {
             context.setPassAuth(true);
             result = point.proceed();
         } else {
