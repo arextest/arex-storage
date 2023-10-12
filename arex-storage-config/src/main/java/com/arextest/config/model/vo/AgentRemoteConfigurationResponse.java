@@ -1,6 +1,7 @@
 package com.arextest.config.model.vo;
 
 import java.util.List;
+import java.util.Map;
 
 import com.arextest.config.model.dto.record.DynamicClassConfiguration;
 import com.arextest.config.model.dto.record.ServiceCollectConfiguration;
@@ -22,4 +23,6 @@ public class AgentRemoteConfigurationResponse {
     private Integer status;
 
     private String targetAddress;
+
+    private Map<String, String> extendField;
 }
