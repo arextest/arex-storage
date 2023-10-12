@@ -77,6 +77,10 @@ public class ResultProcessService {
 
     private void clearAllCache(ResultCodeGroup diffResult) {
         for (ResultCodeGroup.CategoryGroup categoryGroup : diffResult.getCategoryGroups()) {
+            MockCategoryType category = MockCategoryType.create(categoryGroup.getCategoryName());
+            if (!category.isEntryPoint()) {
+                continue;
+            }
             for (ResultCodeGroup.IdPair idPair : categoryGroup.getResultIds()) {
                 prepareMockResultService.removeAll(idPair.getRecordId(), idPair.getTargetId());
             }
