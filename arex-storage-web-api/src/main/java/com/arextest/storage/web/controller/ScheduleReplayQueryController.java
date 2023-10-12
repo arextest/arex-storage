@@ -3,17 +3,16 @@ package com.arextest.storage.web.controller;
 import com.arextest.common.annotation.AppAuth;
 import com.arextest.common.context.ArexContext;
 import com.arextest.common.enums.AuthRejectStrategy;
-import com.arextest.common.utils.JsonTraverseUtils;
 import com.arextest.model.mock.AREXMocker;
-import com.arextest.model.mock.Mocker;
 import com.arextest.model.replay.*;
 import com.arextest.model.replay.holder.ListResultHolder;
 import com.arextest.model.response.Response;
+import com.arextest.storage.mock.MockerPostProcessor;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.service.PrepareMockResultService;
 import com.arextest.storage.service.ScheduleReplayingService;
 import com.arextest.storage.trace.MDCTracer;
-import com.arextest.storage.utils.JsonUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -22,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * this class defined all api list for scheduler replaying
@@ -93,6 +91,7 @@ public class ScheduleReplayQueryController {
      */
     @PostMapping(value = "/replayCase")
     @ResponseBody
+    @AppAuth(rejectStrategy = AuthRejectStrategy.DOWNGRADE)
     public Response replayCase(@RequestBody PagedRequestType requestType) {
         Response validateResult = rangeParameterValidate(requestType);
         if (validateResult != null) {
@@ -103,15 +102,24 @@ public class ScheduleReplayQueryController {
         if (validateResult != null) {
             return validateResult;
         }
+        PagedResponseType responseType = new PagedResponseType();
 
         try {
-            PagedResponseType responseType = new PagedResponseType();
-            responseType.setRecords(scheduleReplayingService.queryEntryPointByRange(requestType));
-            return ResponseUtils.successResponse(responseType);
+            List<AREXMocker> mockers = scheduleReplayingService.queryEntryPointByRange(requestType);
+            responseType.setRecords(mockers);
+
+            if (!Boolean.TRUE.equals(ArexContext.getContext().getPassAuth())) {
+                MockerPostProcessor.desensitize(mockers);
+                responseType.setDesensitized(true);
+            }
+        } catch (JsonProcessingException throwable) {
+            responseType.setDesensitized(false);
+            LOGGER.error("responseDesensitization error:{}", throwable.getMessage(), throwable);
         } catch (Throwable throwable) {
             LOGGER.error("error:{},request:{}", throwable.getMessage(), requestType);
             return ResponseUtils.exceptionResponse(throwable.getMessage());
         }
+        return ResponseUtils.successResponse(responseType);
     }
 
     private Response rangeParameterValidate(PagedRequestType requestType) {
@@ -175,7 +183,7 @@ public class ScheduleReplayQueryController {
      */
     @PostMapping(value = "/countByOperationName")
     @ResponseBody
-    public Response countByOperationName (@RequestBody CountOperationCaseRequestType requestType) {
+    public Response countByOperationName(@RequestBody CountOperationCaseRequestType requestType) {
         Response validateResult = rangeParameterValidate(requestType);
         if (validateResult != null) {
             return validateResult;
@@ -225,48 +233,30 @@ public class ScheduleReplayQueryController {
             return ResponseUtils.emptyRecordIdResponse();
         }
         MDCTracer.addRecordId(recordId);
+        ViewRecordResponseType responseType = new ViewRecordResponseType();
         try {
-            ViewRecordResponseType responseType = new ViewRecordResponseType();
             List<AREXMocker> allReadableResult = scheduleReplayingService.queryRecordList(requestType);
             if (CollectionUtils.isEmpty(allReadableResult)) {
                 LOGGER.info("could not found any resources for request: {}", requestType);
             }
             responseType.setRecordResult(allReadableResult);
-            responseDesensitization(responseType, allReadableResult);
-            return ResponseUtils.successResponse(responseType);
+
+            if (!Boolean.TRUE.equals(ArexContext.getContext().getPassAuth())) {
+                MockerPostProcessor.desensitize(allReadableResult);
+                responseType.setDesensitized(true);
+            }
+        } catch (JsonProcessingException exception) {
+            responseType.setDesensitized(false);
+            LOGGER.error("responseDesensitization error:{}", exception.getMessage(), exception);
         } catch (Throwable throwable) {
             LOGGER.error("viewRecord error:{}, request:{}", throwable.getMessage(), requestType);
             return ResponseUtils.exceptionResponse(throwable.getMessage());
         } finally {
             MDCTracer.clear();
         }
+        return ResponseUtils.successResponse(responseType);
     }
 
-    private static void responseDesensitization(ViewRecordResponseType responseType, List<AREXMocker> allReadableResult) {
-        if (!Boolean.TRUE.equals(ArexContext.getContext().getPassAuth())) {
-            try {
-                responseType.setDesensitized(true);
-                for (AREXMocker arexMocker : allReadableResult) {
-                    Mocker.Target request = arexMocker.getTargetRequest();
-                    Mocker.Target response = arexMocker.getTargetResponse();
-
-                    if (JsonUtil.isJsonStr(request.getBody())) {
-                        request.setBody(JsonTraverseUtils.trimAllLeaves(request.getBody()));
-                    }
-                    if (JsonUtil.isJsonStr(response.getBody())) {
-                        response.setBody(JsonTraverseUtils.trimAllLeaves(response.getBody()));
-                    }
-                    Optional.ofNullable(response.getAttributes())
-                            .ifPresent(attributes -> attributes.entrySet().forEach(entry -> entry.setValue(null)));
-                    Optional.ofNullable(request.getAttributes())
-                            .ifPresent(attributes -> attributes.entrySet().forEach(entry -> entry.setValue(null)));
-                }
-            } catch (Exception e) {
-                responseType.setDesensitized(false);
-                LOGGER.error("trimAllLeaves error", e);
-            }
-        }
-    }
 
     /**
      * preload record content to cache from repository provider
