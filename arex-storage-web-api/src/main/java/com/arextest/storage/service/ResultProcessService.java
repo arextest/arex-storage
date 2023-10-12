@@ -114,7 +114,7 @@ public class ResultProcessService {
             }
             if (!CollectionUtils.isEmpty(needDelete)) {
                 autoPinedMockerRepository.deleteMany(category, needDelete.stream().map(AREXMocker::getId).collect(Collectors.toList()));
-                coverageRepository.deleteByIds(needDelete.stream().map(AREXMocker::getId).collect(Collectors.toList()));
+                coverageRepository.deleteByRecordIds(needDelete.stream().map(AREXMocker::getRecordId).collect(Collectors.toList()));
                 needDelete = new ArrayList<>();
             }
         }

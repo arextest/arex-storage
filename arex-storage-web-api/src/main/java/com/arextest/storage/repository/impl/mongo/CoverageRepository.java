@@ -60,8 +60,8 @@ public class CoverageRepository {
         coverageCollection.updateOne(filters, updates);
     }
 
-    public void deleteByIds(List<String> ids) {
-        Bson filters = Filters.in(DASH_ID, ids);
+    public void deleteByRecordIds(List<String> recordIds) {
+        Bson filters = Filters.in(AREXMocker.Fields.recordId, recordIds);
         coverageCollection.deleteMany(filters);
     }
 }
