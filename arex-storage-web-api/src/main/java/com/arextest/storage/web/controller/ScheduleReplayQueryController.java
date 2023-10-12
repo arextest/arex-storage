@@ -1,24 +1,14 @@
 package com.arextest.storage.web.controller;
 
 import com.arextest.model.mock.AREXMocker;
-import com.arextest.model.replay.CountOperationCaseRequestType;
-import com.arextest.model.replay.CountOperationCaseResponseType;
-import com.arextest.model.replay.PagedRequestType;
-import com.arextest.model.replay.PagedResponseType;
-import com.arextest.model.replay.QueryCaseCountRequestType;
-import com.arextest.model.replay.QueryCaseCountResponseType;
-import com.arextest.model.replay.QueryMockCacheRequestType;
-import com.arextest.model.replay.QueryMockCacheResponseType;
-import com.arextest.model.replay.QueryReplayResultRequestType;
-import com.arextest.model.replay.QueryReplayResultResponseType;
-import com.arextest.model.replay.ViewRecordRequestType;
-import com.arextest.model.replay.ViewRecordResponseType;
+import com.arextest.model.replay.*;
 import com.arextest.model.replay.holder.ListResultHolder;
 import com.arextest.model.response.Response;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.service.PrepareMockResultService;
 import com.arextest.storage.service.ScheduleReplayingService;
 import com.arextest.storage.trace.MDCTracer;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -41,17 +31,11 @@ import java.util.Map;
  */
 @Slf4j
 @RequestMapping(path = "/api/storage/replay/query", produces = {MediaType.APPLICATION_JSON_VALUE})
+@AllArgsConstructor
 public class ScheduleReplayQueryController {
 
     private final ScheduleReplayingService scheduleReplayingService;
-
     private final PrepareMockResultService prepareMockResultService;
-
-    public ScheduleReplayQueryController(ScheduleReplayingService scheduleReplayingService,
-                                         PrepareMockResultService prepareMockResultService) {
-        this.scheduleReplayingService = scheduleReplayingService;
-        this.prepareMockResultService = prepareMockResultService;
-    }
 
     /**
      * fetch the replay result for compare
@@ -138,6 +122,9 @@ public class ScheduleReplayQueryController {
         }
         if (requestType.getBeginTime() >= requestType.getEndTime()) {
             return ResponseUtils.parameterInvalidResponse("The beginTime >= endTime from requested");
+        }
+        if (StringUtils.isEmpty(requestType.getSourceProvider())) {
+            requestType.setSourceProvider(ProviderNames.DEFAULT);
         }
         return null;
     }
@@ -265,10 +252,14 @@ public class ScheduleReplayQueryController {
         if (StringUtils.isEmpty(recordId)) {
             return ResponseUtils.emptyRecordIdResponse();
         }
+        if (StringUtils.isEmpty(requestType.getSourceProvider())) {
+            requestType.setSourceProvider(ProviderNames.DEFAULT);
+        }
+
         MDCTracer.addRecordId(recordId);
         long beginTime = System.currentTimeMillis();
         try {
-            return toResponse(prepareMockResultService.preloadAll(requestType.getSourceProvider(), recordId));
+            return  toResponse(prepareMockResultService.preloadAll(requestType.getSourceProvider(), recordId));
         } catch (Throwable throwable) {
             LOGGER.error("QueryMockCache error:{},request:{}", throwable.getMessage(), requestType);
             return ResponseUtils.exceptionResponse(throwable.getMessage());
@@ -297,7 +288,7 @@ public class ScheduleReplayQueryController {
         }
         MDCTracer.addRecordId(recordId);
         try {
-            return toResponse(prepareMockResultService.removeAll(recordId));
+            return toResponse(prepareMockResultService.removeAllRecordCache(recordId));
         } catch (Throwable throwable) {
             LOGGER.error("QueryMockCache error:{},request:{}", throwable.getMessage(), requestType);
             return ResponseUtils.exceptionResponse(throwable.getMessage());

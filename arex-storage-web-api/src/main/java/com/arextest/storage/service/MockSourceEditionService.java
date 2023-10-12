@@ -9,17 +9,13 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Slf4j
 @Service
 public class MockSourceEditionService {
     private final RepositoryProviderFactory providerFactory;
-
-    public MockSourceEditionService(RepositoryProviderFactory providerFactory) {
+    public MockSourceEditionService(RepositoryProviderFactory providerFactory, Set<MockCategoryType> entryPointTypes) {
         this.providerFactory = providerFactory;
     }
 
@@ -139,6 +135,23 @@ public class MockSourceEditionService {
         return count;
     }
 
+    public boolean moveTo(String srcProviderName, String srcRecordId, String targetProviderName) {
+        copyTo(srcProviderName, srcRecordId, targetProviderName, srcRecordId);
+        removeByRecordId(srcProviderName, srcRecordId);
+        return true;
+    }
+
+    public boolean removeByRecordId(String providerName, String recordId) {
+        RepositoryProvider<?> repositoryWriter = providerFactory.findProvider(providerName);
+        if (repositoryWriter == null) {
+            LOGGER.warn("Could not found provider for {}", providerName);
+            return false;
+        }
+        for (MockCategoryType categoryType : providerFactory.getCategoryTypes()) {
+            repositoryWriter.removeBy(categoryType, recordId);
+        }
+        return true;
+    }
 
     private List<Mocker> createTargetList(Iterable<Mocker> srcItemIterable, String targetRecordId) {
         Iterator<Mocker> valueIterator = srcItemIterable.iterator();

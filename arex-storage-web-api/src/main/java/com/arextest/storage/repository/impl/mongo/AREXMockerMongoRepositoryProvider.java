@@ -11,13 +11,10 @@ import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.utils.TimeUtils;
 import com.mongodb.BasicDBObject;
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.Aggregates;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Projections;
-import com.mongodb.client.model.Sorts;
-import com.mongodb.client.model.Updates;
+import com.mongodb.client.model.*;
 import com.mongodb.client.result.DeleteResult;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -27,15 +24,7 @@ import org.bson.conversions.Bson;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 import javax.validation.constraints.NotNull;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * The rolling provider used by default,
@@ -72,20 +61,26 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     protected final MongoDatabase mongoDatabase;
     private final String providerName;
     private final StorageConfigurationProperties properties;
+    private final Set<MockCategoryType> entryPointTypes;
 
-    public AREXMockerMongoRepositoryProvider(MongoDatabase mongoDatabase, StorageConfigurationProperties properties) {
-        this(ProviderNames.DEFAULT, mongoDatabase, properties);
+    public AREXMockerMongoRepositoryProvider(MongoDatabase mongoDatabase,
+                                             StorageConfigurationProperties properties,
+                                             Set<MockCategoryType> entryPointTypes) {
+        this(ProviderNames.DEFAULT, mongoDatabase, properties, entryPointTypes);
     }
 
-    public AREXMockerMongoRepositoryProvider(String providerName, MongoDatabase mongoDatabase,
-            StorageConfigurationProperties properties) {
+    public AREXMockerMongoRepositoryProvider(String providerName,
+                                             MongoDatabase mongoDatabase,
+                                             StorageConfigurationProperties properties,
+                                             Set<MockCategoryType> entryPointTypes) {
         this.properties = properties;
         this.targetClassType = AREXMocker.class;
         this.mongoDatabase = mongoDatabase;
         this.providerName = providerName;
+        this.entryPointTypes = entryPointTypes;
     }
 
-    private MongoCollection<AREXMocker> createOrGetCollection(MockCategoryType category) {
+    MongoCollection<AREXMocker> createOrGetCollection(MockCategoryType category) {
         String categoryName = this.getProviderName() + category.getName() + COLLECTION_PREFIX;
         return mongoDatabase.getCollection(categoryName, this.targetClassType);
     }
@@ -228,6 +223,22 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         return resultMap;
     }
 
+    @Override
+    public AREXMocker findEntryFromAllType(String recordId) {
+        // todo detect mocker type from header
+        // MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
+        for (MockCategoryType category : entryPointTypes) {
+            MongoCollection<AREXMocker> collectionSource = createOrGetCollection(category);
+            FindIterable<AREXMocker> res = collectionSource.find(Filters.eq(PRIMARY_KEY_COLUMN_NAME, recordId), AREXMocker.class);
+            Iterator<AREXMocker> iterator = res.iterator();
+            if (iterator.hasNext()) {
+                AREXMocker resItem = iterator.next();
+                resItem.setCategoryType(category);
+                return resItem;
+            }
+        }
+        return null;
+    }
 
     @Override
     public boolean save(AREXMocker value) {
@@ -280,6 +291,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
                         Filters.eq(APP_ID_COLUMN_NAME, appId)));
         return deleteResult.getDeletedCount();
     }
+
     @Override
     public boolean update(AREXMocker value) {
         Bson primaryKeyFilter = buildPrimaryKeyFilter(value);
