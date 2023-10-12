@@ -18,7 +18,10 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 
@@ -203,7 +206,6 @@ public class ScheduleReplayQueryController {
 
     @ResponseBody
     @GetMapping(value = "/viewRecord/")
-    @AppAuth(rejectStrategy = AuthRejectStrategy.DOWNGRADE)
     public Response viewRecord(String recordId,
                                @RequestParam(required = false) String category,
                                @RequestParam(required = false, defaultValue = ProviderNames.DEFAULT) String srcProvider) {
@@ -223,7 +225,6 @@ public class ScheduleReplayQueryController {
      */
     @PostMapping("/viewRecord")
     @ResponseBody
-    @AppAuth(rejectStrategy = AuthRejectStrategy.DOWNGRADE)
     public Response viewRecord(@RequestBody ViewRecordRequestType requestType) {
         if (requestType == null) {
             return ResponseUtils.requestBodyEmptyResponse();
@@ -241,7 +242,10 @@ public class ScheduleReplayQueryController {
             }
             responseType.setRecordResult(allReadableResult);
 
-            if (!Boolean.TRUE.equals(ArexContext.getContext().getPassAuth())) {
+            ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            HttpServletRequest request = requestAttributes.getRequest();
+            String passAuth = request.getHeader("passAuth");
+            if (!Boolean.TRUE.toString().equals(passAuth)) {
                 MockerPostProcessor.desensitize(allReadableResult);
                 responseType.setDesensitized(true);
             }
