@@ -37,11 +37,14 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
     }
 
     /**
-     * 自动固化的Case:
-     *      更新数据
+     * if is auto pined Case:
+     *      update path
      *
-     * 新记录的Case:
-     *      判断是否存在相同Key，相同则删除原自动固化Case，更新为新Case（每次回放只更新一次），不存在则自动固化
+     * if is new case:
+     *      if it has same path key:
+     *          replace old case
+     *      else:
+     *          store
      */
     @Override
     public void handle(AREXMocker coverageMocker) {
