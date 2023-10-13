@@ -1,6 +1,5 @@
 package com.arextest.storage.web.controller;
 
-import com.arextest.common.annotation.AppAuth;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.response.Response;
@@ -83,7 +82,6 @@ public class MockSourceEditionController {
         return ResponseUtils.successResponse(editableService.removeAll(srcProviderName, recordId));
     }
 
-    @AppAuth
     @PostMapping(value = "/removeBy/")
     @ResponseBody
     public Response removeAllBy(@RequestBody MockRequest request) {
