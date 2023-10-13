@@ -244,8 +244,8 @@ public class ScheduleReplayQueryController {
 
             ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
             HttpServletRequest request = requestAttributes.getRequest();
-            String passAuth = request.getHeader("passAuth");
-            if (!Boolean.TRUE.toString().equals(passAuth)) {
+            String downgrade = request.getHeader("downgrade");
+            if (Boolean.TRUE.toString().equals(downgrade)) {
                 MockerPostProcessor.desensitize(allReadableResult);
                 responseType.setDesensitized(true);
             }
