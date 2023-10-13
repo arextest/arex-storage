@@ -1,10 +1,14 @@
 package com.arextest.storage.beans;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.Resource;
 
+import com.arextest.storage.repository.impl.mongo.AutoPinedMockerRepository;
+import com.arextest.storage.service.mockerhandlers.MockerHandlerFactory;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -88,6 +92,18 @@ public class StorageAutoConfiguration {
         return customCategoryTypes;
     }
 
+    @Bean
+    public Set<MockCategoryType> entryPointTypes() {
+        Set<MockCategoryType> entryPoints = new LinkedHashSet<>();
+        Set<MockCategoryType> customCategoryTypes = properties.getCategoryTypes();
+        // order matters here, we want all custom entry points to be added first
+        if (CollectionUtils.isNotEmpty(customCategoryTypes)) {
+            customCategoryTypes.stream().filter(MockCategoryType::isEntryPoint).forEach(entryPoints::add);
+        }
+        MockCategoryType.DEFAULTS.stream().filter(MockCategoryType::isEntryPoint).forEach(entryPoints::add);
+        return entryPoints;
+    }
+
     /**
      * used for web api provider how to decode the request before processing. we add a zstd-jackson converter.
      *
@@ -110,10 +126,11 @@ public class StorageAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(AgentWorkingService.class)
     public AgentWorkingService agentWorkingService(MockResultProvider mockResultProvider,
-        RepositoryProviderFactory repositoryProviderFactory, ZstdJacksonSerializer zstdJacksonSerializer,
-        PrepareMockResultService prepareMockResultService, List<AgentWorkingListener> agentWorkingListeners) {
+                                                   RepositoryProviderFactory repositoryProviderFactory, MockerHandlerFactory mockerHandlerFactory,
+                                                   ZstdJacksonSerializer zstdJacksonSerializer, PrepareMockResultService prepareMockResultService,
+                                                   List<AgentWorkingListener> agentWorkingListeners) {
         AgentWorkingService workingService =
-            new AgentWorkingService(mockResultProvider, repositoryProviderFactory, agentWorkingListeners);
+            new AgentWorkingService(mockResultProvider, repositoryProviderFactory, mockerHandlerFactory, agentWorkingListeners);
         workingService.setPrepareMockResultService(prepareMockResultService);
         workingService.setZstdJacksonSerializer(zstdJacksonSerializer);
         workingService.setRecordEnvType(properties.getRecordEnv());
@@ -150,14 +167,20 @@ public class StorageAutoConfiguration {
     }
 
     @Bean
+    @Order(3)
+    public RepositoryProvider<AREXMocker> autoPinnedMockerProvider(MongoDatabase mongoDatabase, Set<MockCategoryType> entryPointTypes) {
+        return new AutoPinedMockerRepository(mongoDatabase, properties, entryPointTypes);
+    }
+
+    @Bean
     @Order(2)
-    public RepositoryProvider<AREXMocker> pinnedMockerProvider(MongoDatabase mongoDatabase) {
-        return new AREXMockerMongoRepositoryProvider(ProviderNames.PINNED, mongoDatabase, properties);
+    public RepositoryProvider<AREXMocker> pinnedMockerProvider(MongoDatabase mongoDatabase, Set<MockCategoryType> entryPointTypes) {
+        return new AREXMockerMongoRepositoryProvider(ProviderNames.PINNED, mongoDatabase, properties, entryPointTypes);
     }
 
     @Bean
     @Order(1)
-    public RepositoryProvider<AREXMocker> defaultMockerProvider(MongoDatabase mongoDatabase) {
-        return new AREXMockerMongoRepositoryProvider(mongoDatabase, properties);
+    public RepositoryProvider<AREXMocker> defaultMockerProvider(MongoDatabase mongoDatabase, Set<MockCategoryType> entryPointTypes) {
+        return new AREXMockerMongoRepositoryProvider(mongoDatabase, properties, entryPointTypes);
     }
 }
