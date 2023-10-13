@@ -1,10 +1,18 @@
 package com.arextest.storage.web.controller;
 
-import com.arextest.common.annotation.AppAuth;
-import com.arextest.common.context.ArexContext;
-import com.arextest.common.enums.AuthRejectStrategy;
 import com.arextest.model.mock.AREXMocker;
-import com.arextest.model.replay.*;
+import com.arextest.model.replay.CountOperationCaseRequestType;
+import com.arextest.model.replay.CountOperationCaseResponseType;
+import com.arextest.model.replay.PagedRequestType;
+import com.arextest.model.replay.PagedResponseType;
+import com.arextest.model.replay.QueryCaseCountRequestType;
+import com.arextest.model.replay.QueryCaseCountResponseType;
+import com.arextest.model.replay.QueryMockCacheRequestType;
+import com.arextest.model.replay.QueryMockCacheResponseType;
+import com.arextest.model.replay.QueryReplayResultRequestType;
+import com.arextest.model.replay.QueryReplayResultResponseType;
+import com.arextest.model.replay.ViewRecordRequestType;
+import com.arextest.model.replay.ViewRecordResponseType;
 import com.arextest.model.replay.holder.ListResultHolder;
 import com.arextest.model.response.Response;
 import com.arextest.storage.mock.MockerPostProcessor;
@@ -17,7 +25,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -94,7 +107,6 @@ public class ScheduleReplayQueryController {
      */
     @PostMapping(value = "/replayCase")
     @ResponseBody
-    @AppAuth(rejectStrategy = AuthRejectStrategy.DOWNGRADE)
     public Response replayCase(@RequestBody PagedRequestType requestType) {
         Response validateResult = rangeParameterValidate(requestType);
         if (validateResult != null) {
@@ -105,24 +117,15 @@ public class ScheduleReplayQueryController {
         if (validateResult != null) {
             return validateResult;
         }
-        PagedResponseType responseType = new PagedResponseType();
 
         try {
-            List<AREXMocker> mockers = scheduleReplayingService.queryEntryPointByRange(requestType);
-            responseType.setRecords(mockers);
-
-            if (!Boolean.TRUE.equals(ArexContext.getContext().getPassAuth())) {
-                MockerPostProcessor.desensitize(mockers);
-                responseType.setDesensitized(true);
-            }
-        } catch (JsonProcessingException throwable) {
-            responseType.setDesensitized(false);
-            LOGGER.error("responseDesensitization error:{}", throwable.getMessage(), throwable);
+            PagedResponseType responseType = new PagedResponseType();
+            responseType.setRecords(scheduleReplayingService.queryEntryPointByRange(requestType));
+            return ResponseUtils.successResponse(responseType);
         } catch (Throwable throwable) {
             LOGGER.error("error:{},request:{}", throwable.getMessage(), requestType);
             return ResponseUtils.exceptionResponse(throwable.getMessage());
         }
-        return ResponseUtils.successResponse(responseType);
     }
 
     private Response rangeParameterValidate(PagedRequestType requestType) {
