@@ -11,7 +11,7 @@ spring:
 arex:
   app:
     auth:
-      switch: false
+      switch: true
   url:
     report:
       agentload: ${arex.report.config.agent.url}/api/config/agent/load
