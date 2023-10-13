@@ -6,10 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 @Getter
 @Setter
@@ -17,11 +14,9 @@ import java.util.Set;
 @AllArgsConstructor
 @EqualsAndHashCode(of = "name")
 public class MockCategoryType {
-
     private String name;
     private boolean entryPoint;
     private boolean skipComparison;
-
     @Override
     public String toString() {
         return this.name;
@@ -37,6 +32,10 @@ public class MockCategoryType {
 
     public static MockCategoryType createDependency(String name) {
         return new MockCategoryType(name, false, false);
+    }
+
+    public static MockCategoryType createCoverage(String name) {
+        return new MockCategoryType(name, false, true);
     }
 
     public static MockCategoryType create(String name) {
@@ -59,18 +58,20 @@ public class MockCategoryType {
     public static final MockCategoryType REDIS = MockCategoryType.createDependency("Redis");
     public static final MockCategoryType DUBBO_PROVIDER = MockCategoryType.createEntryPoint("DubboProvider");
     public static final MockCategoryType DUBBO_CONSUMER = MockCategoryType.createDependency("DubboConsumer");
+    public static final MockCategoryType COVERAGE = MockCategoryType.createCoverage("Coverage");
 
     static {
-        HashSet<MockCategoryType> internalSet = new HashSet<>();
-        internalSet.add(Q_MESSAGE_CONSUMER);
-        internalSet.add(Q_MESSAGE_PRODUCER);
+        Set<MockCategoryType> internalSet = new LinkedHashSet<>();
         internalSet.add(SERVLET);
+        internalSet.add(DUBBO_PROVIDER);
+        internalSet.add(Q_MESSAGE_CONSUMER);
+
+        internalSet.add(Q_MESSAGE_PRODUCER);
         internalSet.add(DATABASE);
         internalSet.add(HTTP_CLIENT);
         internalSet.add(CONFIG_FILE);
         internalSet.add(DYNAMIC_CLASS);
         internalSet.add(REDIS);
-        internalSet.add(DUBBO_PROVIDER);
         internalSet.add(DUBBO_CONSUMER);
         DEFAULTS = Collections.unmodifiableSet(internalSet);
     }

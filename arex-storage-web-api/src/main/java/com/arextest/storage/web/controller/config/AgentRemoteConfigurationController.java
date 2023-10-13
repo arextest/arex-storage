@@ -1,23 +1,22 @@
 package com.arextest.storage.web.controller.config;
 
-import com.arextest.common.model.response.Response;
-import com.arextest.common.model.response.ResponseCode;
-import com.arextest.common.utils.ResponseUtils;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import com.arextest.config.mapper.InstancesMapper;
-import com.arextest.config.model.dto.application.ApplicationConfiguration;
-import com.arextest.config.model.dto.application.InstancesConfiguration;
-import com.arextest.config.model.dto.record.DynamicClassConfiguration;
-import com.arextest.config.model.dto.record.ServiceCollectConfiguration;
 import com.arextest.config.model.vo.AgentRemoteConfigurationRequest;
 import com.arextest.config.model.vo.AgentRemoteConfigurationResponse;
 import com.arextest.config.model.vo.AgentStatusRequest;
 import com.arextest.config.model.vo.AgentStatusType;
-import com.arextest.storage.service.config.ConfigurableHandler;
-import com.arextest.storage.service.config.impl.ApplicationInstancesConfigurableHandler;
-import com.arextest.storage.service.config.impl.ApplicationServiceConfigurableHandler;
 import com.arextest.storage.service.config.impl.ServiceCollectConfigurableHandler;
-import com.arextest.storage.trace.MDCTracer;
-import lombok.extern.slf4j.Slf4j;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -28,14 +27,19 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.text.SimpleDateFormat;
-import java.util.List;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.stream.Collectors;
+import com.arextest.common.model.response.Response;
+import com.arextest.common.model.response.ResponseCode;
+import com.arextest.common.utils.ResponseUtils;
+import com.arextest.config.model.dto.application.ApplicationConfiguration;
+import com.arextest.config.model.dto.application.InstancesConfiguration;
+import com.arextest.config.model.dto.record.DynamicClassConfiguration;
+import com.arextest.config.model.dto.record.ServiceCollectConfiguration;
+import com.arextest.storage.service.config.ConfigurableHandler;
+import com.arextest.storage.service.config.impl.ApplicationInstancesConfigurableHandler;
+import com.arextest.storage.service.config.impl.ApplicationServiceConfigurableHandler;
+import com.arextest.storage.trace.MDCTracer;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author jmo
@@ -62,6 +66,9 @@ public final class AgentRemoteConfigurationController {
     @Resource
     private ServiceCollectConfigurableHandler serviceCollectHandler;
 
+    @Resource
+    private ObjectMapper objectMapper;
+
     @PostMapping("/load")
     @ResponseBody
     public Response load(@RequestBody AgentRemoteConfigurationRequest request) {
@@ -82,13 +89,14 @@ public final class AgentRemoteConfigurationController {
             AgentRemoteConfigurationResponse body = new AgentRemoteConfigurationResponse();
             body.setDynamicClassConfigurationList(dynamicClassHandler.useResultAsList(appId));
             body.setServiceCollectConfiguration(serviceCollectConfiguration);
+            body.setExtendField(getExtendField(serviceCollectConfiguration));
             body.setStatus(applicationConfiguration.getStatus());
             InstancesConfiguration instancesConfiguration = InstancesMapper.INSTANCE.dtoFromContract(request);
             applicationInstancesConfigurableHandler.createOrUpdate(instancesConfiguration);
             List<InstancesConfiguration> instances = applicationInstancesConfigurableHandler.useResultAsList(appId,
-                serviceCollectConfiguration.getRecordMachineCountLimit());
+                    serviceCollectConfiguration.getRecordMachineCountLimit());
             Set<String> recordingHosts =
-                instances.stream().map(InstancesConfiguration::getHost).collect(Collectors.toSet());
+                    instances.stream().map(InstancesConfiguration::getHost).collect(Collectors.toSet());
             if (recordingHosts.contains(request.getHost())) {
                 body.setTargetAddress(request.getHost());
             } else {
@@ -106,7 +114,7 @@ public final class AgentRemoteConfigurationController {
     @PostMapping("/agentStatus")
     @ResponseBody
     public ResponseEntity<String> agentStatus(HttpServletRequest httpServletRequest, HttpServletResponse response,
-        @RequestBody AgentStatusRequest request) {
+                                              @RequestBody AgentStatusRequest request) {
 
         try {
             // get requested appId
@@ -153,6 +161,19 @@ public final class AgentRemoteConfigurationController {
         } finally {
             MDCTracer.clear();
         }
+    }
+
+    private Map<String, String> getExtendField(ServiceCollectConfiguration serviceCollectConfiguration) {
+        Map<String, String> extendField = null;
+        if (serviceCollectConfiguration != null && CollectionUtils.isNotEmpty(serviceCollectConfiguration.getSerializeSkipInfoList())) {
+            try {
+                String infoListStr = objectMapper.writeValueAsString(serviceCollectConfiguration.getSerializeSkipInfoList());
+                extendField = Collections.singletonMap("serializeSkipInfoList", infoListStr);
+            } catch (JsonProcessingException e) {
+                LOGGER.error("getExtendField error", e);
+            }
+        }
+        return extendField;
     }
 
     private ApplicationConfiguration loadApplicationResult(AgentRemoteConfigurationRequest request) {
