@@ -78,14 +78,13 @@ public class AppAuthAspect {
             result = point.proceed();
         } else {
             context.setPassAuth(false);
-            return reject(point, auth, NO_PERMISSION);
+            result = reject(point, auth, NO_PERMISSION);
         }
         ArexContext.removeContext();
         return result;
     }
 
     private Object reject(ProceedingJoinPoint point, AppAuth auth, String remark) throws Throwable {
-        ArexContext.removeContext();
         switch (auth.rejectStrategy()) {
             case FAIL_RESPONSE:
                 return ResponseUtils.errorResponse(remark, ResponseCode.AUTHENTICATION_FAILED);
