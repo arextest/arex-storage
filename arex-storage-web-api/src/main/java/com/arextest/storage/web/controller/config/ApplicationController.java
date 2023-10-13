@@ -31,7 +31,6 @@ public class ApplicationController {
 
     @PostMapping("/add")
     @ResponseBody
-    @AppAuth
     public Response load(@RequestBody @Valid AddApplicationRequest request) {
         AddApplicationResponse response = applicationService.addApplication(request);
         return ResponseUtils.successResponse(response);
