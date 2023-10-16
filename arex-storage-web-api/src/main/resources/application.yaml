@@ -12,11 +12,6 @@ arex:
   app:
     auth:
       switch: true
-  url:
-    report:
-      agentload: ${arex.report.config.agent.url}/api/config/agent/load
-      agentStatus: ${arex.report.config.agent.url}/api/config/agent/agentStatus
-      desensitization: ${arex.report.config.agent.url}/api/desensitization/listJar
   config:
     # default for application settings
     application:
