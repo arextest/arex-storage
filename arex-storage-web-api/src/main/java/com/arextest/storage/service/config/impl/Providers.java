@@ -1,20 +1,18 @@
 package com.arextest.storage.service.config.impl;
 
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ServiceLoader;
-
-import org.apache.commons.lang3.StringUtils;
-
 import com.arextest.config.model.dto.application.ApplicationConfiguration;
 import com.arextest.config.model.dto.application.ApplicationDescription;
 import com.arextest.config.model.dto.application.OperationDescription;
 import com.arextest.config.model.dto.application.ServiceDescription;
 import com.arextest.storage.service.config.provider.ApplicationDescriptionProvider;
 import com.arextest.storage.service.config.provider.ApplicationServiceDescriptionProvider;
-
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ServiceLoader;
 
 /**
  * @author jmo
@@ -76,7 +74,7 @@ public final class Providers {
             ApplicationConfiguration applicationConfiguration = new ApplicationConfiguration();
             applicationConfiguration.setAppId(appId);
             applicationConfiguration.setOwner("unknown owner");
-            applicationConfiguration.setAppName("unknown app name");
+            applicationConfiguration.setAppName(appId);
             applicationConfiguration.setOrganizationName("unknown organization name");
             applicationConfiguration.setGroupName("unknown group name");
             applicationConfiguration.setGroupId("unknown group id");
