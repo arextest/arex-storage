@@ -13,28 +13,39 @@ import java.util.List;
 @Slf4j
 @Component
 public final class MatchKeyFactory {
-    private final List<MatchKeyBuilder> matchKeyBuilders;
-    public MatchKeyFactory(List<MatchKeyBuilder> matchKeyBuilders) {
-        this.matchKeyBuilders = matchKeyBuilders;
-    }
 
-    private MatchKeyBuilder find(MockCategoryType categoryType) {
-        if (CollectionUtils.isNotEmpty(this.matchKeyBuilders)) {
-            for (MatchKeyBuilder matchKeyBuilder : this.matchKeyBuilders) {
-                if (matchKeyBuilder.isSupported(categoryType)) {
-                    return matchKeyBuilder;
-                }
-            }
-        }
-        return null;
-    }
+  private final List<MatchKeyBuilder> matchKeyBuilders;
 
-    public List<byte[]> build(@NotNull Mocker instance) {
-        MatchKeyBuilder matchKeyBuilder = find(instance.getCategoryType());
-        if (matchKeyBuilder == null) {
-            LOGGER.warn("Could not found replay result match key builder for {}", instance);
-            return Collections.emptyList();
+  public MatchKeyFactory(List<MatchKeyBuilder> matchKeyBuilders) {
+    this.matchKeyBuilders = matchKeyBuilders;
+  }
+
+  private MatchKeyBuilder find(MockCategoryType categoryType) {
+    if (CollectionUtils.isNotEmpty(this.matchKeyBuilders)) {
+      for (MatchKeyBuilder matchKeyBuilder : this.matchKeyBuilders) {
+        if (matchKeyBuilder.isSupported(categoryType)) {
+          return matchKeyBuilder;
         }
-        return matchKeyBuilder.build(instance);
+      }
     }
+    return null;
+  }
+
+  public List<byte[]> build(@NotNull Mocker instance) {
+    MatchKeyBuilder matchKeyBuilder = find(instance.getCategoryType());
+    if (matchKeyBuilder == null) {
+      LOGGER.warn("Could not found replay result match key builder for {}", instance);
+      return Collections.emptyList();
+    }
+    return matchKeyBuilder.build(instance);
+  }
+
+  public String findDBTableNames(@NotNull Mocker instance) {
+    MatchKeyBuilder matchKeyBuilder = find(instance.getCategoryType());
+    if (matchKeyBuilder == null) {
+      LOGGER.warn("Could not found db table names for {}", instance);
+      return null;
+    }
+    return matchKeyBuilder.findDBTableNames(instance);
+  }
 }

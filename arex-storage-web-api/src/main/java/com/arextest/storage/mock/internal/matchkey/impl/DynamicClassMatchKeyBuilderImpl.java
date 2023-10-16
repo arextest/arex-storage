@@ -16,17 +16,22 @@ import java.util.Objects;
 @Order(10)
 final class DynamicClassMatchKeyBuilderImpl implements MatchKeyBuilder {
 
-    @Override
-    public boolean isSupported(MockCategoryType categoryType) {
-        return Objects.equals(categoryType, MockCategoryType.DYNAMIC_CLASS);
-    }
+  @Override
+  public boolean isSupported(MockCategoryType categoryType) {
+    return Objects.equals(categoryType, MockCategoryType.DYNAMIC_CLASS);
+  }
 
-    @Override
-    public List<byte[]> build(Mocker instance) {
-        MessageDigest messageDigest =MessageDigestWriter.getMD5Digest();
-        byte[] operationNameBytes = CacheKeyUtils.toUtf8Bytes(instance.getOperationName());
-        messageDigest.update(operationNameBytes);
-        messageDigest.update(CacheKeyUtils.toUtf8Bytes(instance.getTargetRequest().getBody()));
-        return Arrays.asList(messageDigest.digest(), operationNameBytes);
-    }
+  @Override
+  public List<byte[]> build(Mocker instance) {
+    MessageDigest messageDigest = MessageDigestWriter.getMD5Digest();
+    byte[] operationNameBytes = CacheKeyUtils.toUtf8Bytes(instance.getOperationName());
+    messageDigest.update(operationNameBytes);
+    messageDigest.update(CacheKeyUtils.toUtf8Bytes(instance.getTargetRequest().getBody()));
+    return Arrays.asList(messageDigest.digest(), operationNameBytes);
+  }
+
+  @Override
+  public String findDBTableNames(Mocker instance) {
+    return null;
+  }
 }

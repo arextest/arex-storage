@@ -12,14 +12,19 @@ import java.util.List;
 @Component
 final class EntryPointMatchKeyBuilderImpl implements MatchKeyBuilder {
 
-    @Override
-    public boolean isSupported(MockCategoryType categoryType) {
-        return categoryType.isEntryPoint();
-    }
+  @Override
+  public boolean isSupported(MockCategoryType categoryType) {
+    return categoryType.isEntryPoint();
+  }
 
-    @Override
-    public List<byte[]> build(Mocker instance) {
-        byte[] operationBytes = CacheKeyUtils.toUtf8Bytes(instance.getOperationName());
-        return Collections.singletonList(operationBytes);
-    }
+  @Override
+  public List<byte[]> build(Mocker instance) {
+    byte[] operationBytes = CacheKeyUtils.toUtf8Bytes(instance.getOperationName());
+    return Collections.singletonList(operationBytes);
+  }
+
+  @Override
+  public String findDBTableNames(Mocker instance) {
+    return null;
+  }
 }

@@ -27,6 +27,7 @@ import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.storage.converter.ZstdJacksonMessageConverter;
 import com.arextest.storage.metric.AgentWorkingMetricService;
+import com.arextest.storage.metric.MatchStrategyMetricService;
 import com.arextest.storage.metric.MetricListener;
 import com.arextest.storage.mock.MockResultProvider;
 import com.arextest.storage.repository.ProviderNames;
@@ -48,139 +49,164 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class StorageAutoConfiguration {
 
-    private final StorageConfigurationProperties properties;
+  private final StorageConfigurationProperties properties;
 
-    @Resource
-    IndexsSettingConfiguration indexsSettingConfiguration;
+  @Resource
+  IndexsSettingConfiguration indexsSettingConfiguration;
 
-    public StorageAutoConfiguration(StorageConfigurationProperties configurationProperties) {
-        properties = configurationProperties;
+  public StorageAutoConfiguration(StorageConfigurationProperties configurationProperties) {
+    properties = configurationProperties;
+  }
+
+  @Bean
+  @ConditionalOnMissingBean(MongoDatabase.class)
+  public MongoDatabase mongoDatabase(
+      AdditionalCodecProviderFactory additionalCodecProviderFactory) {
+    MongoDatabase database = MongoDbUtils.create(properties.getMongodbUri(),
+        additionalCodecProviderFactory);
+    indexsSettingConfiguration.setTtlIndexes(database);
+    indexsSettingConfiguration.ensureMockerQueryIndex(database);
+    indexsSettingConfiguration.setIndexAboutConfig(database);
+    return database;
+  }
+
+  @Bean
+  @ConditionalOnMissingBean(AdditionalCodecProviderFactory.class)
+  public AdditionalCodecProviderFactory additionalCodecProviderFactory() {
+    return new AdditionalCodecProviderFactory();
+  }
+
+  @Bean
+  @ConditionalOnMissingBean(CacheProvider.class)
+  public CacheProvider cacheProvider() {
+    if (StringUtils.isEmpty(properties.getCache().getUri())) {
+      return new DefaultRedisCacheProvider();
     }
+    return new DefaultRedisCacheProvider(properties.getCache().getUri());
+  }
 
-    @Bean
-    @ConditionalOnMissingBean(MongoDatabase.class)
-    public MongoDatabase mongoDatabase(AdditionalCodecProviderFactory additionalCodecProviderFactory) {
-        MongoDatabase database = MongoDbUtils.create(properties.getMongodbUri(), additionalCodecProviderFactory);
-        indexsSettingConfiguration.setTtlIndexes(database);
-        indexsSettingConfiguration.ensureMockerQueryIndex(database);
-        indexsSettingConfiguration.setIndexAboutConfig(database);
-        return database;
+  @Bean
+  public Set<MockCategoryType> categoryTypes() {
+    Set<MockCategoryType> customCategoryTypes = properties.getCategoryTypes();
+    if (CollectionUtils.isEmpty(customCategoryTypes)) {
+      return MockCategoryType.DEFAULTS;
     }
+    customCategoryTypes.addAll(MockCategoryType.DEFAULTS);
+    return customCategoryTypes;
+  }
 
-    @Bean
-    @ConditionalOnMissingBean(AdditionalCodecProviderFactory.class)
-    public AdditionalCodecProviderFactory additionalCodecProviderFactory() {
-        return new AdditionalCodecProviderFactory();
+  @Bean
+  public Set<MockCategoryType> entryPointTypes() {
+    Set<MockCategoryType> entryPoints = new LinkedHashSet<>();
+    Set<MockCategoryType> customCategoryTypes = properties.getCategoryTypes();
+    // order matters here, we want all custom entry points to be added first
+    if (CollectionUtils.isNotEmpty(customCategoryTypes)) {
+      customCategoryTypes.stream().filter(MockCategoryType::isEntryPoint).forEach(entryPoints::add);
     }
+    MockCategoryType.DEFAULTS.stream().filter(MockCategoryType::isEntryPoint)
+        .forEach(entryPoints::add);
+    return entryPoints;
+  }
 
-    @Bean
-    @ConditionalOnMissingBean(CacheProvider.class)
-    public CacheProvider cacheProvider() {
-        if (StringUtils.isEmpty(properties.getCache().getUri())) {
-            return new DefaultRedisCacheProvider();
-        }
-        return new DefaultRedisCacheProvider(properties.getCache().getUri());
-    }
+  /**
+   * used for web api provider how to decode the request before processing. we add a zstd-jackson
+   * converter.
+   *
+   * @return HttpMessageConverters
+   */
+  @Bean
+  @ConditionalOnMissingBean(HttpMessageConverters.class)
+  public HttpMessageConverters customConverters(
+      ZstdJacksonMessageConverter zstdJacksonMessageConverter) {
+    return new HttpMessageConverters(zstdJacksonMessageConverter);
+  }
 
-    @Bean
-    public Set<MockCategoryType> categoryTypes() {
-        Set<MockCategoryType> customCategoryTypes = properties.getCategoryTypes();
-        if (CollectionUtils.isEmpty(customCategoryTypes)) {
-            return MockCategoryType.DEFAULTS;
-        }
-        customCategoryTypes.addAll(MockCategoryType.DEFAULTS);
-        return customCategoryTypes;
-    }
+  @Bean
+  @ConditionalOnProperty(prefix = "arex.storage", name = "enableDiscoveryEntryPoint", havingValue = "true")
+  public AgentWorkingListener autoDiscoveryEntryPointListener(
+      ApplicationServiceConfigurationRepositoryImpl serviceRepository,
+      ApplicationOperationConfigurationRepositoryImpl serviceOperationRepository,
+      CacheProvider cacheProvider) {
+    return new AutoDiscoveryEntryPointListener(serviceRepository, serviceOperationRepository,
+        cacheProvider);
+  }
 
-    @Bean
-    public Set<MockCategoryType> entryPointTypes() {
-        Set<MockCategoryType> entryPoints = new LinkedHashSet<>();
-        Set<MockCategoryType> customCategoryTypes = properties.getCategoryTypes();
-        // order matters here, we want all custom entry points to be added first
-        if (CollectionUtils.isNotEmpty(customCategoryTypes)) {
-            customCategoryTypes.stream().filter(MockCategoryType::isEntryPoint).forEach(entryPoints::add);
-        }
-        MockCategoryType.DEFAULTS.stream().filter(MockCategoryType::isEntryPoint).forEach(entryPoints::add);
-        return entryPoints;
-    }
+  @Bean
+  @ConditionalOnMissingBean(AgentWorkingService.class)
+  public AgentWorkingService agentWorkingService(MockResultProvider mockResultProvider,
+      RepositoryProviderFactory repositoryProviderFactory,
+      MockerHandlerFactory mockerHandlerFactory,
+      ZstdJacksonSerializer zstdJacksonSerializer,
+      PrepareMockResultService prepareMockResultService,
+      List<AgentWorkingListener> agentWorkingListeners) {
+    AgentWorkingService workingService =
+        new AgentWorkingService(mockResultProvider, repositoryProviderFactory, mockerHandlerFactory,
+            agentWorkingListeners);
+    workingService.setPrepareMockResultService(prepareMockResultService);
+    workingService.setZstdJacksonSerializer(zstdJacksonSerializer);
+    workingService.setRecordEnvType(properties.getRecordEnv());
+    return workingService;
+  }
 
-    /**
-     * used for web api provider how to decode the request before processing. we add a zstd-jackson converter.
-     *
-     * @return HttpMessageConverters
-     */
-    @Bean
-    @ConditionalOnMissingBean(HttpMessageConverters.class)
-    public HttpMessageConverters customConverters(ZstdJacksonMessageConverter zstdJacksonMessageConverter) {
-        return new HttpMessageConverters(zstdJacksonMessageConverter);
-    }
+  @Bean
+  @ConditionalOnMissingBean(AgentWorkingMetricService.class)
+  public AgentWorkingMetricService agentWorkingMetricService(
+      AgentWorkingService agentWorkingService,
+      List<MetricListener> metricListeners) {
+    return new AgentWorkingMetricService(agentWorkingService, metricListeners);
+  }
 
-    @Bean
-    @ConditionalOnProperty(prefix = "arex.storage", name = "enableDiscoveryEntryPoint", havingValue = "true")
-    public AgentWorkingListener autoDiscoveryEntryPointListener(
-        ApplicationServiceConfigurationRepositoryImpl serviceRepository,
-        ApplicationOperationConfigurationRepositoryImpl serviceOperationRepository, CacheProvider cacheProvider) {
-        return new AutoDiscoveryEntryPointListener(serviceRepository, serviceOperationRepository, cacheProvider);
-    }
+  @Bean
+  @ConditionalOnMissingBean(MatchStrategyMetricService.class)
+  public MatchStrategyMetricService matchStrategyMetricService(
+      List<MetricListener> metricListeners) {
+    return new MatchStrategyMetricService(metricListeners);
+  }
 
-    @Bean
-    @ConditionalOnMissingBean(AgentWorkingService.class)
-    public AgentWorkingService agentWorkingService(MockResultProvider mockResultProvider,
-                                                   RepositoryProviderFactory repositoryProviderFactory, MockerHandlerFactory mockerHandlerFactory,
-                                                   ZstdJacksonSerializer zstdJacksonSerializer, PrepareMockResultService prepareMockResultService,
-                                                   List<AgentWorkingListener> agentWorkingListeners) {
-        AgentWorkingService workingService =
-            new AgentWorkingService(mockResultProvider, repositoryProviderFactory, mockerHandlerFactory, agentWorkingListeners);
-        workingService.setPrepareMockResultService(prepareMockResultService);
-        workingService.setZstdJacksonSerializer(zstdJacksonSerializer);
-        workingService.setRecordEnvType(properties.getRecordEnv());
-        return workingService;
-    }
+  @Bean
+  @ConditionalOnMissingBean(ScheduleReplayQueryController.class)
+  public ScheduleReplayQueryController scheduleReplayQueryController(
+      ScheduleReplayingService scheduleReplayingService,
+      PrepareMockResultService prepareMockResultService) {
+    return new ScheduleReplayQueryController(scheduleReplayingService, prepareMockResultService);
+  }
 
-    @Bean
-    @ConditionalOnMissingBean(AgentWorkingMetricService.class)
-    public AgentWorkingMetricService agentWorkingMetricService(AgentWorkingService agentWorkingService,
-        List<MetricListener> metricListeners) {
-        return new AgentWorkingMetricService(agentWorkingService, metricListeners);
-    }
+  @Bean
+  @ConditionalOnMissingBean(ScheduleReplayingService.class)
+  public ScheduleReplayingService scheduleReplayingService(MockResultProvider mockResultProvider,
+      RepositoryProviderFactory repositoryProviderFactory,
+      ApplicationOperationConfigurationRepositoryImpl serviceOperationRepository) {
+    return new ScheduleReplayingService(mockResultProvider, repositoryProviderFactory,
+        serviceOperationRepository);
+  }
 
-    @Bean
-    @ConditionalOnMissingBean(ScheduleReplayQueryController.class)
-    public ScheduleReplayQueryController scheduleReplayQueryController(
-        ScheduleReplayingService scheduleReplayingService, PrepareMockResultService prepareMockResultService) {
-        return new ScheduleReplayQueryController(scheduleReplayingService, prepareMockResultService);
-    }
+  @Bean
+  @ConditionalOnMissingBean(MockSourceEditionController.class)
+  public MockSourceEditionController mockSourceEditionController(
+      MockSourceEditionService editableService,
+      PrepareMockResultService storageCache) {
+    return new MockSourceEditionController(editableService, storageCache);
+  }
 
-    @Bean
-    @ConditionalOnMissingBean(ScheduleReplayingService.class)
-    public ScheduleReplayingService scheduleReplayingService(MockResultProvider mockResultProvider,
-        RepositoryProviderFactory repositoryProviderFactory,
-        ApplicationOperationConfigurationRepositoryImpl serviceOperationRepository) {
-        return new ScheduleReplayingService(mockResultProvider, repositoryProviderFactory, serviceOperationRepository);
-    }
+  @Bean
+  @Order(3)
+  public RepositoryProvider<AREXMocker> autoPinnedMockerProvider(MongoDatabase mongoDatabase,
+      Set<MockCategoryType> entryPointTypes) {
+    return new AutoPinedMockerRepository(mongoDatabase, properties, entryPointTypes);
+  }
 
-    @Bean
-    @ConditionalOnMissingBean(MockSourceEditionController.class)
-    public MockSourceEditionController mockSourceEditionController(MockSourceEditionService editableService,
-        PrepareMockResultService storageCache) {
-        return new MockSourceEditionController(editableService, storageCache);
-    }
+  @Bean
+  @Order(2)
+  public RepositoryProvider<AREXMocker> pinnedMockerProvider(MongoDatabase mongoDatabase,
+      Set<MockCategoryType> entryPointTypes) {
+    return new AREXMockerMongoRepositoryProvider(ProviderNames.PINNED, mongoDatabase, properties,
+        entryPointTypes);
+  }
 
-    @Bean
-    @Order(3)
-    public RepositoryProvider<AREXMocker> autoPinnedMockerProvider(MongoDatabase mongoDatabase, Set<MockCategoryType> entryPointTypes) {
-        return new AutoPinedMockerRepository(mongoDatabase, properties, entryPointTypes);
-    }
-
-    @Bean
-    @Order(2)
-    public RepositoryProvider<AREXMocker> pinnedMockerProvider(MongoDatabase mongoDatabase, Set<MockCategoryType> entryPointTypes) {
-        return new AREXMockerMongoRepositoryProvider(ProviderNames.PINNED, mongoDatabase, properties, entryPointTypes);
-    }
-
-    @Bean
-    @Order(1)
-    public RepositoryProvider<AREXMocker> defaultMockerProvider(MongoDatabase mongoDatabase, Set<MockCategoryType> entryPointTypes) {
-        return new AREXMockerMongoRepositoryProvider(mongoDatabase, properties, entryPointTypes);
-    }
+  @Bean
+  @Order(1)
+  public RepositoryProvider<AREXMocker> defaultMockerProvider(MongoDatabase mongoDatabase,
+      Set<MockCategoryType> entryPointTypes) {
+    return new AREXMockerMongoRepositoryProvider(mongoDatabase, properties, entryPointTypes);
+  }
 }

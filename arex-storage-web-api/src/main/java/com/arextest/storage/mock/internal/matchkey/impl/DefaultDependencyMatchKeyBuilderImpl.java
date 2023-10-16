@@ -24,28 +24,33 @@ import java.util.List;
 @Order()
 final class DefaultDependencyMatchKeyBuilderImpl implements MatchKeyBuilder {
 
-    @Override
-    public boolean isSupported(MockCategoryType categoryType) {
-        return !categoryType.isEntryPoint() && !categoryType.isSkipComparison();
-    }
+  @Override
+  public boolean isSupported(MockCategoryType categoryType) {
+    return !categoryType.isEntryPoint() && !categoryType.isSkipComparison();
+  }
 
-    @Override
-    public List<byte[]> build(Mocker instance) {
-        byte[] operationBytes = CacheKeyUtils.toUtf8Bytes(instance.getOperationName());
-        Mocker.Target request = instance.getTargetRequest();
-        if (request == null || StringUtils.isEmpty(request.getBody())) {
-            return Collections.singletonList(operationBytes);
-        }
-        MessageDigest messageDigest = MessageDigestWriter.getMD5Digest();
-        messageDigest.update(operationBytes);
-        StringReader stringReader = new StringReader(request.getBody());
-        OutputStream output = new MessageDigestWriter(messageDigest);
-        try {
-            IOUtils.copy(stringReader, output, StandardCharsets.UTF_8);
-            stringReader.close();
-        } catch (IOException e) {
-            LOGGER.error("Unknown dependency replay result match key build error:{}", e.getMessage(), e);
-        }
-        return Arrays.asList(messageDigest.digest(), operationBytes);
+  @Override
+  public List<byte[]> build(Mocker instance) {
+    byte[] operationBytes = CacheKeyUtils.toUtf8Bytes(instance.getOperationName());
+    Mocker.Target request = instance.getTargetRequest();
+    if (request == null || StringUtils.isEmpty(request.getBody())) {
+      return Collections.singletonList(operationBytes);
     }
+    MessageDigest messageDigest = MessageDigestWriter.getMD5Digest();
+    messageDigest.update(operationBytes);
+    StringReader stringReader = new StringReader(request.getBody());
+    OutputStream output = new MessageDigestWriter(messageDigest);
+    try {
+      IOUtils.copy(stringReader, output, StandardCharsets.UTF_8);
+      stringReader.close();
+    } catch (IOException e) {
+      LOGGER.error("Unknown dependency replay result match key build error:{}", e.getMessage(), e);
+    }
+    return Arrays.asList(messageDigest.digest(), operationBytes);
+  }
+
+  @Override
+  public String findDBTableNames(Mocker instance) {
+    return null;
+  }
 }

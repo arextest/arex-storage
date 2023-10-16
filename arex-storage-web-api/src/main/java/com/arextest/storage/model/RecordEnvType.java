@@ -18,7 +18,7 @@ public enum RecordEnvType {
     @Getter
     private final int codeValue;
 
-    RecordEnvType(int codeValue) {
-        this.codeValue = codeValue;
-    }
+  RecordEnvType(int codeValue) {
+    this.codeValue = codeValue;
+  }
 }
