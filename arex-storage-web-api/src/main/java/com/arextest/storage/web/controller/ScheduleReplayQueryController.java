@@ -4,10 +4,12 @@ import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.replay.*;
 import com.arextest.model.replay.holder.ListResultHolder;
 import com.arextest.model.response.Response;
+import com.arextest.storage.mock.MockerPostProcessor;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.service.PrepareMockResultService;
 import com.arextest.storage.service.ScheduleReplayingService;
 import com.arextest.storage.trace.MDCTracer;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -19,7 +21,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 
@@ -35,6 +40,7 @@ import java.util.Map;
 public class ScheduleReplayQueryController {
 
     private final ScheduleReplayingService scheduleReplayingService;
+
     private final PrepareMockResultService prepareMockResultService;
 
     /**
@@ -171,7 +177,7 @@ public class ScheduleReplayQueryController {
      */
     @PostMapping(value = "/countByOperationName")
     @ResponseBody
-    public Response countByOperationName (@RequestBody CountOperationCaseRequestType requestType) {
+    public Response countByOperationName(@RequestBody CountOperationCaseRequestType requestType) {
         Response validateResult = rangeParameterValidate(requestType);
         if (validateResult != null) {
             return validateResult;
@@ -189,8 +195,8 @@ public class ScheduleReplayQueryController {
         }
     }
 
-    @GetMapping(value = "/viewRecord/")
     @ResponseBody
+    @GetMapping(value = "/viewRecord/")
     public Response viewRecord(String recordId,
                                @RequestParam(required = false) String category,
                                @RequestParam(required = false, defaultValue = ProviderNames.DEFAULT) String srcProvider) {
@@ -219,22 +225,33 @@ public class ScheduleReplayQueryController {
             return ResponseUtils.emptyRecordIdResponse();
         }
         MDCTracer.addRecordId(recordId);
+        ViewRecordResponseType responseType = new ViewRecordResponseType();
         try {
-            ViewRecordResponseType responseType = new ViewRecordResponseType();
             List<AREXMocker> allReadableResult = scheduleReplayingService.queryRecordList(requestType);
             if (CollectionUtils.isEmpty(allReadableResult)) {
                 LOGGER.info("could not found any resources for request: {}", requestType);
             }
             responseType.setRecordResult(allReadableResult);
-            return ResponseUtils.successResponse(responseType);
+
+            ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            HttpServletRequest request = requestAttributes.getRequest();
+            String downgrade = request.getHeader("downgrade");
+            if (Boolean.TRUE.toString().equals(downgrade)) {
+                MockerPostProcessor.desensitize(allReadableResult);
+                responseType.setDesensitized(true);
+            }
+        } catch (JsonProcessingException exception) {
+            responseType.setDesensitized(false);
+            LOGGER.error("responseDesensitization error:{}", exception.getMessage(), exception);
         } catch (Throwable throwable) {
             LOGGER.error("viewRecord error:{}, request:{}", throwable.getMessage(), requestType);
             return ResponseUtils.exceptionResponse(throwable.getMessage());
         } finally {
             MDCTracer.clear();
         }
-
+        return ResponseUtils.successResponse(responseType);
     }
+
 
     /**
      * preload record content to cache from repository provider
@@ -259,7 +276,7 @@ public class ScheduleReplayQueryController {
         MDCTracer.addRecordId(recordId);
         long beginTime = System.currentTimeMillis();
         try {
-            return  toResponse(prepareMockResultService.preloadAll(requestType.getSourceProvider(), recordId));
+            return toResponse(prepareMockResultService.preloadAll(requestType.getSourceProvider(), recordId));
         } catch (Throwable throwable) {
             LOGGER.error("QueryMockCache error:{},request:{}", throwable.getMessage(), requestType);
             return ResponseUtils.exceptionResponse(throwable.getMessage());

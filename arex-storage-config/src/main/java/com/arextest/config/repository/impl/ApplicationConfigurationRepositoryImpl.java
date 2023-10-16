@@ -48,7 +48,7 @@ public class ApplicationConfigurationRepositoryImpl implements ConfigRepositoryP
     }
 
     private void flushAppName() {
-        Bson filter = Filters.eq(AppCollection.Fields.appName, UNKNOWN_APP_NAME);
+        Bson filter = Filters.in(AppCollection.Fields.appName, UNKNOWN_APP_NAME, "", null);
         List<WriteModel<AppCollection>> bulkUpdateOps = new ArrayList<>();
         try (MongoCursor<AppCollection> cursor = mongoCollection.find(filter).iterator()) {
             while (cursor.hasNext()) {

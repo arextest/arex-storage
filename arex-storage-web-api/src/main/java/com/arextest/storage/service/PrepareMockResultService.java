@@ -49,11 +49,6 @@ public final class PrepareMockResultService {
         if (repositoryReader == null) {
             return false;
         }
-        MDCTracer.addCategory(categoryType);
-        if (mockResultProvider.recordResultCount(categoryType, recordId) > 0) {
-            LOGGER.warn("skip preload cache for category:{},record id:{}", categoryType, recordId);
-            return true;
-        }
         Iterable<? extends Mocker> iterable;
         iterable = repositoryReader.queryRecordList(categoryType, recordId);
         if (iterable == null) {
