@@ -91,6 +91,7 @@ public final class PrepareMockResultService {
     }
 
     public boolean removeAll(String recordId, String resultId) {
-        return removeAllRecordCache(recordId) && removeAllResultCache(resultId);
+        return true;
+//        return removeAllRecordCache(recordId) && removeAllResultCache(resultId);
     }
 }
