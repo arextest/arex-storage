@@ -6,7 +6,7 @@
     <groupId>com.arextest</groupId>
     <artifactId>arex-storage-service</artifactId>
     <packaging>pom</packaging>
-    <version>1.0.29</version>
+    <version>1.0.30</version>
 
     <name>${project.groupId}:${project.artifactId}</name>
     <description>Arex-storage is used for data storage.</description>
