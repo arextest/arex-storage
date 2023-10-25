@@ -9,6 +9,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.FindOneAndUpdateOptions;
+import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.Updates;
 import java.util.Date;
 import java.util.List;
@@ -41,6 +42,7 @@ public class CoverageRepository {
         Updates.setOnInsert("_id", new ObjectId().toString()));
     FindOneAndUpdateOptions opt = new FindOneAndUpdateOptions();
     opt.upsert(true);
+    opt.projection(Projections.exclude(AREXMocker.Fields.targetResponse));
 
     try {
       return coverageCollection.findOneAndUpdate(filters, update, opt);
