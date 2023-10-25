@@ -7,11 +7,12 @@ import java.util.List;
  * @since 2021/12/21
  */
 public interface ServiceDescription {
-    String getAppId();
 
-    String getServiceName();
+  String getAppId();
 
-    String getServiceKey();
+  String getServiceName();
 
-    List<? extends OperationDescription> getOperationList();
+  String getServiceKey();
+
+  List<? extends OperationDescription> getOperationList();
 }

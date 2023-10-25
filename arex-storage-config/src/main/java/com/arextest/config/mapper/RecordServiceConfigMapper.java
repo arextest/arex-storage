@@ -11,18 +11,18 @@ import org.mapstruct.factory.Mappers;
 @Mapper
 public interface RecordServiceConfigMapper {
 
-    RecordServiceConfigMapper INSTANCE = Mappers.getMapper(RecordServiceConfigMapper.class);
+  RecordServiceConfigMapper INSTANCE = Mappers.getMapper(RecordServiceConfigMapper.class);
 
-    @Mappings({
-            @Mapping(target = "modifiedTime", expression = "java(dao.getDataChangeUpdateTime() == null ? null : new java.sql.Timestamp(dao.getDataChangeUpdateTime()))"),
-            @Mapping(target = "recordMachineCountLimit", expression = "java(dao.getRecordMachineCountLimit() == null ? 1 : dao.getRecordMachineCountLimit())")
-    })
-    ServiceCollectConfiguration dtoFromDao(RecordServiceConfigCollection dao);
+  @Mappings({
+      @Mapping(target = "modifiedTime", expression = "java(dao.getDataChangeUpdateTime() == null ? null : new java.sql.Timestamp(dao.getDataChangeUpdateTime()))"),
+      @Mapping(target = "recordMachineCountLimit", expression = "java(dao.getRecordMachineCountLimit() == null ? 1 : dao.getRecordMachineCountLimit())")
+  })
+  ServiceCollectConfiguration dtoFromDao(RecordServiceConfigCollection dao);
 
-    @Mappings({
-            @Mapping(target = "dataChangeCreateTime", expression = "java(System.currentTimeMillis())"),
-            @Mapping(target = "dataChangeUpdateTime", expression = "java(System.currentTimeMillis())")
-    })
-    RecordServiceConfigCollection daoFromDto(ServiceCollectConfiguration dto);
+  @Mappings({
+      @Mapping(target = "dataChangeCreateTime", expression = "java(System.currentTimeMillis())"),
+      @Mapping(target = "dataChangeUpdateTime", expression = "java(System.currentTimeMillis())")
+  })
+  RecordServiceConfigCollection daoFromDto(ServiceCollectConfiguration dto);
 
 }

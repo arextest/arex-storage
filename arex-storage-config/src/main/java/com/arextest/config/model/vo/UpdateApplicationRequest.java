@@ -1,9 +1,8 @@
 package com.arextest.config.model.vo;
 
-import lombok.Data;
-
-import javax.validation.constraints.NotNull;
 import java.util.Set;
+import javax.validation.constraints.NotNull;
+import lombok.Data;
 
 /**
  * @author wildeslam.
@@ -11,8 +10,9 @@ import java.util.Set;
  */
 @Data
 public class UpdateApplicationRequest {
-    @NotNull
-    private String appId;
-    private String appName;
-    private Set<String> owners;
+
+  @NotNull
+  private String appId;
+  private String appName;
+  private Set<String> owners;
 }

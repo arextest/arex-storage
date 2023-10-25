@@ -11,15 +11,15 @@ import lombok.experimental.FieldNameConstants;
 @FieldNameConstants
 public class ServiceCollection extends BaseEntity {
 
-    public static final String DOCUMENT_NAME = "Service";
+  public static final String DOCUMENT_NAME = "Service";
 
-    @NonNull
-    private String appId;
-    @NonNull
-    private String serviceName;
-    @NonNull
-    private String serviceKey;
-    @NonNull
-    private Integer status;
+  @NonNull
+  private String appId;
+  @NonNull
+  private String serviceName;
+  @NonNull
+  private String serviceKey;
+  @NonNull
+  private Integer status;
 
 }

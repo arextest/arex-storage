@@ -7,18 +7,18 @@ import lombok.Getter;
  * @since 2021/11/18
  */
 public enum RecordEnvType {
-    /**
-     * production
-     */
-    PRO(0),
-    /**
-     * testing
-     */
-    TEST(1);
-    @Getter
-    private final int codeValue;
+  /**
+   * production
+   */
+  PRO(0),
+  /**
+   * testing
+   */
+  TEST(1);
+  @Getter
+  private final int codeValue;
 
-    RecordEnvType(int codeValue) {
-        this.codeValue = codeValue;
-    }
+  RecordEnvType(int codeValue) {
+    this.codeValue = codeValue;
+  }
 }

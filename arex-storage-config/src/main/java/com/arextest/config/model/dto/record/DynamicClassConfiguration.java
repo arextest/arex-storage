@@ -11,16 +11,17 @@ import lombok.Setter;
 @Getter
 @Setter
 public class DynamicClassConfiguration extends AbstractConfiguration {
-    private String id;
-    private String appId;
-    private String fullClassName;
-    private String methodName;
-    private String parameterTypes;
 
-    /**
-     * from system provide or user custom provide
-     */
-    private int configType;
+  private String id;
+  private String appId;
+  private String fullClassName;
+  private String methodName;
+  private String parameterTypes;
+
+  /**
+   * from system provide or user custom provide
+   */
+  private int configType;
 
 }
 

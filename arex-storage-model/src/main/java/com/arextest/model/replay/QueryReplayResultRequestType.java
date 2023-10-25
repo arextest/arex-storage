@@ -8,6 +8,7 @@ import lombok.Data;
  */
 @Data
 public class QueryReplayResultRequestType {
-    private String recordId;
-    private String replayResultId;
+
+  private String recordId;
+  private String replayResultId;
 }

@@ -8,6 +8,10 @@ import com.arextest.common.utils.ResponseUtils;
 import com.arextest.config.model.dto.application.ApplicationConfiguration;
 import com.arextest.config.repository.impl.ApplicationConfigurationRepositoryImpl;
 import com.arextest.storage.service.config.ApplicationService;
+import java.util.List;
+import java.util.Set;
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -19,11 +23,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
-import java.util.List;
-import java.util.Set;
-
 /**
  * @author wildeslam.
  * @create 2023/10/8 17:12
@@ -33,66 +32,68 @@ import java.util.Set;
 @Component
 @ConditionalOnProperty(value = "arex.app.auth.switch", havingValue = "true")
 public class AppAuthAspect {
-    private static final String NO_PERMISSION = "No permission";
-    private static final String NO_APPID = "No appId";
-    private static final String ERROR_APPID = "Error appId";
 
-    @Resource
-    private ApplicationConfigurationRepositoryImpl applicationConfigurationRepository;
-    @Resource
-    private ApplicationService applicationService;
+  private static final String NO_PERMISSION = "No permission";
+  private static final String NO_APPID = "No appId";
+  private static final String ERROR_APPID = "Error appId";
 
-    @Pointcut("@annotation(com.arextest.common.annotation.AppAuth)")
-    public void appAuth(){}
+  @Resource
+  private ApplicationConfigurationRepositoryImpl applicationConfigurationRepository;
+  @Resource
+  private ApplicationService applicationService;
 
-    @Around("appAuth() && @annotation(auth)")
-    public Object doAround(ProceedingJoinPoint point, AppAuth auth) throws Throwable {
-        ArexContext context = ArexContext.getContext();
-        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        HttpServletRequest request = requestAttributes.getRequest();
-        String appId = request.getHeader("appId");
-        String accessToken = request.getHeader("access-token");
-        String userName = JwtUtil.getUserName(accessToken);
-        context.setAppId(appId);
-        context.setOperator(userName);
-        if (appId == null) {
-            LOGGER.error("header has no appId");
-            return reject(point, auth, NO_APPID);
-        }
+  @Pointcut("@annotation(com.arextest.common.annotation.AppAuth)")
+  public void appAuth() {
+  }
 
-        Set<String> owners = applicationService.getAppOwnersCache(appId);
-        if (owners == null) {
-            List<ApplicationConfiguration> applications = applicationConfigurationRepository.listBy(context.getAppId());
-            if (CollectionUtils.isEmpty(applications)) {
-                LOGGER.error("error appId");
-                return reject(point, auth, ERROR_APPID);
-            }
-            ApplicationConfiguration application = applications.get(0);
-            owners = application.getOwners();
-        }
-
-
-        Object result;
-        if (CollectionUtils.isEmpty(owners) || owners.contains(userName)) {
-            context.setPassAuth(true);
-            result = point.proceed();
-        } else {
-            context.setPassAuth(false);
-            result = reject(point, auth, NO_PERMISSION);
-        }
-        ArexContext.removeContext();
-        return result;
+  @Around("appAuth() && @annotation(auth)")
+  public Object doAround(ProceedingJoinPoint point, AppAuth auth) throws Throwable {
+    ArexContext context = ArexContext.getContext();
+    ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+    HttpServletRequest request = requestAttributes.getRequest();
+    String appId = request.getHeader("appId");
+    String accessToken = request.getHeader("access-token");
+    String userName = JwtUtil.getUserName(accessToken);
+    context.setAppId(appId);
+    context.setOperator(userName);
+    if (appId == null) {
+      LOGGER.error("header has no appId");
+      return reject(point, auth, NO_APPID);
     }
 
-    private Object reject(ProceedingJoinPoint point, AppAuth auth, String remark) throws Throwable {
-        switch (auth.rejectStrategy()) {
-            case FAIL_RESPONSE:
-                return ResponseUtils.errorResponse(remark, ResponseCode.AUTHENTICATION_FAILED);
-            case DOWNGRADE:
-                ArexContext.getContext().setPassAuth(false);
-            default:
-                return point.proceed();
-        }
+    Set<String> owners = applicationService.getAppOwnersCache(appId);
+    if (owners == null) {
+      List<ApplicationConfiguration> applications = applicationConfigurationRepository.listBy(
+          context.getAppId());
+      if (CollectionUtils.isEmpty(applications)) {
+        LOGGER.error("error appId");
+        return reject(point, auth, ERROR_APPID);
+      }
+      ApplicationConfiguration application = applications.get(0);
+      owners = application.getOwners();
     }
+
+    Object result;
+    if (CollectionUtils.isEmpty(owners) || owners.contains(userName)) {
+      context.setPassAuth(true);
+      result = point.proceed();
+    } else {
+      context.setPassAuth(false);
+      result = reject(point, auth, NO_PERMISSION);
+    }
+    ArexContext.removeContext();
+    return result;
+  }
+
+  private Object reject(ProceedingJoinPoint point, AppAuth auth, String remark) throws Throwable {
+    switch (auth.rejectStrategy()) {
+      case FAIL_RESPONSE:
+        return ResponseUtils.errorResponse(remark, ResponseCode.AUTHENTICATION_FAILED);
+      case DOWNGRADE:
+        ArexContext.getContext().setPassAuth(false);
+      default:
+        return point.proceed();
+    }
+  }
 
 }

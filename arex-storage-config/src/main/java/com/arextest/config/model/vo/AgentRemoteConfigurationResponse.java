@@ -1,11 +1,9 @@
 package com.arextest.config.model.vo;
 
-import java.util.List;
-import java.util.Map;
-
 import com.arextest.config.model.dto.record.DynamicClassConfiguration;
 import com.arextest.config.model.dto.record.ServiceCollectConfiguration;
-
+import java.util.List;
+import java.util.Map;
 import lombok.Data;
 
 /**
@@ -14,15 +12,17 @@ import lombok.Data;
  */
 @Data
 public class AgentRemoteConfigurationResponse {
-    private ServiceCollectConfiguration serviceCollectConfiguration;
-    private List<DynamicClassConfiguration> dynamicClassConfigurationList;
 
-    /**
-     * Bit flag composed of bits that record/replay are enabled. see {@link com.arextest.config.model.dto.StatusType}
-     */
-    private Integer status;
+  private ServiceCollectConfiguration serviceCollectConfiguration;
+  private List<DynamicClassConfiguration> dynamicClassConfigurationList;
 
-    private String targetAddress;
+  /**
+   * Bit flag composed of bits that record/replay are enabled. see
+   * {@link com.arextest.config.model.dto.StatusType}
+   */
+  private Integer status;
 
-    private Map<String, String> extendField;
+  private String targetAddress;
+
+  private Map<String, String> extendField;
 }

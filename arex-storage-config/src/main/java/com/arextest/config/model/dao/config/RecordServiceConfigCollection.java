@@ -1,11 +1,10 @@
 package com.arextest.config.model.dao.config;
 
+import com.arextest.config.model.dao.BaseEntity;
+import com.arextest.config.model.dto.record.SerializeSkipInfoConfiguration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import com.arextest.config.model.dao.BaseEntity;
-import com.arextest.config.model.dto.record.SerializeSkipInfoConfiguration;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -16,26 +15,26 @@ import lombok.experimental.FieldNameConstants;
 @FieldNameConstants
 public class RecordServiceConfigCollection extends BaseEntity {
 
-    public static final String DOCUMENT_NAME = "RecordServiceConfig";
+  public static final String DOCUMENT_NAME = "RecordServiceConfig";
 
-    @NonNull
-    private String appId;
+  @NonNull
+  private String appId;
 
-    private int sampleRate;
+  private int sampleRate;
 
-    private int allowDayOfWeeks;
+  private int allowDayOfWeeks;
 
-    private boolean timeMock;
-    @NonNull
-    private String allowTimeOfDayFrom;
-    @NonNull
-    private String allowTimeOfDayTo;
+  private boolean timeMock;
+  @NonNull
+  private String allowTimeOfDayFrom;
+  @NonNull
+  private String allowTimeOfDayTo;
 
-    private Set<String> excludeServiceOperationSet;
+  private Set<String> excludeServiceOperationSet;
 
-    private Integer recordMachineCountLimit;
+  private Integer recordMachineCountLimit;
 
-    private Map<String, String> extendField;
+  private Map<String, String> extendField;
 
-    private List<SerializeSkipInfoConfiguration> serializeSkipInfoList;
+  private List<SerializeSkipInfoConfiguration> serializeSkipInfoList;
 }

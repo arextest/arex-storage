@@ -8,14 +8,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 public class SortingOption {
-    /**
-     * order by.
-     */
-    private String label;
 
-    /**
-     * @see SortingTypeEnum
-     * -1:desc or 1:asc
-     */
-    private int sortingType;
+  /**
+   * order by.
+   */
+  private String label;
+
+  /**
+   * @see SortingTypeEnum -1:desc or 1:asc
+   */
+  private int sortingType;
 }
