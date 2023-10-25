@@ -9,6 +9,7 @@ import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.impl.mongo.CoverageRepository;
 import com.arextest.storage.service.MockSourceEditionService;
+import com.arextest.storage.trace.MDCTracer;
 import java.util.concurrent.ThreadPoolExecutor;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -91,6 +92,7 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
         }
         return;
       }
+      MDCTracer.addRecordId(coverageMocker.getRecordId());
       try {
         final RepositoryProvider<Mocker> pinedProvider = repositoryProviderFactory.findProvider(
             ProviderNames.AUTO_PINNED);
@@ -125,5 +127,4 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
       }
     }
   }
-
 }
