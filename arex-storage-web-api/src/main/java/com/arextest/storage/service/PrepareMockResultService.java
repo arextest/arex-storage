@@ -5,7 +5,6 @@ import com.arextest.model.mock.Mocker;
 import com.arextest.storage.mock.MockResultProvider;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
-import com.arextest.storage.trace.MDCTracer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

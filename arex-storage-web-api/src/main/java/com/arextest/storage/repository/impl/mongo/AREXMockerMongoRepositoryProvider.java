@@ -34,10 +34,10 @@ import java.util.*;
 @EnableConfigurationProperties({StorageConfigurationProperties.class})
 public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<AREXMocker> {
 
+    public static final String PRIMARY_KEY_COLUMN_NAME = "_id";
     static final String CREATE_TIME_COLUMN_NAME = "creationTime";
     static final String UPDATE_TIME_COLUMN_NAME = "updateTime";
     static final String EXPIRATION_TIME_COLUMN_NAME = "expirationTime";
-    public static final String PRIMARY_KEY_COLUMN_NAME = "_id";
     static final String RECORD_ID_COLUMN_NAME = "recordId";
     private static final String APP_ID_COLUMN_NAME = "appId";
     private static final String ENV_COLUMN_NAME = "recordEnvironment";
@@ -53,12 +53,11 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     private static final String TARGET_RESPONSE_COLUMN_NAME = "targetResponse";
     private final static Bson CREATE_TIME_ASCENDING_SORT = Sorts.ascending(CREATE_TIME_COLUMN_NAME);
     private final static Bson CREATE_TIME_DESCENDING_SORT = Sorts.descending(CREATE_TIME_COLUMN_NAME);
-
-    private final Class<AREXMocker> targetClassType;
     private static final int DEFAULT_MIN_LIMIT_SIZE = 1;
     private static final int DEFAULT_MAX_LIMIT_SIZE = 1000;
     private static final int DEFAULT_BSON_WHERE_SIZE = 8;
     protected final MongoDatabase mongoDatabase;
+    private final Class<AREXMocker> targetClassType;
     private final String providerName;
     private final StorageConfigurationProperties properties;
     private final Set<MockCategoryType> entryPointTypes;
@@ -181,7 +180,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
 
 
     private AREXMocker getLastRecordVersionMocker(PagedRequestType pagedRequestType,
-            MongoCollection<AREXMocker> collectionSource) {
+                                                  MongoCollection<AREXMocker> collectionSource) {
         return collectionSource
                 .find(Filters.and(buildReadRangeFilters(pagedRequestType)))
                 .sort(CREATE_TIME_DESCENDING_SORT)
@@ -377,6 +376,16 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
             this.source = source.iterator();
         }
 
+        private static AREXMocker attach(MockCategoryType categoryType, AREXMocker item) {
+            if (item != null) {
+                item.setCategoryType(categoryType);
+                if (categoryType.isEntryPoint()) {
+                    item.setRecordId(item.getId());
+                }
+            }
+            return item;
+        }
+
         @Override
         public Iterator<AREXMocker> iterator() {
             return this;
@@ -390,16 +399,6 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         @Override
         public AREXMocker next() {
             return attach(categoryType, source.next());
-        }
-
-        private static AREXMocker attach(MockCategoryType categoryType, AREXMocker item) {
-            if (item != null) {
-                item.setCategoryType(categoryType);
-                if (categoryType.isEntryPoint()) {
-                    item.setRecordId(item.getId());
-                }
-            }
-            return item;
         }
     }
 }

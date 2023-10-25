@@ -1,22 +1,21 @@
 package com.arextest.storage.repository.impl.mongo;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-
-import org.apache.commons.lang3.StringUtils;
-import org.bson.codecs.configuration.CodecProvider;
-import org.bson.codecs.configuration.CodecRegistries;
-import org.bson.codecs.configuration.CodecRegistry;
-import org.bson.codecs.pojo.PojoCodecProvider;
-
 import com.arextest.model.mock.Mocker;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
+import org.apache.commons.lang3.StringUtils;
+import org.bson.codecs.configuration.CodecProvider;
+import org.bson.codecs.configuration.CodecRegistries;
+import org.bson.codecs.configuration.CodecRegistry;
+import org.bson.codecs.pojo.PojoCodecProvider;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * @author jmo
@@ -29,7 +28,7 @@ public final class MongoDbUtils {
     public static MongoDatabase create(String host) {
         MongoDatabase mongoDatabase = getMongoClient(host);
         AREXMockerCodecProvider arexMockerCodecProvider =
-            AREXMockerCodecProvider.builder().targetCodec(new CompressionCodecImpl<>(Mocker.Target.class)).build();
+                AREXMockerCodecProvider.builder().targetCodec(new CompressionCodecImpl<>(Mocker.Target.class)).build();
         return mongoDatabase.withCodecRegistry(customCodecRegistry(Collections.singletonList(arexMockerCodecProvider)));
     }
 
@@ -47,7 +46,7 @@ public final class MongoDbUtils {
      */
     public static CodecRegistry customCodecRegistry(List<CodecProvider> additionalCodecProviders) {
         List<CodecProvider> codecProviderList =
-            new ArrayList<>(Optional.ofNullable(additionalCodecProviders).orElse(Collections.emptyList()));
+                new ArrayList<>(Optional.ofNullable(additionalCodecProviders).orElse(Collections.emptyList()));
         codecProviderList.add(PojoCodecProvider.builder().automatic(true).build());
         CodecRegistry customPojo = CodecRegistries.fromProviders(codecProviderList);
         return CodecRegistries.fromRegistries(MongoClientSettings.getDefaultCodecRegistry(), customPojo);

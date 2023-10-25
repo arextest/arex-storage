@@ -29,6 +29,7 @@ public interface ViewHandler<T> {
         }
         return null;
     }
+
     /**
      * after configured,we apply the result as list return.
      *

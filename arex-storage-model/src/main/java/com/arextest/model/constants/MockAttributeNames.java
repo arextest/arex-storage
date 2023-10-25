@@ -1,14 +1,10 @@
 package com.arextest.model.constants;
 
 public final class MockAttributeNames {
-    private MockAttributeNames() {
-    }
-
     /**
      * for example:application/json
      */
     public static final String CONTENT_TYPE = "ContentType";
-
     /**
      * for example:POST/GET/PUT
      */
@@ -17,7 +13,6 @@ public final class MockAttributeNames {
     public static final String REQUEST_PATH = "RequestPath";
     public static final String HEADERS = "Headers";
     public static final String URL = "url";
-
     public static final String DB_NAME = "dbName";
     public static final String DB_PARAMETERS = "parameters";
     public static final String DB_SQL = "sql";
@@ -28,6 +23,8 @@ public final class MockAttributeNames {
     public static final String CONSUMER_GROUP_NAME = "consumerGroupName";
     public static final String MESSAGE_ID = "messageId";
     public static final String SUBJECT = "subject";
+    private MockAttributeNames() {
+    }
 
 
 }

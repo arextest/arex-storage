@@ -23,7 +23,7 @@ final class DynamicClassMatchKeyBuilderImpl implements MatchKeyBuilder {
 
     @Override
     public List<byte[]> build(Mocker instance) {
-        MessageDigest messageDigest =MessageDigestWriter.getMD5Digest();
+        MessageDigest messageDigest = MessageDigestWriter.getMD5Digest();
         byte[] operationNameBytes = CacheKeyUtils.toUtf8Bytes(instance.getOperationName());
         messageDigest.update(operationNameBytes);
         messageDigest.update(CacheKeyUtils.toUtf8Bytes(instance.getTargetRequest().getBody()));

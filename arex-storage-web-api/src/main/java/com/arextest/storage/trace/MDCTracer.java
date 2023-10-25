@@ -1,10 +1,9 @@
 package com.arextest.storage.trace;
 
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.MDC;
-
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.MDC;
 
 /**
  * @author jmo

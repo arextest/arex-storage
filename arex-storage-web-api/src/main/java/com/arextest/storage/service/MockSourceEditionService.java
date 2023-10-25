@@ -9,12 +9,16 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Service
 public class MockSourceEditionService {
     private final RepositoryProviderFactory providerFactory;
+
     public MockSourceEditionService(RepositoryProviderFactory providerFactory, Set<MockCategoryType> entryPointTypes) {
         this.providerFactory = providerFactory;
     }

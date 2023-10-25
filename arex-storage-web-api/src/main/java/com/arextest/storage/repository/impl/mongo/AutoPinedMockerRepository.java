@@ -19,6 +19,7 @@ import java.util.Set;
 @Slf4j
 public class AutoPinedMockerRepository extends AREXMockerMongoRepositoryProvider {
     private static final long THIRTY_DAY_MILLIS = 30 * 24 * 60 * 60 * 1000L;
+
     public AutoPinedMockerRepository(MongoDatabase mongoDatabase,
                                      StorageConfigurationProperties properties,
                                      Set<MockCategoryType> entryPointTypes) {

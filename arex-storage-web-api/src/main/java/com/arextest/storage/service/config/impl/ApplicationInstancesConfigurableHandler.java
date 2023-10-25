@@ -1,18 +1,15 @@
 package com.arextest.storage.service.config.impl;
 
-import java.util.List;
-
-import javax.annotation.Resource;
-
+import com.arextest.config.model.dto.application.InstancesConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
 import com.arextest.config.repository.impl.InstancesConfigurationRepositoryImpl;
+import com.arextest.storage.service.config.AbstractConfigurableHandler;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.arextest.config.model.dto.application.InstancesConfiguration;
-import com.arextest.storage.service.config.AbstractConfigurableHandler;
-
-import lombok.extern.slf4j.Slf4j;
+import javax.annotation.Resource;
+import java.util.List;
 
 /**
  * @author jmo
@@ -22,13 +19,13 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public final class ApplicationInstancesConfigurableHandler extends AbstractConfigurableHandler<InstancesConfiguration> {
 
-    protected ApplicationInstancesConfigurableHandler(
-        @Autowired ConfigRepositoryProvider<InstancesConfiguration> repositoryProvider) {
-        super(repositoryProvider);
-    }
-
     @Resource
     private InstancesConfigurationRepositoryImpl instancesConfigurationRepository;
+
+    protected ApplicationInstancesConfigurableHandler(
+            @Autowired ConfigRepositoryProvider<InstancesConfiguration> repositoryProvider) {
+        super(repositoryProvider);
+    }
 
     public void createOrUpdate(InstancesConfiguration instancesConfiguration) {
         super.update(instancesConfiguration);

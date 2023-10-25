@@ -24,9 +24,11 @@ final class ResponseUtils {
     static Response emptyRecordIdResponse() {
         return parameterInvalidResponse(REQUESTED_RECORD_ID_EMPTY);
     }
-    static Response invalidTypeResponse(){
+
+    static Response invalidTypeResponse() {
         return parameterInvalidResponse(REQUESTED_TYPE_INVALID);
     }
+
     static Response emptyReplayResultIdResponse() {
         return parameterInvalidResponse(REQUESTED_REPLAY_RESULT_ID_EMPTY);
     }
@@ -41,24 +43,6 @@ final class ResponseUtils {
 
     static Response errorResponse(ResponseStatusType responseStatusType) {
         return new DefaultResponseImpl(responseStatusType);
-    }
-
-    private final static class DefaultResponseImpl implements Response {
-        private final ResponseStatusType responseStatusType;
-
-        private DefaultResponseImpl(ResponseStatusType responseStatusType) {
-            this.responseStatusType = responseStatusType;
-        }
-
-        @Override
-        public ResponseStatusType getResponseStatusType() {
-            return responseStatusType;
-        }
-
-        @Override
-        public void setResponseStatusType(ResponseStatusType responseStatusType1) {
-
-        }
     }
 
     static Response successResponse(boolean result) {
@@ -97,5 +81,23 @@ final class ResponseUtils {
         responseStatusType.setResponseCode(responseCode.getCodeValue());
         responseStatusType.setTimestamp(System.currentTimeMillis());
         return responseStatusType;
+    }
+
+    private final static class DefaultResponseImpl implements Response {
+        private final ResponseStatusType responseStatusType;
+
+        private DefaultResponseImpl(ResponseStatusType responseStatusType) {
+            this.responseStatusType = responseStatusType;
+        }
+
+        @Override
+        public ResponseStatusType getResponseStatusType() {
+            return responseStatusType;
+        }
+
+        @Override
+        public void setResponseStatusType(ResponseStatusType responseStatusType1) {
+
+        }
     }
 }

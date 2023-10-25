@@ -1,11 +1,5 @@
 package com.arextest.storage.beans;
 
-import java.util.concurrent.TimeUnit;
-
-import org.bson.Document;
-import org.bson.conversions.Bson;
-import org.springframework.context.annotation.Configuration;
-
 import com.arextest.config.model.dao.config.AppCollection;
 import com.arextest.config.model.dao.config.InstancesCollection;
 import com.arextest.config.model.dao.config.RecordServiceConfigCollection;
@@ -18,20 +12,24 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.Indexes;
-
 import lombok.extern.slf4j.Slf4j;
+import org.bson.Document;
+import org.bson.conversions.Bson;
+import org.springframework.context.annotation.Configuration;
+
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Configuration(proxyBeanMethods = false)
 public class IndexsSettingConfiguration {
 
-    private static final String COLLECTION_SUFFIX = "Mocker";
     static final String EXPIRATION_TIME_COLUMN_NAME = "expirationTime";
+    private static final String COLLECTION_SUFFIX = "Mocker";
 
     void ensureMockerQueryIndex(MongoDatabase database) {
         for (MockCategoryType category : MockCategoryType.DEFAULTS) {
             MongoCollection<AREXMocker> collection =
-                database.getCollection(getCollectionName(category), AREXMocker.class);
+                    database.getCollection(getCollectionName(category), AREXMocker.class);
             try {
                 Document index = new Document();
                 index.append(AREXMocker.Fields.recordId, 1);
@@ -62,28 +60,28 @@ public class IndexsSettingConfiguration {
 
         // AppCollection
         MongoCollection<AppCollection> appCollectionMongoCollection =
-            mongoDatabase.getCollection(AppCollection.DOCUMENT_NAME, AppCollection.class);
+                mongoDatabase.getCollection(AppCollection.DOCUMENT_NAME, AppCollection.class);
         appCollectionMongoCollection.createIndex(new Document(AppCollection.Fields.appId, 1),
-            new IndexOptions().unique(true));
+                new IndexOptions().unique(true));
 
         // RecordServiceConfigCollection
         MongoCollection<RecordServiceConfigCollection> recordServiceConfigCollectionMongoCollection = mongoDatabase
-            .getCollection(RecordServiceConfigCollection.DOCUMENT_NAME, RecordServiceConfigCollection.class);
+                .getCollection(RecordServiceConfigCollection.DOCUMENT_NAME, RecordServiceConfigCollection.class);
         recordServiceConfigCollectionMongoCollection.createIndex(
-            Indexes.ascending(RecordServiceConfigCollection.Fields.appId), new IndexOptions().unique(true));
+                Indexes.ascending(RecordServiceConfigCollection.Fields.appId), new IndexOptions().unique(true));
 
         // ServiceOperationCollection
         MongoCollection<ServiceOperationCollection> serviceOperationCollectionMongoCollection =
-            mongoDatabase.getCollection(ServiceOperationCollection.DOCUMENT_NAME, ServiceOperationCollection.class);
+                mongoDatabase.getCollection(ServiceOperationCollection.DOCUMENT_NAME, ServiceOperationCollection.class);
         serviceOperationCollectionMongoCollection.createIndex(Indexes.ascending(ServiceOperationCollection.Fields.appId,
-            ServiceOperationCollection.Fields.serviceId, ServiceOperationCollection.Fields.operationName),
-            new IndexOptions().unique(true));
+                        ServiceOperationCollection.Fields.serviceId, ServiceOperationCollection.Fields.operationName),
+                new IndexOptions().unique(true));
 
         // InstancesCollection
         Bson instancesTtlIndex = Indexes.ascending(InstancesCollection.Fields.dataUpdateTime);
         IndexOptions instancesTtlIndexOptions = new IndexOptions().expireAfter(65L, TimeUnit.SECONDS);
         MongoCollection<InstancesCollection> instancesCollectionMongoCollection =
-            mongoDatabase.getCollection(InstancesCollection.DOCUMENT_NAME, InstancesCollection.class);
+                mongoDatabase.getCollection(InstancesCollection.DOCUMENT_NAME, InstancesCollection.class);
         try {
             instancesCollectionMongoCollection.createIndex(instancesTtlIndex, instancesTtlIndexOptions);
         } catch (Throwable throwable) {

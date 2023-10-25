@@ -1,25 +1,22 @@
 package com.arextest.storage.service.config.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.annotation.Resource;
-
 import com.arextest.config.model.dto.StatusType;
+import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
+import com.arextest.config.model.dto.application.ApplicationServiceConfiguration;
+import com.arextest.config.model.dto.application.OperationDescription;
+import com.arextest.config.model.dto.application.ServiceDescription;
 import com.arextest.config.repository.ConfigRepositoryProvider;
+import com.arextest.storage.service.config.AbstractConfigurableHandler;
+import com.arextest.storage.service.config.provider.ApplicationServiceDescriptionProvider;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
-import com.arextest.config.model.dto.application.ApplicationServiceConfiguration;
-import com.arextest.config.model.dto.application.OperationDescription;
-import com.arextest.config.model.dto.application.ServiceDescription;
-import com.arextest.storage.service.config.AbstractConfigurableHandler;
-import com.arextest.storage.service.config.provider.ApplicationServiceDescriptionProvider;
-
-import lombok.extern.slf4j.Slf4j;
+import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author jmo
@@ -28,14 +25,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 public final class ApplicationServiceConfigurableHandler
-    extends AbstractConfigurableHandler<ApplicationServiceConfiguration> {
+        extends AbstractConfigurableHandler<ApplicationServiceConfiguration> {
     @Resource
     private ApplicationServiceDescriptionProvider applicationServiceProvider;
     @Resource
     private AbstractConfigurableHandler<ApplicationOperationConfiguration> operationConfigurableHandler;
 
     protected ApplicationServiceConfigurableHandler(
-        @Autowired ConfigRepositoryProvider<ApplicationServiceConfiguration> repositoryProvider) {
+            @Autowired ConfigRepositoryProvider<ApplicationServiceConfiguration> repositoryProvider) {
         super(repositoryProvider);
     }
 
@@ -66,7 +63,7 @@ public final class ApplicationServiceConfigurableHandler
                 this.buildOperationList(serviceConfiguration, sourceOperationList);
                 operationConfigurableHandler.insertList(serviceConfiguration.getOperationList());
                 LOGGER.info("add {} service's operations size:{}", originService.getServiceName(),
-                    sourceOperationList.size());
+                        sourceOperationList.size());
             }
         }
     }
@@ -83,7 +80,7 @@ public final class ApplicationServiceConfigurableHandler
     }
 
     private void buildOperationList(ApplicationServiceConfiguration service,
-        List<? extends OperationDescription> source) {
+                                    List<? extends OperationDescription> source) {
         List<ApplicationOperationConfiguration> operationList = new ArrayList<>(source.size());
         ApplicationOperationConfiguration operationConfiguration;
         String operationName;

@@ -22,16 +22,8 @@ import java.net.URI;
 @SpringBootApplication(scanBasePackages = "com.arextest.storage")
 public class WebSpringBootServletInitializer extends SpringBootServletInitializer {
 
-    /**
-     * configure for our Servlet
-     *
-     * @param application builder
-     * @return build a source
-     */
-    @Override
-    protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
-        return application.sources(WebSpringBootServletInitializer.class);
-    }
+    @Value("${arex.prometheus.port}")
+    String prometheusPort;
 
     public static void main(String[] args) {
         System.setProperty("java.awt.headless", "false");
@@ -43,8 +35,18 @@ public class WebSpringBootServletInitializer extends SpringBootServletInitialize
             e.printStackTrace();
         }
     }
-    @Value("${arex.prometheus.port}")
-    String prometheusPort;
+
+    /**
+     * configure for our Servlet
+     *
+     * @param application builder
+     * @return build a source
+     */
+    @Override
+    protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+        return application.sources(WebSpringBootServletInitializer.class);
+    }
+
     @PostConstruct
     public void init() {
         PrometheusConfiguration.initMetrics(prometheusPort);

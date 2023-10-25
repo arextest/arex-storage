@@ -19,7 +19,8 @@ import java.util.ServiceLoader;
  * @since 2022/2/21
  */
 public final class Providers {
-    private Providers() {}
+    private Providers() {
+    }
 
     public static ApplicationDescriptionProvider createApplication(String name) {
         if (StringUtils.isEmpty(name)) {

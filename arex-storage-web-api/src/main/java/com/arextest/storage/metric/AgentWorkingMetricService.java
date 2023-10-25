@@ -6,7 +6,6 @@ import com.arextest.storage.mock.MockResultContext;
 import com.arextest.storage.service.AgentWorkingService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.springframework.util.StopWatch;
 
 import javax.validation.constraints.NotNull;
 import java.util.HashMap;
@@ -34,6 +33,10 @@ public class AgentWorkingMetricService {
         this.metricListeners = metricListeners;
     }
 
+    private static long nanosToMillis(long duration) {
+        return TimeUnit.NANOSECONDS.toMillis(duration);
+    }
+
     public <T extends Mocker> boolean saveRecord(@NotNull T item) {
         if (CollectionUtils.isEmpty(metricListeners)) {
             return agentWorkingService.saveRecord(item);
@@ -45,10 +48,6 @@ public class AgentWorkingMetricService {
 
         recordEntryTime(SAVE_MOCK_METHOD_NAME, (AREXMocker) item, nanosToMillis(totalTimeNanos));
         return saveResult;
-    }
-
-    private static long nanosToMillis(long duration) {
-        return TimeUnit.NANOSECONDS.toMillis(duration);
     }
 
     public <T extends Mocker> byte[] queryMockResult(@NotNull T recordItem, MockResultContext context) {

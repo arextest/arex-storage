@@ -1,12 +1,11 @@
 package com.arextest.storage.beans;
 
+import com.arextest.storage.service.config.impl.Providers;
+import com.arextest.storage.service.config.provider.ApplicationDescriptionProvider;
+import com.arextest.storage.service.config.provider.ApplicationServiceDescriptionProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import com.arextest.storage.service.config.provider.ApplicationDescriptionProvider;
-import com.arextest.storage.service.config.provider.ApplicationServiceDescriptionProvider;
-import com.arextest.storage.service.config.impl.Providers;
 
 /**
  * @author jmo

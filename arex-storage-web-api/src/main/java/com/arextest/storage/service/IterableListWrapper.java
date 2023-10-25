@@ -13,8 +13,8 @@ import java.util.Iterator;
  * @since 2021/11/11
  */
 public final class IterableListWrapper<E> extends AbstractList<E> {
-    private final Iterable<E> iterable;
     private final static int SIZE_NOT_GIVEN = 0;
+    private final Iterable<E> iterable;
 
     IterableListWrapper(@NotNull Iterable<E> iterable) {
         this.iterable = iterable;

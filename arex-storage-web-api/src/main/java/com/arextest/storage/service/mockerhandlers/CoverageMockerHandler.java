@@ -12,10 +12,9 @@ import com.arextest.storage.service.MockSourceEditionService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import javax.annotation.Resource;
-import java.util.concurrent.*;
+import java.util.concurrent.ThreadPoolExecutor;
 
 @Component
 @Slf4j
@@ -38,13 +37,13 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
 
     /**
      * if is auto pined Case:
-     *      update path
-     *
+     * update path
+     * <p>
      * if is new case:
-     *      if it has same path key:
-     *          replace old case
-     *      else:
-     *          store
+     * if it has same path key:
+     * replace old case
+     * else:
+     * store
      */
     @Override
     public void handle(AREXMocker coverageMocker) {
@@ -74,9 +73,11 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
 
     private class CoverageTask implements Runnable {
         private final AREXMocker coverageMocker;
+
         CoverageTask(AREXMocker coverageMocker) {
             this.coverageMocker = coverageMocker;
         }
+
         @Override
         public void run() {
             if (StringUtils.isEmpty(coverageMocker.getOperationName()) || coverageMocker.getOperationName().equals("0")) {

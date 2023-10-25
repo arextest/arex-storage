@@ -23,10 +23,9 @@ import java.io.IOException;
 @Component
 public final class ZstdJacksonMessageConverter extends AbstractHttpMessageConverter<Object> {
 
+    public static final String ZSTD_JSON_MEDIA_TYPE = "application/zstd-json;charset=UTF-8";
     @Resource
     private ZstdJacksonSerializer zstdJacksonSerializer;
-
-    public static final String ZSTD_JSON_MEDIA_TYPE = "application/zstd-json;charset=UTF-8";
 
 
     /**

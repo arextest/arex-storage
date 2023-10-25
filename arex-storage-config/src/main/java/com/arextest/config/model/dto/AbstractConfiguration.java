@@ -1,9 +1,9 @@
 package com.arextest.config.model.dto;
 
-import java.sql.Timestamp;
-
 import lombok.Getter;
 import lombok.Setter;
+
+import java.sql.Timestamp;
 
 /**
  * @author jmo

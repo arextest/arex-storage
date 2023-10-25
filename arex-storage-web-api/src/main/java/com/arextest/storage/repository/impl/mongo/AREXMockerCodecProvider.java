@@ -1,8 +1,7 @@
 package com.arextest.storage.repository.impl.mongo;
 
-import java.lang.reflect.Field;
-import java.util.List;
-
+import com.arextest.model.mock.AREXMocker;
+import lombok.Builder;
 import org.bson.codecs.Codec;
 import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistry;
@@ -11,9 +10,8 @@ import org.bson.codecs.pojo.ClassModelBuilder;
 import org.bson.codecs.pojo.PropertyModelBuilder;
 import org.bson.codecs.pojo.TypeWithTypeParameters;
 
-import com.arextest.model.mock.AREXMocker;
-
-import lombok.Builder;
+import java.lang.reflect.Field;
+import java.util.List;
 
 /**
  * @author jmo
@@ -23,16 +21,16 @@ import lombok.Builder;
 @SuppressWarnings("unchecked")
 final class AREXMockerCodecProvider implements CodecProvider {
 
-    private final Codec<?> millisecondsDateTimeCodec = new MillisecondsDateTimeCodecImpl();
     private final static String TARGET_REQUEST_NAME = "targetRequest";
     private final static String TARGET_RESPONSE_NAME = "targetResponse";
     private static final String CATEGORY_TYPE = "categoryType";
+    private final Codec<?> millisecondsDateTimeCodec = new MillisecondsDateTimeCodecImpl();
     private volatile Codec<AREXMocker> arexMockerCodec;
     private Codec<?> targetCodec;
 
     @Override
     public <T> Codec<T> get(Class<T> aClass, CodecRegistry codecRegistry) {
-        return aClass == AREXMocker.class ? (Codec<T>)createCodec(codecRegistry) : null;
+        return aClass == AREXMocker.class ? (Codec<T>) createCodec(codecRegistry) : null;
     }
 
     private Codec<AREXMocker> createCodec(CodecRegistry registry) {
@@ -65,7 +63,7 @@ final class AREXMockerCodecProvider implements CodecProvider {
         for (PropertyModelBuilder<?> propertyModelBuilder : propertyModelBuilders) {
             Codec codec = customCodecLookup(propertyModelBuilder);
             if (codec == null) {
-                withTypeParameters = (TypeWithTypeParameters)propertyField.get(propertyModelBuilder);
+                withTypeParameters = (TypeWithTypeParameters) propertyField.get(propertyModelBuilder);
                 codec = registry.get(withTypeParameters.getType());
             }
             propertyModelBuilder.codec(codec);
@@ -81,8 +79,8 @@ final class AREXMockerCodecProvider implements CodecProvider {
             return targetCodec;
         }
         if (AREXMockerMongoRepositoryProvider.CREATE_TIME_COLUMN_NAME.equals(propertyModelBuilder.getName())
-            || AREXMockerMongoRepositoryProvider.UPDATE_TIME_COLUMN_NAME.equals(propertyModelBuilder.getName())
-            || AREXMockerMongoRepositoryProvider.EXPIRATION_TIME_COLUMN_NAME.equals(propertyModelBuilder.getName())) {
+                || AREXMockerMongoRepositoryProvider.UPDATE_TIME_COLUMN_NAME.equals(propertyModelBuilder.getName())
+                || AREXMockerMongoRepositoryProvider.EXPIRATION_TIME_COLUMN_NAME.equals(propertyModelBuilder.getName())) {
             return millisecondsDateTimeCodec;
         }
         return null;

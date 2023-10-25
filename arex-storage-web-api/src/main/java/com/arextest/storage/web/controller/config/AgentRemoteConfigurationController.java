@@ -1,21 +1,25 @@
 package com.arextest.storage.web.controller.config;
 
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import com.arextest.common.model.response.Response;
+import com.arextest.common.model.response.ResponseCode;
+import com.arextest.common.utils.ResponseUtils;
 import com.arextest.config.mapper.InstancesMapper;
+import com.arextest.config.model.dto.application.ApplicationConfiguration;
+import com.arextest.config.model.dto.application.InstancesConfiguration;
+import com.arextest.config.model.dto.record.DynamicClassConfiguration;
+import com.arextest.config.model.dto.record.ServiceCollectConfiguration;
 import com.arextest.config.model.vo.AgentRemoteConfigurationRequest;
 import com.arextest.config.model.vo.AgentRemoteConfigurationResponse;
 import com.arextest.config.model.vo.AgentStatusRequest;
 import com.arextest.config.model.vo.AgentStatusType;
+import com.arextest.storage.service.config.ConfigurableHandler;
+import com.arextest.storage.service.config.impl.ApplicationInstancesConfigurableHandler;
+import com.arextest.storage.service.config.impl.ApplicationServiceConfigurableHandler;
 import com.arextest.storage.service.config.impl.ServiceCollectConfigurableHandler;
+import com.arextest.storage.trace.MDCTracer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
@@ -27,19 +31,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.arextest.common.model.response.Response;
-import com.arextest.common.model.response.ResponseCode;
-import com.arextest.common.utils.ResponseUtils;
-import com.arextest.config.model.dto.application.ApplicationConfiguration;
-import com.arextest.config.model.dto.application.InstancesConfiguration;
-import com.arextest.config.model.dto.record.DynamicClassConfiguration;
-import com.arextest.config.model.dto.record.ServiceCollectConfiguration;
-import com.arextest.storage.service.config.ConfigurableHandler;
-import com.arextest.storage.service.config.impl.ApplicationInstancesConfigurableHandler;
-import com.arextest.storage.service.config.impl.ApplicationServiceConfigurableHandler;
-import com.arextest.storage.trace.MDCTracer;
-
-import lombok.extern.slf4j.Slf4j;
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author jmo

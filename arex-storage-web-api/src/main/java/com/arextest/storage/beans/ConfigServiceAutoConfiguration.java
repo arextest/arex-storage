@@ -1,10 +1,9 @@
 package com.arextest.storage.beans;
 
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
 import com.arextest.config.repository.impl.*;
 import com.mongodb.client.MongoDatabase;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 @Configuration(proxyBeanMethods = false)
 public class ConfigServiceAutoConfiguration {
@@ -17,13 +16,13 @@ public class ConfigServiceAutoConfiguration {
 
     @Bean
     public ApplicationServiceConfigurationRepositoryImpl
-        applicationServiceConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
+    applicationServiceConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
         return new ApplicationServiceConfigurationRepositoryImpl(mongoDatabase);
     }
 
     @Bean
     public ApplicationOperationConfigurationRepositoryImpl
-        applicationOperationConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
+    applicationOperationConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
         return new ApplicationOperationConfigurationRepositoryImpl(mongoDatabase);
     }
 
@@ -34,13 +33,13 @@ public class ConfigServiceAutoConfiguration {
 
     @Bean
     public ServiceCollectConfigurationRepositoryImpl
-        serviceCollectConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
+    serviceCollectConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
         return new ServiceCollectConfigurationRepositoryImpl(mongoDatabase);
     }
 
     @Bean
     public DynamicClassConfigurationRepositoryImpl
-        dynamicClassConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
+    dynamicClassConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
         return new DynamicClassConfigurationRepositoryImpl(mongoDatabase);
     }
 }

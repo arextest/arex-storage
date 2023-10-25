@@ -1,5 +1,6 @@
 package com.arextest.storage.repository.impl.mongo;
 
+import com.arextest.common.utils.SerializationUtils;
 import com.arextest.extension.desensitization.DataDesensitization;
 import com.arextest.extension.desensitization.DefaultDataDesensitization;
 import lombok.extern.slf4j.Slf4j;
@@ -8,8 +9,6 @@ import org.bson.BsonWriter;
 import org.bson.codecs.Codec;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
-
-import com.arextest.common.utils.SerializationUtils;
 
 @Slf4j
 final class CompressionCodecImpl<T> implements Codec<T> {

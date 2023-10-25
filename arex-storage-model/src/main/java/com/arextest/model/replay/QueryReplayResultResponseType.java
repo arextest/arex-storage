@@ -1,8 +1,8 @@
 package com.arextest.model.replay;
 
-import com.arextest.model.response.ResponseStatusType;
 import com.arextest.model.replay.holder.ListResultHolder;
 import com.arextest.model.response.Response;
+import com.arextest.model.response.ResponseStatusType;
 import lombok.Getter;
 import lombok.Setter;
 

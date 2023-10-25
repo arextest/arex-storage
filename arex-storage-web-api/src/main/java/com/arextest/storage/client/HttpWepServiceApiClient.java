@@ -105,7 +105,7 @@ public final class HttpWepServiceApiClient {
 
     public <TRequest, TResponse> ResponseEntity<TResponse> responsePost(String url, TRequest request, Class<TResponse> responseType, HttpHeaders headerValue) {
         try {
-            return restTemplate.postForEntity(url, wrapJsonContentTypeWithHeader(request,headerValue), responseType);
+            return restTemplate.postForEntity(url, wrapJsonContentTypeWithHeader(request, headerValue), responseType);
         } catch (Throwable throwable) {
             try {
                 LOGGER.error("http post url: {} ,error: {} ,request: {}", url, throwable.getMessage(),
@@ -116,6 +116,7 @@ public final class HttpWepServiceApiClient {
         }
         return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
     @SuppressWarnings("unchecked")
     private <TRequest> HttpEntity<TRequest> wrapJsonContentType(TRequest request) {
         HttpEntity<TRequest> httpJsonEntity;
@@ -128,6 +129,7 @@ public final class HttpWepServiceApiClient {
         }
         return httpJsonEntity;
     }
+
     private <TRequest> HttpEntity<TRequest> wrapJsonContentTypeWithHeader(TRequest request, HttpHeaders headerValue) {
         HttpEntity<TRequest> httpJsonEntity;
         if (request instanceof HttpEntity) {

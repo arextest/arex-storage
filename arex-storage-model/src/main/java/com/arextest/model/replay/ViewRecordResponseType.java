@@ -13,7 +13,7 @@ import java.util.List;
  * @since 2021/11/3
  */
 @Data
-public class ViewRecordResponseType  extends DesensitizationResponseType implements Response {
+public class ViewRecordResponseType extends DesensitizationResponseType implements Response {
     private ResponseStatusType responseStatusType;
     private List<AREXMocker> recordResult;
 }

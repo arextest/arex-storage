@@ -16,13 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.util.HashMap;
@@ -46,7 +40,8 @@ public class AgentRecordingController {
 
     @Resource
     private AgentWorkingMetricService agentWorkingMetricService;
-
+    @Resource
+    private ZstdJacksonSerializer zstdJacksonSerializer;
 
     /**
      * from agent query,means to save the request and try to find a record item as mock result for return.
@@ -115,9 +110,6 @@ public class AgentRecordingController {
             MDCTracer.clear();
         }
     }
-
-    @Resource
-    private ZstdJacksonSerializer zstdJacksonSerializer;
 
     @PostMapping(value = "/saveTest", produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody

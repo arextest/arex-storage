@@ -1,14 +1,5 @@
 package com.arextest.config.repository.impl;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import javax.annotation.PostConstruct;
-
-import org.bson.conversions.Bson;
-import org.bson.types.ObjectId;
-
 import com.arextest.config.mapper.DynamicClassMapper;
 import com.arextest.config.model.dao.config.DynamicClassCollection;
 import com.arextest.config.model.dto.record.DynamicClassConfiguration;
@@ -22,12 +13,18 @@ import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
 import com.mongodb.client.result.UpdateResult;
+import org.bson.conversions.Bson;
+import org.bson.types.ObjectId;
+
+import javax.annotation.PostConstruct;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class DynamicClassConfigurationRepositoryImpl implements ConfigRepositoryProvider<DynamicClassConfiguration> {
 
-    private MongoDatabase mongoDatabase;
-
     MongoCollection<DynamicClassCollection> mongoCollection;
+    private MongoDatabase mongoDatabase;
 
     public DynamicClassConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
         this.mongoDatabase = mongoDatabase;
@@ -36,7 +33,7 @@ public class DynamicClassConfigurationRepositoryImpl implements ConfigRepository
     @PostConstruct
     public void init() {
         this.mongoCollection =
-            mongoDatabase.getCollection(DynamicClassCollection.DOCUMENT_NAME, DynamicClassCollection.class);
+                mongoDatabase.getCollection(DynamicClassCollection.DOCUMENT_NAME, DynamicClassCollection.class);
     }
 
     @Override
@@ -63,8 +60,8 @@ public class DynamicClassConfigurationRepositoryImpl implements ConfigRepository
         Bson filter = Filters.eq(DASH_ID, new ObjectId(configuration.getId()));
 
         List<Bson> updateList = Arrays.asList(MongoHelper.getUpdate(),
-            MongoHelper.getSpecifiedProperties(configuration, DynamicClassCollection.Fields.fullClassName,
-                DynamicClassCollection.Fields.methodName, DynamicClassCollection.Fields.parameterTypes));
+                MongoHelper.getSpecifiedProperties(configuration, DynamicClassCollection.Fields.fullClassName,
+                        DynamicClassCollection.Fields.methodName, DynamicClassCollection.Fields.parameterTypes));
         Bson updateCombine = Updates.combine(updateList);
 
         UpdateResult updateResult = mongoCollection.updateMany(filter, updateCombine);

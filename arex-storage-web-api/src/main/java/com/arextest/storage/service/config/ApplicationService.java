@@ -68,7 +68,7 @@ public class ApplicationService {
 
     public boolean modifyApplication(UpdateApplicationRequest request) {
         List<ApplicationConfiguration> applicationConfigurationList =
-            applicationConfigurationRepository.listBy(request.getAppId());
+                applicationConfigurationRepository.listBy(request.getAppId());
         if (CollectionUtils.isEmpty(applicationConfigurationList)) {
             return false;
         }

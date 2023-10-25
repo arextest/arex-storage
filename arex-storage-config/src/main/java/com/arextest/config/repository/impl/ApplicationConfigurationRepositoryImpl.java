@@ -9,11 +9,7 @@ import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Sorts;
-import com.mongodb.client.model.UpdateManyModel;
-import com.mongodb.client.model.Updates;
-import com.mongodb.client.model.WriteModel;
+import com.mongodb.client.model.*;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
 import org.apache.commons.lang3.StringUtils;
@@ -27,12 +23,9 @@ import java.util.Arrays;
 import java.util.List;
 
 public class ApplicationConfigurationRepositoryImpl implements ConfigRepositoryProvider<ApplicationConfiguration> {
-    private MongoDatabase mongoDatabase;
-
-    private MongoCollection<AppCollection> mongoCollection;
-
     private static final String UNKNOWN_APP_NAME = "unknown app name";
-
+    private MongoDatabase mongoDatabase;
+    private MongoCollection<AppCollection> mongoCollection;
     @Resource
     private List<ConfigRepositoryProvider> configRepositoryProviders;
 
@@ -102,9 +95,9 @@ public class ApplicationConfigurationRepositoryImpl implements ConfigRepositoryP
         Bson filter = Filters.eq(AppCollection.Fields.appId, configuration.getAppId());
 
         List<Bson> updateList = Arrays.asList(MongoHelper.getUpdate(),
-            MongoHelper.getSpecifiedProperties(configuration, AppCollection.Fields.agentVersion,
-                AppCollection.Fields.agentExtVersion, AppCollection.Fields.status, AppCollection.Fields.features,
-                AppCollection.Fields.appName, AppCollection.Fields.owners));
+                MongoHelper.getSpecifiedProperties(configuration, AppCollection.Fields.agentVersion,
+                        AppCollection.Fields.agentExtVersion, AppCollection.Fields.status, AppCollection.Fields.features,
+                        AppCollection.Fields.appName, AppCollection.Fields.owners));
         Bson updateCombine = Updates.combine(updateList);
 
         return mongoCollection.updateMany(filter, updateCombine).getModifiedCount() > 0;

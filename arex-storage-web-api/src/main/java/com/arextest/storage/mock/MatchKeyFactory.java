@@ -14,6 +14,7 @@ import java.util.List;
 @Component
 public final class MatchKeyFactory {
     private final List<MatchKeyBuilder> matchKeyBuilders;
+
     public MatchKeyFactory(List<MatchKeyBuilder> matchKeyBuilders) {
         this.matchKeyBuilders = matchKeyBuilders;
     }

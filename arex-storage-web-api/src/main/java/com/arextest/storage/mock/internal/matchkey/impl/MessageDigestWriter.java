@@ -6,6 +6,7 @@ import java.security.NoSuchAlgorithmException;
 
 /**
  * The request should be large use streaming to md5
+ *
  * @author jmo
  * @since 2022/11/23
  */
@@ -17,11 +18,6 @@ public class MessageDigestWriter extends OutputStream {
         this.messageDigest = messageDigest;
     }
 
-    @Override
-    public void write(int b) {
-        messageDigest.update((byte) b);
-    }
-
     public static MessageDigest getMD5Digest() {
         try {
             return MessageDigest.getInstance(MD5_ALGORITHM_NAME);
@@ -29,5 +25,10 @@ public class MessageDigestWriter extends OutputStream {
             throw new IllegalStateException("Could not find MessageDigest with algorithm \"" + MD5_ALGORITHM_NAME +
                     "\"", exception);
         }
+    }
+
+    @Override
+    public void write(int b) {
+        messageDigest.update((byte) b);
     }
 }

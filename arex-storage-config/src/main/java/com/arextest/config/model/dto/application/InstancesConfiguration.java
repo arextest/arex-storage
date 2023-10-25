@@ -1,10 +1,10 @@
 package com.arextest.config.model.dto.application;
 
-import java.util.Date;
-import java.util.Map;
-
 import com.arextest.config.model.dto.AbstractConfiguration;
 import lombok.Data;
+
+import java.util.Date;
+import java.util.Map;
 
 /**
  * created by xinyuan_wang on 2023/3/14

@@ -18,31 +18,31 @@ public interface Mocker {
 
     void setRecordId(String recordId);
 
+    int getRecordEnvironment();
+
     void setRecordEnvironment(int environment);
 
-    int getRecordEnvironment();
+    long getCreationTime();
 
     /**
      * millis from utc format without timezone
      */
     void setCreationTime(long creationTime);
 
-    long getCreationTime();
-
-    void setUpdateTime(long updateTime);
-
     long getUpdateTime();
 
-    void setExpirationTime(long expirationTime);
+    void setUpdateTime(long updateTime);
 
     /**
      * MongoDB TTL Index
      */
     long getExpirationTime();
 
-    void setId(String id);
+    void setExpirationTime(long expirationTime);
 
     String getId();
+
+    void setId(String id);
 
     MockCategoryType getCategoryType();
 

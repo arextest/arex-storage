@@ -37,7 +37,7 @@ final class QMessageProduceMatchKeyBuilderImpl implements MatchKeyBuilder {
         if (request == null || StringUtils.isEmpty(request.getBody())) {
             return Collections.singletonList(operationBytes);
         }
-        MessageDigest messageDigest =MessageDigestWriter.getMD5Digest();
+        MessageDigest messageDigest = MessageDigestWriter.getMD5Digest();
         messageDigest.update(operationBytes);
         StringReader stringReader = new StringReader(request.getBody());
         OutputStream output = new MessageDigestWriter(messageDigest);

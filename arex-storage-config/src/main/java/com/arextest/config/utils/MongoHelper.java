@@ -1,22 +1,21 @@
 package com.arextest.config.utils;
 
+import com.arextest.config.model.dao.BaseEntity;
+import com.mongodb.client.model.Updates;
+import lombok.extern.slf4j.Slf4j;
+import org.bson.conversions.Bson;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.arextest.config.model.dao.BaseEntity;
-import org.bson.conversions.Bson;
-import com.mongodb.client.model.Updates;
-
-import lombok.extern.slf4j.Slf4j;
-
 @Slf4j
 public class MongoHelper {
     public static Bson getUpdate() {
         return Updates.combine(Updates.set(BaseEntity.Fields.dataChangeUpdateTime, System.currentTimeMillis()),
-            Updates.setOnInsert(BaseEntity.Fields.dataChangeCreateTime, System.currentTimeMillis()));
+                Updates.setOnInsert(BaseEntity.Fields.dataChangeCreateTime, System.currentTimeMillis()));
     }
 
     public static Bson getFullProperties(Object obj) {
@@ -30,7 +29,7 @@ public class MongoHelper {
                 }
             } catch (IllegalAccessException e) {
                 LOGGER.error(
-                    String.format("Class:[%s]. failed to get field %s", obj.getClass().getName(), field.getName()), e);
+                        String.format("Class:[%s]. failed to get field %s", obj.getClass().getName(), field.getName()), e);
             }
         }
         return Updates.combine(updates);
@@ -52,7 +51,7 @@ public class MongoHelper {
                 }
             } catch (IllegalAccessException e) {
                 LOGGER.error(String.format("Class:[%s]. failed to get field %s", obj.getClass().getName(), fieldName),
-                    e);
+                        e);
             }
         }
         return Updates.combine(updates);

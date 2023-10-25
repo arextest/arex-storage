@@ -1,38 +1,34 @@
 package com.arextest.storage.service;
 
-import java.util.Collections;
-import java.util.List;
-
-import javax.validation.constraints.NotNull;
-
+import com.arextest.common.cache.CacheProvider;
 import com.arextest.config.model.dto.StatusType;
+import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
+import com.arextest.config.model.dto.application.ApplicationServiceConfiguration;
 import com.arextest.config.repository.impl.ApplicationOperationConfigurationRepositoryImpl;
 import com.arextest.config.repository.impl.ApplicationServiceConfigurationRepositoryImpl;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-
-import com.arextest.common.cache.CacheProvider;
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.cache.CacheKeyUtils;
 import com.arextest.storage.mock.MockResultContext;
-import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
-import com.arextest.config.model.dto.application.ApplicationServiceConfiguration;
-
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.validation.constraints.NotNull;
+import java.util.Collections;
+import java.util.List;
 
 @Slf4j
 public class AutoDiscoveryEntryPointListener implements AgentWorkingListener {
-    private final ApplicationServiceConfigurationRepositoryImpl serviceRepository;
-    private final ApplicationOperationConfigurationRepositoryImpl serviceOperationRepository;
-    private final CacheProvider cacheProvider;
-
     private static final String DASH = "_";
     // private static final int SERVICE_TYPE_NORMAL = 4;
     private static final String SERVICE_MAPPINGS_PREFIX = "service_mappings_";
     private static final byte[] EMPTY_BYTE_ARRAY = CacheKeyUtils.toUtf8Bytes(StringUtils.EMPTY);
+    private final ApplicationServiceConfigurationRepositoryImpl serviceRepository;
+    private final ApplicationOperationConfigurationRepositoryImpl serviceOperationRepository;
+    private final CacheProvider cacheProvider;
 
     public AutoDiscoveryEntryPointListener(ApplicationServiceConfigurationRepositoryImpl serviceRepository,
-        ApplicationOperationConfigurationRepositoryImpl serviceOperationRepository, CacheProvider cacheProvider) {
+                                           ApplicationOperationConfigurationRepositoryImpl serviceOperationRepository, CacheProvider cacheProvider) {
         this.serviceRepository = serviceRepository;
         this.serviceOperationRepository = serviceOperationRepository;
         this.cacheProvider = cacheProvider;
@@ -53,7 +49,7 @@ public class AutoDiscoveryEntryPointListener implements AgentWorkingListener {
         String operationName = item.getOperationName();
         String serviceId = CacheKeyUtils.fromUtf8Bytes(cacheProvider.get(appServiceKey));
         byte[] operationKey = CacheKeyUtils.toUtf8Bytes(SERVICE_MAPPINGS_PREFIX + serviceId + DASH
-            + item.getOperationName() + DASH + item.getCategoryType().getName());
+                + item.getOperationName() + DASH + item.getCategoryType().getName());
         if (cacheProvider.get(operationKey) != null) {
             return;
         }

@@ -1,12 +1,5 @@
 package com.arextest.config.repository.impl;
 
-import java.util.*;
-
-import javax.annotation.PostConstruct;
-
-import org.bson.conversions.Bson;
-import org.bson.types.ObjectId;
-
 import com.arextest.config.mapper.InstancesMapper;
 import com.arextest.config.model.dao.config.DynamicClassCollection;
 import com.arextest.config.model.dao.config.InstancesCollection;
@@ -19,12 +12,16 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.*;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
+import org.bson.conversions.Bson;
+import org.bson.types.ObjectId;
+
+import javax.annotation.PostConstruct;
+import java.util.*;
 
 public class InstancesConfigurationRepositoryImpl implements ConfigRepositoryProvider<InstancesConfiguration> {
 
-    private MongoDatabase mongoDatabase;
-
     MongoCollection<InstancesCollection> mongoCollection;
+    private MongoDatabase mongoDatabase;
 
     public InstancesConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
         this.mongoDatabase = mongoDatabase;
@@ -33,7 +30,7 @@ public class InstancesConfigurationRepositoryImpl implements ConfigRepositoryPro
     @PostConstruct
     public void init() {
         this.mongoCollection =
-            mongoDatabase.getCollection(InstancesCollection.DOCUMENT_NAME, InstancesCollection.class);
+                mongoDatabase.getCollection(InstancesCollection.DOCUMENT_NAME, InstancesCollection.class);
     }
 
     @Override
@@ -75,14 +72,14 @@ public class InstancesConfigurationRepositoryImpl implements ConfigRepositoryPro
     @Override
     public boolean update(InstancesConfiguration configuration) {
         Bson filter = Filters.and(Filters.eq(InstancesCollection.Fields.appId, configuration.getAppId()),
-            Filters.eq(InstancesCollection.Fields.host, configuration.getHost()));
+                Filters.eq(InstancesCollection.Fields.host, configuration.getHost()));
 
         List<Bson> updateList = Arrays.asList(MongoHelper.getUpdate(), MongoHelper.getFullProperties(configuration),
-            Updates.set(InstancesCollection.Fields.dataUpdateTime, new Date()));
+                Updates.set(InstancesCollection.Fields.dataUpdateTime, new Date()));
         Bson updateCombine = Updates.combine(updateList);
 
         FindOneAndUpdateOptions options =
-            new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER).upsert(true);
+                new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER).upsert(true);
         InstancesCollection result = mongoCollection.findOneAndUpdate(filter, updateCombine, options);
         return result != null;
     }
@@ -116,7 +113,7 @@ public class InstancesConfigurationRepositoryImpl implements ConfigRepositoryPro
 
     public boolean removeByAppIdAndHost(String appId, String host) {
         Bson filterCombine = Filters.and(Filters.eq(InstancesCollection.Fields.appId, appId),
-            Filters.eq(InstancesCollection.Fields.host, host));
+                Filters.eq(InstancesCollection.Fields.host, host));
         DeleteResult remove = mongoCollection.deleteMany(filterCombine);
         return remove.getDeletedCount() > 0;
     }

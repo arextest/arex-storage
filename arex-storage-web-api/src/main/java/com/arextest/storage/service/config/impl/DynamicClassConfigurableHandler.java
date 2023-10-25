@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 @Component
 public final class DynamicClassConfigurableHandler extends AbstractConfigurableHandler<DynamicClassConfiguration> {
     protected DynamicClassConfigurableHandler(
-        @Autowired ConfigRepositoryProvider<DynamicClassConfiguration> repositoryProvider) {
+            @Autowired ConfigRepositoryProvider<DynamicClassConfiguration> repositoryProvider) {
         super(repositoryProvider);
     }
 

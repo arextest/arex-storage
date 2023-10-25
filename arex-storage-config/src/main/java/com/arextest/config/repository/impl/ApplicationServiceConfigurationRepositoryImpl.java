@@ -1,15 +1,5 @@
 package com.arextest.config.repository.impl;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
-
-import org.bson.conversions.Bson;
-import org.bson.types.ObjectId;
-
 import com.arextest.config.mapper.ServiceMapper;
 import com.arextest.config.model.dao.config.ServiceCollection;
 import com.arextest.config.model.dto.application.ApplicationServiceConfiguration;
@@ -22,19 +12,26 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
+import org.bson.conversions.Bson;
+import org.bson.types.ObjectId;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class ApplicationServiceConfigurationRepositoryImpl
-    implements ConfigRepositoryProvider<ApplicationServiceConfiguration> {
+        implements ConfigRepositoryProvider<ApplicationServiceConfiguration> {
 
     private MongoDatabase mongoDatabase;
     @Resource
     private ApplicationOperationConfigurationRepositoryImpl applicationOperationConfigurationRepository;
+    private MongoCollection<ServiceCollection> mongoCollection;
 
     public ApplicationServiceConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
         this.mongoDatabase = mongoDatabase;
     }
-
-    private MongoCollection<ServiceCollection> mongoCollection;
 
     @PostConstruct
     public void init() {
@@ -67,7 +64,7 @@ public class ApplicationServiceConfigurationRepositoryImpl
         Bson filter = Filters.eq(DASH_ID, new ObjectId(configuration.getId()));
 
         List<Bson> updateList = Arrays.asList(MongoHelper.getUpdate(),
-            Updates.set(ServiceCollection.Fields.status, configuration.getStatus()));
+                Updates.set(ServiceCollection.Fields.status, configuration.getStatus()));
         Bson updateCombine = Updates.combine(updateList);
 
         return mongoCollection.updateMany(filter, updateCombine).getModifiedCount() > 0;

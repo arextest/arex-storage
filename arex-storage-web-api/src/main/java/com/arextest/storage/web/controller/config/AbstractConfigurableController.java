@@ -1,15 +1,14 @@
 package com.arextest.storage.web.controller.config;
 
-import java.util.List;
-
-import com.arextest.config.model.dto.ModifyType;
+import com.arextest.common.model.response.Response;
+import com.arextest.common.utils.ResponseUtils;
 import com.arextest.config.model.dto.AbstractConfiguration;
+import com.arextest.config.model.dto.ModifyType;
 import com.arextest.storage.service.config.ConfigurableHandler;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
-import com.arextest.common.model.response.Response;
-import com.arextest.common.utils.ResponseUtils;
+import java.util.List;
 
 /**
  * @author jmo
@@ -71,7 +70,7 @@ public abstract class AbstractConfigurableController<T extends AbstractConfigura
     @PostMapping("/batchModify/{modifyType}")
     @ResponseBody
     public final Response batchModify(@PathVariable ModifyType modifyType, @RequestBody List<T> configuration)
-        throws Exception {
+            throws Exception {
         if (modifyType == ModifyType.INSERT) {
             for (T item : configuration) {
                 item.validParameters();

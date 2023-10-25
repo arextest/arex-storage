@@ -10,14 +10,6 @@ import lombok.experimental.FieldNameConstants;
 @FieldNameConstants
 public class AREXMocker implements Mocker {
 
-    public AREXMocker() {
-
-    }
-
-    public AREXMocker(MockCategoryType categoryType) {
-        this.categoryType = categoryType;
-    }
-
     /**
      * 1、Only for editing dependencies,the entry point ignored
      * 2、During query, record the id of the mock, and use the id to associate data during comparison
@@ -49,4 +41,10 @@ public class AREXMocker implements Mocker {
      */
     private String recordVersion;
     private Integer continuousFailCount;
+    public AREXMocker() {
+
+    }
+    public AREXMocker(MockCategoryType categoryType) {
+        this.categoryType = categoryType;
+    }
 }

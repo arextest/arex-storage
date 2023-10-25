@@ -43,7 +43,8 @@ public class AppAuthAspect {
     private ApplicationService applicationService;
 
     @Pointcut("@annotation(com.arextest.common.annotation.AppAuth)")
-    public void appAuth(){}
+    public void appAuth() {
+    }
 
     @Around("appAuth() && @annotation(auth)")
     public Object doAround(ProceedingJoinPoint point, AppAuth auth) throws Throwable {

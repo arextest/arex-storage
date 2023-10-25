@@ -12,14 +12,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 
 @RequestMapping(path = "/api/storage/edit/", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -36,7 +29,7 @@ public class MockSourceEditionController {
     private final int REMOVE_BY_RECORDID = 3;
 
     public MockSourceEditionController(MockSourceEditionService editableService,
-            PrepareMockResultService storageCache) {
+                                       PrepareMockResultService storageCache) {
         this.editableService = editableService;
         this.storageCache = storageCache;
     }
@@ -50,9 +43,9 @@ public class MockSourceEditionController {
     @GetMapping(value = "/copy/")
     @ResponseBody
     public Response copyTo(String srcProviderName,
-            String srcRecordId,
-            String targetProviderName,
-            String targetRecordId) {
+                           String srcRecordId,
+                           String targetProviderName,
+                           String targetRecordId) {
         if (StringUtils.isEmpty(srcProviderName)) {
             return ResponseUtils.parameterInvalidResponse("The srcProviderName of requested is empty");
         }
@@ -104,8 +97,8 @@ public class MockSourceEditionController {
     @GetMapping(value = "/remove/")
     @ResponseBody
     public Response remove(@RequestParam(required = false, defaultValue = ProviderNames.DEFAULT) String srcProviderName,
-            String category,
-            String recordId) {
+                           String category,
+                           String recordId) {
         if (StringUtils.isEmpty(recordId)) {
             return ResponseUtils.emptyRecordIdResponse();
         }

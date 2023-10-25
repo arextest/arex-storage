@@ -18,7 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.annotation.Resource;
 import javax.validation.constraints.NotNull;
 import java.util.List;
 
@@ -34,14 +33,11 @@ public class AgentWorkingService {
     private final MockResultProvider mockResultProvider;
     private final RepositoryProviderFactory repositoryProviderFactory;
     private final MockerHandlerFactory mockerHandlerFactory;
-
+    private final List<AgentWorkingListener> agentWorkingListeners;
     @Setter
     private ZstdJacksonSerializer zstdJacksonSerializer;
     @Setter
     private PrepareMockResultService prepareMockResultService;
-
-    private final List<AgentWorkingListener> agentWorkingListeners;
-
     @Setter
     private RecordEnvType recordEnvType;
 
@@ -145,7 +141,7 @@ public class AgentWorkingService {
                 if (MockResultMatchStrategy.STRICT_MATCH == context.getMockStrategy()) {
                     return ZstdJacksonSerializer.EMPTY_INSTANCE;
                 }
-                
+
                 mockResultProvider.putReplayResult(recordItem);
                 LOGGER.info("reload fetch replay mock record empty from cache,record id:{},replay id:{}, " +
                                 "reloadResult:{}",

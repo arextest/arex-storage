@@ -1,15 +1,5 @@
 package com.arextest.config.repository.impl;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import javax.annotation.PostConstruct;
-
-import org.apache.commons.lang3.StringUtils;
-import org.bson.conversions.Bson;
-import org.bson.types.ObjectId;
-
 import com.arextest.config.mapper.ServiceOperationMapper;
 import com.arextest.config.model.dao.config.ServiceOperationCollection;
 import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
@@ -24,9 +14,17 @@ import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
+import org.apache.commons.lang3.StringUtils;
+import org.bson.conversions.Bson;
+import org.bson.types.ObjectId;
+
+import javax.annotation.PostConstruct;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class ApplicationOperationConfigurationRepositoryImpl
-    implements ConfigRepositoryProvider<ApplicationOperationConfiguration> {
+        implements ConfigRepositoryProvider<ApplicationOperationConfiguration> {
     private MongoDatabase mongoDatabase;
 
     private MongoCollection<ServiceOperationCollection> mongoCollection;
@@ -38,7 +36,7 @@ public class ApplicationOperationConfigurationRepositoryImpl
     @PostConstruct
     private void init() {
         this.mongoCollection =
-            mongoDatabase.getCollection(ServiceOperationCollection.DOCUMENT_NAME, ServiceOperationCollection.class);
+                mongoDatabase.getCollection(ServiceOperationCollection.DOCUMENT_NAME, ServiceOperationCollection.class);
     }
 
     @Override
@@ -64,7 +62,7 @@ public class ApplicationOperationConfigurationRepositoryImpl
     public boolean update(ApplicationOperationConfiguration configuration) {
         Bson filter = Filters.eq(DASH_ID, new ObjectId(configuration.getId()));
         List<Bson> updateList = Arrays.asList(MongoHelper.getUpdate(),
-            MongoHelper.getSpecifiedProperties(configuration, ServiceOperationCollection.Fields.status));
+                MongoHelper.getSpecifiedProperties(configuration, ServiceOperationCollection.Fields.status));
         Bson updateCombine = Updates.combine(updateList);
 
         return mongoCollection.updateMany(filter, updateCombine).getModifiedCount() > 0;
@@ -80,7 +78,7 @@ public class ApplicationOperationConfigurationRepositoryImpl
     public boolean insert(ApplicationOperationConfiguration configuration) {
 
         ServiceOperationCollection serviceOperationCollection =
-            ServiceOperationMapper.INSTANCE.daoFromDto(configuration);
+                ServiceOperationMapper.INSTANCE.daoFromDto(configuration);
         InsertOneResult insertOneResult = mongoCollection.insertOne(serviceOperationCollection);
         if (insertOneResult.getInsertedId() != null) {
             configuration.setId(serviceOperationCollection.getId());
@@ -94,7 +92,7 @@ public class ApplicationOperationConfigurationRepositoryImpl
         Bson filter = Filters.eq(DASH_ID, new ObjectId(operationId));
         ServiceOperationCollection serviceOperationCollection = mongoCollection.find(filter).first();
         return serviceOperationCollection == null ? null
-            : ServiceOperationMapper.INSTANCE.dtoFromDao(serviceOperationCollection);
+                : ServiceOperationMapper.INSTANCE.dtoFromDao(serviceOperationCollection);
     }
 
     // the search of operation's based—info by serviceId
@@ -124,18 +122,18 @@ public class ApplicationOperationConfigurationRepositoryImpl
     public boolean findAndUpdate(ApplicationOperationConfiguration configuration) {
 
         Bson query = Filters.and(Filters.eq(ServiceOperationCollection.Fields.serviceId, configuration.getServiceId()),
-            Filters.eq(ServiceOperationCollection.Fields.operationName, configuration.getOperationName()),
-            Filters.eq(ServiceOperationCollection.Fields.appId, configuration.getAppId()));
+                Filters.eq(ServiceOperationCollection.Fields.operationName, configuration.getOperationName()),
+                Filters.eq(ServiceOperationCollection.Fields.appId, configuration.getAppId()));
 
         List<Bson> updateList = Arrays.asList(MongoHelper.getUpdate(),
-            MongoHelper.getSpecifiedProperties(configuration, ServiceOperationCollection.Fields.operationType,
-                ServiceOperationCollection.Fields.status),
-            Updates.addEachToSet(ServiceOperationCollection.Fields.operationTypes,
-                new ArrayList<>(configuration.getOperationTypes())));
+                MongoHelper.getSpecifiedProperties(configuration, ServiceOperationCollection.Fields.operationType,
+                        ServiceOperationCollection.Fields.status),
+                Updates.addEachToSet(ServiceOperationCollection.Fields.operationTypes,
+                        new ArrayList<>(configuration.getOperationTypes())));
         Bson updateCombine = Updates.combine(updateList);
 
         ServiceOperationCollection dao = mongoCollection.findOneAndUpdate(query, updateCombine,
-            new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER));
+                new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER));
 
         return dao != null && StringUtils.isNotEmpty(dao.getId());
     }

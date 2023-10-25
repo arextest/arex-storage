@@ -1,12 +1,11 @@
 package com.arextest.config.model.vo;
 
-import java.util.List;
-import java.util.Map;
-
 import com.arextest.config.model.dto.record.DynamicClassConfiguration;
 import com.arextest.config.model.dto.record.ServiceCollectConfiguration;
-
 import lombok.Data;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author b_yu

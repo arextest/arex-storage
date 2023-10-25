@@ -31,11 +31,11 @@ final class RedisMatchKeyBuilderImpl implements MatchKeyBuilder {
         if (request == null || StringUtils.isEmpty(request.getBody())) {
             return Collections.singletonList(operationBytes);
         }
-        MessageDigest messageDigest =MessageDigestWriter.getMD5Digest();
+        MessageDigest messageDigest = MessageDigestWriter.getMD5Digest();
         messageDigest.update(operationBytes);
         byte[] redisKeyBytes = CacheKeyUtils.toUtf8Bytes(request.getBody());
         messageDigest.update(redisKeyBytes);
         messageDigest.update(CacheKeyUtils.toUtf8Bytes(request.attributeAsString(MockAttributeNames.CLUSTER_NAME)));
-        return Arrays.asList(messageDigest.digest(),operationBytes);
+        return Arrays.asList(messageDigest.digest(), operationBytes);
     }
 }

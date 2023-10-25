@@ -19,7 +19,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -29,6 +32,10 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 public class ResultProcessService {
+    private static final int COMPARED_WITHOUT_DIFFERENCE = 0;
+    private static final int COMPARED_WITH_DIFFERENCE = 1;
+    private static final int COMPARED_INTERNAL_EXCEPTION = 2;
+    private static final int NORMAL_FINISH_CODE = 2;
     @Resource
     AutoPinedMockerRepository autoPinedMockerRepository;
     @Resource
@@ -41,10 +48,6 @@ public class ResultProcessService {
     PrepareMockResultService prepareMockResultService;
     @Resource
     CoverageRepository coverageRepository;
-    private static final int COMPARED_WITHOUT_DIFFERENCE = 0;
-    private static final int COMPARED_WITH_DIFFERENCE = 1;
-    private static final int COMPARED_INTERNAL_EXCEPTION = 2;
-    private static final int NORMAL_FINISH_CODE = 2;
 
     public void handleResult(PostProcessResultRequestType requestType) {
         List<ResultCodeGroup> diffResults = requestType.getResults();

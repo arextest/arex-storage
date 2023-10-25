@@ -1,13 +1,13 @@
 package com.arextest.config.model.dto.record;
 
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.arextest.config.model.dto.AbstractConfiguration;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author jmo

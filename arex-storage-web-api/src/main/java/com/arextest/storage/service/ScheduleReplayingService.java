@@ -1,25 +1,23 @@
 package com.arextest.storage.service;
 
-import java.util.*;
-
-import com.arextest.config.repository.ConfigRepositoryProvider;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.MapUtils;
-
 import com.arextest.common.utils.CompressionUtils;
+import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
+import com.arextest.config.repository.ConfigRepositoryProvider;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.ViewRecordRequestType;
 import com.arextest.model.replay.holder.ListResultHolder;
 import com.arextest.storage.mock.MockResultProvider;
-import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.RepositoryReader;
 import com.arextest.storage.trace.MDCTracer;
-
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
+
+import java.util.*;
 
 /**
  * When user create a plan, the schedule fired to replaying, which should be know how many replay cases to sending and
@@ -37,8 +35,8 @@ public class ScheduleReplayingService {
     private final ConfigRepositoryProvider<ApplicationOperationConfiguration> serviceOperationRepository;
 
     public ScheduleReplayingService(MockResultProvider mockResultProvider,
-        RepositoryProviderFactory repositoryProviderFactory,
-        ConfigRepositoryProvider<ApplicationOperationConfiguration> serviceOperationRepository) {
+                                    RepositoryProviderFactory repositoryProviderFactory,
+                                    ConfigRepositoryProvider<ApplicationOperationConfiguration> serviceOperationRepository) {
         this.mockResultProvider = mockResultProvider;
         this.repositoryProviderFactory = repositoryProviderFactory;
         this.serviceOperationRepository = serviceOperationRepository;
@@ -54,12 +52,12 @@ public class ScheduleReplayingService {
             }
             MDCTracer.addCategory(categoryType);
             List<String> recordList =
-                encodeToBase64String(mockResultProvider.getRecordResultList(categoryType, recordId));
+                    encodeToBase64String(mockResultProvider.getRecordResultList(categoryType, recordId));
             List<String> replayResultList =
-                encodeToBase64String(mockResultProvider.getReplayResultList(categoryType, replayResultId));
+                    encodeToBase64String(mockResultProvider.getReplayResultList(categoryType, replayResultId));
             if (CollectionUtils.isEmpty(recordList) && CollectionUtils.isEmpty(replayResultList)) {
                 LOGGER.info("skipped empty replay result for category:{}, recordId:{} ,replayResultId:{}", categoryType,
-                    recordId, replayResultId);
+                        recordId, replayResultId);
                 continue;
             }
             listResultHolder = new ListResultHolder();
@@ -73,7 +71,7 @@ public class ScheduleReplayingService {
 
     public List<AREXMocker> queryByRange(PagedRequestType requestType) {
         RepositoryReader<AREXMocker> repositoryReader =
-            repositoryProviderFactory.findProvider(requestType.getSourceProvider());
+                repositoryProviderFactory.findProvider(requestType.getSourceProvider());
         if (repositoryReader != null) {
             return new IterableListWrapper<>(repositoryReader.queryByRange(requestType));
         }
@@ -82,7 +80,7 @@ public class ScheduleReplayingService {
 
     public List<AREXMocker> queryEntryPointByRange(PagedRequestType requestType) {
         RepositoryProvider<AREXMocker> repositoryProvider =
-            repositoryProviderFactory.findProvider(requestType.getSourceProvider());
+                repositoryProviderFactory.findProvider(requestType.getSourceProvider());
         if (repositoryProvider != null) {
             return new IterableListWrapper<>(repositoryProvider.queryEntryPointByRange(requestType));
         }
@@ -132,7 +130,7 @@ public class ScheduleReplayingService {
 
     private Map<String, Long> countSingleCategoryByOperationName(PagedRequestType pagedRequestType) {
         RepositoryReader<?> repositoryReader =
-            repositoryProviderFactory.findProvider(pagedRequestType.getSourceProvider());
+                repositoryProviderFactory.findProvider(pagedRequestType.getSourceProvider());
         if (repositoryReader != null) {
             return repositoryReader.countByOperationName(pagedRequestType);
         }
@@ -172,7 +170,7 @@ public class ScheduleReplayingService {
 
     private long countSingleCategory(PagedRequestType replayCaseRangeRequest) {
         RepositoryReader<?> repositoryReader =
-            repositoryProviderFactory.findProvider(replayCaseRangeRequest.getSourceProvider());
+                repositoryProviderFactory.findProvider(replayCaseRangeRequest.getSourceProvider());
         if (repositoryReader != null) {
             return repositoryReader.countByRange(replayCaseRangeRequest);
         }

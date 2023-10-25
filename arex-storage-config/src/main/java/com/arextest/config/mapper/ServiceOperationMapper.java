@@ -1,12 +1,11 @@
 package com.arextest.config.mapper;
 
+import com.arextest.config.model.dao.config.ServiceOperationCollection;
+import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
 import org.mapstruct.factory.Mappers;
-
-import com.arextest.config.model.dao.config.ServiceOperationCollection;
-import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
 
 @Mapper
 public interface ServiceOperationMapper {

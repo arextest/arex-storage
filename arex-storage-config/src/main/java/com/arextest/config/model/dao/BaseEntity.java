@@ -1,10 +1,9 @@
 package com.arextest.config.model.dao;
 
-import org.bson.BsonType;
-import org.bson.codecs.pojo.annotations.BsonRepresentation;
-
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
+import org.bson.BsonType;
+import org.bson.codecs.pojo.annotations.BsonRepresentation;
 
 @Data
 @FieldNameConstants
