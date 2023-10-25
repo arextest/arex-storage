@@ -10,6 +10,7 @@ import lombok.Data;
  */
 @Data
 public class QueryCaseCountResponseType implements Response {
-    private ResponseStatusType responseStatusType;
-    private long count;
+
+  private ResponseStatusType responseStatusType;
+  private long count;
 }

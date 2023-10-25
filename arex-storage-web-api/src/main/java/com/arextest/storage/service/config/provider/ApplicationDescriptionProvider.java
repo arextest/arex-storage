@@ -9,5 +9,6 @@ import com.arextest.config.model.dto.application.ApplicationDescription;
  * @since 2022/1/21
  */
 public interface ApplicationDescriptionProvider {
-    ApplicationDescription get(String appId);
+
+  ApplicationDescription get(String appId);
 }

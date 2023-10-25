@@ -4,8 +4,9 @@ import lombok.Data;
 
 @Data
 public class MockRequest {
-    private String appId;
-    private String operationName;
-    private String recordId;
-    private int type;
+
+  private String appId;
+  private String operationName;
+  private String recordId;
+  private int type;
 }

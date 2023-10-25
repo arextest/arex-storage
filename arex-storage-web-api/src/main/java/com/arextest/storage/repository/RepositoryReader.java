@@ -3,7 +3,6 @@ package com.arextest.storage.repository;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.model.replay.PagedRequestType;
-
 import java.util.Map;
 
 /**
@@ -11,17 +10,18 @@ import java.util.Map;
  * @since 2021/11/7
  */
 public interface RepositoryReader<T extends Mocker> {
-    Iterable<T> queryRecordList(MockCategoryType categoryType, String recordId);
 
-    T findEntryFromAllType(String recordId);
+  Iterable<T> queryRecordList(MockCategoryType categoryType, String recordId);
 
-    T queryRecord(Mocker requestType);
+  T findEntryFromAllType(String recordId);
 
-    Iterable<T> queryByRange(PagedRequestType rangeRequestType);
+  T queryRecord(Mocker requestType);
 
-    Iterable<T> queryEntryPointByRange(PagedRequestType rangeRequestType);
+  Iterable<T> queryByRange(PagedRequestType rangeRequestType);
 
-    long countByRange(PagedRequestType rangeRequestType);
+  Iterable<T> queryEntryPointByRange(PagedRequestType rangeRequestType);
 
-    Map<String, Long> countByOperationName(PagedRequestType rangeRequestType);
+  long countByRange(PagedRequestType rangeRequestType);
+
+  Map<String, Long> countByOperationName(PagedRequestType rangeRequestType);
 }

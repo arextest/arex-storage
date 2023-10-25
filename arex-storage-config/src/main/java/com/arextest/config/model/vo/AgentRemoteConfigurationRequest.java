@@ -1,8 +1,7 @@
 package com.arextest.config.model.vo;
 
-import lombok.Data;
-
 import java.util.Map;
+import lombok.Data;
 
 /**
  * @author b_yu
@@ -10,11 +9,12 @@ import java.util.Map;
  */
 @Data
 public class AgentRemoteConfigurationRequest {
-    private String appId;
-    private String host;
-    private String recordVersion;
-    private String agentStatus;
-    private Integer status;
-    private Map<String, String> systemEnv;
-    private Map<String, String> systemProperties;
+
+  private String appId;
+  private String host;
+  private String recordVersion;
+  private String agentStatus;
+  private Integer status;
+  private Map<String, String> systemEnv;
+  private Map<String, String> systemProperties;
 }

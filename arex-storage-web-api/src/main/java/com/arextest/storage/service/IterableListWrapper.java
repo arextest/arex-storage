@@ -1,9 +1,9 @@
 package com.arextest.storage.service;
 
 
-import javax.validation.constraints.NotNull;
 import java.util.AbstractList;
 import java.util.Iterator;
+import javax.validation.constraints.NotNull;
 
 /**
  * avoid create a new array List,supported serialize is our goal.
@@ -13,25 +13,26 @@ import java.util.Iterator;
  * @since 2021/11/11
  */
 public final class IterableListWrapper<E> extends AbstractList<E> {
-    private final static int SIZE_NOT_GIVEN = 0;
-    private final Iterable<E> iterable;
 
-    IterableListWrapper(@NotNull Iterable<E> iterable) {
-        this.iterable = iterable;
-    }
+  private final static int SIZE_NOT_GIVEN = 0;
+  private final Iterable<E> iterable;
 
-    @Override
-    public E get(int index) {
-        throw new UnsupportedOperationException();
-    }
+  IterableListWrapper(@NotNull Iterable<E> iterable) {
+    this.iterable = iterable;
+  }
 
-    @Override
-    public Iterator<E> iterator() {
-        return iterable.iterator();
-    }
+  @Override
+  public E get(int index) {
+    throw new UnsupportedOperationException();
+  }
 
-    @Override
-    public int size() {
-        return SIZE_NOT_GIVEN;
-    }
+  @Override
+  public Iterator<E> iterator() {
+    return iterable.iterator();
+  }
+
+  @Override
+  public int size() {
+    return SIZE_NOT_GIVEN;
+  }
 }

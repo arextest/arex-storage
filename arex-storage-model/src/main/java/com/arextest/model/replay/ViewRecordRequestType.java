@@ -12,7 +12,8 @@ import lombok.ToString;
 @Setter
 @ToString
 public class ViewRecordRequestType {
-    private String recordId;
-    private String sourceProvider;
-    private String categoryType;
+
+  private String recordId;
+  private String sourceProvider;
+  private String categoryType;
 }

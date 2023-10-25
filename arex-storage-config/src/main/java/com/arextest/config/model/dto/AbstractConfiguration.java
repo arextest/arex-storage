@@ -1,9 +1,8 @@
 package com.arextest.config.model.dto;
 
+import java.sql.Timestamp;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.sql.Timestamp;
 
 /**
  * @author jmo
@@ -12,11 +11,12 @@ import java.sql.Timestamp;
 @Getter
 @Setter
 public abstract class AbstractConfiguration {
-    private Integer status;
-    private Timestamp modifiedTime;
+
+  private Integer status;
+  private Timestamp modifiedTime;
 
 
-    public void validParameters() throws Exception {
+  public void validParameters() throws Exception {
 
-    }
+  }
 }

@@ -6,23 +6,23 @@ package com.arextest.config.model.dto;
  */
 public enum FeatureType implements Feature {
 
-    /**
-     * enable continuous integration
-     */
-    CI;
-    private final int mask;
+  /**
+   * enable continuous integration
+   */
+  CI;
+  private final int mask;
 
-    FeatureType() {
-        mask = (1 << ordinal());
-    }
+  FeatureType() {
+    mask = (1 << ordinal());
+  }
 
-    @Override
-    public boolean enabledIn(int flags) {
-        return (flags & mask) != 0;
-    }
+  @Override
+  public boolean enabledIn(int flags) {
+    return (flags & mask) != 0;
+  }
 
-    @Override
-    public int getMask() {
-        return mask;
-    }
+  @Override
+  public int getMask() {
+    return mask;
+  }
 }

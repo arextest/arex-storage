@@ -4,7 +4,8 @@ import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 
 public interface MockerSaveHandler<T extends Mocker> {
-    MockCategoryType getMockCategoryType();
 
-    void handle(T item);
+  MockCategoryType getMockCategoryType();
+
+  void handle(T item);
 }

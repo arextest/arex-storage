@@ -8,8 +8,8 @@ import java.util.Map;
  */
 public interface MetricListener {
 
-    /**
-     * record request time with tags.
-     */
-    void recordTime(String metricName, Map<String, String> tags, long timeMillis);
+  /**
+   * record request time with tags.
+   */
+  void recordTime(String metricName, Map<String, String> tags, long timeMillis);
 }

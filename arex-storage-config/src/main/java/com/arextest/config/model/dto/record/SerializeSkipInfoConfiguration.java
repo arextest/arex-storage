@@ -4,6 +4,7 @@ import lombok.Data;
 
 @Data
 public class SerializeSkipInfoConfiguration {
-    private String fullClassName;
-    private String fieldName;
+
+  private String fullClassName;
+  private String fieldName;
 }

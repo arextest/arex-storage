@@ -12,15 +12,15 @@ import org.mapstruct.factory.Mappers;
 @Mapper
 public interface InstancesMapper {
 
-    InstancesMapper INSTANCE = Mappers.getMapper(InstancesMapper.class);
+  InstancesMapper INSTANCE = Mappers.getMapper(InstancesMapper.class);
 
-    @Mappings({@Mapping(target = "modifiedTime",
-            expression = "java(dao.getDataChangeUpdateTime() == null ? null : new java.sql.Timestamp(dao.getDataChangeUpdateTime()))")})
-    InstancesConfiguration dtoFromDao(InstancesCollection dao);
+  @Mappings({@Mapping(target = "modifiedTime",
+      expression = "java(dao.getDataChangeUpdateTime() == null ? null : new java.sql.Timestamp(dao.getDataChangeUpdateTime()))")})
+  InstancesConfiguration dtoFromDao(InstancesCollection dao);
 
-    InstancesCollection daoFromDto(InstancesConfiguration dto);
+  InstancesCollection daoFromDto(InstancesConfiguration dto);
 
-    InstancesConfiguration dtoFromContract(AgentRemoteConfigurationRequest contract);
+  InstancesConfiguration dtoFromContract(AgentRemoteConfigurationRequest contract);
 
-    InstancesConfiguration dtoFromContract(AgentStatusRequest request);
+  InstancesConfiguration dtoFromContract(AgentStatusRequest request);
 }

@@ -2,7 +2,8 @@
 
 ## Introduction
 
-It is an http web APIs used to manage or access the recording and replaying resources from remote repository,
+It is an http web APIs used to manage or access the recording and replaying resources from remote
+repository,
 which it structured by `MockItem` for each category enums:`MockCategoryType`.
 
 The primary functions as following:
@@ -98,7 +99,8 @@ The `MainEntry` is a base interface defined in the package `arex.storage.model.m
 1. **Modify default value `localhost`**
 
    If you use default providers as remote storage implementation,
-   you should be change the connection string in the file of path 'resources/META-INF/application.properties'.
+   you should be change the connection string in the file of path '
+   resources/META-INF/application.properties'.
 
    example for `Redis` & `mongodb` connection:
    ```

@@ -1,94 +1,95 @@
 package com.arextest.model.mock;
 
 
+import java.util.HashMap;
+import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public interface Mocker {
-    String getAppId();
 
-    String getReplayId();
+  String getAppId();
 
-    void setReplayId(String replayId);
+  String getReplayId();
 
-    String getRecordId();
+  void setReplayId(String replayId);
 
-    void setRecordId(String recordId);
+  String getRecordId();
 
-    int getRecordEnvironment();
+  void setRecordId(String recordId);
 
-    void setRecordEnvironment(int environment);
+  int getRecordEnvironment();
 
-    long getCreationTime();
+  void setRecordEnvironment(int environment);
+
+  long getCreationTime();
+
+  /**
+   * millis from utc format without timezone
+   */
+  void setCreationTime(long creationTime);
+
+  long getUpdateTime();
+
+  void setUpdateTime(long updateTime);
+
+  /**
+   * MongoDB TTL Index
+   */
+  long getExpirationTime();
+
+  void setExpirationTime(long expirationTime);
+
+  String getId();
+
+  void setId(String id);
+
+  MockCategoryType getCategoryType();
+
+  String getOperationName();
+
+  Target getTargetRequest();
+
+  Target getTargetResponse();
+
+  String getRecordVersion();
+
+  void setRecordVersion(String recordVersion);
+
+
+  @Getter
+  @Setter
+  class Target {
 
     /**
-     * millis from utc format without timezone
+     * The value used base64 encoding from AREX's Agent for bytes requested.
      */
-    void setCreationTime(long creationTime);
-
-    long getUpdateTime();
-
-    void setUpdateTime(long updateTime);
-
+    private String body;
+    private Map<String, Object> attributes;
     /**
-     * MongoDB TTL Index
+     * It used by AREX's agent deserialization which class type should be applying
      */
-    long getExpirationTime();
+    private String type;
 
-    void setExpirationTime(long expirationTime);
-
-    String getId();
-
-    void setId(String id);
-
-    MockCategoryType getCategoryType();
-
-    String getOperationName();
-
-    Target getTargetRequest();
-
-    Target getTargetResponse();
-
-    String getRecordVersion();
-
-    void setRecordVersion(String recordVersion);
-
-
-    @Getter
-    @Setter
-    class Target {
-        /**
-         * The value used base64 encoding from AREX's Agent for bytes requested.
-         */
-        private String body;
-        private Map<String, Object> attributes;
-        /**
-         * It used by AREX's agent deserialization which class type should be applying
-         */
-        private String type;
-
-        public Object getAttribute(String name) {
-            return attributes == null ? null : attributes.get(name);
-        }
-
-        public void setAttribute(String name, Object value) {
-            if (this.attributes == null) {
-                this.attributes = new HashMap<>();
-            }
-            if (value == null) {
-                this.attributes.remove(name);
-                return;
-            }
-            this.attributes.put(name, value);
-        }
-
-        public String attributeAsString(String name) {
-            Object result = getAttribute(name);
-            return result instanceof String ? (String) result : null;
-        }
+    public Object getAttribute(String name) {
+      return attributes == null ? null : attributes.get(name);
     }
+
+    public void setAttribute(String name, Object value) {
+      if (this.attributes == null) {
+        this.attributes = new HashMap<>();
+      }
+      if (value == null) {
+        this.attributes.remove(name);
+        return;
+      }
+      this.attributes.put(name, value);
+    }
+
+    public String attributeAsString(String name) {
+      Object result = getAttribute(name);
+      return result instanceof String ? (String) result : null;
+    }
+  }
 
 }

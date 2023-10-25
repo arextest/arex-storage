@@ -8,39 +8,39 @@ import lombok.Getter;
  */
 public enum MockResultType {
 
-    /**
-     * The pure origin record from the agent's sample
-     */
-    RECORD_RESULT(0),
+  /**
+   * The pure origin record from the agent's sample
+   */
+  RECORD_RESULT(0),
 
-    /**
-     * based on origin record do after replay result
-     */
-    REPLAY_RESULT(1),
-    /**
-     * The sequence of mock return when replaying
-     */
-    CONSUME_RESULT(2),
+  /**
+   * based on origin record do after replay result
+   */
+  REPLAY_RESULT(1),
+  /**
+   * The sequence of mock return when replaying
+   */
+  CONSUME_RESULT(2),
 
-    /**
-     * a mapping relation between recordId and replayId
-     */
-    RECORD_REPLAY_MAPPING(3),
-    /**
-     * the id of record mock
-     */
-    RECORD_INSTANCE_ID(4),
-    /**
-     * the record data with operation
-     */
-    RECORD_WITH_OPERATION(5),
-    ;
+  /**
+   * a mapping relation between recordId and replayId
+   */
+  RECORD_REPLAY_MAPPING(3),
+  /**
+   * the id of record mock
+   */
+  RECORD_INSTANCE_ID(4),
+  /**
+   * the record data with operation
+   */
+  RECORD_WITH_OPERATION(5),
+  ;
 
 
-    @Getter
-    private final int codeValue;
+  @Getter
+  private final int codeValue;
 
-    MockResultType(int codeValue) {
-        this.codeValue = codeValue;
-    }
+  MockResultType(int codeValue) {
+    this.codeValue = codeValue;
+  }
 }

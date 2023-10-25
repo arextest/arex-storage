@@ -1,9 +1,8 @@
 package com.arextest.model.replay.holder;
 
 import com.arextest.model.mock.MockCategoryType;
-import lombok.Data;
-
 import java.util.List;
+import lombok.Data;
 
 /**
  * @author jmo
@@ -12,12 +11,12 @@ import java.util.List;
 @Data
 public class ListResultHolder {
 
-    /**
-     * The codeValue from enum MockerCategory
-     *
-     * @see MockCategoryType
-     */
-    private MockCategoryType categoryType;
-    private List<String> record;
-    private List<String> replayResult;
+  /**
+   * The codeValue from enum MockerCategory
+   *
+   * @see MockCategoryType
+   */
+  private MockCategoryType categoryType;
+  private List<String> record;
+  private List<String> replayResult;
 }

@@ -13,24 +13,27 @@ import org.springframework.stereotype.Component;
  * @since 2022/1/22
  */
 @Component
-public final class DynamicClassConfigurableHandler extends AbstractConfigurableHandler<DynamicClassConfiguration> {
-    protected DynamicClassConfigurableHandler(
-            @Autowired ConfigRepositoryProvider<DynamicClassConfiguration> repositoryProvider) {
-        super(repositoryProvider);
-    }
+public final class DynamicClassConfigurableHandler extends
+    AbstractConfigurableHandler<DynamicClassConfiguration> {
 
-    @Override
-    public boolean insert(DynamicClassConfiguration configuration) {
-        if (StringUtils.isEmpty(configuration.getAppId())) {
-            return false;
-        }
-        if (StringUtils.isEmpty(configuration.getFullClassName())) {
-            return false;
-        }
-        return super.insert(configuration);
-    }
+  protected DynamicClassConfigurableHandler(
+      @Autowired ConfigRepositoryProvider<DynamicClassConfiguration> repositoryProvider) {
+    super(repositoryProvider);
+  }
 
-    public boolean removeByAppId(String appId) {
-        return CollectionUtils.isEmpty(super.useResultAsList(appId)) || repositoryProvider.removeByAppId(appId);
+  @Override
+  public boolean insert(DynamicClassConfiguration configuration) {
+    if (StringUtils.isEmpty(configuration.getAppId())) {
+      return false;
     }
+    if (StringUtils.isEmpty(configuration.getFullClassName())) {
+      return false;
+    }
+    return super.insert(configuration);
+  }
+
+  public boolean removeByAppId(String appId) {
+    return CollectionUtils.isEmpty(super.useResultAsList(appId))
+        || repositoryProvider.removeByAppId(appId);
+  }
 }

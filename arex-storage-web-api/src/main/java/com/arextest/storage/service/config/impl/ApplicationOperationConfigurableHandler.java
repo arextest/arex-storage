@@ -15,21 +15,21 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 public final class ApplicationOperationConfigurableHandler
-        extends AbstractConfigurableHandler<ApplicationOperationConfiguration> {
+    extends AbstractConfigurableHandler<ApplicationOperationConfiguration> {
 
-    protected ApplicationOperationConfigurableHandler(
-            @Autowired ConfigRepositoryProvider<ApplicationOperationConfiguration> repositoryProvider) {
-        super(repositoryProvider);
-    }
+  protected ApplicationOperationConfigurableHandler(
+      @Autowired ConfigRepositoryProvider<ApplicationOperationConfiguration> repositoryProvider) {
+    super(repositoryProvider);
+  }
 
-    @Override
-    public boolean insert(ApplicationOperationConfiguration configuration) {
-        if (configuration.getServiceId() == null) {
-            return false;
-        }
-        if (StringUtils.isEmpty(configuration.getOperationName())) {
-            return false;
-        }
-        return super.insert(configuration);
+  @Override
+  public boolean insert(ApplicationOperationConfiguration configuration) {
+    if (configuration.getServiceId() == null) {
+      return false;
     }
+    if (StringUtils.isEmpty(configuration.getOperationName())) {
+      return false;
+    }
+    return super.insert(configuration);
+  }
 }

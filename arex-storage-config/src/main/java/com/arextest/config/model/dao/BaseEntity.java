@@ -8,8 +8,9 @@ import org.bson.codecs.pojo.annotations.BsonRepresentation;
 @Data
 @FieldNameConstants
 public class BaseEntity {
-    @BsonRepresentation(BsonType.OBJECT_ID)
-    private String id;
-    private Long dataChangeCreateTime;
-    private Long dataChangeUpdateTime;
+
+  @BsonRepresentation(BsonType.OBJECT_ID)
+  private String id;
+  private Long dataChangeCreateTime;
+  private Long dataChangeUpdateTime;
 }

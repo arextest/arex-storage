@@ -13,18 +13,19 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class ApplicationProviderConfiguration {
-    @Value("${arex.config.application.provider}")
-    private String applicationProviderName;
-    @Value("${arex.config.application.service.provider}")
-    private String applicationServiceProviderName;
 
-    @Bean
-    public ApplicationDescriptionProvider applicationDescriptionProvider() {
-        return Providers.createApplication(applicationProviderName);
-    }
+  @Value("${arex.config.application.provider}")
+  private String applicationProviderName;
+  @Value("${arex.config.application.service.provider}")
+  private String applicationServiceProviderName;
 
-    @Bean
-    public ApplicationServiceDescriptionProvider applicationServiceDescriptionProvider() {
-        return Providers.createApplicationService(applicationServiceProviderName);
-    }
+  @Bean
+  public ApplicationDescriptionProvider applicationDescriptionProvider() {
+    return Providers.createApplication(applicationProviderName);
+  }
+
+  @Bean
+  public ApplicationServiceDescriptionProvider applicationServiceDescriptionProvider() {
+    return Providers.createApplicationService(applicationServiceProviderName);
+  }
 }

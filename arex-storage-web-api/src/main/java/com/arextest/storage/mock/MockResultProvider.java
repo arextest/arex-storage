@@ -2,30 +2,31 @@ package com.arextest.storage.mock;
 
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
-
-import javax.validation.constraints.NotNull;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 
 /**
  * @author jmo
  * @since 2021/11/9
  */
 public interface MockResultProvider {
-    <T extends Mocker> boolean putRecordResult(MockCategoryType categoryType, String recordId, Iterable<T> values);
 
-    <T extends Mocker> boolean putReplayResult(T value);
+  <T extends Mocker> boolean putRecordResult(MockCategoryType categoryType, String recordId,
+      Iterable<T> values);
 
-    byte[] getRecordResult(@NotNull Mocker mockItem, MockResultContext context);
+  <T extends Mocker> boolean putReplayResult(T value);
 
-    List<byte[]> getRecordResultList(MockCategoryType category, String recordId);
+  byte[] getRecordResult(@NotNull Mocker mockItem, MockResultContext context);
 
-    List<byte[]> getReplayResultList(MockCategoryType category, String replayId);
+  List<byte[]> getRecordResultList(MockCategoryType category, String recordId);
 
-    int replayResultCount(MockCategoryType category, String replayResultId);
+  List<byte[]> getReplayResultList(MockCategoryType category, String replayId);
 
-    int recordResultCount(MockCategoryType category, String recordId);
+  int replayResultCount(MockCategoryType category, String replayResultId);
 
-    boolean removeRecordResult(MockCategoryType category, String recordId);
+  int recordResultCount(MockCategoryType category, String recordId);
 
-    boolean removeReplayResult(MockCategoryType category, String replayResultId);
+  boolean removeRecordResult(MockCategoryType category, String recordId);
+
+  boolean removeReplayResult(MockCategoryType category, String replayResultId);
 }
