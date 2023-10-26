@@ -32,7 +32,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @Order(30)
-final class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
+public class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
 
   private static final char SQL_BATCH_TERMINAL_CHAR = ';';
   private static final String COMMA_STRING = ",";
@@ -102,7 +102,6 @@ final class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
     return dbMockKeyBuild(databaseMocker);
   }
 
-  @Override
   public String findDBTableNames(Mocker instance) {
     String sqlText = instance.getTargetRequest().getBody();
     int sourceCount = sqlText.length();

@@ -28,9 +28,4 @@ final class DynamicClassMatchKeyBuilderImpl implements MatchKeyBuilder {
     messageDigest.update(CacheKeyUtils.toUtf8Bytes(instance.getTargetRequest().getBody()));
     return Arrays.asList(messageDigest.digest(), operationNameBytes);
   }
-
-  @Override
-  public String findDBTableNames(Mocker instance) {
-    return null;
-  }
 }

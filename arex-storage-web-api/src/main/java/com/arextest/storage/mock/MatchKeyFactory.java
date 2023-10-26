@@ -39,12 +39,4 @@ public final class MatchKeyFactory {
     return matchKeyBuilder.build(instance);
   }
 
-  public String findDBTableNames(@NotNull Mocker instance) {
-    MatchKeyBuilder matchKeyBuilder = find(instance.getCategoryType());
-    if (matchKeyBuilder == null) {
-      LOGGER.warn("Could not found db table names for {}", instance);
-      return null;
-    }
-    return matchKeyBuilder.findDBTableNames(instance);
-  }
 }

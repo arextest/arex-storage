@@ -157,14 +157,6 @@ public class StorageAutoConfiguration {
   }
 
   @Bean
-  @ConditionalOnMissingBean(ScheduleReplayQueryController.class)
-  public ScheduleReplayQueryController scheduleReplayQueryController(
-      ScheduleReplayingService scheduleReplayingService,
-      PrepareMockResultService prepareMockResultService) {
-    return new ScheduleReplayQueryController(scheduleReplayingService, prepareMockResultService);
-  }
-
-  @Bean
   @ConditionalOnMissingBean(MatchStrategyMetricService.class)
   public MatchStrategyMetricService matchStrategyMetricService(
       List<MetricListener> metricListeners) {

@@ -14,6 +14,4 @@ public interface MatchKeyBuilder {
   boolean isSupported(MockCategoryType categoryType);
 
   List<byte[]> build(Mocker instance);
-
-  String findDBTableNames(Mocker instance);
 }

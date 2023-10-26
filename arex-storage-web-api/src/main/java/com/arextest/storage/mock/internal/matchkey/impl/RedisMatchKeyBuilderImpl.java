@@ -38,9 +38,4 @@ final class RedisMatchKeyBuilderImpl implements MatchKeyBuilder {
         CacheKeyUtils.toUtf8Bytes(request.attributeAsString(MockAttributeNames.CLUSTER_NAME)));
     return Arrays.asList(messageDigest.digest(), operationBytes);
   }
-
-  @Override
-  public String findDBTableNames(Mocker instance) {
-    return null;
-  }
 }

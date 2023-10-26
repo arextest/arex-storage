@@ -61,9 +61,4 @@ final class HttpClientMatchKeyBuilderImpl implements MatchKeyBuilder {
     return Arrays.asList(messageDigest.digest(), httpMethodWithUrlBytes, operationBytes);
 
   }
-
-  @Override
-  public String findDBTableNames(Mocker instance) {
-    return null;
-  }
 }

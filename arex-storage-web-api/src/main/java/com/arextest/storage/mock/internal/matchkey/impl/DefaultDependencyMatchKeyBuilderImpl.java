@@ -47,9 +47,4 @@ final class DefaultDependencyMatchKeyBuilderImpl implements MatchKeyBuilder {
     }
     return Arrays.asList(messageDigest.digest(), operationBytes);
   }
-
-  @Override
-  public String findDBTableNames(Mocker instance) {
-    return null;
-  }
 }

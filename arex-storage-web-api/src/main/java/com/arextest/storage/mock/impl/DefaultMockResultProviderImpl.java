@@ -12,12 +12,18 @@ import com.arextest.storage.mock.MatchKeyFactory;
 import com.arextest.storage.mock.MockResultContext;
 import com.arextest.storage.mock.MockResultMatchStrategy;
 import com.arextest.storage.mock.MockResultProvider;
+import com.arextest.storage.mock.internal.matchkey.impl.DatabaseMatchKeyBuilderImpl;
 import com.arextest.storage.model.MockResultType;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import javax.annotation.Resource;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +44,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   private static final String STRICT_MATCH = "strictMatch";
   private static final String FUZZY_MATCH = "fuzzyMatch";
   private static final String SIMILARITY_MATCH = "similarityMatch";
+  private static final String COMMA_STRING = ",";
   /**
    * default 2h expired
    */
@@ -53,6 +60,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   private MatchKeyFactory matchKeyFactory;
   @Resource
   private MatchStrategyMetricService matchStrategyMetricService;
+  @Resource
+  private DatabaseMatchKeyBuilderImpl databaseMatchKeyBuilder;
 
   /**
    * 1. Store recorded data and matching keys in redis 2. The mock type associated with dubbo, which
@@ -135,8 +144,11 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   }
 
   private boolean shouldBuildRecordOperationKey(Mocker mocker) {
-    return StringUtils.isEmpty(notUseSimilarityStrategyAppIds)
-        || !notUseSimilarityStrategyAppIds.contains(mocker.getAppId());
+    if (StringUtils.isEmpty(notUseSimilarityStrategyAppIds)) {
+      return true;
+    }
+    String[] appIds = notUseSimilarityStrategyAppIds.split(COMMA_STRING);
+    return !Arrays.asList(appIds).contains(mocker.getAppId());
   }
 
   private boolean shouldRecordCallReplayMax(MockCategoryType category) {
@@ -272,7 +284,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     String operationName = mockItem.getOperationName();
 
     if (MockCategoryType.DATABASE.equals(category)) {
-      String tableNames = matchKeyFactory.findDBTableNames(mockItem);
+      String tableNames = databaseMatchKeyBuilder.findDBTableNames(mockItem);
       Object dbName = mockItem.getTargetRequest().getAttribute(MockAttributeNames.DB_NAME);
       operationName = String.format("%s_%s_%s", operationName, tableNames, dbName);
     }
