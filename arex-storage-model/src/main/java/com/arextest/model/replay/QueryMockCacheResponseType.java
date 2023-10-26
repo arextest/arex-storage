@@ -10,5 +10,6 @@ import lombok.Data;
  */
 @Data
 public class QueryMockCacheResponseType implements Response {
-    private ResponseStatusType responseStatusType;
+
+  private ResponseStatusType responseStatusType;
 }

@@ -14,6 +14,12 @@ import com.arextest.storage.mock.MockResultMatchStrategy;
 import com.arextest.storage.mock.MockResultProvider;
 import com.arextest.storage.model.MockResultType;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import javax.annotation.Resource;
+import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -21,15 +27,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
-import javax.validation.constraints.NotNull;
-import java.util.*;
-
 
 @Component
 @Slf4j
 final class DefaultMockResultProviderImpl implements MockResultProvider {
 
+  private static final int EMPTY_SIZE = 0;
+  private static final String CALL_REPLAY_MAX = "callReplayMax";
+  private static final String DUBBO_PREFIX = "Dubbo";
+  private static final String STRICT_MATCH = "strictMatch";
+  private static final String FUZZY_MATCH = "fuzzyMatch";
+  private static final String SIMILARITY_MATCH = "similarityMatch";
   /**
    * default 2h expired
    */
@@ -37,13 +45,6 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   private long cacheExpiredSeconds;
   @Value("${arex.storage.not.use.similarity.strategy.appIds}")
   private String notUseSimilarityStrategyAppIds;
-  private static final int EMPTY_SIZE = 0;
-  private static final String CALL_REPLAY_MAX = "callReplayMax";
-  private static final String DUBBO_PREFIX = "Dubbo";
-  private static final String STRICT_MATCH = "strictMatch";
-  private static final String FUZZY_MATCH = "fuzzyMatch";
-  private static final String SIMILARITY_MATCH = "similarityMatch";
-
   @Resource
   private CacheProvider redisCacheProvider;
   @Resource

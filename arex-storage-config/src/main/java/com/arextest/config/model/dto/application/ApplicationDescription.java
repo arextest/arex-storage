@@ -8,21 +8,21 @@ package com.arextest.config.model.dto.application;
  */
 public interface ApplicationDescription {
 
-    String getAppId();
+  String getAppId();
 
-    String getOwner();
+  String getOwner();
 
-    String getAppName();
+  String getAppName();
 
-    String getOrganizationName();
+  String getOrganizationName();
 
-    String getOrganizationId();
+  String getOrganizationId();
 
-    String getDescription();
+  String getDescription();
 
-    String getGroupName();
+  String getGroupName();
 
-    String getGroupId();
+  String getGroupId();
 
-    String getCategory();
+  String getCategory();
 }

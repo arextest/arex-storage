@@ -1,214 +1,179 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://maven.apache.org/POM/4.0.0"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>com.arextest</groupId>
   <artifactId>arex-storage-service</artifactId>
-  <packaging>pom</packaging>
-  <version>1.0.32</version>
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <configuration>
+            <encoding>${project.build.sourceEncoding}</encoding>
+            <source>${java.version}</source>
+            <target>${java.version}</target>
+          </configuration>
+          <groupId>org.apache.maven.plugins</groupId>
+          <version>${maven-compiler-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <groupId>org.apache.maven.plugins</groupId>
+          <version>${maven-surefire-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-source-plugin</artifactId>
+          <configuration>
+            <skipSource>${maven.source.skip}</skipSource>
+          </configuration>
+          <executions>
+            <execution>
+              <goals>
+                <goal>jar-no-fork</goal>
+              </goals>
+              <id>attach-sources</id>
+            </execution>
+          </executions>
+          <groupId>org.apache.maven.plugins</groupId>
+          <version>${maven-source-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-jar-plugin</artifactId>
+          <groupId>org.apache.maven.plugins</groupId>
+          <version>${maven-jar-plugin.version}</version>
+        </plugin>
 
-  <name>${project.groupId}:${project.artifactId}</name>
-  <description>Arex-storage is used for data storage.</description>
-  <url>https://github.com/arextest/arex-storage</url>
+        <plugin>
+          <artifactId>maven-war-plugin</artifactId>
+          <groupId>org.apache.maven.plugins</groupId>
+          <version>${maven-war-plugin.version}</version>
+        </plugin>
 
-  <modules>
-    <module>arex-storage-model</module>
-    <module>arex-storage-web-api</module>
-    <module>arex-storage-config</module>
-  </modules>
-  <properties>
-    <java.version>1.8</java.version>
-    <junit.version>4.12</junit.version>
-    <commons-lang3.version>3.3.2</commons-lang3.version>
-    <spring.boot.version>2.6.3</spring.boot.version>
-    <jmockit.version>1.49</jmockit.version>
-    <lombok.version>1.18.6</lombok.version>
-    <arex.storage.model.version>1.0.4</arex.storage.model.version>
+        <plugin>
+          <artifactId>maven-install-plugin</artifactId>
+          <groupId>org.apache.maven.plugins</groupId>
+          <version>${maven-install-plugin.version}</version>
+        </plugin>
 
-    <jacoco-maven-plugin.version>0.7.5.201505241946</jacoco-maven-plugin.version>
-    <!-- single jacoco.exec file relative to root directory of the project -->
-    <jacoco.report.path>${project.basedir}/code-coverage/jacoco.exec</jacoco.report.path>
-    <sonar.jacoco.reportPath>${jacoco.report.path}</sonar.jacoco.reportPath>
-    <sonar.exclusions>
-      **/model/**
-    </sonar.exclusions>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven-compiler-plugin.version>3.6.0</maven-compiler-plugin.version>
-    <maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
-    <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
-    <maven-jar-plugin.version>3.0.2</maven-jar-plugin.version>
-    <maven-war-plugin.version>3.0.0</maven-war-plugin.version>
-    <maven-install-plugin.version>2.5.2</maven-install-plugin.version>
-    <maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
-    <!-- Users could specify this property as true to skip the attaching source process -->
-    <maven.source.skip>false</maven.source.skip>
-    <!-- Users could specify this property as true to skip the deploy process -->
-    <maven.deploy.skip>false</maven.deploy.skip>
-  </properties>
+        <plugin>
+          <artifactId>maven-deploy-plugin</artifactId>
+          <configuration>
+            <skip>${maven.deploy.skip}</skip>
+          </configuration>
+          <groupId>org.apache.maven.plugins</groupId>
+          <version>${maven-deploy-plugin.version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+  <dependencies>
+    <dependency>
+      <artifactId>lombok</artifactId>
+      <groupId>org.projectlombok</groupId>
+    </dependency>
+  </dependencies>
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>com.fasterxml.jackson</groupId>
         <artifactId>jackson-bom</artifactId>
-        <version>2.10.3</version>
-        <type>pom</type>
+        <groupId>com.fasterxml.jackson</groupId>
         <scope>import</scope>
+        <type>pom</type>
+        <version>2.10.3</version>
       </dependency>
       <dependency>
-        <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
+        <groupId>com.google.guava</groupId>
         <version>20.0</version>
       </dependency>
       <dependency>
-        <groupId>org.apache.logging.log4j</groupId>
         <artifactId>log4j-bom</artifactId>
+        <groupId>org.apache.logging.log4j</groupId>
+        <scope>import</scope>
+        <type>pom</type>
         <version>2.17.2</version>
-        <type>pom</type>
-        <scope>import</scope>
       </dependency>
       <dependency>
-        <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-dependencies</artifactId>
-        <version>${spring.boot.version}</version>
-        <type>pom</type>
+        <groupId>org.springframework.boot</groupId>
         <scope>import</scope>
+        <type>pom</type>
+        <version>${spring.boot.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.projectlombok</groupId>
         <artifactId>lombok</artifactId>
-        <version>${lombok.version}</version>
+        <groupId>org.projectlombok</groupId>
         <scope>provided</scope>
+        <version>${lombok.version}</version>
       </dependency>
       <!-- mock -->
       <dependency>
-        <groupId>org.jmockit</groupId>
         <artifactId>jmockit</artifactId>
-        <version>${jmockit.version}</version>
+        <groupId>org.jmockit</groupId>
         <scope>test</scope>
+        <version>${jmockit.version}</version>
       </dependency>
       <!-- test -->
       <dependency>
-        <groupId>junit</groupId>
         <artifactId>junit</artifactId>
-        <version>${junit.version}</version>
+        <groupId>junit</groupId>
         <scope>test</scope>
+        <version>${junit.version}</version>
       </dependency>
 
       <dependency>
-        <groupId>org.apache.commons</groupId>
         <artifactId>commons-collections4</artifactId>
+        <groupId>org.apache.commons</groupId>
         <version>4.4</version>
       </dependency>
       <dependency>
-        <groupId>org.apache.commons</groupId>
         <artifactId>commons-lang3</artifactId>
+        <groupId>org.apache.commons</groupId>
         <version>${commons-lang3.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.arextest</groupId>
         <artifactId>arex-common</artifactId>
-        <version>0.1.15</version>
         <exclusions>
           <exclusion>
             <artifactId>commons-io</artifactId>
             <groupId>commons-io</groupId>
           </exclusion>
         </exclusions>
+        <groupId>com.arextest</groupId>
+        <version>0.1.15</version>
       </dependency>
       <dependency>
-        <groupId>com.arextest</groupId>
         <artifactId>arex-extension</artifactId>
+        <groupId>com.arextest</groupId>
         <version>0.0.1</version>
       </dependency>
       <dependency>
-        <groupId>javax.annotation</groupId>
         <artifactId>jsr250-api</artifactId>
+        <groupId>javax.annotation</groupId>
         <version>1.0</version>
       </dependency>
       <dependency>
-        <groupId>com.arextest</groupId>
         <artifactId>arex-model</artifactId>
+        <groupId>com.arextest</groupId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.arextest</groupId>
         <artifactId>arex-storage-config</artifactId>
+        <groupId>com.arextest</groupId>
         <version>${project.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
-  <dependencies>
-    <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-    </dependency>
-  </dependencies>
+  <description>Arex-storage is used for data storage.</description>
 
-  <build>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <version>${maven-compiler-plugin.version}</version>
-          <configuration>
-            <source>${java.version}</source>
-            <target>${java.version}</target>
-            <encoding>${project.build.sourceEncoding}</encoding>
-          </configuration>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <version>${maven-surefire-plugin.version}</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-source-plugin</artifactId>
-          <version>${maven-source-plugin.version}</version>
-          <executions>
-            <execution>
-              <id>attach-sources</id>
-              <goals>
-                <goal>jar-no-fork</goal>
-              </goals>
-            </execution>
-          </executions>
-          <configuration>
-            <skipSource>${maven.source.skip}</skipSource>
-          </configuration>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-jar-plugin</artifactId>
-          <version>${maven-jar-plugin.version}</version>
-        </plugin>
-
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-war-plugin</artifactId>
-          <version>${maven-war-plugin.version}</version>
-        </plugin>
-
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-install-plugin</artifactId>
-          <version>${maven-install-plugin.version}</version>
-        </plugin>
-
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-deploy-plugin</artifactId>
-          <version>${maven-deploy-plugin.version}</version>
-          <configuration>
-            <skip>${maven.deploy.skip}</skip>
-          </configuration>
-        </plugin>
-      </plugins>
-    </pluginManagement>
-  </build>
-
+  <developers>
+    <developer>
+      <email>arex.test.com@gmail.com</email>
+      <name>AREX</name>
+      <organization>AREX group</organization>
+      <organizationUrl>https://www.arextest.com</organizationUrl>
+    </developer>
+  </developers>
   <distributionManagement>
     <repository>
       <id>releases</id>
@@ -219,6 +184,7 @@
       <url>${snapshots.repo}</url>
     </snapshotRepository>
   </distributionManagement>
+  <groupId>com.arextest</groupId>
 
   <licenses>
     <license>
@@ -226,27 +192,18 @@
       <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
     </license>
   </licenses>
-  <developers>
-    <developer>
-      <name>AREX</name>
-      <email>arex.test.com@gmail.com</email>
-      <organization>AREX group</organization>
-      <organizationUrl>https://www.arextest.com</organizationUrl>
-    </developer>
-  </developers>
-  <scm>
-    <connection>scm:git:git://github.com/arextest/arex-storage.git</connection>
-    <developerConnection>scm:git:ssh://github.com:arextest/arex-storage.git</developerConnection>
-    <url>https://github.com/arextest/arex-storage</url>
-  </scm>
+  <modelVersion>4.0.0</modelVersion>
+  <modules>
+    <module>arex-storage-model</module>
+    <module>arex-storage-web-api</module>
+    <module>arex-storage-config</module>
+  </modules>
+  <name>${project.groupId}:${project.artifactId}</name>
 
+  <packaging>pom</packaging>
 
   <profiles>
     <profile>
-      <id>war</id>
-      <properties>
-        <packagingType>war</packagingType>
-      </properties>
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
@@ -254,13 +211,103 @@
         <finalName>arex-storage-web-api</finalName>
         <plugins>
           <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>
+            <groupId>org.apache.maven.plugins</groupId>
           </plugin>
         </plugins>
       </build>
+      <id>war</id>
+      <properties>
+        <packagingType>war</packagingType>
+      </properties>
     </profile>
     <profile>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <excludes>
+                <exclude>**/WebSpringBootServletInitializer.java</exclude>
+              </excludes>
+            </configuration>
+            <groupId>org.apache.maven.plugins</groupId>
+          </plugin>
+          <plugin>
+            <artifactId>maven-source-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
+                <id>generate-source-jar</id>
+                <phase>package</phase>
+              </execution>
+            </executions>
+            <groupId>org.apache.maven.plugins</groupId>
+            <version>3.2.1</version>
+          </plugin>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <detectJavaApiLink>false</detectJavaApiLink>
+              <doclint>none</doclint>
+              <source>8</source>
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+                <id>generate-javadocs</id>
+              </execution>
+            </executions>
+            <groupId>org.apache.maven.plugins</groupId>
+            <version>3.4.0</version>
+          </plugin>
+          <plugin>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+              </execution>
+            </executions>
+            <groupId>org.apache.maven.plugins</groupId>
+            <version>3.0.1</version>
+          </plugin>
+          <plugin>
+            <artifactId>nexus-staging-maven-plugin</artifactId>
+            <configuration>
+              <autoReleaseAfterClose>true</autoReleaseAfterClose>
+              <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+              <serverId>ossrh</serverId>
+            </configuration>
+            <extensions>true</extensions>
+            <groupId>org.sonatype.plugins</groupId>
+            <version>1.6.13</version>
+          </plugin>
+          <plugin>
+            <artifactId>versions-maven-plugin</artifactId>
+            <configuration>
+              <generateBackupPoms>false</generateBackupPoms>
+            </configuration>
+            <groupId>org.codehaus.mojo</groupId>
+            <version>2.8.1</version>
+          </plugin>
+        </plugins>
+        <resources>
+          <resource>
+            <directory>arex-storage</directory>
+            <excludes>
+              <exclude>**/application*.properties</exclude>
+            </excludes>
+          </resource>
+        </resources>
+      </build>
       <id>jar</id>
       <properties>
         <packagingType>jar</packagingType>
@@ -269,7 +316,34 @@
         <snapshots.repo>https://s01.oss.sonatype.org/content/repositories/snapshots/
         </snapshots.repo>
       </properties>
+    </profile>
+    <profile>
       <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <excludes>
+                <exclude>**/WebSpringBootServletInitializer.java</exclude>
+              </excludes>
+            </configuration>
+            <groupId>org.apache.maven.plugins</groupId>
+          </plugin>
+          <plugin>
+            <artifactId>maven-source-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
+                <id>generate-source-jar</id>
+                <phase>package</phase>
+              </execution>
+            </executions>
+            <groupId>org.apache.maven.plugins</groupId>
+            <version>3.2.1</version>
+          </plugin>
+        </plugins>
         <resources>
           <resource>
             <directory>arex-storage</directory>
@@ -278,124 +352,50 @@
             </excludes>
           </resource>
         </resources>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <configuration>
-              <excludes>
-                <exclude>**/WebSpringBootServletInitializer.java</exclude>
-              </excludes>
-            </configuration>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-source-plugin</artifactId>
-            <version>3.2.1</version>
-            <executions>
-              <execution>
-                <id>generate-source-jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>jar-no-fork</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <version>3.4.0</version>
-            <configuration>
-              <doclint>none</doclint>
-              <source>8</source>
-              <detectJavaApiLink>false</detectJavaApiLink>
-            </configuration>
-            <executions>
-              <execution>
-                <id>generate-javadocs</id>
-                <goals>
-                  <goal>jar</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-gpg-plugin</artifactId>
-            <version>3.0.1</version>
-            <executions>
-              <execution>
-                <id>sign-artifacts</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>sign</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.sonatype.plugins</groupId>
-            <artifactId>nexus-staging-maven-plugin</artifactId>
-            <version>1.6.13</version>
-            <extensions>true</extensions>
-            <configuration>
-              <serverId>ossrh</serverId>
-              <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
-              <autoReleaseAfterClose>true</autoReleaseAfterClose>
-            </configuration>
-          </plugin>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>versions-maven-plugin</artifactId>
-            <version>2.8.1</version>
-            <configuration>
-              <generateBackupPoms>false</generateBackupPoms>
-            </configuration>
-          </plugin>
-        </plugins>
       </build>
-    </profile>
-    <profile>
       <id>jar-local</id>
       <properties>
         <packagingType>jar</packagingType>
       </properties>
-      <build>
-        <resources>
-          <resource>
-            <directory>arex-storage</directory>
-            <excludes>
-              <exclude>**/application*.properties</exclude>
-            </excludes>
-          </resource>
-        </resources>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <configuration>
-              <excludes>
-                <exclude>**/WebSpringBootServletInitializer.java</exclude>
-              </excludes>
-            </configuration>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-source-plugin</artifactId>
-            <version>3.2.1</version>
-            <executions>
-              <execution>
-                <id>generate-source-jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>jar-no-fork</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
     </profile>
   </profiles>
+
+  <properties>
+    <arex.storage.model.version>1.0.4</arex.storage.model.version>
+    <commons-lang3.version>3.3.2</commons-lang3.version>
+    <jacoco-maven-plugin.version>0.7.5.201505241946</jacoco-maven-plugin.version>
+    <jacoco.report.path>${project.basedir}/code-coverage/jacoco.exec</jacoco.report.path>
+    <java.version>1.8</java.version>
+    <jmockit.version>1.49</jmockit.version>
+    <junit.version>4.12</junit.version>
+
+    <lombok.version>1.18.6</lombok.version>
+    <!-- single jacoco.exec file relative to root directory of the project -->
+    <maven-compiler-plugin.version>3.6.0</maven-compiler-plugin.version>
+    <maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
+    <maven-install-plugin.version>2.5.2</maven-install-plugin.version>
+    <maven-jar-plugin.version>3.0.2</maven-jar-plugin.version>
+    <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
+    <maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
+    <maven-war-plugin.version>3.0.0</maven-war-plugin.version>
+    <maven.deploy.skip>false</maven.deploy.skip>
+    <maven.source.skip>false</maven.source.skip>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <sonar.exclusions>
+      **/model/**
+    </sonar.exclusions>
+    <!-- Users could specify this property as true to skip the attaching source process -->
+    <sonar.jacoco.reportPath>${jacoco.report.path}</sonar.jacoco.reportPath>
+    <!-- Users could specify this property as true to skip the deploy process -->
+    <spring.boot.version>2.6.3</spring.boot.version>
+  </properties>
+  <scm>
+    <connection>scm:git:git://github.com/arextest/arex-storage.git</connection>
+    <developerConnection>scm:git:ssh://github.com:arextest/arex-storage.git</developerConnection>
+    <url>https://github.com/arextest/arex-storage</url>
+  </scm>
+  <url>https://github.com/arextest/arex-storage</url>
+
+
+  <version>1.0.32</version>
 </project>

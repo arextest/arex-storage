@@ -8,6 +8,7 @@ import lombok.Data;
  */
 @Data
 public class QueryMockCacheRequestType {
-    private String recordId;
-    private String sourceProvider;
+
+  private String recordId;
+  private String sourceProvider;
 }

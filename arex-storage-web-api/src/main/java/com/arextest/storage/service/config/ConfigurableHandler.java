@@ -8,13 +8,13 @@ import java.util.List;
  */
 public interface ConfigurableHandler<T> extends ViewHandler<T> {
 
-    boolean insert(T configuration);
+  boolean insert(T configuration);
 
-    boolean remove(T configuration);
+  boolean remove(T configuration);
 
-    boolean insertList(List<T> configurationList);
+  boolean insertList(List<T> configurationList);
 
-    boolean removeList(List<T> configurationList);
+  boolean removeList(List<T> configurationList);
 
-    boolean update(T configuration);
+  boolean update(T configuration);
 }

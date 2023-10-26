@@ -4,7 +4,8 @@ import lombok.Data;
 
 @Data
 public class Dependency {
-    private String dependencyId;
-    private String operationName;
-    private String operationType;
+
+  private String dependencyId;
+  private String operationName;
+  private String operationType;
 }

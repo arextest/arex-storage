@@ -1,5 +1,7 @@
 package com.arextest.storage.web.controller;
 
+import static com.arextest.model.constants.HeaderNames.AREX_MOCK_STRATEGY_CODE;
+
 import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
@@ -12,6 +14,9 @@ import com.arextest.storage.mock.MockResultMatchStrategy;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.AgentWorkingService;
 import com.arextest.storage.trace.MDCTracer;
+import java.util.HashMap;
+import java.util.Map;
+import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
@@ -23,12 +28,6 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-
-import javax.annotation.Resource;
-import java.util.HashMap;
-import java.util.Map;
-
-import static com.arextest.model.constants.HeaderNames.AREX_MOCK_STRATEGY_CODE;
 
 /**
  * This class defined all api list for agent recording
@@ -46,7 +45,8 @@ public class AgentRecordingController {
 
   @Resource
   private AgentWorkingMetricService agentWorkingMetricService;
-
+  @Resource
+  private ZstdJacksonSerializer zstdJacksonSerializer;
 
   /**
    * from agent query,means to save the request and try to find a record item as mock result for
@@ -79,7 +79,6 @@ public class AgentRecordingController {
         return ZstdJacksonSerializer.EMPTY_INSTANCE;
       }
       MDCTracer.addTrace(category, requestType);
-      MDCTracer.addAppId(requestType.getAppId());
       MockResultContext context = new MockResultContext(MockResultMatchStrategy.of(strategyCode));
       return agentWorkingMetricService.queryMockResult(requestType, context);
     } catch (Throwable throwable) {
@@ -122,9 +121,6 @@ public class AgentRecordingController {
       MDCTracer.clear();
     }
   }
-
-  @Resource
-  private ZstdJacksonSerializer zstdJacksonSerializer;
 
   @PostMapping(value = "/saveTest", produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseBody

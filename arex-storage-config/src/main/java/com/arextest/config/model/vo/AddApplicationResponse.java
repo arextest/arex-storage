@@ -8,7 +8,8 @@ import lombok.Data;
  */
 @Data
 public class AddApplicationResponse {
-    private Boolean success;
-    private String msg;
-    private String appId;
+
+  private Boolean success;
+  private String msg;
+  private String appId;
 }

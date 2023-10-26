@@ -4,10 +4,9 @@ import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.cache.CacheKeyUtils;
 import com.arextest.storage.mock.MatchKeyBuilder;
-import org.springframework.stereotype.Component;
-
 import java.util.Collections;
 import java.util.List;
+import org.springframework.stereotype.Component;
 
 @Component
 final class EntryPointMatchKeyBuilderImpl implements MatchKeyBuilder {

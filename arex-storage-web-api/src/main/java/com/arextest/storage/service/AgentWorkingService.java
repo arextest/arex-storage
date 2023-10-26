@@ -13,14 +13,12 @@ import com.arextest.storage.repository.RepositoryReader;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.mockerhandlers.MockerHandlerFactory;
 import com.arextest.storage.service.mockerhandlers.MockerSaveHandler;
+import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-
-import javax.annotation.Resource;
-import javax.validation.constraints.NotNull;
-import java.util.List;
 
 /**
  * The agent working should be complete two things: save the origin record and fetch the record
@@ -35,14 +33,11 @@ public class AgentWorkingService {
   private final MockResultProvider mockResultProvider;
   private final RepositoryProviderFactory repositoryProviderFactory;
   private final MockerHandlerFactory mockerHandlerFactory;
-
+  private final List<AgentWorkingListener> agentWorkingListeners;
   @Setter
   private ZstdJacksonSerializer zstdJacksonSerializer;
   @Setter
   private PrepareMockResultService prepareMockResultService;
-
-  private final List<AgentWorkingListener> agentWorkingListeners;
-
   @Setter
   private RecordEnvType recordEnvType;
 

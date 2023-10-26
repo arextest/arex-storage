@@ -5,9 +5,10 @@ package com.arextest.config.model.dto;
  * @since 2022/1/21
  */
 public interface Feature {
-    String name();
 
-    boolean enabledIn(int flags);
+  String name();
 
-    int getMask();
+  boolean enabledIn(int flags);
+
+  int getMask();
 }

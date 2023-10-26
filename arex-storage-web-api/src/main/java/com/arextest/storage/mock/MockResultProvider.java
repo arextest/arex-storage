@@ -1,10 +1,9 @@
 package com.arextest.storage.mock;
 
-import com.arextest.model.mock.Mocker;
 import com.arextest.model.mock.MockCategoryType;
-
-import javax.validation.constraints.NotNull;
+import com.arextest.model.mock.Mocker;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 
 /**
  * @author jmo

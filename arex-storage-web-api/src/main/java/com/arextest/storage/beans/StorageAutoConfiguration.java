@@ -1,24 +1,5 @@
 package com.arextest.storage.beans;
 
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.annotation.Resource;
-
-import com.arextest.storage.repository.impl.mongo.AutoPinedMockerRepository;
-import com.arextest.storage.service.mockerhandlers.MockerHandlerFactory;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.http.HttpMessageConverters;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
-
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.common.cache.DefaultRedisCacheProvider;
 import com.arextest.config.repository.impl.ApplicationOperationConfigurationRepositoryImpl;
@@ -35,14 +16,33 @@ import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.impl.mongo.AREXMockerMongoRepositoryProvider;
 import com.arextest.storage.repository.impl.mongo.AdditionalCodecProviderFactory;
+import com.arextest.storage.repository.impl.mongo.AutoPinedMockerRepository;
 import com.arextest.storage.repository.impl.mongo.MongoDbUtils;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
-import com.arextest.storage.service.*;
+import com.arextest.storage.service.AgentWorkingListener;
+import com.arextest.storage.service.AgentWorkingService;
+import com.arextest.storage.service.AutoDiscoveryEntryPointListener;
+import com.arextest.storage.service.MockSourceEditionService;
+import com.arextest.storage.service.PrepareMockResultService;
+import com.arextest.storage.service.ScheduleReplayingService;
+import com.arextest.storage.service.mockerhandlers.MockerHandlerFactory;
 import com.arextest.storage.web.controller.MockSourceEditionController;
 import com.arextest.storage.web.controller.ScheduleReplayQueryController;
 import com.mongodb.client.MongoDatabase;
-
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.http.HttpMessageConverters;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties({StorageConfigurationProperties.class})
@@ -154,6 +154,14 @@ public class StorageAutoConfiguration {
       AgentWorkingService agentWorkingService,
       List<MetricListener> metricListeners) {
     return new AgentWorkingMetricService(agentWorkingService, metricListeners);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean(ScheduleReplayQueryController.class)
+  public ScheduleReplayQueryController scheduleReplayQueryController(
+      ScheduleReplayingService scheduleReplayingService,
+      PrepareMockResultService prepareMockResultService) {
+    return new ScheduleReplayQueryController(scheduleReplayingService, prepareMockResultService);
   }
 
   @Bean

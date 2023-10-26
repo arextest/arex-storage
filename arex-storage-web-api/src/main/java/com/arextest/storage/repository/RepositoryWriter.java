@@ -2,7 +2,6 @@ package com.arextest.storage.repository;
 
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
-
 import java.util.List;
 
 /**
@@ -10,15 +9,18 @@ import java.util.List;
  * @since 2021/11/7
  */
 public interface RepositoryWriter<T extends Mocker> {
-    boolean save(T value);
 
-    boolean saveList(List<T> valueList);
+  boolean save(T value);
 
-    long removeBy(MockCategoryType categoryType, String recordId);
-    boolean update(T value);
+  boolean saveList(List<T> valueList);
 
-    long removeByAppId(MockCategoryType categoryType, String appId);
+  long removeBy(MockCategoryType categoryType, String recordId);
 
-    long removeByOperationNameAndAppId(MockCategoryType categoryType, String operationName, String appId);
+  boolean update(T value);
+
+  long removeByAppId(MockCategoryType categoryType, String appId);
+
+  long removeByOperationNameAndAppId(MockCategoryType categoryType, String operationName,
+      String appId);
 
 }

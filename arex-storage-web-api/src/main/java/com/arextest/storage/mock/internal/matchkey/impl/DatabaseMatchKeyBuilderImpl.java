@@ -8,17 +8,16 @@ import com.arextest.storage.mock.MatchKeyBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
-
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
 
 /**
  * Why the db mock key has more items building? 1,The user add some comments to sql or 2,add or
@@ -34,8 +33,6 @@ import java.util.Objects;
 @Component
 @Order(30)
 final class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
-
-  private final ObjectMapper objectMapper;
 
   private static final char SQL_BATCH_TERMINAL_CHAR = ';';
   private static final String COMMA_STRING = ",";
@@ -55,9 +52,44 @@ final class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
    */
   private static final List<String> SQL_TABLE_KEYS = Arrays.asList("from", "join", "update",
       "into");
+  private final ObjectMapper objectMapper;
 
   DatabaseMatchKeyBuilderImpl(ObjectMapper objectMapper) {
     this.objectMapper = objectMapper;
+  }
+
+  private static boolean readShouldTerminal(char src) {
+    return src == SQL_BATCH_TERMINAL_CHAR || isWhitespace(src);
+  }
+
+  private static int skipWhitespace(String sqlText, int fromIndex, int sourceCount) {
+    int skipWhitespaceCount = 0;
+    for (; fromIndex < sourceCount && isWhitespace(sqlText.charAt(fromIndex));
+        fromIndex++, skipWhitespaceCount++) {
+
+    }
+    return skipWhitespaceCount;
+  }
+
+  private static boolean isWhitespace(char src) {
+    return Character.isWhitespace(src);
+  }
+
+  private static boolean firstCharacterWordBoundaryNotMatch(final String source, char first,
+      int position) {
+    return !(equalsIgnoreCase(source.charAt(position), first) && isWordBoundary(source,
+        position - 1));
+  }
+
+  private static boolean isWordBoundary(final String source, int positionOfPrevOrNext) {
+    if (positionOfPrevOrNext < 0 || positionOfPrevOrNext >= source.length()) {
+      return true;
+    }
+    return isWhitespace(source.charAt(positionOfPrevOrNext));
+  }
+
+  private static boolean equalsIgnoreCase(char src, char target) {
+    return src == target || Math.abs(src - target) == UPPER_LOWER_CASE_DELTA_VALUE;
   }
 
   @Override
@@ -194,23 +226,6 @@ final class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
     return sqlText.substring(valueBeginIndex, readFromIndex);
   }
 
-  private static boolean readShouldTerminal(char src) {
-    return src == SQL_BATCH_TERMINAL_CHAR || isWhitespace(src);
-  }
-
-  private static int skipWhitespace(String sqlText, int fromIndex, int sourceCount) {
-    int skipWhitespaceCount = 0;
-    for (; fromIndex < sourceCount && isWhitespace(sqlText.charAt(fromIndex));
-        fromIndex++, skipWhitespaceCount++) {
-
-    }
-    return skipWhitespaceCount;
-  }
-
-  private static boolean isWhitespace(char src) {
-    return Character.isWhitespace(src);
-  }
-
   private int findIndexWholeIgnoreCase(String source, int sourceCount, String target,
       int targetCount,
       int fromIndex) {
@@ -240,22 +255,5 @@ final class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
       }
     }
     return INDEX_NOT_FOUND;
-  }
-
-  private static boolean firstCharacterWordBoundaryNotMatch(final String source, char first,
-      int position) {
-    return !(equalsIgnoreCase(source.charAt(position), first) && isWordBoundary(source,
-        position - 1));
-  }
-
-  private static boolean isWordBoundary(final String source, int positionOfPrevOrNext) {
-    if (positionOfPrevOrNext < 0 || positionOfPrevOrNext >= source.length()) {
-      return true;
-    }
-    return isWhitespace(source.charAt(positionOfPrevOrNext));
-  }
-
-  private static boolean equalsIgnoreCase(char src, char target) {
-    return src == target || Math.abs(src - target) == UPPER_LOWER_CASE_DELTA_VALUE;
   }
 }

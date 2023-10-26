@@ -8,7 +8,8 @@ import lombok.Data;
  */
 @Data
 public class AgentStatusRequest {
-    private String appId;
-    private String host;
-    private String agentStatus;
+
+  private String appId;
+  private String host;
+  private String agentStatus;
 }

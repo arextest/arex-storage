@@ -2,10 +2,9 @@ package com.arextest.storage.cache;
 
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.storage.model.MockResultType;
-
-import javax.validation.constraints.NotNull;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import javax.validation.constraints.NotNull;
 
 
 public final class CacheKeyUtils {

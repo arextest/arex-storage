@@ -19,11 +19,6 @@ public class MessageDigestWriter extends OutputStream {
     this.messageDigest = messageDigest;
   }
 
-  @Override
-  public void write(int b) {
-    messageDigest.update((byte) b);
-  }
-
   public static MessageDigest getMD5Digest() {
     try {
       return MessageDigest.getInstance(MD5_ALGORITHM_NAME);
@@ -32,5 +27,10 @@ public class MessageDigestWriter extends OutputStream {
           "Could not find MessageDigest with algorithm \"" + MD5_ALGORITHM_NAME +
               "\"", exception);
     }
+  }
+
+  @Override
+  public void write(int b) {
+    messageDigest.update((byte) b);
   }
 }

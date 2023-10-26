@@ -12,16 +12,16 @@ import lombok.experimental.FieldNameConstants;
 @FieldNameConstants
 public class DynamicClassCollection extends BaseEntity {
 
-    public static final String DOCUMENT_NAME = "DynamicClass";
+  public static final String DOCUMENT_NAME = "DynamicClass";
 
-    @NonNull
-    private String appId;
+  @NonNull
+  private String appId;
 
-    private String fullClassName;
+  private String fullClassName;
 
-    private String methodName;
+  private String methodName;
 
-    private String parameterTypes;
+  private String parameterTypes;
 
-    private int configType;
+  private int configType;
 }
