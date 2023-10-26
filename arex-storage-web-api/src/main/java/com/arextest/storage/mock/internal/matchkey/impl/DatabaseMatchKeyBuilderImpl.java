@@ -102,7 +102,7 @@ public class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
     return dbMockKeyBuild(databaseMocker);
   }
 
-  public String findDBTableNames(Mocker instance) {
+  public static String findDBTableNames(Mocker instance) {
     String sqlText = instance.getTargetRequest().getBody();
     int sourceCount = sqlText.length();
     List<String> tableNames = new ArrayList<>();
@@ -215,7 +215,7 @@ public class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
     }
   }
 
-  private String readTableValue(String sqlText, int readFromIndex, int sourceCount) {
+  private static String readTableValue(String sqlText, int readFromIndex, int sourceCount) {
     final int valueBeginIndex = readFromIndex;
     for (; readFromIndex < sourceCount; readFromIndex++) {
       if (readShouldTerminal(sqlText.charAt(readFromIndex))) {
@@ -225,7 +225,7 @@ public class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
     return sqlText.substring(valueBeginIndex, readFromIndex);
   }
 
-  private int findIndexWholeIgnoreCase(String source, int sourceCount, String target,
+  private static int findIndexWholeIgnoreCase(String source, int sourceCount, String target,
       int targetCount,
       int fromIndex) {
     if (fromIndex >= sourceCount) {
