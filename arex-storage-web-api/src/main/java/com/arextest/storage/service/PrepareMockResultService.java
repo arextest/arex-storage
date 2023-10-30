@@ -34,7 +34,7 @@ public final class PrepareMockResultService {
     }
     boolean result = false;
     for (MockCategoryType categoryType : providerFactory.getCategoryTypes()) {
-      result = preload(repositoryProvider, categoryType, recordId);
+      result = result || preload(repositoryProvider, categoryType, recordId);
       LOGGER.info("preload cache result:{},category:{},record id:{}", result, categoryType,
           recordId);
     }
@@ -95,10 +95,5 @@ public final class PrepareMockResultService {
 
   public boolean removeResult(MockCategoryType category, String resultId) {
     return mockResultProvider.removeReplayResult(category, resultId);
-  }
-
-  public boolean removeAll(String recordId, String resultId) {
-    return true;
-//        return removeAllRecordCache(recordId) && removeAllResultCache(resultId);
   }
 }

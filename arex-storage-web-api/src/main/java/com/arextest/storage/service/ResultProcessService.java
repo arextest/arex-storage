@@ -45,8 +45,6 @@ public class ResultProcessService {
   @Resource
   RepositoryProviderFactory repositoryProviderFactory;
   @Resource
-  PrepareMockResultService prepareMockResultService;
-  @Resource
   CoverageRepository coverageRepository;
 
   public void handleResult(PostProcessResultRequestType requestType) {
@@ -59,9 +57,6 @@ public class ResultProcessService {
         handleAutoPin(diffResult);
         LOGGER.info("Auto pin modification done for plan {}", requestType.getReplayPlanId());
       }
-
-      clearAllCache(diffResult);
-      LOGGER.info("Clear cache done for plan {}", requestType.getReplayPlanId());
     }
   }
 
@@ -78,18 +73,6 @@ public class ResultProcessService {
       default:
         // do nothing
         break;
-    }
-  }
-
-  private void clearAllCache(ResultCodeGroup diffResult) {
-    for (ResultCodeGroup.CategoryGroup categoryGroup : diffResult.getCategoryGroups()) {
-      MockCategoryType category = MockCategoryType.create(categoryGroup.getCategoryName());
-      if (!category.isEntryPoint()) {
-        continue;
-      }
-      for (ResultCodeGroup.IdPair idPair : categoryGroup.getResultIds()) {
-        prepareMockResultService.removeAll(idPair.getRecordId(), idPair.getTargetId());
-      }
     }
   }
 
