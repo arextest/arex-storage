@@ -34,6 +34,10 @@ public enum MockResultType {
    * the record data with operation
    */
   RECORD_WITH_OPERATION(5),
+  /**
+   * record instance id that has been matched
+   */
+  RECORD_INSTANCE_ID_HAS_BEEN_MATCHED(6),
   ;
 
 

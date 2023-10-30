@@ -85,6 +85,19 @@ public final class CacheKeyUtils {
         .array();
   }
 
+  public static byte[] buildMatchedRecordInstanceIdsKey(MockCategoryType category,
+      byte[] recordIdBytes, byte[] replayIdBytes, byte[] operationNameBytes) {
+    byte[] value = categoryBytes(MockResultType.RECORD_INSTANCE_ID_HAS_BEEN_MATCHED, category);
+    int capacity =
+        recordIdBytes.length + operationNameBytes.length + value.length + replayIdBytes.length;
+    return ByteBuffer.allocate(capacity)
+        .put(recordIdBytes)
+        .put(operationNameBytes)
+        .put(value)
+        .put(replayIdBytes)
+        .array();
+  }
+
   public static byte[] merge(@NotNull byte[] src, int value) {
     return ByteBuffer.allocate(src.length + Integer.SIZE)
         .put(src)

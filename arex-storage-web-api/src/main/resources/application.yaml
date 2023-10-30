@@ -34,3 +34,9 @@ arex:
           timeMock: true
   prometheus:
     port: 20093
+  storage:
+    not:
+      use:
+        similarity:
+          strategy:
+            appIds:

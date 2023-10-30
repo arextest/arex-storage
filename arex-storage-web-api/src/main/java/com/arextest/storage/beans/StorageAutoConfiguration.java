@@ -8,6 +8,7 @@ import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.storage.converter.ZstdJacksonMessageConverter;
 import com.arextest.storage.metric.AgentWorkingMetricService;
+import com.arextest.storage.metric.MatchStrategyMetricService;
 import com.arextest.storage.metric.MetricListener;
 import com.arextest.storage.mock.MockResultProvider;
 import com.arextest.storage.repository.ProviderNames;
@@ -153,6 +154,13 @@ public class StorageAutoConfiguration {
       AgentWorkingService agentWorkingService,
       List<MetricListener> metricListeners) {
     return new AgentWorkingMetricService(agentWorkingService, metricListeners);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean(MatchStrategyMetricService.class)
+  public MatchStrategyMetricService matchStrategyMetricService(
+      List<MetricListener> metricListeners) {
+    return new MatchStrategyMetricService(metricListeners);
   }
 
   @Bean

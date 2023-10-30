@@ -32,9 +32,10 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @Order(30)
-final class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
+public class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
 
   private static final char SQL_BATCH_TERMINAL_CHAR = ';';
+  private static final String COMMA_STRING = ",";
   private static final int INDEX_NOT_FOUND = -1;
   private static final int UPPER_LOWER_CASE_DELTA_VALUE = 32;
   /**
@@ -99,6 +100,29 @@ final class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
   @Override
   public List<byte[]> build(Mocker databaseMocker) {
     return dbMockKeyBuild(databaseMocker);
+  }
+
+  public static String findDBTableNames(Mocker instance) {
+    String sqlText = instance.getTargetRequest().getBody();
+    int sourceCount = sqlText.length();
+    List<String> tableNames = new ArrayList<>();
+    for (int i = 0; i < SQL_TABLE_KEYS.size(); i++) {
+      String key = SQL_TABLE_KEYS.get(i);
+      int targetCount = key.length();
+      int fromIndex = 0;
+      int index = findIndexWholeIgnoreCase(sqlText, sourceCount, key, targetCount, fromIndex);
+      while (index != INDEX_NOT_FOUND) {
+        fromIndex = index + targetCount;
+        int skipWhitespaceCount = skipWhitespace(sqlText, fromIndex, sourceCount);
+        fromIndex += skipWhitespaceCount;
+        String value = readTableValue(sqlText, fromIndex, sourceCount);
+        tableNames.add(value);
+        int valueLength = value.length();
+        fromIndex += valueLength;
+        index = findIndexWholeIgnoreCase(sqlText, sourceCount, key, targetCount, fromIndex);
+      }
+    }
+    return String.join(COMMA_STRING, tableNames);
   }
 
   /**
@@ -191,7 +215,7 @@ final class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
     }
   }
 
-  private String readTableValue(String sqlText, int readFromIndex, int sourceCount) {
+  private static String readTableValue(String sqlText, int readFromIndex, int sourceCount) {
     final int valueBeginIndex = readFromIndex;
     for (; readFromIndex < sourceCount; readFromIndex++) {
       if (readShouldTerminal(sqlText.charAt(readFromIndex))) {
@@ -201,7 +225,7 @@ final class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
     return sqlText.substring(valueBeginIndex, readFromIndex);
   }
 
-  private int findIndexWholeIgnoreCase(String source, int sourceCount, String target,
+  private static int findIndexWholeIgnoreCase(String source, int sourceCount, String target,
       int targetCount,
       int fromIndex) {
     if (fromIndex >= sourceCount) {
