@@ -42,6 +42,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   private static final String CALL_REPLAY_MAX = "callReplayMax";
   private static final String DUBBO_PREFIX = "Dubbo";
   private static final String STRICT_MATCH = "strictMatch";
+  private static final String MULTI_OPERATION_WITH_STRICT_MATCH = "multiOperationStrictMatch";
   private static final String FUZZY_MATCH = "fuzzyMatch";
   private static final String SIMILARITY_MATCH = "similarityMatch";
   private static final String COMMA_STRING = ",";
@@ -450,7 +451,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
         matchedRecordInstanceIds.add(id);
         updateUsedRecordInstanceData(category, recordIdBytes, replayIdBytes, operationName,
             matchedRecordInstanceIds);
-        matchStrategyMetricService.recordMatchingCount(STRICT_MATCH, (AREXMocker) mockItem);
+        matchStrategyMetricService.recordMatchingCount(MULTI_OPERATION_WITH_STRICT_MATCH, (AREXMocker) mockItem);
         LOGGER.info(
             "[[title=similarityMatch]]get mock result with strictly match, instanceId: {}, matchedRecordInstanceIds: {}",
             id, matchedRecordInstanceIds);
@@ -484,19 +485,6 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
         }
 
         String recordRequestBody = getRequestBody(mocker.getTargetRequest(), category);
-        if (StringUtils.equals(replayRequestBody, recordRequestBody)) {
-          String mockerId = mocker.getId();
-          mockItem.setId(mockerId);
-          matchedRecordInstanceIds.add(mockerId);
-          updateUsedRecordInstanceData(category, recordIdBytes, replayIdBytes, operationName,
-              matchedRecordInstanceIds);
-          matchStrategyMetricService.recordMatchingCount(STRICT_MATCH, (AREXMocker) mockItem);
-          LOGGER.info(
-              "[[title=similarityMatch]]get mock result with strictly match, instanceId: {}, matchedRecordInstanceIds: {}",
-              mockerId, matchedRecordInstanceIds);
-          return mockDataBytes;
-        }
-
         int sumLength = calc(replayRequestBody, recordRequestBody);
 
         LOGGER.info("[[title=similarityMatch]]recordInstanceId: {}, sumLength: {}",
@@ -530,8 +518,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
             matchedRecordInstanceIds);
       }
       LOGGER.info(
-          "[[title=similarityMatch]]operation: {}, matchedInstanceId: {}, matchedRecordInstanceIds:{}",
-          length, instanceId, matchedRecordInstanceIds);
+          "[[title=similarityMatch]]get mock result with similarity match, operation: {}, length: {}, matchedInstanceId: {}, matchedRecordInstanceIds:{}",
+          operationName, length, instanceId, matchedRecordInstanceIds);
 
       // 4.5. buried point record the number of times similarity is used.
       matchStrategyMetricService.recordMatchingCount(SIMILARITY_MATCH, (AREXMocker) mockItem);
