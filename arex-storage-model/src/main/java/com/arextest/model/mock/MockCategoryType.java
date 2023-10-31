@@ -1,15 +1,15 @@
 package com.arextest.model.mock;
 
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.Objects;
-import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Objects;
+import java.util.Set;
 @Getter
 @Setter
 @NoArgsConstructor
@@ -23,6 +23,7 @@ public class MockCategoryType {
   public static final MockCategoryType Q_MESSAGE_PRODUCER = MockCategoryType.createDependency(
       "QMessageProducer");
   public static final MockCategoryType SERVLET = MockCategoryType.createEntryPoint("Servlet");
+  public static final MockCategoryType NETTY_PROVIDER = MockCategoryType.createEntryPoint("NettyProvider");
   public static final MockCategoryType DATABASE = MockCategoryType.createDependency("Database");
   public static final MockCategoryType HTTP_CLIENT = MockCategoryType.createDependency(
       "HttpClient");
@@ -40,6 +41,7 @@ public class MockCategoryType {
   static {
     Set<MockCategoryType> internalSet = new LinkedHashSet<>();
     internalSet.add(SERVLET);
+    internalSet.add(NETTY_PROVIDER);
     internalSet.add(DUBBO_PROVIDER);
     internalSet.add(Q_MESSAGE_CONSUMER);
 
