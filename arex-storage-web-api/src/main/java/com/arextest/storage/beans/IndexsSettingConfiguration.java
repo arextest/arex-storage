@@ -12,6 +12,8 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.Indexes;
+import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
@@ -25,37 +27,57 @@ public class IndexsSettingConfiguration {
   static final String EXPIRATION_TIME_COLUMN_NAME = "expirationTime";
   private static final String COLLECTION_SUFFIX = "Mocker";
 
-  void ensureMockerQueryIndex(MongoDatabase database) {
+  private void ensureMockerQueryIndex(MongoDatabase database) {
     for (MockCategoryType category : MockCategoryType.DEFAULTS) {
-      MongoCollection<AREXMocker> collection =
-          database.getCollection(getCollectionName(category), AREXMocker.class);
-      try {
-        Document index = new Document();
-        index.append(AREXMocker.Fields.recordId, 1);
-        index.append(AREXMocker.Fields.creationTime, -1);
-        collection.createIndex(index);
-      } catch (MongoCommandException e) {
-        LOGGER.info("create index failed for {}", category.getName(), e);
-      }
+      for (Field field : ProviderNames.class.getDeclaredFields()) {
+        String providerName = null;
+        try {
+          providerName = (String) field.get(ProviderNames.class);
+        } catch (IllegalAccessException e) {
+          LOGGER.error("get provider name failed", e);
+          continue;
+        }
 
-      try {
-        Document index = new Document();
-        index.append(AREXMocker.Fields.appId, 1);
-        index.append(AREXMocker.Fields.operationName, 1);
-        collection.createIndex(index);
-      } catch (MongoCommandException e) {
-        LOGGER.info("create index failed for {}", category.getName(), e);
+        MongoCollection<AREXMocker> collection =
+            database.getCollection(getCollectionName(category, providerName),
+                AREXMocker.class);
+
+        try {
+          Document index = new Document();
+          index.append(AREXMocker.Fields.recordId, 1);
+          collection.createIndex(index);
+        } catch (MongoCommandException e) {
+          LOGGER.info("create index failed for {}", category.getName(), e);
+        }
+
+        try {
+          Document index = new Document();
+          index.append(AREXMocker.Fields.recordId, 1);
+          index.append(AREXMocker.Fields.creationTime, -1);
+          collection.dropIndex(index);
+        } catch (MongoCommandException e) {
+          LOGGER.info("drop index failed for {}", category.getName(), e);
+        }
+
+        try {
+          Document index = new Document();
+          index.append(AREXMocker.Fields.appId, 1);
+          index.append(AREXMocker.Fields.operationName, 1);
+          collection.createIndex(index);
+        } catch (MongoCommandException e) {
+          LOGGER.info("create index failed for {}", category.getName(), e);
+        }
       }
     }
   }
 
-  void setTtlIndexes(MongoDatabase mongoDatabase) {
+  private void setTtlIndexes(MongoDatabase mongoDatabase) {
     for (MockCategoryType category : MockCategoryType.DEFAULTS) {
       setTTLIndexInMockerCollection(category, mongoDatabase);
     }
   }
 
-  void setIndexAboutConfig(MongoDatabase mongoDatabase) {
+  private void setIndexAboutConfig(MongoDatabase mongoDatabase) {
 
     // AppCollection
     MongoCollection<AppCollection> appCollectionMongoCollection =
@@ -96,7 +118,7 @@ public class IndexsSettingConfiguration {
 
   private void setTTLIndexInMockerCollection(MockCategoryType category,
       MongoDatabase mongoDatabase) {
-    String categoryName = getCollectionName(category);
+    String categoryName = getCollectionName(category, ProviderNames.DEFAULT);
     MongoCollection<AREXMocker> collection = mongoDatabase.getCollection(categoryName,
         AREXMocker.class);
     Bson index = new Document(EXPIRATION_TIME_COLUMN_NAME, 1);
@@ -110,7 +132,24 @@ public class IndexsSettingConfiguration {
     }
   }
 
-  private String getCollectionName(MockCategoryType category) {
-    return ProviderNames.DEFAULT + category.getName() + COLLECTION_SUFFIX;
+  private String getCollectionName(MockCategoryType category, String providerName) {
+    return providerName + category.getName() + COLLECTION_SUFFIX;
+  }
+
+  public void setIndexes(MongoDatabase mongoDatabase) {
+    Runnable runnable = () -> {
+      try {
+        long timestamp = System.currentTimeMillis();
+        LOGGER.info("start to set indexes");
+        setIndexAboutConfig(mongoDatabase);
+        setTtlIndexes(mongoDatabase);
+        ensureMockerQueryIndex(mongoDatabase);
+        LOGGER.info("set indexes success. cost: {}ms", System.currentTimeMillis() - timestamp);
+      }catch (Exception e){
+        LOGGER.error("set indexes failed", e);
+      }
+    };
+    Thread thread = new Thread(runnable);
+    thread.start();
   }
 }
