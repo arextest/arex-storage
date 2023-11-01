@@ -64,9 +64,7 @@ public class StorageAutoConfiguration {
       AdditionalCodecProviderFactory additionalCodecProviderFactory) {
     MongoDatabase database = MongoDbUtils.create(properties.getMongodbUri(),
         additionalCodecProviderFactory);
-    indexsSettingConfiguration.setTtlIndexes(database);
-    indexsSettingConfiguration.ensureMockerQueryIndex(database);
-    indexsSettingConfiguration.setIndexAboutConfig(database);
+    indexsSettingConfiguration.setIndexes(database);
     return database;
   }
 
