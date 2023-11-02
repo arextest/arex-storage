@@ -258,7 +258,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
       byte[] recordOperationKey = CacheKeyUtils.buildRecordOperationKey(category, recordId,
           operationName);
       int count = resultCount(recordOperationKey);
-
+      LOGGER.info("get record result with operation:{}, count: {}", operationName, count);
       if (useSequenceMatch(context.getMockStrategy(), category, mockItem, count)) {
         return getMockResultWithSequenceMatch(mockItem, context, category, mockKeyList,
             recordIdBytes, replayIdBytes);
