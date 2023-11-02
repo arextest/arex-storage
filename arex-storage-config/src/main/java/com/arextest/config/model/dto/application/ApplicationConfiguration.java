@@ -3,9 +3,10 @@ package com.arextest.config.model.dto.application;
 
 import com.arextest.config.model.dto.AbstractConfiguration;
 import com.arextest.config.model.dto.FeatureType;
-import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.Set;
 
 /**
  * @author jmo
@@ -44,5 +45,10 @@ public class ApplicationConfiguration extends AbstractConfiguration implements
    * organization_id
    */
   private String organizationId;
+
+  /**
+   * @see com.arextest.model.replay.AppVisibilityLevelEnum .
+   */
+  private int visibilityLevel;
 
 }

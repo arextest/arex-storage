@@ -1,9 +1,10 @@
 package com.arextest.config.model.vo;
 
-import java.util.Set;
+import lombok.Data;
+
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-import lombok.Data;
+import java.util.Set;
 
 /**
  * @author wildeslam.
@@ -16,4 +17,8 @@ public class AddApplicationRequest {
   private String appName;
   @NotEmpty
   private Set<String> owners;
+  /**
+   * @see com.arextest.model.replay.AppVisibilityLevelEnum .
+   */
+  private Integer visibilityLevel;
 }
