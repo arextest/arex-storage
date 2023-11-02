@@ -16,14 +16,15 @@ import com.mongodb.client.model.Updates;
 import com.mongodb.client.model.WriteModel;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class ApplicationConfigurationRepositoryImpl implements
     ConfigRepositoryProvider<ApplicationConfiguration> {
@@ -101,10 +102,14 @@ public class ApplicationConfigurationRepositoryImpl implements
     Bson filter = Filters.eq(AppCollection.Fields.appId, configuration.getAppId());
 
     List<Bson> updateList = Arrays.asList(MongoHelper.getUpdate(),
-        MongoHelper.getSpecifiedProperties(configuration, AppCollection.Fields.agentVersion,
-            AppCollection.Fields.agentExtVersion, AppCollection.Fields.status,
+        MongoHelper.getSpecifiedProperties(configuration,
+            AppCollection.Fields.agentVersion,
+            AppCollection.Fields.agentExtVersion,
+            AppCollection.Fields.status,
             AppCollection.Fields.features,
-            AppCollection.Fields.appName, AppCollection.Fields.owners));
+            AppCollection.Fields.appName,
+            AppCollection.Fields.owners,
+            AppCollection.Fields.visibilityLevel));
     Bson updateCombine = Updates.combine(updateList);
 
     return mongoCollection.updateMany(filter, updateCombine).getModifiedCount() > 0;
