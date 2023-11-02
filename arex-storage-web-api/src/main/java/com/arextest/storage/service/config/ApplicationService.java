@@ -10,14 +10,15 @@ import com.arextest.config.repository.impl.ApplicationConfigurationRepositoryImp
 import com.arextest.storage.cache.CacheKeyUtils;
 import com.arextest.storage.utils.RandomUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.List;
-import java.util.Set;
-import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.Resource;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author wildeslam.
@@ -48,6 +49,7 @@ public class ApplicationService {
     applicationConfiguration.setRecordedCaseCount(0);
     applicationConfiguration.setStatus(StatusType.RECORD.getMask() | StatusType.REPLAY.getMask());
     applicationConfiguration.setOwners(request.getOwners());
+    applicationConfiguration.setVisibilityLevel(request.getVisibilityLevel());
 
     applicationConfiguration.setOrganizationName("unknown organization name");
     applicationConfiguration.setGroupName("unknown group name");
@@ -78,6 +80,9 @@ public class ApplicationService {
     if (request.getOwners() != null) {
       applicationConfiguration.setOwners(request.getOwners());
       putAppOwnersCache(request.getAppId(), request.getOwners());
+    }
+    if (request.getVisibilityLevel() != null) {
+      applicationConfiguration.setVisibilityLevel(request.getVisibilityLevel());
     }
     return applicationConfigurationRepository.update(applicationConfiguration);
   }
