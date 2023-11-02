@@ -17,4 +17,13 @@ public enum AppVisibilityLevelEnum {
     public int getCode() {
         return code;
     }
+
+    public static boolean valid(int parameter) {
+        for (AppVisibilityLevelEnum appVisibilityLevel : AppVisibilityLevelEnum.values()) {
+            if (parameter == appVisibilityLevel.code) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
