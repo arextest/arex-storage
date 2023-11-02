@@ -34,9 +34,9 @@ public final class PrepareMockResultService {
     }
     boolean result = false;
     for (MockCategoryType categoryType : providerFactory.getCategoryTypes()) {
-      result = result || preload(repositoryProvider, categoryType, recordId);
-      LOGGER.info("preload cache result:{},category:{},record id:{}", result, categoryType,
-          recordId);
+      boolean curResult = preload(repositoryProvider, categoryType, recordId);
+      result = curResult || result;
+      LOGGER.info("preload cache result:{},category:{},record id:{}", curResult, categoryType, recordId);
     }
     return result;
   }
