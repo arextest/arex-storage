@@ -20,5 +20,5 @@ public class AddApplicationRequest {
   /**
    * @see com.arextest.model.replay.AppVisibilityLevelEnum .
    */
-  private Integer visibilityLevel;
+  private int visibilityLevel;
 }
