@@ -177,11 +177,11 @@
   <distributionManagement>
     <repository>
       <id>releases</id>
-      <url>${releases.repo}</url>
+      <url>http://maven.release.ctripcorp.com/nexus/content/repositories/flightrelease</url>
     </repository>
     <snapshotRepository>
       <id>snapshots</id>
-      <url>${snapshots.repo}</url>
+      <url>http://maven.release.ctripcorp.com/nexus/content/repositories/flightsnapshot</url>
     </snapshotRepository>
   </distributionManagement>
   <groupId>com.arextest</groupId>
@@ -397,5 +397,5 @@
   <url>https://github.com/arextest/arex-storage</url>
 
 
-  <version>1.0.37</version>
+  <version>1.0.38</version>
 </project>

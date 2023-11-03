@@ -16,7 +16,9 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import javax.annotation.PostConstruct;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.conversions.Bson;
@@ -143,5 +145,30 @@ public class ApplicationOperationConfigurationRepositoryImpl
         new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER));
 
     return dao != null && StringUtils.isNotEmpty(dao.getId());
+  }
+
+  public List<ApplicationOperationConfiguration> queryByMultiCondition(
+      Map<String, Object> conditions) {
+    if (conditions == null || conditions.isEmpty()) {
+      return Collections.emptyList();
+    }
+
+    List<ApplicationOperationConfiguration> dtos = new ArrayList<>();
+    List<Bson> filters = new ArrayList<>();
+    for (Map.Entry<String, Object> condition : conditions.entrySet()) {
+      if (condition != null) {
+        filters.add(Filters.eq(condition.getKey(), condition.getValue()));
+      }
+    }
+    try (MongoCursor<ServiceOperationCollection> cursor = mongoCollection.find(Filters.and(filters))
+        .iterator()) {
+      while (cursor.hasNext()) {
+        ServiceOperationCollection document = cursor.next();
+        ApplicationOperationConfiguration dto = ServiceOperationMapper.INSTANCE.baseInfoFromDao(
+            document);
+        dtos.add(dto);
+      }
+    }
+    return dtos;
   }
 }
