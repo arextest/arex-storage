@@ -156,7 +156,7 @@ public class ApplicationOperationConfigurationRepositoryImpl
     List<ApplicationOperationConfiguration> dtos = new ArrayList<>();
     List<Bson> filters = new ArrayList<>();
     for (Map.Entry<String, Object> condition : conditions.entrySet()) {
-      if (condition != null) {
+      if (condition != null && condition.getKey() != null) {
         filters.add(Filters.eq(condition.getKey(), condition.getValue()));
       }
     }
