@@ -160,6 +160,11 @@ public class ApplicationOperationConfigurationRepositoryImpl
         filters.add(Filters.eq(condition.getKey(), condition.getValue()));
       }
     }
+
+    if (filters.isEmpty()) {
+      return Collections.emptyList();
+    }
+
     try (MongoCursor<ServiceOperationCollection> cursor = mongoCollection.find(Filters.and(filters))
         .iterator()) {
       while (cursor.hasNext()) {
