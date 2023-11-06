@@ -24,4 +24,4 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/arex-replay-schedule:${{ vars.AREX_VER }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/arex-storage-serive:${{ vars.AREX_VER }}
