@@ -86,13 +86,13 @@ public final class CacheKeyUtils {
   }
 
   public static byte[] buildMatchedRecordInstanceIdsKey(MockCategoryType category,
-      byte[] recordIdBytes, byte[] replayIdBytes, byte[] operationNameBytes) {
+      byte[] recordIdBytes, byte[] replayIdBytes, byte[] mockResultId) {
     byte[] value = categoryBytes(MockResultType.RECORD_INSTANCE_ID_HAS_BEEN_MATCHED, category);
     int capacity =
-        recordIdBytes.length + operationNameBytes.length + value.length + replayIdBytes.length;
+        recordIdBytes.length + mockResultId.length + value.length + replayIdBytes.length;
     return ByteBuffer.allocate(capacity)
         .put(recordIdBytes)
-        .put(operationNameBytes)
+        .put(mockResultId)
         .put(value)
         .put(replayIdBytes)
         .array();
