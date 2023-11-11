@@ -15,10 +15,11 @@ import com.arextest.storage.mock.MockResultProvider;
 import com.arextest.storage.mock.internal.matchkey.impl.DatabaseMatchKeyBuilderImpl;
 import com.arextest.storage.model.MockResultType;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -274,7 +277,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
 
   private boolean useSequenceMatch(MockResultMatchStrategy mockStrategy, MockCategoryType category,
       Mocker mockItem, int recordDataCount) {
-    return !shouldUseIdOfInstanceToMockResult(category)
+    return category.isSkipComparison()
         || mockStrategy == MockResultMatchStrategy.STRICT_MATCH
         || recordDataCount <= 1 || !shouldBuildRecordOperationKey(mockItem);
   }
@@ -455,12 +458,14 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
       if (count == EMPTY_SIZE) {
         return null;
       }
+      boolean tryFindLastValue =
+          context.getMockStrategy() == MockResultMatchStrategy.TRY_FIND_LAST_VALUE;
 
       // 4. gets replay request content.
       String replayRequestBody = getRequestBody(mockItem.getTargetRequest(), category);
 
       // 5. iterate over all records, calculating the similarity between replay requests and record requests.
-      Map<Integer, AREXMocker> invocationMap = new HashMap<>();
+      Map<Integer, List<Pair<String, byte[]>>> invocationMap = Maps.newHashMap();
       for (int sequence = 1; sequence <= count; sequence++) {
         byte[] mockDataBytes = getMockerDataBytesFromMockKey(sourceKey, sequence);
         if (mockDataBytes == null) {
@@ -470,10 +475,14 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
         AREXMocker mocker = serializer.deserialize(mockDataBytes, AREXMocker.class);
         String recordInstanceId = mocker.getId();
 
-        byte[] usedRecordInstanceIdsKey = buildMatchedRecordInstanceIdsKey(category, recordIdBytes, replayIdBytes,
-            CacheKeyUtils.toUtf8Bytes(recordInstanceId));
-        int resultCount = resultCount(usedRecordInstanceIdsKey);
-        if (resultCount > EMPTY_SIZE) {
+        int consumerCount = getReplayConsumerCount(category, recordIdBytes, replayIdBytes, recordInstanceId);
+        if (consumerCount > EMPTY_SIZE) {
+          if (tryFindLastValue && sequence == count) {
+            LOGGER.info(
+                "[[title=similarityMatch]]try find last value, recordInstanceId: {}, consumerCount: {}",
+                recordInstanceId, consumerCount);
+            return mockDataBytes;
+          }
           LOGGER.info("[[title=similarityMatch]]operation: {}, recordInstanceId: {} is matched.", operationName, recordInstanceId);
           continue;
         }
@@ -483,8 +492,15 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
 
         LOGGER.info("[[title=similarityMatch]]recordInstanceId: {}, sumLength: {}",
             recordInstanceId, sumLength);
+        Pair<String, byte[]> pair = ImmutablePair.of(recordInstanceId, mockDataBytes);
         if (MapUtils.isEmpty(invocationMap) || invocationMap.get(sumLength) == null) {
-          invocationMap.put(sumLength, mocker);
+          List<Pair<String, byte[]>> pairs = Lists.newArrayListWithExpectedSize(1);
+          pairs.add(pair);
+          invocationMap.put(sumLength, pairs);
+        } else {
+          List<Pair<String, byte[]>> pairs = invocationMap.get(sumLength);
+          pairs.add(pair);
+          invocationMap.put(sumLength, pairs);
         }
       }
 
@@ -502,27 +518,30 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
       });
 
       // 7. get the matched recording result.
-      for (int i = 0; i < scores.size(); i++) {
-        Integer length = scores.get(i);
-        AREXMocker mocker = invocationMap.get(length);
-        String instanceId = mocker.getId();
-        if (StringUtils.isNotEmpty(instanceId)) {
-          long increaseCount = increasesReplayConsumer(category, recordIdBytes, replayIdBytes, CacheKeyUtils.toUtf8Bytes(instanceId));
+      for (Integer score: scores) {
+        List<Pair<String, byte[]>> pairList = invocationMap.get(score);
+        for (Pair<String, byte[]> pair : pairList) {
+          String instanceId = pair.getLeft();
+          if (StringUtils.isEmpty(instanceId)) {
+            continue;
+          }
+
+          long increaseCount = increasesReplayConsumer(category, recordIdBytes, replayIdBytes,
+              CacheKeyUtils.toUtf8Bytes(instanceId));
           if (increaseCount > 1) {
-            LOGGER.info("[[title=similarityMatch]]operation: {}, recordInstanceId: {} is matched.", operationName, instanceId);
+            LOGGER.info(
+                "[[title=similarityMatch]]operation: {}, recordInstanceId: {} is matched.", operationName, instanceId);
             continue;
           }
           mockItem.setId(instanceId);
+          LOGGER.info(
+              "[[title=similarityMatch]]get mock result with similarity match, operation: {}, length: {}, matchedInstanceId: {}}",
+              operationName, score, instanceId);
+          // 7.1. buried point record the number of times similarity is used.
+          matchStrategyMetricService.recordMatchingCount(SIMILARITY_MATCH, (AREXMocker) mockItem);
+          return pair.getRight();
         }
-        LOGGER.info(
-            "[[title=similarityMatch]]get mock result with similarity match, operation: {}, length: {}, matchedInstanceId: {}}",
-            operationName, length, instanceId);
-
-        // 7.1. buried point record the number of times similarity is used.
-        matchStrategyMetricService.recordMatchingCount(SIMILARITY_MATCH, (AREXMocker) mockItem);
-        return serializer.serialize(mocker);
       }
-
       return null;
     } catch (Throwable throwable) {
       LOGGER.error(
@@ -530,6 +549,13 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
           throwable.getMessage(), category, throwable);
     }
     return null;
+  }
+
+  private int getReplayConsumerCount(MockCategoryType category, byte[] recordIdBytes, byte[] replayIdBytes,
+      String recordInstanceId) {
+    byte[] usedRecordInstanceIdsKey = buildMatchedRecordInstanceIdsKey(category, recordIdBytes,
+        replayIdBytes, CacheKeyUtils.toUtf8Bytes(recordInstanceId));
+    return resultCount(usedRecordInstanceIdsKey);
   }
 
   /**
