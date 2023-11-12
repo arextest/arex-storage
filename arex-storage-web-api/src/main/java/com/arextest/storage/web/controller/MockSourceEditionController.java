@@ -181,7 +181,7 @@ public class MockSourceEditionController {
     try {
       boolean updateResult = editableService.update(srcProviderName, body);
       if (updateResult) {
-        storageCache.removeRecord(category, body.getRecordId());
+        storageCache.removeRecord(srcProviderName, category, body.getRecordId());
       }
       LOGGER.info("update record result:{},category:{},uniqueId:{}", updateResult, category,
           body.getId());

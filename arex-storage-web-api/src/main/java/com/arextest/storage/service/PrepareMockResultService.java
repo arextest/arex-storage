@@ -36,7 +36,8 @@ public final class PrepareMockResultService {
     for (MockCategoryType categoryType : providerFactory.getCategoryTypes()) {
       boolean curResult = preload(repositoryProvider, categoryType, recordId);
       result = curResult || result;
-      LOGGER.info("preload cache result:{},category:{},record id:{}", curResult, categoryType, recordId);
+      LOGGER.info("preload cache result:{},category:{},record id:{}", curResult, categoryType,
+          recordId);
     }
     return result;
   }
@@ -73,16 +74,43 @@ public final class PrepareMockResultService {
     return false;
   }
 
-  public boolean removeAllRecordCache(String recordId) {
+  public boolean removeAllRecordCache(String recordId, String sourceProvider) {
+    RepositoryProvider<? extends Mocker> repositoryProvider = providerFactory.findProvider(
+        sourceProvider);
+    if (repositoryProvider == null) {
+      return false;
+    }
     boolean result = false;
     for (MockCategoryType categoryType : providerFactory.getCategoryTypes()) {
-      result = removeRecord(categoryType, recordId);
+      result = removeRecord(repositoryProvider, categoryType, recordId);
     }
     return result;
   }
 
-  public boolean removeRecord(MockCategoryType category, String recordId) {
-    return mockResultProvider.removeRecordResult(category, recordId);
+  public boolean removeRecord(RepositoryProvider<? extends Mocker> repositoryReader,
+      MockCategoryType category, String recordId) {
+    if (repositoryReader == null) {
+      return false;
+    }
+    if (mockResultProvider.recordResultCount(category, recordId) <= 0) {
+      LOGGER.warn("skip remove cache for category:{},record id:{}", category, recordId);
+      return true;
+    }
+    Iterable<? extends Mocker> iterable;
+    iterable = repositoryReader.queryRecordList(category, recordId);
+    if (iterable == null) {
+      return false;
+    }
+    return mockResultProvider.removeRecordResult(category, recordId, iterable);
+  }
+
+  public boolean removeRecord(String sourceProvider, MockCategoryType category, String recordId) {
+    RepositoryProvider<? extends Mocker> repositoryProvider = providerFactory.findProvider(
+        sourceProvider);
+    if (repositoryProvider == null) {
+      return false;
+    }
+    return removeRecord(repositoryProvider, category, recordId);
   }
 
   public boolean removeAllResultCache(String resultId) {
