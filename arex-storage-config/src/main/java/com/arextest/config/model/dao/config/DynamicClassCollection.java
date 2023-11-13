@@ -24,4 +24,6 @@ public class DynamicClassCollection extends BaseEntity {
   private String parameterTypes;
 
   private int configType;
+
+  private String keyFormula;
 }

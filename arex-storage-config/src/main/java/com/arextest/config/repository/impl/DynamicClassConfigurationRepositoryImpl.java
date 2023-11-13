@@ -2,6 +2,7 @@ package com.arextest.config.repository.impl;
 
 import com.arextest.config.mapper.DynamicClassMapper;
 import com.arextest.config.model.dao.config.DynamicClassCollection;
+import com.arextest.config.model.dao.config.DynamicClassCollection.Fields;
 import com.arextest.config.model.dto.record.DynamicClassConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
 import com.arextest.config.utils.MongoHelper;
@@ -64,7 +65,8 @@ public class DynamicClassConfigurationRepositoryImpl implements
         MongoHelper.getSpecifiedProperties(configuration,
             DynamicClassCollection.Fields.fullClassName,
             DynamicClassCollection.Fields.methodName,
-            DynamicClassCollection.Fields.parameterTypes));
+            DynamicClassCollection.Fields.parameterTypes,
+            DynamicClassCollection.Fields.keyFormula));
     Bson updateCombine = Updates.combine(updateList);
 
     UpdateResult updateResult = mongoCollection.updateMany(filter, updateCombine);
