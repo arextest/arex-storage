@@ -24,6 +24,7 @@ public class StorageConfigurationProperties {
   private Map<String, Long> expirationDurationMap;
   private Long defaultExpirationDuration;
   private int allowReRunDays;
+  private List<String> supportMockerTag;
 
   @Getter
   @Setter
