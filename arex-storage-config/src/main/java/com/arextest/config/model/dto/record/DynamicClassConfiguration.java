@@ -23,5 +23,7 @@ public class DynamicClassConfiguration extends AbstractConfiguration {
    */
   private int configType;
 
+  private String keyFormula;
+
 }
 
