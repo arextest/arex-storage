@@ -28,6 +28,4 @@ public interface MockResultProvider {
 
   <T extends Mocker> boolean removeRecordResult(MockCategoryType category, String recordId,
       Iterable<T> values);
-
-  boolean removeReplayResult(MockCategoryType category, String replayResultId);
 }

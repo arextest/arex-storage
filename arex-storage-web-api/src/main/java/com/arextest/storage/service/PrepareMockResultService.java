@@ -112,16 +112,4 @@ public final class PrepareMockResultService {
     }
     return removeRecord(repositoryProvider, category, recordId);
   }
-
-  public boolean removeAllResultCache(String resultId) {
-    boolean result = false;
-    for (MockCategoryType categoryType : providerFactory.getCategoryTypes()) {
-      result = removeResult(categoryType, resultId);
-    }
-    return result;
-  }
-
-  public boolean removeResult(MockCategoryType category, String resultId) {
-    return mockResultProvider.removeReplayResult(category, resultId);
-  }
 }

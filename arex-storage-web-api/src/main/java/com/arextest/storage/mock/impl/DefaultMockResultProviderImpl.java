@@ -189,17 +189,6 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     return removed > EMPTY_SIZE;
   }
 
-  @Override
-  public boolean removeReplayResult(MockCategoryType category, String replayResultId) {
-//    if (StringUtils.isEmpty(replayResultId)) {
-//      return false;
-//    }
-//    final byte[] replayCountKey = CacheKeyUtils.buildReplayKey(category, replayResultId);
-//    int removed = removeResult(replayCountKey);
-//    return removed > EMPTY_SIZE;
-    return true;
-  }
-
   private <T extends Mocker> int removeResult(MockCategoryType category,
       byte[] recordIdBytes, T value) {
     int removed = EMPTY_SIZE;
