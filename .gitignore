@@ -5,6 +5,7 @@ code-coverage/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+arex-storage-jar
 
 ### STS ###
 .apt_generated

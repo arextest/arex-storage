@@ -54,5 +54,17 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
+  <profiles>
+    <profile>
+      <build>
+        <finalName>${artifactId}</finalName>
+      </build>
+      <id>jar</id>
+      <properties>
+        <packagingType>jar</packagingType>
+      </properties>
+    </profile>
+  </profiles>
+
 
 </project>

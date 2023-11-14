@@ -10,4 +10,16 @@
     <version>1.0.40</version>
   </parent>
 
+  <profiles>
+    <profile>
+      <build>
+        <finalName>${artifactId}</finalName>
+      </build>
+      <id>jar</id>
+      <properties>
+        <packagingType>jar</packagingType>
+      </properties>
+    </profile>
+  </profiles>
+
 </project>
