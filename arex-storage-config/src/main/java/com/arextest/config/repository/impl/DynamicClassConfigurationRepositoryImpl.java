@@ -2,6 +2,7 @@ package com.arextest.config.repository.impl;
 
 import com.arextest.config.mapper.DynamicClassMapper;
 import com.arextest.config.model.dao.config.DynamicClassCollection;
+import com.arextest.config.model.dao.config.DynamicClassCollection.Fields;
 import com.arextest.config.model.dto.record.DynamicClassConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
 import com.arextest.config.utils.MongoHelper;
