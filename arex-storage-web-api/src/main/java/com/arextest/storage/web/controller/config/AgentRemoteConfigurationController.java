@@ -13,6 +13,7 @@ import com.arextest.config.model.vo.AgentRemoteConfigurationResponse;
 import com.arextest.config.model.vo.AgentStatusRequest;
 import com.arextest.config.model.vo.AgentStatusType;
 import com.arextest.storage.service.config.ConfigurableHandler;
+import com.arextest.storage.service.config.impl.ApplicationConfigurableHandler;
 import com.arextest.storage.service.config.impl.ApplicationInstancesConfigurableHandler;
 import com.arextest.storage.service.config.impl.ApplicationServiceConfigurableHandler;
 import com.arextest.storage.service.config.impl.ServiceCollectConfigurableHandler;
@@ -25,12 +26,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -54,6 +59,8 @@ public final class AgentRemoteConfigurationController {
 
   private static final String EMPTY_TIME = "0";
   private static final String LAST_MODIFY_TIME = "If-Modified-Since";
+
+  private static final String ENV_IDENTIFIER = "arex.tags.env";
   @Resource
   private ConfigurableHandler<DynamicClassConfiguration> dynamicClassHandler;
   @Resource
@@ -65,6 +72,11 @@ public final class AgentRemoteConfigurationController {
 
   @Resource
   private ServiceCollectConfigurableHandler serviceCollectHandler;
+
+  @Resource
+  private ApplicationConfigurableHandler applicationConfigurableHandler;
+  @Resource
+  private ThreadPoolExecutor envUpdateHandlerExecutor;
 
   @Resource
   private ObjectMapper objectMapper;
@@ -105,6 +117,11 @@ public final class AgentRemoteConfigurationController {
       } else {
         body.setTargetAddress(request.getHost() + NOT_RECORDING);
       }
+
+      // asynchronously update application env
+      CompletableFuture.runAsync(
+          new AddEnvRunnable(instancesConfiguration, applicationConfigurableHandler),
+          envUpdateHandlerExecutor);
       return ResponseUtils.successResponse(body);
     } catch (Exception e) {
       LOGGER.error("load config error", e);
@@ -187,5 +204,29 @@ public final class AgentRemoteConfigurationController {
 
   private ApplicationConfiguration loadApplicationResult(AgentRemoteConfigurationRequest request) {
     return applicationHandler.useResult(request.getAppId());
+  }
+
+  @AllArgsConstructor
+  private static class AddEnvRunnable implements Runnable {
+
+    private InstancesConfiguration instance;
+
+    private ApplicationConfigurableHandler applicationConfigurableHandler;
+
+    @Override
+    public void run() {
+      try {
+        Map<String, String> systemProperties = instance.getSystemProperties();
+        if (MapUtils.isEmpty(systemProperties)) {
+          return;
+        }
+        String env = systemProperties.get(ENV_IDENTIFIER);
+        if (StringUtils.isNotEmpty(env)) {
+          applicationConfigurableHandler.addEnvToApp(instance.getAppId(), env);
+        }
+      } catch (RuntimeException e) {
+        LOGGER.error("add env error", e);
+      }
+    }
   }
 }

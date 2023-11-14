@@ -51,4 +51,6 @@ public class ApplicationConfiguration extends AbstractConfiguration implements
    */
   private int visibilityLevel;
 
+  private Set<String> tagEnvs;
+
 }

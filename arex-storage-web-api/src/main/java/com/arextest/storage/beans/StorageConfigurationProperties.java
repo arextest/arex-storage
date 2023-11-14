@@ -2,6 +2,7 @@ package com.arextest.storage.beans;
 
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.storage.model.RecordEnvType;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.Getter;
@@ -23,6 +24,7 @@ public class StorageConfigurationProperties {
   private Map<String, Long> expirationDurationMap;
   private Long defaultExpirationDuration;
   private int allowReRunDays;
+  private List<String> supportMockerTag;
 
   @Getter
   @Setter

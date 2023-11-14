@@ -108,7 +108,8 @@ public class ApplicationConfigurationRepositoryImpl implements
             AppCollection.Fields.features,
             AppCollection.Fields.appName,
             AppCollection.Fields.owners,
-            AppCollection.Fields.visibilityLevel));
+            AppCollection.Fields.visibilityLevel,
+            AppCollection.Fields.tagEnvs));
     Bson updateCombine = Updates.combine(updateList);
 
     return mongoCollection.updateMany(filter, updateCombine).getModifiedCount() > 0;
@@ -132,6 +133,12 @@ public class ApplicationConfigurationRepositoryImpl implements
     AppCollection appCollection = AppMapper.INSTANCE.daoFromDto(configuration);
     InsertOneResult insertOneResult = mongoCollection.insertOne(appCollection);
     return insertOneResult.getInsertedId() != null;
+  }
+
+  public boolean addEnvToApp(String appId, String env) {
+    Bson filter = Filters.eq(AppCollection.Fields.appId, appId);
+    Bson update = Updates.addToSet(AppCollection.Fields.tagEnvs, env);
+    return mongoCollection.updateMany(filter, update).getModifiedCount() > 0;
   }
 
 }

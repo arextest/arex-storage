@@ -47,4 +47,6 @@ public class AppCollection extends BaseEntity {
 
   private int visibilityLevel;
 
+  private Set<String> tagEnvs;
+
 }

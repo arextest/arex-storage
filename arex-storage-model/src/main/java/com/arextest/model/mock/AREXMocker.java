@@ -42,6 +42,10 @@ public class AREXMocker implements Mocker {
   private String recordVersion;
   private Integer continuousFailCount;
   private Map<Integer, Long> eigenMap;
+  /**
+   * add tag to mocker
+   */
+  private Map<String, Object> tags;
 
   public AREXMocker() {
 

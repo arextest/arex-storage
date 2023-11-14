@@ -66,6 +66,11 @@ public interface Mocker {
    */
   void setEigenMap(Map<Integer, Long> eigenMap);
 
+  void setTags(Map<String, Object> tags);
+
+  Map<String, Object> getTags();
+
+
   @Getter
   @Setter
   class Target {
