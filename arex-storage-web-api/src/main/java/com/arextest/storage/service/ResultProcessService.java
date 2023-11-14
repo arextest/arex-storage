@@ -58,9 +58,6 @@ public class ResultProcessService {
         handleAutoPin(diffResult);
         LOGGER.info("Auto pin modification done for plan {}", requestType.getReplayPlanId());
       }
-
-      clearAllCache(diffResult);
-      LOGGER.info("Clear cache done for plan {}", requestType.getReplayPlanId());
     }
   }
 
@@ -196,15 +193,18 @@ public class ResultProcessService {
     return decodedResult;
   }
 
-  private void clearAllCache(ResultCodeGroup diffResult) {
-    for (ResultCodeGroup.CategoryGroup categoryGroup : diffResult.getCategoryGroups()) {
-      MockCategoryType category = MockCategoryType.create(categoryGroup.getCategoryName());
-      if (!category.isEntryPoint()) {
-        continue;
+  public void clearAllCache(PostProcessResultRequestType requestType) {
+    List<ResultCodeGroup> diffResults = requestType.getResults();
+    if (CollectionUtils.isEmpty(diffResults)) {
+      return;
+    }
+    for (ResultCodeGroup diffResult : diffResults) {
+      for (ResultCodeGroup.CategoryGroup categoryGroup : diffResult.getCategoryGroups()) {
+        for (ResultCodeGroup.IdPair idPair : categoryGroup.getResultIds()) {
+          prepareMockResultService.removeAllRecordCache(idPair.getRecordId(), null);
+        }
       }
-      for (ResultCodeGroup.IdPair idPair : categoryGroup.getResultIds()) {
-        prepareMockResultService.removeAllRecordCache(idPair.getRecordId(), null);
-      }
+      LOGGER.info("Clear cache done for plan {}", requestType.getReplayPlanId());
     }
   }
 

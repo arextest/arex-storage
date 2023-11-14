@@ -26,4 +26,12 @@ public class ScheduleResultProcessController {
     resultProcessService.handleResult(request);
     return ResponseUtils.successResponse(true);
   }
+
+
+  @PostMapping("/clearAllCache")
+  @ResponseBody
+  public Response clearAllCache(@RequestBody PostProcessResultRequestType request) {
+    resultProcessService.clearAllCache(request);
+    return ResponseUtils.successResponse(true);
+  }
 }

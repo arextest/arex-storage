@@ -213,8 +213,12 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
         continue;
       }
       for (int sequence = 1; sequence <= resultCount; sequence ++ ) {
-        final byte[] sequenceKey = createSequenceKey(key, sequence);
-        redisCacheProvider.remove(sequenceKey);
+        byte[] sequenceKey = createSequenceKey(key, sequence);
+        if (redisCacheProvider.remove(sequenceKey)) {
+          removed++;
+        }
+      }
+      if (redisCacheProvider.remove(key)) {
         removed++;
       }
     }
