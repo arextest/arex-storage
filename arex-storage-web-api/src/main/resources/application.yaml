@@ -40,3 +40,5 @@ arex:
         similarity:
           strategy:
             appIds:
+pom:
+  version: ${project.version}
