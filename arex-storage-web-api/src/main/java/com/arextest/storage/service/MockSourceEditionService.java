@@ -1,9 +1,12 @@
 package com.arextest.storage.service;
 
+import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -18,10 +21,13 @@ import org.springframework.stereotype.Service;
 public class MockSourceEditionService {
 
   private final RepositoryProviderFactory providerFactory;
+  private final ScheduleReplayingService scheduleReplayingService;
 
   public MockSourceEditionService(RepositoryProviderFactory providerFactory,
+      ScheduleReplayingService scheduleReplayingService,
       Set<MockCategoryType> entryPointTypes) {
     this.providerFactory = providerFactory;
+    this.scheduleReplayingService = scheduleReplayingService;
   }
 
   public <T extends Mocker> boolean add(String providerName, T item) {
@@ -127,14 +133,14 @@ public class MockSourceEditionService {
       LOGGER.warn("could not found provider for {} or {}", srcProvider, targetProvider);
       return count;
     }
-    Iterable<Mocker> srcItemIterable;
+    List<Mocker> srcMockers;
     Set<MockCategoryType> categoryTypes = providerFactory.getCategoryTypes();
     for (MockCategoryType categoryType : categoryTypes) {
-      srcItemIterable = srcProvider.queryRecordList(categoryType, srcRecordId);
-      if (srcItemIterable == null) {
+      srcMockers = scheduleReplayingService.queryRecordList(srcProvider, categoryType, srcRecordId);
+      if (CollectionUtils.isEmpty(srcMockers)) {
         continue;
       }
-      List<Mocker> targetList = createTargetList(srcItemIterable, targetRecordId);
+      List<Mocker> targetList = createTargetList(srcMockers, targetRecordId);
       if (CollectionUtils.isNotEmpty(targetList)) {
         if (targetProvider.saveList(targetList)) {
           count += targetList.size();
@@ -162,19 +168,17 @@ public class MockSourceEditionService {
     return true;
   }
 
-  private List<Mocker> createTargetList(Iterable<Mocker> srcItemIterable, String targetRecordId) {
-    Iterator<Mocker> valueIterator = srcItemIterable.iterator();
+  private List<Mocker> createTargetList(List<Mocker> srcMockers, String targetRecordId) {
     List<Mocker> targetList = null;
     long now = System.currentTimeMillis();
-    while (valueIterator.hasNext()) {
+    for (Mocker mocker: srcMockers) {
       if (targetList == null) {
         targetList = new LinkedList<>();
       }
-      Mocker value = valueIterator.next();
-      value.setRecordId(targetRecordId);
-      value.setId(null);
-      value.setCreationTime(now);
-      targetList.add(value);
+      mocker.setRecordId(targetRecordId);
+      mocker.setId(null);
+      mocker.setCreationTime(now);
+      targetList.add(mocker);
     }
     return targetList;
   }
