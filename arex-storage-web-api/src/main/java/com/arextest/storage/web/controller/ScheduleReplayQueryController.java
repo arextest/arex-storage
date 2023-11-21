@@ -318,7 +318,7 @@ public class ScheduleReplayQueryController {
     }
     MDCTracer.addRecordId(recordId);
     try {
-      return toResponse(prepareMockResultService.removeAllRecordCache(recordId));
+      return toResponse(prepareMockResultService.removeAllRecordCache(recordId, requestType.getSourceProvider()));
     } catch (Throwable throwable) {
       LOGGER.error("QueryMockCache error:{},request:{}", throwable.getMessage(), requestType);
       return ResponseUtils.exceptionResponse(throwable.getMessage());

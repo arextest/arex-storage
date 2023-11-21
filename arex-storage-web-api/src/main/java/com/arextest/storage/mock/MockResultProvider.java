@@ -26,7 +26,6 @@ public interface MockResultProvider {
 
   int recordResultCount(MockCategoryType category, String recordId);
 
-  boolean removeRecordResult(MockCategoryType category, String recordId);
-
-  boolean removeReplayResult(MockCategoryType category, String replayResultId);
+  <T extends Mocker> boolean removeRecordResult(MockCategoryType category, String recordId,
+      Iterable<T> values);
 }

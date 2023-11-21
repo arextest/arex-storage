@@ -152,34 +152,55 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   }
 
   @Override
-  public boolean removeRecordResult(MockCategoryType category, String recordId) {
-    final int removed;
+  public <T extends Mocker> boolean removeRecordResult(MockCategoryType category, String recordId, Iterable<T> values) {
+    int removed = EMPTY_SIZE;
+    final byte[] recordIdBytes = CacheKeyUtils.toUtf8Bytes(recordId);
     byte[] recordCountKey = CacheKeyUtils.buildRecordKey(category, recordId);
-    removed = removeResult(recordCountKey);
+
+    Iterator<T> valueIterator = values.iterator();
+    while (valueIterator.hasNext()) {
+      T value = valueIterator.next();
+      byte[] recordOperationKey = CacheKeyUtils.buildRecordOperationKey(category, recordId,
+          getOperationNameWithCategory(value, category));
+      redisCacheProvider.remove(recordOperationKey);
+      removed += removeResult(category, recordIdBytes, value);
+    }
+
+    int count = resultCount(recordCountKey);
+    if (count > EMPTY_SIZE) {
+      redisCacheProvider.remove(recordCountKey);
+      for (int sequence = 1; sequence <= count; sequence++) {
+        final byte[] resultSequenceKey = createSequenceKey(recordCountKey, sequence);
+        if (redisCacheProvider.remove(resultSequenceKey)) {
+          removed++;
+        }
+      }
+    }
+
     LOGGER.info("remove record result size:{} for category:{},record id:{}", removed, category,
         recordId);
     return removed > EMPTY_SIZE;
   }
 
-  @Override
-  public boolean removeReplayResult(MockCategoryType category, String replayResultId) {
-    if (StringUtils.isEmpty(replayResultId)) {
-      return false;
-    }
-    final byte[] replayCountKey = CacheKeyUtils.buildReplayKey(category, replayResultId);
-    int removed = removeResult(replayCountKey);
-    return removed > EMPTY_SIZE;
-  }
-
-  private int removeResult(final byte[] resultCountKey) {
+  private <T extends Mocker> int removeResult(MockCategoryType category,
+      byte[] recordIdBytes, T value) {
     int removed = EMPTY_SIZE;
-    int replayCount = resultCount(resultCountKey);
-    if (replayCount > EMPTY_SIZE) {
-      redisCacheProvider.remove(resultCountKey);
-    }
-    for (int sequence = 1; sequence <= replayCount; sequence++) {
-      final byte[] resultSequenceKey = createSequenceKey(resultCountKey, sequence);
-      if (redisCacheProvider.remove(resultSequenceKey)) {
+
+    List<byte[]> mockKeyList = matchKeyFactory.build(value);
+    for (int i = 0; i < mockKeyList.size(); i++) {
+      byte[] mockKeyBytes = mockKeyList.get(i);
+      byte[] key = CacheKeyUtils.buildRecordKey(category, recordIdBytes, mockKeyBytes);
+      int resultCount = resultCount(key);
+      if (resultCount <= EMPTY_SIZE) {
+        continue;
+      }
+      for (int sequence = 1; sequence <= resultCount; sequence ++ ) {
+        byte[] sequenceKey = createSequenceKey(key, sequence);
+        if (redisCacheProvider.remove(sequenceKey)) {
+          removed++;
+        }
+      }
+      if (redisCacheProvider.remove(key)) {
         removed++;
       }
     }
