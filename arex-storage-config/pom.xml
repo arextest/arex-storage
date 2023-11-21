@@ -45,7 +45,7 @@
   <parent>
     <artifactId>arex-storage-service</artifactId>
     <groupId>com.arextest</groupId>
-    <version>1.0.40</version>
+    <version>1.0.41</version>
   </parent>
 
   <properties>
@@ -53,6 +53,18 @@
     <maven.compiler.target>8</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
+
+  <profiles>
+    <profile>
+      <build>
+        <finalName>${artifactId}</finalName>
+      </build>
+      <id>jar</id>
+      <properties>
+        <packagingType>jar</packagingType>
+      </properties>
+    </profile>
+  </profiles>
 
 
 </project>

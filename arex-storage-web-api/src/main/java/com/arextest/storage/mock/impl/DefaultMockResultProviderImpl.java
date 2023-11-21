@@ -20,6 +20,7 @@ import com.google.common.collect.Maps;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -76,41 +77,33 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     Iterator<T> valueIterator = values.iterator();
     int size = 0;
     byte[] recordKey = CacheKeyUtils.buildRecordKey(category, recordIdBytes);
-    boolean shouldUseIdOfInstanceToMockResult = shouldUseIdOfInstanceToMockResult(category);
     boolean shouldRecordCallReplayMax = shouldRecordCallReplayMax(category);
 
     // Records the maximum number of operations corresponding to recorded data
-    if (shouldUseIdOfInstanceToMockResult) {
-      List<T> mockList = new ArrayList<>();
-      // Obtain the number of the same interfaces in recorded data
-      while (valueIterator.hasNext()) {
-        T value = valueIterator.next();
-        mockList.add(value);
-        if (shouldBuildRecordOperationKey(value) || shouldRecordCallReplayMax) {
-          byte[] recordOperationKey = CacheKeyUtils.buildRecordOperationKey(category, recordId,
-              getOperationNameWithCategory(value, category));
-          nextSequence(recordOperationKey);
+    List<T> mockList = new ArrayList<>();
+    // Obtain the number of the same interfaces in recorded data
+    while (valueIterator.hasNext()) {
+      T value = valueIterator.next();
+      mockList.add(value);
+      if (shouldBuildRecordOperationKey(value) || shouldRecordCallReplayMax) {
+        byte[] recordOperationKey = CacheKeyUtils.buildRecordOperationKey(category, recordId,
+            getOperationNameWithCategory(value, category));
+        nextSequence(recordOperationKey);
+      }
+    }
+    mockList.sort(Comparator.comparing(Mocker::getCreationTime));
+    for (T value : mockList) {
+      // Place the maximum number of playback times corresponding to the operations into the recorded data
+      if (shouldRecordCallReplayMax) {
+        byte[] recordOperationKey = CacheKeyUtils.buildRecordOperationKey(category, recordId,
+            value.getOperationName());
+        int count = resultCount(recordOperationKey);
+        Mocker.Target targetResponse = value.getTargetResponse();
+        if (targetResponse != null) {
+          targetResponse.setAttribute(CALL_REPLAY_MAX, count);
         }
       }
-
-      for (T value : mockList) {
-        // Place the maximum number of playback times corresponding to the operations into the recorded data
-        if (shouldRecordCallReplayMax) {
-          byte[] recordOperationKey = CacheKeyUtils.buildRecordOperationKey(category, recordId,
-              value.getOperationName());
-          int count = resultCount(recordOperationKey);
-          Mocker.Target targetResponse = value.getTargetResponse();
-          if (targetResponse != null) {
-            targetResponse.setAttribute(CALL_REPLAY_MAX, count);
-          }
-        }
-        size = sequencePutRecordData(category, recordIdBytes, size, recordKey, value);
-      }
-    } else {
-      while (valueIterator.hasNext()) {
-        T value = valueIterator.next();
-        size = sequencePutRecordData(category, recordIdBytes, size, recordKey, value);
-      }
+      size = sequencePutRecordData(category, recordIdBytes, size, recordKey, value);
     }
     LOGGER.info("put record result to cache size:{} for category:{},record id:{}", size, category,
         recordId);

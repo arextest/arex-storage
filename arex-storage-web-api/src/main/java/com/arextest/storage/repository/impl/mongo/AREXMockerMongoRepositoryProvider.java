@@ -104,8 +104,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
       updateExpirationTime(Collections.singletonList(recordIdFilter), collectionSource);
     }
     Iterable<AREXMocker> iterable = collectionSource
-        .find(recordIdFilter)
-        .sort(CREATE_TIME_ASCENDING_SORT);
+        .find(recordIdFilter);
     return new AttachmentCategoryIterable(category, iterable);
   }
 
