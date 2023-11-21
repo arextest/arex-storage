@@ -166,10 +166,10 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
       removed += removeResult(category, recordIdBytes, value);
     }
 
-    int replayCount = resultCount(recordCountKey);
-    if (replayCount > EMPTY_SIZE) {
+    int count = resultCount(recordCountKey);
+    if (count > EMPTY_SIZE) {
       redisCacheProvider.remove(recordCountKey);
-      for (int sequence = 1; sequence <= replayCount; sequence++) {
+      for (int sequence = 1; sequence <= count; sequence++) {
         final byte[] resultSequenceKey = createSequenceKey(recordCountKey, sequence);
         if (redisCacheProvider.remove(resultSequenceKey)) {
           removed++;
