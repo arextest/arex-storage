@@ -46,8 +46,7 @@ public class ResultProcessService {
   RepositoryProviderFactory repositoryProviderFactory;
   @Resource
   CoverageRepository coverageRepository;
-  @Resource
-  PrepareMockResultService prepareMockResultService;
+
   public void handleResult(PostProcessResultRequestType requestType) {
     List<ResultCodeGroup> diffResults = requestType.getResults();
     if (CollectionUtils.isEmpty(diffResults)) {
@@ -192,20 +191,4 @@ public class ResultProcessService {
     }
     return decodedResult;
   }
-
-  public void clearAllCache(PostProcessResultRequestType requestType) {
-    List<ResultCodeGroup> diffResults = requestType.getResults();
-    if (CollectionUtils.isEmpty(diffResults)) {
-      return;
-    }
-    for (ResultCodeGroup diffResult : diffResults) {
-      for (ResultCodeGroup.CategoryGroup categoryGroup : diffResult.getCategoryGroups()) {
-        for (ResultCodeGroup.IdPair idPair : categoryGroup.getResultIds()) {
-          prepareMockResultService.removeAllRecordCache(idPair.getRecordId(), null);
-        }
-      }
-      LOGGER.info("Clear cache done for plan {}", requestType.getReplayPlanId());
-    }
-  }
-
 }
