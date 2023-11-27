@@ -11,11 +11,13 @@ import com.arextest.model.response.Response;
 import com.arextest.storage.metric.AgentWorkingMetricService;
 import com.arextest.storage.mock.MockResultContext;
 import com.arextest.storage.mock.MockResultMatchStrategy;
+import com.arextest.storage.model.InvalidCaseRequest;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.AgentWorkingService;
 import com.arextest.storage.trace.MDCTracer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -47,7 +49,6 @@ public class AgentRecordingController {
   private AgentWorkingMetricService agentWorkingMetricService;
   @Resource
   private ZstdJacksonSerializer zstdJacksonSerializer;
-
   /**
    * from agent query,means to save the request and try to find a record item as mock result for
    * return.
@@ -140,6 +141,17 @@ public class AgentRecordingController {
     return saveTest(arexMocker(MockCategoryType.create(category)));
   }
 
+  @PostMapping(value = "/invalidCase", produces = {MediaType.APPLICATION_JSON_VALUE})
+  @ResponseBody
+  public Response invalidCase(@RequestBody InvalidCaseRequest requestType) {
+      if (StringUtils.isEmpty(requestType.getRecordId())) {
+          LOGGER.warn("agent invalid case recordId empty, {}", requestType);
+          return ResponseUtils.emptyRecordIdResponse();
+      }
+      LOGGER.info("agent invalid case, request:{}", requestType);
+      CompletableFuture.runAsync(() -> agentWorkingMetricService.invalidCase(requestType));
+      return ResponseUtils.successResponse(true);
+  }
   private AREXMocker arexMocker(MockCategoryType categoryType) {
     AREXMocker mocker = new AREXMocker(categoryType);
     mocker.setOperationName("hello");

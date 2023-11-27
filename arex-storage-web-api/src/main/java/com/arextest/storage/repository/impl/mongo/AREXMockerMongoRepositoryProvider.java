@@ -279,6 +279,13 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
           .getOrDefault(category.getName(), properties.getDefaultExpirationDuration())));
       collectionSource.insertMany(valueList);
     } catch (Throwable ex) {
+      // rolling mocker save failed remove all entry point data
+      if (Objects.equals(this.providerName, ProviderNames.DEFAULT)) {
+        String recordId = valueList.get(0).getRecordId();
+        for (MockCategoryType categoryType : entryPointTypes) {
+          removeBy(categoryType, recordId);
+        }
+      }
       LOGGER.error("save List error:{} , size:{}", ex.getMessage(), valueList.size(), ex);
       return false;
     }
