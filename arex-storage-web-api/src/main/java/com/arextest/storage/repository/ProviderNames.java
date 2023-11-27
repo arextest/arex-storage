@@ -9,4 +9,8 @@ public final class ProviderNames {
   public static final String DEFAULT = "Rolling";
   public static final String PINNED = "Pinned";
   public static final String AUTO_PINNED = "AutoPinned";
+
+
+  public static final String RECORDING_SCENE_POOL = "Recording";
+  public static final String REPLAY_SCENE_POOL = "Replay";
 }
