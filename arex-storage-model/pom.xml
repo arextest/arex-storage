@@ -7,13 +7,13 @@
   <parent>
     <artifactId>arex-storage-service</artifactId>
     <groupId>com.arextest</groupId>
-    <version>1.0.42</version>
+    <version>1.0.43</version>
   </parent>
 
   <profiles>
     <profile>
       <build>
-        <finalName>${artifactId}</finalName>
+        <finalName>${project.artifactId}</finalName>
       </build>
       <id>jar</id>
       <properties>

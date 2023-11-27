@@ -68,11 +68,11 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
 
   /**
    * 1. Store recorded data and matching keys in redis 2. The mock type associated with dubbo, which
-   * needs to record the maximum number of replays
+   * needs to record the maximum number of replays 3. renewal cache
    */
   @Override
   public <T extends Mocker> boolean putRecordResult(MockCategoryType category, String recordId,
-      Iterable<T> values) {
+      Iterable<T> values, boolean renewal) {
     final byte[] recordIdBytes = CacheKeyUtils.toUtf8Bytes(recordId);
     Iterator<T> valueIterator = values.iterator();
     int size = 0;
@@ -88,11 +88,17 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
       if (shouldBuildRecordOperationKey(value) || shouldRecordCallReplayMax) {
         byte[] recordOperationKey = CacheKeyUtils.buildRecordOperationKey(category, recordId,
             getOperationNameWithCategory(value, category));
-        nextSequence(recordOperationKey);
+        if (renewal) {
+          byte[] bytes = redisCacheProvider.get(recordOperationKey);
+          redisCacheProvider.put(recordOperationKey, cacheExpiredSeconds, bytes);
+        } else {
+          nextSequence(recordOperationKey);
+        }
       }
     }
     mockList.sort(Comparator.comparing(Mocker::getCreationTime));
-    for (T value : mockList) {
+    for (int sequence = 1; sequence <= mockList.size(); sequence++) {
+      T value = mockList.get(sequence - 1);
       // Place the maximum number of playback times corresponding to the operations into the recorded data
       if (shouldRecordCallReplayMax) {
         byte[] recordOperationKey = CacheKeyUtils.buildRecordOperationKey(category, recordId,
@@ -103,7 +109,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
           targetResponse.setAttribute(CALL_REPLAY_MAX, count);
         }
       }
-      size = sequencePutRecordData(category, recordIdBytes, size, recordKey, value);
+      size = sequencePutRecordData(category, recordIdBytes, size, recordKey, value, renewal, sequence);
     }
     LOGGER.info("put record result to cache size:{} for category:{},record id:{}", size, category,
         recordId);
@@ -111,8 +117,13 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   }
 
   private <T extends Mocker> int sequencePutRecordData(MockCategoryType category,
-      byte[] recordIdBytes, int size, byte[] recordKey, T value) {
+      byte[] recordIdBytes, int size, byte[] recordKey, T value, boolean renewal, int sequence) {
     List<byte[]> mockKeyList = matchKeyFactory.build(value);
+    if (renewal) {
+      return renewalRecordData(category, recordIdBytes, size, recordKey, value, mockKeyList,
+          sequence);
+    }
+
     final byte[] zstdValue = serializer.serialize(value);
     byte[] valueRefKey = sequencePut(recordKey, zstdValue);
     if (valueRefKey == null) {
@@ -124,6 +135,34 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
       byte[] sequenceKey = sequencePut(key, valueRefKey);
       if (sequenceKey != null) {
         size++;
+      }
+    }
+    // if category type is the type to be compared.associate the mock instance id with the related mock key.
+    if (shouldUseIdOfInstanceToMockResult(category)) {
+      putRecordInstanceId(valueRefKey, value.getId());
+      putMockKeyListWithInstanceId(value.getId(), mockKeyList);
+    }
+    return size;
+  }
+
+  private <T extends Mocker> int renewalRecordData(MockCategoryType category, byte[] recordIdBytes,
+      int size, byte[] recordKey, T value, List<byte[]> mockKeyList, int sequence) {
+    final byte[] zstdValue = serializer.serialize(value);
+    final byte[] valueRefKey = createSequenceKey(recordKey, sequence);
+    boolean result = redisCacheProvider.put(valueRefKey, cacheExpiredSeconds, zstdValue);
+    if (!result) {
+      LOGGER.info("failed to renewal record data");
+      return 0;
+    }
+    for (int i = 0; i < mockKeyList.size(); i++) {
+      byte[] mockKeyBytes = mockKeyList.get(i);
+      byte[] key = CacheKeyUtils.buildRecordKey(category, recordIdBytes, mockKeyBytes);
+      int resultCount = resultCount(key);
+      for (int row = 1; row <= resultCount; row++) {
+        final byte[] sequenceKey = createSequenceKey(key, row);
+        if (redisCacheProvider.put(sequenceKey, cacheExpiredSeconds, valueRefKey)) {
+          size++;
+        }
       }
     }
     // if category type is the type to be compared.associate the mock instance id with the related mock key.
@@ -152,7 +191,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   }
 
   @Override
-  public <T extends Mocker> boolean removeRecordResult(MockCategoryType category, String recordId, Iterable<T> values) {
+  public <T extends Mocker> boolean removeRecordResult(MockCategoryType category, String recordId,
+      Iterable<T> values) {
     int removed = EMPTY_SIZE;
     final byte[] recordIdBytes = CacheKeyUtils.toUtf8Bytes(recordId);
     byte[] recordCountKey = CacheKeyUtils.buildRecordKey(category, recordId);
@@ -194,7 +234,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
       if (resultCount <= EMPTY_SIZE) {
         continue;
       }
-      for (int sequence = 1; sequence <= resultCount; sequence ++ ) {
+      for (int sequence = 1; sequence <= resultCount; sequence++) {
         byte[] sequenceKey = createSequenceKey(key, sequence);
         if (redisCacheProvider.remove(sequenceKey)) {
           removed++;
@@ -457,8 +497,10 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
         byte[] mockResultId = getIdOfRecordInstance(context.getValueRefKey());
         String id = CacheKeyUtils.fromUtf8Bytes(mockResultId);
         mockItem.setId(id);
-        long increasesCount = increasesReplayConsumer(category, recordIdBytes, replayIdBytes, mockResultId);
-        matchStrategyMetricService.recordMatchingCount(MULTI_OPERATION_WITH_STRICT_MATCH, (AREXMocker) mockItem);
+        long increasesCount = increasesReplayConsumer(category, recordIdBytes, replayIdBytes,
+            mockResultId);
+        matchStrategyMetricService.recordMatchingCount(MULTI_OPERATION_WITH_STRICT_MATCH,
+            (AREXMocker) mockItem);
         LOGGER.info(
             "[[title=similarityMatch]]get mock result with strictly match, instanceId: {}, increasesCount: {}",
             id, increasesCount);
@@ -489,7 +531,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
         AREXMocker mocker = serializer.deserialize(mockDataBytes, AREXMocker.class);
         String recordInstanceId = mocker.getId();
 
-        int consumerCount = getReplayConsumerCount(category, recordIdBytes, replayIdBytes, recordInstanceId);
+        int consumerCount = getReplayConsumerCount(category, recordIdBytes, replayIdBytes,
+            recordInstanceId);
         if (consumerCount > EMPTY_SIZE) {
           if (tryFindLastValue && sequence == count) {
             LOGGER.info(
@@ -497,7 +540,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
                 recordInstanceId, consumerCount);
             return mockDataBytes;
           }
-          LOGGER.info("[[title=similarityMatch]]operation: {}, recordInstanceId: {} is matched.", operationName, recordInstanceId);
+          LOGGER.info("[[title=similarityMatch]]operation: {}, recordInstanceId: {} is matched.",
+              operationName, recordInstanceId);
           continue;
         }
 
@@ -532,7 +576,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
       });
 
       // 7. get the matched recording result.
-      for (Integer score: scores) {
+      for (Integer score : scores) {
         List<Pair<String, byte[]>> pairList = invocationMap.get(score);
         for (Pair<String, byte[]> pair : pairList) {
           String instanceId = pair.getLeft();
@@ -544,7 +588,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
               CacheKeyUtils.toUtf8Bytes(instanceId));
           if (increaseCount > 1) {
             LOGGER.info(
-                "[[title=similarityMatch]]operation: {}, recordInstanceId: {} is matched.", operationName, instanceId);
+                "[[title=similarityMatch]]operation: {}, recordInstanceId: {} is matched.",
+                operationName, instanceId);
             continue;
           }
           mockItem.setId(instanceId);
@@ -565,7 +610,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     return null;
   }
 
-  private int getReplayConsumerCount(MockCategoryType category, byte[] recordIdBytes, byte[] replayIdBytes,
+  private int getReplayConsumerCount(MockCategoryType category, byte[] recordIdBytes,
+      byte[] replayIdBytes,
       String recordInstanceId) {
     byte[] usedRecordInstanceIdsKey = buildMatchedRecordInstanceIdsKey(category, recordIdBytes,
         replayIdBytes, CacheKeyUtils.toUtf8Bytes(recordInstanceId));
@@ -603,12 +649,14 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
 
   private long increasesReplayConsumer(MockCategoryType category, byte[] recordIdBytes,
       byte[] replayIdBytes, byte[] mockResultId) {
-    byte[] usedRecordInstanceIdsKey = buildMatchedRecordInstanceIdsKey(category, recordIdBytes, replayIdBytes,
+    byte[] usedRecordInstanceIdsKey = buildMatchedRecordInstanceIdsKey(category, recordIdBytes,
+        replayIdBytes,
         mockResultId);
     return redisCacheProvider.incrValue(usedRecordInstanceIdsKey);
   }
 
-  private byte[] buildMatchedRecordInstanceIdsKey(MockCategoryType category, byte[] recordIdBytes, byte[] replayIdBytes,
+  private byte[] buildMatchedRecordInstanceIdsKey(MockCategoryType category, byte[] recordIdBytes,
+      byte[] replayIdBytes,
       byte[] mockResultId) {
     byte[] usedRecordInstanceIdsKey = CacheKeyUtils.buildMatchedRecordInstanceIdsKey(category,
         recordIdBytes, replayIdBytes, mockResultId);

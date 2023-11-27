@@ -12,7 +12,7 @@ import javax.validation.constraints.NotNull;
 public interface MockResultProvider {
 
   <T extends Mocker> boolean putRecordResult(MockCategoryType categoryType, String recordId,
-      Iterable<T> values);
+      Iterable<T> values, boolean renewal);
 
   <T extends Mocker> boolean putReplayResult(T value);
 
