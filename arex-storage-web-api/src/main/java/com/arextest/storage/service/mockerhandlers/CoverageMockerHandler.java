@@ -8,6 +8,8 @@ import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.impl.mongo.CoverageRepository;
+import com.arextest.storage.repository.scenepool.ScenePoolFactory;
+import com.arextest.storage.repository.scenepool.ScenePoolProviderImpl;
 import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.trace.MDCTracer;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -19,7 +21,6 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
-
   @Resource
   private RepositoryProviderFactory repositoryProviderFactory;
   @Resource
@@ -30,6 +31,8 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
   private CacheProvider cacheProvider;
   @Resource
   private ThreadPoolExecutor coverageHandlerExecutor;
+  @Resource
+  private ScenePoolFactory scenePoolFactory;
 
   @Override
   public MockCategoryType getMockCategoryType() {
@@ -43,12 +46,19 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
    */
   @Override
   public void handle(AREXMocker coverageMocker) {
-    CoverageTask task = new CoverageTask(coverageMocker);
-    coverageHandlerExecutor.submit(task);
-    LOGGER.info(
-        "CoverageMockerHandler handle submit, recordId:{}, pathKey: {}, pool queue size: {}",
-        coverageMocker.getRecordId(), coverageMocker.getOperationName(),
-        coverageHandlerExecutor.getQueue().size());
+    ScenePoolProviderImpl scenePoolProvider;
+    if (StringUtils.isEmpty(coverageMocker.getReplayId())) {
+      scenePoolProvider = scenePoolFactory.getProvider(ProviderNames.RECORDING_SCENE_POOL);
+    } else {
+      scenePoolProvider = scenePoolFactory.getProvider(ProviderNames.REPLAY_SCENE_POOL);
+    }
+
+//    CoverageTask task = new CoverageTask(coverageMocker);
+//    coverageHandlerExecutor.submit(task);
+//    LOGGER.info(
+//        "CoverageMockerHandler handle submit, recordId:{}, pathKey: {}, pool queue size: {}",
+//        coverageMocker.getRecordId(), coverageMocker.getOperationName(),
+//        coverageHandlerExecutor.getQueue().size());
   }
 
   private void transferEntry(AREXMocker coverageMocker, String incomingCaseId) {
