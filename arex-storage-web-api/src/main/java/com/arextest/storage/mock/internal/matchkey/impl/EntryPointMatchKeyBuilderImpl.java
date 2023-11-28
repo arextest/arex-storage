@@ -21,4 +21,9 @@ final class EntryPointMatchKeyBuilderImpl implements MatchKeyBuilder {
     byte[] operationBytes = CacheKeyUtils.toUtf8Bytes(instance.getOperationName());
     return Collections.singletonList(operationBytes);
   }
+
+  @Override
+  public String getEigenBody(Mocker instance) {
+    return instance.getTargetRequest().getBody();
+  }
 }

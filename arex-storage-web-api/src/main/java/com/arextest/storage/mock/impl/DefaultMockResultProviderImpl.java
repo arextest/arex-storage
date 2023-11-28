@@ -8,6 +8,7 @@ import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.cache.CacheKeyUtils;
 import com.arextest.storage.metric.MatchStrategyMetricService;
+import com.arextest.storage.mock.EigenProcessor;
 import com.arextest.storage.mock.MatchKeyFactory;
 import com.arextest.storage.mock.MockResultContext;
 import com.arextest.storage.mock.MockResultMatchStrategy;
@@ -24,6 +25,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import javax.annotation.Resource;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +49,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   private static final String MULTI_OPERATION_WITH_STRICT_MATCH = "multiOperationStrictMatch";
   private static final String FUZZY_MATCH = "fuzzyMatch";
   private static final String SIMILARITY_MATCH = "similarityMatch";
+  private static final String EIGEN_MATCH = "eigenMatch";
   private static final String COMMA_STRING = ",";
   /**
    * default 2h expired
@@ -55,6 +58,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   private long cacheExpiredSeconds;
   @Value("${arex.storage.not.use.similarity.strategy.appIds}")
   private String notUseSimilarityStrategyAppIds;
+  @Value("${arex.storage.use.eigen.match}")
+  private boolean useEigenMatch;
   @Resource
   private CacheProvider redisCacheProvider;
   @Resource
@@ -87,7 +92,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
       mockList.add(value);
       if (shouldBuildRecordOperationKey(value) || shouldRecordCallReplayMax) {
         byte[] recordOperationKey = CacheKeyUtils.buildRecordOperationKey(category, recordId,
-            getOperationNameWithCategory(value, category));
+            getOperationNameWithCategory(value));
         nextSequence(recordOperationKey);
       }
     }
@@ -112,6 +117,9 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
 
   private <T extends Mocker> int sequencePutRecordData(MockCategoryType category,
       byte[] recordIdBytes, int size, byte[] recordKey, T value) {
+    if (useEigenMatch && MapUtils.isEmpty(value.getEigenMap())) {
+      calculateEigen(value);
+    }
     List<byte[]> mockKeyList = matchKeyFactory.build(value);
     final byte[] zstdValue = serializer.serialize(value);
     byte[] valueRefKey = sequencePut(recordKey, zstdValue);
@@ -161,7 +169,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     while (valueIterator.hasNext()) {
       T value = valueIterator.next();
       byte[] recordOperationKey = CacheKeyUtils.buildRecordOperationKey(category, recordId,
-          getOperationNameWithCategory(value, category));
+          getOperationNameWithCategory(value));
       redisCacheProvider.remove(recordOperationKey);
       removed += removeResult(category, recordIdBytes, value);
     }
@@ -180,6 +188,30 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     LOGGER.info("remove record result size:{} for category:{},record id:{}", removed, category,
         recordId);
     return removed > EMPTY_SIZE;
+  }
+
+  @Override
+  public void calculateEigen(Mocker item) {
+    try {
+      if (item.getCategoryType().isEntryPoint()) {
+        return;
+      }
+      String eigenBody = matchKeyFactory.getEigenBody(item);
+      if (StringUtils.isEmpty(eigenBody)) {
+        LOGGER.warn("record eigen body is null");
+        return;
+      }
+
+      Map<Integer, Long> calculateEigen = EigenProcessor.calculateEigen(eigenBody,
+          item.getCategoryType().getName(), null, null);
+      if (MapUtils.isEmpty(calculateEigen)) {
+        LOGGER.warn("calculate eigen is null");
+        return;
+      }
+      item.setEigenMap(calculateEigen);
+    } catch (Exception e) {
+      LOGGER.error("setCalculateEigen failed!", e);
+    }
   }
 
   private <T extends Mocker> int removeResult(MockCategoryType category,
@@ -258,6 +290,9 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     String replayId = mockItem.getReplayId();
     try {
       long start = System.currentTimeMillis();
+      if (useEigenMatch) {
+        calculateEigen(mockItem);
+      }
       List<byte[]> mockKeyList = matchKeyFactory.build(mockItem);
       long end = System.currentTimeMillis();
       LOGGER.info("build mock keys cost:{} ms", end - start);
@@ -269,7 +304,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
       final byte[] recordIdBytes = CacheKeyUtils.toUtf8Bytes(recordId);
       final byte[] replayIdBytes = CacheKeyUtils.toUtf8Bytes(replayId);
 
-      String operationName = getOperationNameWithCategory(mockItem, category);
+      String operationName = getOperationNameWithCategory(mockItem);
       byte[] recordOperationKey = CacheKeyUtils.buildRecordOperationKey(category, recordId,
           operationName);
       int count = resultCount(recordOperationKey);
@@ -279,6 +314,10 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
             recordIdBytes, replayIdBytes);
       }
 
+      if (useEigenMatch) {
+        return getMockResultWithEigenMatch(category, recordIdBytes, replayIdBytes,
+            mockKeyList, mockItem, operationName, context);
+      }
       return getMockResultWithSimilarityMatch(category, recordIdBytes, replayIdBytes, mockKeyList,
           mockItem, operationName, context);
     } catch (Throwable throwable) {
@@ -296,10 +335,10 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
         || recordDataCount <= 1 || !shouldBuildRecordOperationKey(mockItem);
   }
 
-  private String getOperationNameWithCategory(Mocker mockItem, MockCategoryType category) {
+  private String getOperationNameWithCategory(Mocker mockItem) {
     String operationName = mockItem.getOperationName();
 
-    if (MockCategoryType.DATABASE.equals(category)) {
+    if (MockCategoryType.DATABASE.equals(mockItem.getCategoryType())) {
       String tableNames = databaseMatchKeyBuilder.findDBTableNames(mockItem);
       Object dbName = mockItem.getTargetRequest().getAttribute(MockAttributeNames.DB_NAME);
       operationName = String.format("%s_%s_%s", operationName, tableNames, dbName);
@@ -395,6 +434,23 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
       }
     }
     return len1 + len2;
+  }
+
+  private int coincidePath(Map<Integer, Long> replayEigenMap, Map<Integer, Long> recordEigenMap) {
+    int row = 0;
+    if (MapUtils.isEmpty(replayEigenMap) || MapUtils.isEmpty(recordEigenMap)) {
+      return row;
+    }
+
+    for (Map.Entry<Integer, Long> entry : recordEigenMap.entrySet()) {
+      Integer key = entry.getKey();
+      Long recordPathValue = recordEigenMap.get(key);
+      Long replayPathValue = replayEigenMap.get(key);
+      if (Objects.equals(recordPathValue, replayPathValue)) {
+        row++;
+      }
+    }
+    return row;
   }
 
   private byte[] sequenceMockResult(MockCategoryType category, final byte[] recordIdBytes,
@@ -573,6 +629,135 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   }
 
   /**
+   * the matching result is obtained by mocker eigen.
+   * 1.If it can be accurately matched, match it first
+   * 2.Those who cannot be accurately matched will find all candidates
+   * 2.1 Find the eigen values of all candidates and calculate the number of nodes that overlap with the feature values of the playback data
+   * 2.2 Find the value with the highest number of overlapping nodes and return it as matching data
+   */
+  public byte[] getMockResultWithEigenMatch(MockCategoryType category,
+      final byte[] recordIdBytes, byte[] replayIdBytes, List<byte[]> mockKeyList, @NotNull Mocker mockItem,
+      String operationName, MockResultContext context) {
+    try {
+      // 1. determine whether it can be accurately matched in multiple call scenarios
+      byte[] result = sequenceMockResult(category, recordIdBytes, replayIdBytes, mockKeyList.get(0),
+          context);
+
+      // 2. the data on the exact match is returned directly
+      if (result != null) {
+        byte[] mockResultId = getIdOfRecordInstance(context.getValueRefKey());
+        String id = CacheKeyUtils.fromUtf8Bytes(mockResultId);
+        mockItem.setId(id);
+        long increasesCount = increasesReplayConsumer(category, recordIdBytes, replayIdBytes, mockResultId);
+        matchStrategyMetricService.recordMatchingCount(MULTI_OPERATION_WITH_STRICT_MATCH,
+            (AREXMocker) mockItem);
+        LOGGER.info(
+            "[[title=eigenMatch]]get mock result with eigen match, instanceId: {}, increasesCount: {}",
+            id, increasesCount);
+        return result;
+      }
+
+      // 3. use eigen to match
+      byte[] fuzzMockKeyBytes = mockKeyList.get(mockKeyList.size() - 1);
+      byte[] sourceKey = CacheKeyUtils.buildRecordKey(category, recordIdBytes, fuzzMockKeyBytes);
+      int count = resultCount(sourceKey);
+      if (count == EMPTY_SIZE) {
+        return null;
+      }
+      boolean tryFindLastValue =
+          context.getMockStrategy() == MockResultMatchStrategy.TRY_FIND_LAST_VALUE;
+
+      // 3.1 iterate over all records, calculating the eigen between replay requests and record requests.
+      // invocationMap: Map<eigenScore, List<Pair<mockerInstanceId, mockerData>>>
+      Map<Integer, List<Pair<String, byte[]>>> invocationMap = Maps.newHashMap();
+      for (int sequence = 1; sequence <= count; sequence++) {
+        byte[] mockDataBytes = getMockerDataBytesFromMockKey(sourceKey, sequence);
+        if (mockDataBytes == null) {
+          continue;
+        }
+
+        AREXMocker mocker = serializer.deserialize(mockDataBytes, AREXMocker.class);
+        String recordInstanceId = mocker.getId();
+
+        int consumerCount = getReplayConsumerCount(category, recordIdBytes, replayIdBytes, recordInstanceId);
+        if (consumerCount > EMPTY_SIZE) {
+          if (tryFindLastValue && sequence == count) {
+            LOGGER.info(
+                "[[title=eigenMatch]]try find last value, recordInstanceId: {}, consumerCount: {}",
+                recordInstanceId, consumerCount);
+            return mockDataBytes;
+          }
+          LOGGER.info(
+              "[[title=eigenMatch]]operation: {}, recordInstanceId: {} is matched",
+              operationName, recordInstanceId);
+          continue;
+        }
+
+        Map<Integer, Long> recordEigenMap = mocker.getEigenMap();
+        int coincidePath = coincidePath(mockItem.getEigenMap(), recordEigenMap);
+        LOGGER.info("[[title=eigenMatch]]recordInstanceId: {}, paths: {}", recordInstanceId,
+            coincidePath);
+
+        Pair<String, byte[]> pair = ImmutablePair.of(recordInstanceId, mockDataBytes);
+        if (MapUtils.isEmpty(invocationMap) || invocationMap.get(coincidePath) == null) {
+          List<Pair<String, byte[]>> pairs = Lists.newArrayListWithExpectedSize(1);
+          pairs.add(pair);
+          invocationMap.put(coincidePath, pairs);
+        } else {
+          List<Pair<String, byte[]>> pairs = invocationMap.get(coincidePath);
+          pairs.add(pair);
+          invocationMap.put(coincidePath, pairs);
+        }
+      }
+
+      if (MapUtils.isEmpty(invocationMap)) {
+        return null;
+      }
+
+      // 3.2 sort the matching results by eigen map.
+      List<Integer> scores = new ArrayList<>(invocationMap.keySet());
+      scores.sort((o1, o2) -> {
+        if (o1.equals(o2)) {
+          return 0;
+        }
+        return o2 - o1 > 0 ? 1 : -1;
+      });
+
+      for (Integer score : scores) {
+        List<Pair<String, byte[]>> pairList = invocationMap.get(score);
+        for (Pair<String, byte[]> pair : pairList) {
+          // 3.3 put the matched recording id into the cache.
+          String instanceId = pair.getLeft();
+          if (StringUtils.isEmpty(instanceId)) {
+            continue;
+          }
+
+          long consumerKeyCount = increasesReplayConsumer(category, recordIdBytes, replayIdBytes,
+              CacheKeyUtils.toUtf8Bytes(instanceId));
+          if (consumerKeyCount > 1L) {
+            LOGGER.info(
+                "[[title=eigenMatch]]operation: {}, recordInstanceId: {} is matched.", operationName, instanceId);
+            continue;
+          }
+          mockItem.setId(instanceId);
+          LOGGER.info(
+              "[[title=eigenMatch]]get mock result with eigen match, operation: {}, score: {}, matchedInstanceId: {}",
+              operationName, score, instanceId);
+          // 3.4. buried point record the number of times similarity is used.
+          matchStrategyMetricService.recordMatchingCount(EIGEN_MATCH, (AREXMocker) mockItem);
+          return pair.getRight();
+        }
+      }
+      return null;
+    } catch (Throwable throwable) {
+      LOGGER.error(
+          "[[title=eigenMatch]]getMockResultWithEigenMatch error: {}, category:{}",
+          throwable.getMessage(), category, throwable);
+    }
+    return null;
+  }
+
+  /**
    * Gets the request body content and returns null if the request body is empty. if it is a
    * database mock type, the request parameters are added to the request body.
    *
@@ -610,9 +795,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
 
   private byte[] buildMatchedRecordInstanceIdsKey(MockCategoryType category, byte[] recordIdBytes, byte[] replayIdBytes,
       byte[] mockResultId) {
-    byte[] usedRecordInstanceIdsKey = CacheKeyUtils.buildMatchedRecordInstanceIdsKey(category,
+    return CacheKeyUtils.buildMatchedRecordInstanceIdsKey(category,
         recordIdBytes, replayIdBytes, mockResultId);
-    return usedRecordInstanceIdsKey;
   }
 
   @Override

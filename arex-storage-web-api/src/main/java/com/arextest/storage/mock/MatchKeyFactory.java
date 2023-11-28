@@ -39,4 +39,18 @@ public final class MatchKeyFactory {
     return matchKeyBuilder.build(instance);
   }
 
+  public String getEigenBody(@NotNull Mocker instance) {
+    MatchKeyBuilder matchKeyBuilder = find(instance.getCategoryType());
+    if (matchKeyBuilder == null) {
+      LOGGER.warn("Could not get eigen body for {}", instance);
+      return null;
+    }
+
+    if (instance.getTargetRequest() == null) {
+      LOGGER.warn("failed to get eigen body, recordId: {}, category: {}", instance.getRecordId(), instance.getCategoryType());
+      return null;
+    }
+    return matchKeyBuilder.getEigenBody(instance);
+  }
+
 }

@@ -56,6 +56,15 @@ public interface Mocker {
 
   void setRecordVersion(String recordVersion);
 
+  Map<Integer, Long> getEigenMap();
+
+  /**
+   * Eigenvalues of mock data
+   * key: Hashcode for the key value of the JSON node
+   * value: The hash code of the value value value of the JSON node,
+   * The use of long type is to prevent memory overflow
+   */
+  void setEigenMap(Map<Integer, Long> eigenMap);
 
   @Getter
   @Setter
