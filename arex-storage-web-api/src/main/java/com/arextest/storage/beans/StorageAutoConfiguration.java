@@ -150,8 +150,9 @@ public class StorageAutoConfiguration {
   @ConditionalOnMissingBean(AgentWorkingMetricService.class)
   public AgentWorkingMetricService agentWorkingMetricService(
       AgentWorkingService agentWorkingService,
+      MockSourceEditionService editableService,
       List<MetricListener> metricListeners) {
-    return new AgentWorkingMetricService(agentWorkingService, metricListeners);
+    return new AgentWorkingMetricService(agentWorkingService, editableService, metricListeners);
   }
 
   @Bean

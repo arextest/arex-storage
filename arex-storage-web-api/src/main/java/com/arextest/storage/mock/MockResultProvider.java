@@ -3,6 +3,7 @@ package com.arextest.storage.mock;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
 
 /**
@@ -28,4 +29,11 @@ public interface MockResultProvider {
 
   <T extends Mocker> boolean removeRecordResult(MockCategoryType category, String recordId,
       Iterable<T> values);
+
+  /**
+   * Calculate the eigen values of the request body.
+   * @param item
+   * @return
+   */
+  void calculateEigen(@NotNull Mocker item);
 }

@@ -1,6 +1,7 @@
 package com.arextest.model.mock;
 
 
+import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
@@ -40,6 +41,7 @@ public class AREXMocker implements Mocker {
    */
   private String recordVersion;
   private Integer continuousFailCount;
+  private Map<Integer, Long> eigenMap;
 
   public AREXMocker() {
 

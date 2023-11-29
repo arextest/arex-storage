@@ -5,6 +5,9 @@ import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.cache.CacheKeyUtils;
 import com.arextest.storage.mock.MatchKeyBuilder;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringReader;
@@ -15,8 +18,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -24,6 +29,15 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Order(15)
 final class HttpClientMatchKeyBuilderImpl implements MatchKeyBuilder {
+
+  @Value("${arex.storage.use.eigen.match}")
+  private boolean useEigenMatch;
+
+  private final ObjectMapper objectMapper;
+  private static final String BODY = "body";
+  HttpClientMatchKeyBuilderImpl(ObjectMapper objectMapper) {
+    this.objectMapper = objectMapper;
+  }
 
   @Override
   public boolean isSupported(MockCategoryType categoryType) {
@@ -49,7 +63,15 @@ final class HttpClientMatchKeyBuilderImpl implements MatchKeyBuilder {
     if (StringUtils.isEmpty(request.getBody())) {
       return Arrays.asList(httpMethodWithUrlBytes, operationBytes);
     }
-    StringReader stringReader = new StringReader(request.getBody());
+    String body = request.getBody();
+    if (useEigenMatch && MapUtils.isNotEmpty(instance.getEigenMap())) {
+      try {
+        body = objectMapper.writeValueAsString(instance.getEigenMap());
+      } catch (JsonProcessingException e) {
+        LOGGER.error("failed to get http client eigen map, recordId: {}", instance.getRecordId(), e);
+      }
+    }
+    StringReader stringReader = new StringReader(body);
     OutputStream output = new MessageDigestWriter(messageDigest);
     try {
       IOUtils.copy(stringReader, output, StandardCharsets.UTF_8);
@@ -60,5 +82,26 @@ final class HttpClientMatchKeyBuilderImpl implements MatchKeyBuilder {
     messageDigest.update(httpMethodWithUrlBytes);
     return Arrays.asList(messageDigest.digest(), httpMethodWithUrlBytes, operationBytes);
 
+  }
+
+  /**
+   * For the type of httpClient,
+   * it is necessary to concatenate queryString, method and requestBody to calculate the eigen values
+   * @param instance
+   * @return
+   */
+  @Override
+  public String getEigenBody(Mocker instance) {
+    Object queryString = instance.getTargetRequest().getAttribute(MockAttributeNames.HTTP_QUERY_STRING);
+    Object method = instance.getTargetRequest().getAttribute(MockAttributeNames.HTTP_METHOD);
+    ObjectNode objectNode = objectMapper.createObjectNode();
+    objectNode.put(BODY, instance.getTargetRequest().getBody());
+    if (queryString != null) {
+      objectNode.put(MockAttributeNames.HTTP_QUERY_STRING, queryString.toString());
+    }
+    if (method != null) {
+      objectNode.put(MockAttributeNames.HTTP_METHOD, method.toString());
+    }
+    return objectNode.toString();
   }
 }

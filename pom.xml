@@ -148,6 +148,11 @@
         <version>0.0.1</version>
       </dependency>
       <dependency>
+        <artifactId>compare-sdk</artifactId>
+        <groupId>com.arextest</groupId>
+        <version>0.2.0</version>
+      </dependency>
+      <dependency>
         <artifactId>jsr250-api</artifactId>
         <groupId>javax.annotation</groupId>
         <version>1.0</version>
@@ -403,5 +408,5 @@
   <url>https://github.com/arextest/arex-storage</url>
 
 
-  <version>1.0.43</version>
+  <version>1.0.44</version>
 </project>
