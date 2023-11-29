@@ -14,4 +14,11 @@ public interface MatchKeyBuilder {
   boolean isSupported(MockCategoryType categoryType);
 
   List<byte[]> build(Mocker instance);
+
+  /**
+   * Obtain the mocker that requires eigen value calculation
+   * @param instance
+   * @return
+   */
+  String getEigenBody(Mocker instance);
 }

@@ -40,5 +40,8 @@ arex:
         similarity:
           strategy:
             appIds:
+    use:
+      eigen:
+        match: false
 pom:
   version: ${project.version}

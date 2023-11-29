@@ -22,8 +22,10 @@ final class AREXMockerCodecProvider implements CodecProvider {
 
   private final static String TARGET_REQUEST_NAME = "targetRequest";
   private final static String TARGET_RESPONSE_NAME = "targetResponse";
+  private final static String EIGEN_MAP_NAME = "eigenMap";
   private static final String CATEGORY_TYPE = "categoryType";
   private final Codec<?> millisecondsDateTimeCodec = new MillisecondsDateTimeCodecImpl();
+  private final Codec<?> eigenMapCodec = new EigenMapCodecImpl();
   private volatile Codec<AREXMocker> arexMockerCodec;
   private Codec<?> targetCodec;
 
@@ -76,6 +78,9 @@ final class AREXMockerCodecProvider implements CodecProvider {
     }
     if (TARGET_RESPONSE_NAME.equals(propertyModelBuilder.getName())) {
       return targetCodec;
+    }
+    if (EIGEN_MAP_NAME.equals(propertyModelBuilder.getName())) {
+      return eigenMapCodec;
     }
     if (AREXMockerMongoRepositoryProvider.CREATE_TIME_COLUMN_NAME.equals(
         propertyModelBuilder.getName())

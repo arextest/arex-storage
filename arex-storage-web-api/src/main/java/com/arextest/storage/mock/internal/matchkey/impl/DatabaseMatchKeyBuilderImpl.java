@@ -8,6 +8,7 @@ import com.arextest.storage.mock.MatchKeyBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,7 +16,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -53,6 +56,8 @@ public class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
   private static final List<String> SQL_TABLE_KEYS = Arrays.asList("from", "join", "update",
       "into");
   private final ObjectMapper objectMapper;
+  @Value("${arex.storage.use.eigen.match}")
+  private boolean useEigenMatch;
 
   DatabaseMatchKeyBuilderImpl(ObjectMapper objectMapper) {
     this.objectMapper = objectMapper;
@@ -102,6 +107,26 @@ public class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
     return dbMockKeyBuild(databaseMocker);
   }
 
+  /**
+   * For the type of db, it is necessary to concatenate dbname, dbparameter, and SQL to calculate the feature values
+   * @param instance
+   * @return
+   */
+  @Override
+  public String getEigenBody(Mocker instance) {
+    Object parameters = instance.getTargetRequest().getAttribute(MockAttributeNames.DB_PARAMETERS);
+    Object dbName = instance.getTargetRequest().getAttribute(MockAttributeNames.DB_NAME);
+    ObjectNode objectNode = objectMapper.createObjectNode();
+    objectNode.put(MockAttributeNames.DB_SQL, instance.getTargetRequest().getBody());
+    if (parameters != null) {
+      objectNode.put(MockAttributeNames.DB_PARAMETERS, parameters.toString());
+    }
+    if (dbName != null) {
+      objectNode.put(MockAttributeNames.DB_NAME, dbName.toString());
+    }
+    return objectNode.toString();
+  }
+
   public static String findDBTableNames(Mocker instance) {
     String sqlText = instance.getTargetRequest().getBody();
     int sourceCount = sqlText.length();
@@ -146,11 +171,23 @@ public class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
     md5Digest.update(dbNameBytes);
     md5Digest.update(operationBytes);
     byte[] dbNameMatchKey = md5Digest.digest();
-
-    md5Digest.update(sqlTextBytes);
-    md5Digest.update(sqlParameterBytes);
-    md5Digest.update(dbNameBytes);
-    md5Digest.update(operationBytes);
+    if (useEigenMatch && MapUtils.isNotEmpty(databaseMocker.getEigenMap())) {
+      try {
+        md5Digest.update(CacheKeyUtils.toUtf8Bytes(
+            objectMapper.writeValueAsString(databaseMocker.getEigenMap())));
+      } catch (JsonProcessingException e) {
+        LOGGER.error("failed to get db eigen map, recordId: {}", databaseMocker.getRecordId(), e);
+        md5Digest.update(sqlTextBytes);
+        md5Digest.update(sqlParameterBytes);
+        md5Digest.update(dbNameBytes);
+      }
+      md5Digest.update(operationBytes);
+    } else {
+      md5Digest.update(sqlTextBytes);
+      md5Digest.update(sqlParameterBytes);
+      md5Digest.update(dbNameBytes);
+      md5Digest.update(operationBytes);
+    }
     // 1,db+sql+parameterNameWithValue+operationName
     byte[] fullMatchKey = md5Digest.digest();
     keys.add(fullMatchKey);

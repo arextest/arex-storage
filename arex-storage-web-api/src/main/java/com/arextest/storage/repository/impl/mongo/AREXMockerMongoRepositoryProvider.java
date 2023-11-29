@@ -63,6 +63,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
   private static final String PROJECT_OP = "$project";
   private static final String AGENT_RECORD_VERSION_COLUMN_NAME = "recordVersion";
   private static final String TARGET_RESPONSE_COLUMN_NAME = "targetResponse";
+  private static final String EIGEN_MAP_COLUMN_NAME = "eigenMap";
   private final static Bson CREATE_TIME_ASCENDING_SORT = Sorts.ascending(CREATE_TIME_COLUMN_NAME);
   private final static Bson CREATE_TIME_DESCENDING_SORT = Sorts.descending(CREATE_TIME_COLUMN_NAME);
   private static final int DEFAULT_MIN_LIMIT_SIZE = 1;
@@ -153,7 +154,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
 
     Iterable<AREXMocker> iterable = collectionSource
         .find(Filters.and(bsons))
-        .projection(Projections.exclude(TARGET_RESPONSE_COLUMN_NAME))
+        .projection(Projections.exclude(TARGET_RESPONSE_COLUMN_NAME, EIGEN_MAP_COLUMN_NAME))
         .sort(toSupportSortingOptions(pagedRequestType.getSortingOptions()))
         .skip(pageIndex == null ? 0 : pagedRequestType.getPageSize() * (pageIndex - 1))
         .limit(Math.min(pagedRequestType.getPageSize(), DEFAULT_MAX_LIMIT_SIZE));
