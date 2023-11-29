@@ -14,6 +14,7 @@ import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.trace.MDCTracer;
 import java.util.concurrent.ThreadPoolExecutor;
 import javax.annotation.Resource;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -61,48 +62,26 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
 //        coverageHandlerExecutor.getQueue().size());
   }
 
-  private void transferEntry(AREXMocker coverageMocker, String incomingCaseId) {
-    Mocker oldCoverageMocker = coverageRepository.upsertOne(coverageMocker);
-    // there is an existing AutoPinnedMocker with the same key, delete the related AutoPinnedMocker
-    if (oldCoverageMocker != null) {
-      String oldCaseId = oldCoverageMocker.getRecordId();
-      boolean removed = mockSourceEditionService.removeByRecordId(ProviderNames.AUTO_PINNED,
-          oldCaseId);
-      if (!removed) {
-        LOGGER.error("remove old auto pinned failed, caseId:{}", oldCaseId);
-      }
-    }
-
-    // move entry to auto pinned
-    boolean moved = mockSourceEditionService.moveTo(ProviderNames.DEFAULT, incomingCaseId,
-        ProviderNames.AUTO_PINNED);
-    if (!moved) {
-      LOGGER.error("move entry to auto pinned failed, caseId:{}", incomingCaseId);
-    }
-  }
-
-  private class CoverageTask implements Runnable {
-
+  @AllArgsConstructor
+  private class ReplayTask implements Runnable {
+    private final ScenePoolProviderImpl scenePoolProvider;
     private final AREXMocker coverageMocker;
-
-    CoverageTask(AREXMocker coverageMocker) {
-      this.coverageMocker = coverageMocker;
-    }
 
     @Override
     public void run() {
+      MDCTracer.addRecordId(coverageMocker.getRecordId());
+      MDCTracer.addReplayId(coverageMocker.getReplayId());
       if (StringUtils.isEmpty(coverageMocker.getOperationName())
           || coverageMocker.getOperationName().equals("0")) {
         LOGGER.warn("CoverageMockerHandler handle error, operationName is empty, recordId:{}",
+          coverageMocker.getRecordId());
+
+        // getting operationName(Coverage key) as 0 but having recordId, meaning this is an extremely simple and meaningless case, remove it
+        mockSourceEditionService.removeByRecordId(ProviderNames.DEFAULT,
             coverageMocker.getRecordId());
-        if (!StringUtils.isEmpty(coverageMocker.getRecordId())) {
-          // getting operationName(Coverage key) as 0 but having recordId, meaning this is an extremely simple and meaningless case, remove it
-          mockSourceEditionService.removeByRecordId(ProviderNames.DEFAULT,
-              coverageMocker.getRecordId());
-        }
         return;
       }
-      MDCTracer.addRecordId(coverageMocker.getRecordId());
+
       try {
         final RepositoryProvider<Mocker> pinedProvider = repositoryProviderFactory.findProvider(
             ProviderNames.AUTO_PINNED);
@@ -135,6 +114,26 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
       } catch (Exception e) {
         LOGGER.error("CoverageMockerHandler handle error", e);
       }
+    }
+  }
+
+  private void transferEntry(AREXMocker coverageMocker, String incomingCaseId) {
+    Mocker oldCoverageMocker = coverageRepository.upsertOne(coverageMocker);
+    // there is an existing AutoPinnedMocker with the same key, delete the related AutoPinnedMocker
+    if (oldCoverageMocker != null) {
+      String oldCaseId = oldCoverageMocker.getRecordId();
+      boolean removed = mockSourceEditionService.removeByRecordId(ProviderNames.AUTO_PINNED,
+          oldCaseId);
+      if (!removed) {
+        LOGGER.error("remove old auto pinned failed, caseId:{}", oldCaseId);
+      }
+    }
+
+    // move entry to auto pinned
+    boolean moved = mockSourceEditionService.moveTo(ProviderNames.DEFAULT, incomingCaseId,
+        ProviderNames.AUTO_PINNED);
+    if (!moved) {
+      LOGGER.error("move entry to auto pinned failed, caseId:{}", incomingCaseId);
     }
   }
 }
