@@ -13,7 +13,7 @@
   <profiles>
     <profile>
       <build>
-        <finalName>${project.artifactId}</finalName>
+        <finalName>${artifactId}</finalName>
       </build>
       <id>jar</id>
       <properties>
