@@ -77,7 +77,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
    */
   @Override
   public <T extends Mocker> boolean putRecordResult(MockCategoryType category, String recordId,
-      Iterable<T> values, boolean renewal) {
+      Iterable<T> values) {
     final byte[] recordIdBytes = CacheKeyUtils.toUtf8Bytes(recordId);
     Iterator<T> valueIterator = values.iterator();
     int size = 0;
@@ -86,22 +86,25 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
 
     // Records the maximum number of operations corresponding to recorded data
     List<T> mockList = new ArrayList<>();
+    // key: Redis keys that need to be counted. value: The number of redis keys
+    Map<byte[], Integer> maps = Maps.newHashMap();
     // Obtain the number of the same interfaces in recorded data
     while (valueIterator.hasNext()) {
       T value = valueIterator.next();
       mockList.add(value);
-      if (shouldBuildRecordOperationKey(value) || shouldRecordCallReplayMax) {
-        byte[] recordOperationKey = CacheKeyUtils.buildRecordOperationKey(category, recordId,
-            getOperationNameWithCategory(value));
-        if (renewal) {
-          byte[] bytes = redisCacheProvider.get(recordOperationKey);
-          redisCacheProvider.put(recordOperationKey, cacheExpiredSeconds, bytes);
-        } else {
-          nextSequence(recordOperationKey);
-        }      }
+      // Determine whether grouping through operation is necessary
+      if (!shouldBuildRecordOperationKey(value) && !shouldRecordCallReplayMax) {
+        continue;
+      }
+      byte[] recordOperationKey = CacheKeyUtils.buildRecordOperationKey(category, recordId,
+          getOperationNameWithCategory(value));
+      int count = updateMapsAndGetCount(maps, recordOperationKey);
+      LOGGER.info("update record operation cache, count: {}, operation: {}", count, getOperationNameWithCategory(value));
+      putRedisValue(recordOperationKey, count);
     }
     mockList.sort(Comparator.comparing(Mocker::getCreationTime));
-    for (int sequence = 1; sequence <= mockList.size(); sequence++) {
+    int mockListSize = mockList.size();
+    for (int sequence = 1; sequence <= mockListSize; sequence++) {
       T value = mockList.get(sequence - 1);
       // Place the maximum number of playback times corresponding to the operations into the recorded data
       if (shouldRecordCallReplayMax) {
@@ -113,33 +116,41 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
           targetResponse.setAttribute(CALL_REPLAY_MAX, count);
         }
       }
-      size = sequencePutRecordData(category, recordIdBytes, size, recordKey, value, renewal, sequence);
+      size = sequencePutRecordData(category, recordIdBytes, size, recordKey, value, sequence, maps);
     }
+    LOGGER.info("update record cache, count: {}, recordId: {}, category: {}", mockListSize, recordId, category);
+    putRedisValue(recordKey, mockListSize);
     LOGGER.info("put record result to cache size:{} for category:{},record id:{}", size, category,
         recordId);
     return size > EMPTY_SIZE;
   }
 
+  private void putRedisValue(byte[] recordOperationKey, int count) {
+    redisCacheProvider.put(recordOperationKey, cacheExpiredSeconds, CacheKeyUtils.toUtf8Bytes(
+        String.valueOf(count)));
+  }
+
   private <T extends Mocker> int sequencePutRecordData(MockCategoryType category,
-      byte[] recordIdBytes, int size, byte[] recordKey, T value, boolean renewal, int sequence) {
+      byte[] recordIdBytes, int size, byte[] recordKey, T value, int sequence,
+      Map<byte[], Integer> maps) {
     if (useEigenMatch && MapUtils.isEmpty(value.getEigenMap())) {
       calculateEigen(value);
     }
     List<byte[]> mockKeyList = matchKeyFactory.build(value);
-    if (renewal) {
-      return renewalRecordData(category, recordIdBytes, size, recordKey, value, mockKeyList,
-          sequence);
-    }
-
     final byte[] zstdValue = serializer.serialize(value);
-    byte[] valueRefKey = sequencePut(recordKey, zstdValue);
+    byte[] valueRefKey = sequencePut(recordKey, zstdValue, sequence);
+    LOGGER.info("update record sequence cache, count: {}", sequence);
     if (valueRefKey == null) {
       return size;
     }
     for (int i = 0; i < mockKeyList.size(); i++) {
       byte[] mockKeyBytes = mockKeyList.get(i);
       byte[] key = CacheKeyUtils.buildRecordKey(category, recordIdBytes, mockKeyBytes);
-      byte[] sequenceKey = sequencePut(key, valueRefKey);
+      int count = updateMapsAndGetCount(maps, key);
+      LOGGER.info("update record mock key cache, count: {}, mock index: {}, operation: {}",
+          count, i, value.getOperationName());
+      putRedisValue(key, count);
+      byte[] sequenceKey = sequencePut(key, valueRefKey, count);
       if (sequenceKey != null) {
         size++;
       }
@@ -152,32 +163,35 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     return size;
   }
 
-  private <T extends Mocker> int renewalRecordData(MockCategoryType category, byte[] recordIdBytes,
-      int size, byte[] recordKey, T value, List<byte[]> mockKeyList, int sequence) {
-    final byte[] zstdValue = serializer.serialize(value);
-    final byte[] valueRefKey = createSequenceKey(recordKey, sequence);
-    boolean result = redisCacheProvider.put(valueRefKey, cacheExpiredSeconds, zstdValue);
-    if (!result) {
-      LOGGER.info("failed to renewal record data");
-      return 0;
+  /**
+   * Obtain the corresponding value in the maps through the key and update it
+   */
+  private int updateMapsAndGetCount(Map<byte[], Integer> maps, byte[] key) {
+    int count = 1;
+    byte[] mapKey = getKeyByTargetKey(maps, key);
+    if (mapKey == null) {
+      maps.put(key, count);
+      return count;
     }
-    for (int i = 0; i < mockKeyList.size(); i++) {
-      byte[] mockKeyBytes = mockKeyList.get(i);
-      byte[] key = CacheKeyUtils.buildRecordKey(category, recordIdBytes, mockKeyBytes);
-      int resultCount = resultCount(key);
-      for (int row = 1; row <= resultCount; row++) {
-        final byte[] sequenceKey = createSequenceKey(key, row);
-        if (redisCacheProvider.put(sequenceKey, cacheExpiredSeconds, valueRefKey)) {
-          size++;
-        }
+    int value = maps.get(mapKey);
+    count = value + 1;
+    maps.put(mapKey, count);
+    return count;
+  }
+
+  /**
+   * Obtain the key that matches the content in the maps through the target key
+   */
+  private byte[] getKeyByTargetKey(Map<byte[], Integer> maps, byte[] targetKey) {
+    if (MapUtils.isEmpty(maps)) {
+      return null;
+    }
+    for (byte[] key : maps.keySet()) {
+      if (Arrays.equals(key, targetKey)) {
+        return key;
       }
     }
-    // if category type is the type to be compared.associate the mock instance id with the related mock key.
-    if (shouldUseIdOfInstanceToMockResult(category)) {
-      putRecordInstanceId(valueRefKey, value.getId());
-      putMockKeyListWithInstanceId(value.getId(), mockKeyList);
-    }
-    return size;
+    return null;
   }
 
   private boolean shouldUseIdOfInstanceToMockResult(MockCategoryType category) {
@@ -307,6 +321,20 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     } catch (Throwable throwable) {
       LOGGER.error("put error:{} sequence:{} for base64 key:{}",
           throwable.getMessage(), next, CompressionUtils.encodeToBase64String(key), throwable);
+    }
+    return null;
+  }
+
+  private byte[] sequencePut(final byte[] key, final byte[] zstdValue, int sequence) {
+    try {
+      final byte[] sequenceKey = createSequenceKey(key, sequence);
+      boolean retResult = redisCacheProvider.put(sequenceKey, cacheExpiredSeconds, zstdValue);
+      if (retResult) {
+        return sequenceKey;
+      }
+    } catch (Throwable throwable) {
+      LOGGER.error("put error:{} sequence:{} for base64 key:{}",
+          throwable.getMessage(), sequence, CompressionUtils.encodeToBase64String(key), throwable);
     }
     return null;
   }
@@ -704,7 +732,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
       }
       boolean tryFindLastValue =
           context.getMockStrategy() == MockResultMatchStrategy.TRY_FIND_LAST_VALUE;
-
+      LOGGER.info(
+          "[[title=eigenMatch]]get mock result with eigen match, recordDataCount: {}", count);
       // 3.1 iterate over all records, calculating the eigen between replay requests and record requests.
       // invocationMap: Map<eigenScore, List<Pair<mockerInstanceId, mockerData>>>
       Map<Integer, List<Pair<String, byte[]>>> invocationMap = Maps.newHashMap();

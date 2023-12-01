@@ -52,15 +52,16 @@ public final class PrepareMockResultService {
     if (repositoryReader == null) {
       return false;
     }
-    boolean renewal = mockResultProvider.recordResultCount(categoryType, recordId) > 0;
-    LOGGER.warn("preload cache for category:{}, record id:{}, renewal: {}", categoryType, recordId, renewal);
-
+    int resultCount = mockResultProvider.recordResultCount(categoryType, recordId);
+    if (resultCount > 0) {
+      LOGGER.info("preload cache for category:{},record id:{},count:{}", categoryType, recordId, resultCount);
+    }
     Iterable<? extends Mocker> iterable;
     iterable = repositoryReader.queryRecordList(categoryType, recordId);
     if (iterable == null) {
       return false;
     }
-    return mockResultProvider.putRecordResult(categoryType, recordId, iterable, renewal);
+    return mockResultProvider.putRecordResult(categoryType, recordId, iterable);
   }
 
   private boolean preload(List<RepositoryProvider<? extends Mocker>> repositoryReaderList,

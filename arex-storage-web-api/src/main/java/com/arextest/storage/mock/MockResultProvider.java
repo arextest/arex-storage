@@ -3,7 +3,6 @@ package com.arextest.storage.mock;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import java.util.List;
-import java.util.Map;
 import javax.validation.constraints.NotNull;
 
 /**
@@ -13,7 +12,7 @@ import javax.validation.constraints.NotNull;
 public interface MockResultProvider {
 
   <T extends Mocker> boolean putRecordResult(MockCategoryType categoryType, String recordId,
-      Iterable<T> values, boolean renewal);
+      Iterable<T> values);
 
   <T extends Mocker> boolean putReplayResult(T value);
 
