@@ -7,9 +7,11 @@ import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -52,9 +54,12 @@ public class MockSourceEditionService {
       return false;
     }
     Set<MockCategoryType> categoryTypes = providerFactory.getCategoryTypes();
+    Map<String, Boolean> removeResults = new HashMap<>(categoryTypes.size());
     for (MockCategoryType categoryType : categoryTypes) {
-      repositoryWriter.removeBy(categoryType, recordId);
+      long removeResult = repositoryWriter.removeBy(categoryType, recordId);
+      removeResults.put(categoryType.getName(), removeResult > 0);
     }
+    LOGGER.info("remove all record result:{} for recordId:{}", removeResults, recordId);
     return true;
   }
 

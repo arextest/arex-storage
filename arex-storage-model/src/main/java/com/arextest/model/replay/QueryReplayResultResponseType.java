@@ -14,4 +14,5 @@ public class QueryReplayResultResponseType implements Response {
 
   private ResponseStatusType responseStatusType;
   private List<ListResultHolder> resultHolderList;
+  private Boolean invalidResult;
 }
