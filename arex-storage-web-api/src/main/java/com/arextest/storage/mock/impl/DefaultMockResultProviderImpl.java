@@ -514,11 +514,14 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
         String id = CacheKeyUtils.fromUtf8Bytes(mockResultId);
         mockItem.setId(id);
         long increasesCount = increasesReplayConsumer(category, recordIdBytes, replayIdBytes, mockResultId);
-        matchStrategyMetricService.recordMatchingCount(MULTI_OPERATION_WITH_STRICT_MATCH, (AREXMocker) mockItem);
-        LOGGER.info(
-            "[[title=similarityMatch]]get mock result with strictly match, instanceId: {}, increasesCount: {}",
-            id, increasesCount);
-        return result;
+        if (increasesCount <= 1L) {
+          matchStrategyMetricService.recordMatchingCount(MULTI_OPERATION_WITH_STRICT_MATCH,
+              (AREXMocker) mockItem);
+          LOGGER.info(
+              "[[title=similarityMatch]]get mock result with strictly match, instanceId: {}, increasesCount: {}",
+              id, increasesCount);
+          return result;
+        }
       }
 
       // 3. use similarity match
@@ -649,12 +652,14 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
         String id = CacheKeyUtils.fromUtf8Bytes(mockResultId);
         mockItem.setId(id);
         long increasesCount = increasesReplayConsumer(category, recordIdBytes, replayIdBytes, mockResultId);
-        matchStrategyMetricService.recordMatchingCount(MULTI_OPERATION_WITH_STRICT_MATCH,
-            (AREXMocker) mockItem);
-        LOGGER.info(
-            "[[title=eigenMatch]]get mock result with eigen match, instanceId: {}, increasesCount: {}",
-            id, increasesCount);
-        return result;
+        if (increasesCount <= 1L) {
+          matchStrategyMetricService.recordMatchingCount(MULTI_OPERATION_WITH_STRICT_MATCH,
+              (AREXMocker) mockItem);
+          LOGGER.info(
+              "[[title=eigenMatch]]get mock result with eigen match, instanceId: {}, increasesCount: {}",
+              id, increasesCount);
+          return result;
+        }
       }
 
       // 3. use eigen to match
