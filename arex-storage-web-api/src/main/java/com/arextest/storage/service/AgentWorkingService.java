@@ -68,7 +68,7 @@ public class AgentWorkingService {
       return false;
     }
 
-    mockResultProvider.calculateEigen(item);
+    mockResultProvider.calculateEigen(item, true);
     MockerSaveHandler<T> handler = mockerHandlerFactory.getHandler(item.getCategoryType());
     if (handler != null) {
       handler.handle(item);

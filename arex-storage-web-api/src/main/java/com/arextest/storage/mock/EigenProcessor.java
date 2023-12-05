@@ -19,14 +19,14 @@ public class EigenProcessor {
 
   public static Map<Integer, Long> calculateEigen(String body, String categoryName,
       Collection<List<String>> exclusions,
-      Collection<String> nodeNames) {
+      Collection<String> ignoreNodes) {
     EigenOptions options = EigenOptions.options();
     options.putCategoryType(categoryName);
     if (CollectionUtils.isNotEmpty(exclusions)) {
       options.putExclusions(exclusions);
     }
-    if (CollectionUtils.isNotEmpty(nodeNames)) {
-      options.putIgnoreNodes(nodeNames);
+    if (CollectionUtils.isNotEmpty(ignoreNodes)) {
+      options.putIgnoreNodes(ignoreNodes);
     }
     EigenResult eigenResult = eigenSDK.calculateEigen(body, options);
     if (eigenResult == null) {

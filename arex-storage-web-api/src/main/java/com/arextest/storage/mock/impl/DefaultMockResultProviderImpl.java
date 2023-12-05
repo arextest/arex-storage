@@ -2,6 +2,7 @@ package com.arextest.storage.mock.impl;
 
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.common.utils.CompressionUtils;
+import com.arextest.config.model.vo.QueryConfigOfCategory;
 import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
@@ -16,10 +17,12 @@ import com.arextest.storage.mock.MockResultProvider;
 import com.arextest.storage.mock.internal.matchkey.impl.DatabaseMatchKeyBuilderImpl;
 import com.arextest.storage.model.MockResultType;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
+import com.arextest.storage.service.QueryConfigService;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -70,6 +73,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   private MatchStrategyMetricService matchStrategyMetricService;
   @Resource
   private DatabaseMatchKeyBuilderImpl databaseMatchKeyBuilder;
+  @Resource
+  private QueryConfigService queryConfigService;
 
   /**
    * 1. Store recorded data and matching keys in redis 2. The mock type associated with dubbo, which
@@ -118,7 +123,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   private <T extends Mocker> int sequencePutRecordData(MockCategoryType category,
       byte[] recordIdBytes, int size, byte[] recordKey, T value) {
     if (useEigenMatch && MapUtils.isEmpty(value.getEigenMap())) {
-      calculateEigen(value);
+      calculateEigen(value, true);
     }
     List<byte[]> mockKeyList = matchKeyFactory.build(value);
     final byte[] zstdValue = serializer.serialize(value);
@@ -191,7 +196,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   }
 
   @Override
-  public void calculateEigen(Mocker item) {
+  public void calculateEigen(Mocker item, boolean saveMocker) {
     try {
       if (item.getCategoryType().isEntryPoint()) {
         return;
@@ -202,8 +207,20 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
         return;
       }
 
+      // get exclusion and ignore node from arex-api.use this to reduction noise
+      Collection<List<String>> exclusions = null;
+      Collection<String> ignoreNodes = null;
+      if (saveMocker) {
+        QueryConfigOfCategory queryConfigOfCategory = queryConfigService.queryConfigOfCategory(
+            item);
+        if (queryConfigOfCategory != null) {
+          exclusions = queryConfigOfCategory.getExclusionList();
+          ignoreNodes = queryConfigOfCategory.getIgnoreNodeSet();
+        }
+      }
+
       Map<Integer, Long> calculateEigen = EigenProcessor.calculateEigen(eigenBody,
-          item.getCategoryType().getName(), null, null);
+          item.getCategoryType().getName(), exclusions, ignoreNodes);
       if (MapUtils.isEmpty(calculateEigen)) {
         LOGGER.warn("calculate eigen is null");
         return;
@@ -291,7 +308,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     try {
       long start = System.currentTimeMillis();
       if (useEigenMatch) {
-        calculateEigen(mockItem);
+        calculateEigen(mockItem, false);
       }
       List<byte[]> mockKeyList = matchKeyFactory.build(mockItem);
       long end = System.currentTimeMillis();

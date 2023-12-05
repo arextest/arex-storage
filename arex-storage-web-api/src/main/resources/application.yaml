@@ -12,6 +12,9 @@ arex:
   app:
     auth:
       switch: true
+  query:
+    config:
+      url: ${arex.api.service.api:http://arex-api-service:8080}
   config:
     # default for application settings
     application:

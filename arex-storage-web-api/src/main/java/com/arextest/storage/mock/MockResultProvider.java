@@ -35,5 +35,5 @@ public interface MockResultProvider {
    * @param item
    * @return
    */
-  void calculateEigen(@NotNull Mocker item);
+  void calculateEigen(@NotNull Mocker item, boolean saveMocker);
 }
