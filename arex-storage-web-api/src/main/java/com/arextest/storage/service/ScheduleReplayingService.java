@@ -98,7 +98,7 @@ public class ScheduleReplayingService {
     return Collections.emptyList();
   }
 
-  public List<Mocker> queryRecordList(ViewRecordRequestType viewRecordRequestType) {
+  public List<AREXMocker> queryRecordList(ViewRecordRequestType viewRecordRequestType) {
     String sourceProvider = viewRecordRequestType.getSourceProvider();
     String recordId = viewRecordRequestType.getRecordId();
     RepositoryProvider<Mocker> repositoryReader = repositoryProviderFactory.findProvider(
@@ -111,10 +111,10 @@ public class ScheduleReplayingService {
     if (categoryType != null) {
       return queryRecordList(repositoryReader, categoryType, recordId);
     }
-    List<Mocker> readableResult = new LinkedList<>();
+    List<AREXMocker> readableResult = new LinkedList<>();
     for (MockCategoryType category : repositoryProviderFactory.getCategoryTypes()) {
       MDCTracer.addCategory(category);
-      List<Mocker> mockers = queryRecordList(repositoryReader, category, recordId);
+      List<AREXMocker> mockers = queryRecordList(repositoryReader, category, recordId);
       if (CollectionUtils.isNotEmpty(mockers)) {
         readableResult.addAll(mockers);
       }
@@ -122,15 +122,15 @@ public class ScheduleReplayingService {
     return readableResult;
   }
 
-  public List<Mocker> queryRecordList(RepositoryProvider<Mocker> repositoryReader,
+  public List<AREXMocker> queryRecordList(RepositoryProvider<Mocker> repositoryReader,
       MockCategoryType categoryType, String recordId) {
     Iterable<? extends Mocker> iterable = repositoryReader.queryRecordList(categoryType, recordId);
     if (iterable == null) {
       return null;
     }
-    List<Mocker> resultList = new LinkedList<>();
+    List<AREXMocker> resultList = new LinkedList<>();
     for (Mocker mocker : iterable) {
-      resultList.add(mocker);
+      resultList.add((AREXMocker) mocker);
     }
     resultList.sort(Comparator.comparing(Mocker::getCreationTime));
     return resultList;

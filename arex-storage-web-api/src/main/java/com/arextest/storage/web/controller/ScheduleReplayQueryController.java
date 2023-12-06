@@ -1,6 +1,6 @@
 package com.arextest.storage.web.controller;
 
-import com.arextest.model.mock.Mocker;
+import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.replay.CountOperationCaseRequestType;
 import com.arextest.model.replay.CountOperationCaseResponseType;
 import com.arextest.model.replay.PagedRequestType;
@@ -239,7 +239,7 @@ public class ScheduleReplayQueryController {
     MDCTracer.addRecordId(recordId);
     ViewRecordResponseType responseType = new ViewRecordResponseType();
     try {
-      List<Mocker> allReadableResult = scheduleReplayingService.queryRecordList(requestType);
+      List<AREXMocker> allReadableResult = scheduleReplayingService.queryRecordList(requestType);
       if (CollectionUtils.isEmpty(allReadableResult)) {
         LOGGER.info("could not found any resources for request: {}", requestType);
       }
