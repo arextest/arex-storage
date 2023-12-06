@@ -133,7 +133,7 @@ public class MockSourceEditionService {
       LOGGER.warn("could not found provider for {} or {}", srcProvider, targetProvider);
       return count;
     }
-    List<Mocker> srcMockers;
+    List<AREXMocker> srcMockers;
     Set<MockCategoryType> categoryTypes = providerFactory.getCategoryTypes();
     for (MockCategoryType categoryType : categoryTypes) {
       srcMockers = scheduleReplayingService.queryRecordList(srcProvider, categoryType, srcRecordId);
@@ -172,7 +172,7 @@ public class MockSourceEditionService {
     removeAll(srcProviderName, recordId);
   }
 
-  private List<Mocker> createTargetList(List<Mocker> srcMockers, String targetRecordId) {
+  private List<Mocker> createTargetList(List<AREXMocker> srcMockers, String targetRecordId) {
     List<Mocker> targetList = null;
     long now = System.currentTimeMillis();
     for (Mocker mocker: srcMockers) {
