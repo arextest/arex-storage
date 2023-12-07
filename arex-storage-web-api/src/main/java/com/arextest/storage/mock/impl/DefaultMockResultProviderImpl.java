@@ -207,7 +207,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
 
   private boolean shouldRecordCallReplayMax(MockCategoryType category) {
     return shouldUseIdOfInstanceToMockResult(category) && (category.getName()
-        .startsWith(DUBBO_PREFIX) || category.equals(MockCategoryType.DYNAMIC_CLASS));
+        .startsWith(DUBBO_PREFIX) || category.equals(MockCategoryType.DYNAMIC_CLASS)
+        || category.equals(MockCategoryType.REDIS));
   }
 
   @Override
