@@ -3,7 +3,6 @@ package com.arextest.storage.mock;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import java.util.List;
-import java.util.Map;
 import javax.validation.constraints.NotNull;
 
 /**

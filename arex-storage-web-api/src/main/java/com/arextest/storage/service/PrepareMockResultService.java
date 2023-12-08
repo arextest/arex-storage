@@ -52,9 +52,9 @@ public final class PrepareMockResultService {
     if (repositoryReader == null) {
       return false;
     }
-    if (mockResultProvider.recordResultCount(categoryType, recordId) > 0) {
-      LOGGER.warn("skip preload cache for category:{},record id:{}", categoryType, recordId);
-      return true;
+    int resultCount = mockResultProvider.recordResultCount(categoryType, recordId);
+    if (resultCount > 0) {
+      LOGGER.info("preload cache for category:{},record id:{},count:{}", categoryType, recordId, resultCount);
     }
     Iterable<? extends Mocker> iterable;
     iterable = repositoryReader.queryRecordList(categoryType, recordId);

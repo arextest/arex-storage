@@ -1,6 +1,7 @@
 package com.arextest.storage.mock;
 
 import com.arextest.common.utils.JsonTraverseUtils;
+import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.utils.JsonUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -9,9 +10,9 @@ import java.util.Optional;
 
 public class MockerPostProcessor {
 
-  public static void desensitize(List<Mocker> allReadableResult)
+  public static void desensitize(List<AREXMocker> allReadableResult)
       throws JsonProcessingException {
-    for (Mocker arexMocker : allReadableResult) {
+    for (AREXMocker arexMocker : allReadableResult) {
       Mocker.Target request = arexMocker.getTargetRequest();
       Mocker.Target response = arexMocker.getTargetResponse();
 
