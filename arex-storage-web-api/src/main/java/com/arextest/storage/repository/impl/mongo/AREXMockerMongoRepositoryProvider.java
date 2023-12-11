@@ -385,11 +385,11 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     }
     item = buildTimeRangeFilter(rangeRequestType.getBeginTime(), rangeRequestType.getEndTime());
     filters.add(item);
-    // add the filter by mockTag
-    if (MapUtils.isNotEmpty(rangeRequestType.getMockTags())) {
-      for (Map.Entry<String, Object> entry : rangeRequestType.getMockTags().entrySet()) {
+    // add the filter by tag
+    if (MapUtils.isNotEmpty(rangeRequestType.getTags())) {
+      for (Map.Entry<String, String> entry : rangeRequestType.getTags().entrySet()) {
         String tagName = entry.getKey();
-        if (!properties.getSupportMockerTag().contains(tagName)) {
+        if (properties.getSupportTags() == null || !properties.getSupportTags().contains(tagName)) {
           continue;
         }
         item = Filters.eq(TAGS_COLUMN_NAME + DOT_OP + tagName, entry.getValue());

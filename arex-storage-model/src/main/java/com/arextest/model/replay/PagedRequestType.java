@@ -23,5 +23,5 @@ public class PagedRequestType {
   private MockCategoryType category;
   private String sourceProvider;
   private List<SortingOption> sortingOptions;
-  private Map<String, Object> mockTags;
+  private Map<String, String> tags;
 }

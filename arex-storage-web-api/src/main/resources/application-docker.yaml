@@ -9,7 +9,7 @@ arex:
       ConfigFile: 3456000000
     defaultExpirationDuration: 345600000
     allowReRunDays: 1
-    supportMockerTag:
+    supportTags:
       - env
   api:
     config:

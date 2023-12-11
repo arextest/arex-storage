@@ -9,6 +9,7 @@ import com.arextest.storage.service.config.AbstractConfigurableHandler;
 import com.arextest.storage.service.config.provider.ApplicationDescriptionProvider;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import javax.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,8 +65,8 @@ public class ApplicationConfigurableHandler extends AbstractConfigurableHandler<
     return Collections.singletonList(applicationConfiguration);
   }
 
-  public boolean addEnvToApp(String appId, String envId) {
-    return applicationConfigurationRepository.addEnvToApp(appId, envId);
+  public boolean addEnvToApp(String appId, Map<String, String> tags) {
+    return applicationConfigurationRepository.addEnvToApp(appId, tags);
   }
 
 }

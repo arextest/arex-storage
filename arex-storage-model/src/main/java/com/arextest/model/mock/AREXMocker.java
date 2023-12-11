@@ -45,7 +45,7 @@ public class AREXMocker implements Mocker {
   /**
    * add tag to mocker
    */
-  private Map<String, Object> tags;
+  private Map<String, String> tags;
 
   public AREXMocker() {
 

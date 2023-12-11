@@ -3,6 +3,7 @@ package com.arextest.config.model.dto.application;
 
 import com.arextest.config.model.dto.AbstractConfiguration;
 import com.arextest.config.model.dto.FeatureType;
+import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -51,6 +52,6 @@ public class ApplicationConfiguration extends AbstractConfiguration implements
    */
   private int visibilityLevel;
 
-  private Set<String> tagEnvs;
+  private Map<String, Set<String>> tags;
 
 }

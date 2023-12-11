@@ -1,6 +1,7 @@
 package com.arextest.config.model.dao.config;
 
 import com.arextest.config.model.dao.BaseEntity;
+import java.util.Map;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -47,6 +48,6 @@ public class AppCollection extends BaseEntity {
 
   private int visibilityLevel;
 
-  private Set<String> tagEnvs;
+  private Map<String, Set<String>> tags;
 
 }
