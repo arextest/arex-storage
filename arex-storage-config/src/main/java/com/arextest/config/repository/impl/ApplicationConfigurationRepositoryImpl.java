@@ -138,7 +138,7 @@ public class ApplicationConfigurationRepositoryImpl implements
   public boolean addEnvToApp(String appId, String env) {
     Bson filter = Filters.eq(AppCollection.Fields.appId, appId);
     Bson update = Updates.addToSet(AppCollection.Fields.tagEnvs, env);
-    return mongoCollection.updateMany(filter, update).getModifiedCount() > 0;
+    return mongoCollection.updateOne(filter, update).getModifiedCount() > 0;
   }
 
 }

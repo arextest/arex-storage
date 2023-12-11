@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
@@ -119,9 +120,8 @@ public final class AgentRemoteConfigurationController {
       }
 
       // asynchronously update application env
-      CompletableFuture.runAsync(
-          new AddEnvRunnable(instancesConfiguration, applicationConfigurableHandler),
-          envUpdateHandlerExecutor);
+      asyncUpdateAppEnv(instancesConfiguration);
+
       return ResponseUtils.successResponse(body);
     } catch (Exception e) {
       LOGGER.error("load config error", e);
@@ -200,6 +200,17 @@ public final class AgentRemoteConfigurationController {
       }
     }
     return extendField;
+  }
+
+  private void asyncUpdateAppEnv(InstancesConfiguration instancesConfiguration) {
+    try {
+      CompletableFuture.runAsync(
+          new AddEnvRunnable(instancesConfiguration, applicationConfigurableHandler),
+          envUpdateHandlerExecutor);
+    } catch (RejectedExecutionException e) {
+      LOGGER.error("envUpdateHandlerExecutor is full, appId:{}",
+          instancesConfiguration.getAppId());
+    }
   }
 
   private ApplicationConfiguration loadApplicationResult(AgentRemoteConfigurationRequest request) {

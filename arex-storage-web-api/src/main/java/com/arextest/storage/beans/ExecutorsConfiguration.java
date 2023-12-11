@@ -25,10 +25,10 @@ public class ExecutorsConfiguration implements Thread.UncaughtExceptionHandler {
   @Bean
   public ThreadPoolExecutor envUpdateHandlerExecutor() {
     return new ThreadPoolExecutor(1, 4,
-        0L, TimeUnit.MILLISECONDS,
+        1000, TimeUnit.MILLISECONDS,
         new LinkedBlockingQueue<>(200),
         createThreadFac("envUpdate-handler-%d"),
-        new ThreadPoolExecutor.CallerRunsPolicy());
+        new ThreadPoolExecutor.AbortPolicy());
   }
 
   private ThreadFactory createThreadFac(String namePattern) {
