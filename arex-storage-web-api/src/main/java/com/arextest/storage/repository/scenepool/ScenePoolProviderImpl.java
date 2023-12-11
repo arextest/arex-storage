@@ -13,17 +13,18 @@ import lombok.AllArgsConstructor;
 import org.bson.conversions.Bson;
 
 @AllArgsConstructor
-public class ScenePoolProviderImpl implements ScenePoolProvider {
+public class ScenePoolProviderImpl extends AbstractScenePoolProvider {
   private final String providerName;
-  private final MongoDatabase mongoDatabase;
   @Override
   public String getProviderName() {
     return providerName;
   }
 
   @Override
-  public MongoDatabase getDataBase() {
-    return mongoDatabase;
+  public boolean checkSceneExist(String appId, String sceneKey) {
+    Bson filter = Filters.and(Filters.eq(Fields.appId, appId),
+        Filters.eq(Fields.sceneKey, sceneKey));
+    return getCollection().countDocuments(filter) > 0;
   }
 
   public void upsertOne(Scene scene) {
@@ -40,11 +41,5 @@ public class ScenePoolProviderImpl implements ScenePoolProvider {
         Updates.set(Fields.creationTime, expire)
     );
     getCollection().updateOne(filter, update, new UpdateOptions().upsert(true));
-  }
-
-  public boolean checkAppSceneExist(String appId, String sceneKey) {
-    Bson filter = Filters.and(Filters.eq(Fields.appId, appId),
-        Filters.eq(Fields.sceneKey, sceneKey));
-    return getCollection().countDocuments(filter) > 0;
   }
 }

@@ -7,9 +7,9 @@ import org.springframework.stereotype.Component;
 @Component
 @AllArgsConstructor
 public class ScenePoolFactory {
-  private List<ScenePoolProviderImpl> poolImpls;
+  private List<ScenePoolProvider> poolImpls;
 
-  public ScenePoolProviderImpl getProvider(String providerName) {
+  public ScenePoolProvider getProvider(String providerName) {
     return poolImpls.stream()
         .filter(poolImpl -> poolImpl.getProviderName().equals(providerName))
         .findFirst()

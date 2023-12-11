@@ -9,6 +9,7 @@ import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.impl.mongo.CoverageRepository;
 import com.arextest.storage.repository.scenepool.ScenePoolFactory;
+import com.arextest.storage.repository.scenepool.ScenePoolProvider;
 import com.arextest.storage.repository.scenepool.ScenePoolProviderImpl;
 import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.trace.MDCTracer;
@@ -47,21 +48,26 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
    */
   @Override
   public void handle(AREXMocker coverageMocker) {
-    ScenePoolProviderImpl scenePoolProvider;
+    ScenePoolProvider scenePoolProvider;
     if (StringUtils.isEmpty(coverageMocker.getReplayId())) {
       scenePoolProvider = scenePoolFactory.getProvider(ProviderNames.RECORDING_SCENE_POOL);
+      RecordTask task = new RecordTask(scenePoolProvider, coverageMocker);
+      coverageHandlerExecutor.submit(task);
     } else {
       scenePoolProvider = scenePoolFactory.getProvider(ProviderNames.REPLAY_SCENE_POOL);
+      // todo: implement task for replay phase
     }
 
-//    CoverageTask task = new CoverageTask(coverageMocker);
-//    coverageHandlerExecutor.submit(task);
-//    LOGGER.info(
-//        "CoverageMockerHandler handle submit, recordId:{}, pathKey: {}, pool queue size: {}",
-//        coverageMocker.getRecordId(), coverageMocker.getOperationName(),
-//        coverageHandlerExecutor.getQueue().size());
+    LOGGER.info(
+        "CoverageMockerHandler submitted async task, recordId: {}, pathKey: {}, pool queue size: {}",
+        coverageMocker.getRecordId(), coverageMocker.getOperationName(),
+        coverageHandlerExecutor.getQueue().size());
   }
 
+  /**
+   * async task for coverage mocker received during replay phase
+   * todo: use this task
+   */
   @AllArgsConstructor
   private class ReplayTask implements Runnable {
     private final ScenePoolProviderImpl scenePoolProvider;
@@ -71,18 +77,17 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
     public void run() {
       MDCTracer.addRecordId(coverageMocker.getRecordId());
       MDCTracer.addReplayId(coverageMocker.getReplayId());
-      if (StringUtils.isEmpty(coverageMocker.getOperationName())
-          || coverageMocker.getOperationName().equals("0")) {
-        LOGGER.warn("CoverageMockerHandler handle error, operationName is empty, recordId:{}",
-          coverageMocker.getRecordId());
-
-        // getting operationName(Coverage key) as 0 but having recordId, meaning this is an extremely simple and meaningless case, remove it
-        mockSourceEditionService.removeByRecordId(ProviderNames.DEFAULT,
-            coverageMocker.getRecordId());
-        return;
-      }
-
       try {
+        if (StringUtils.isEmpty(coverageMocker.getOperationName())
+            || coverageMocker.getOperationName().equals("0")) {
+          LOGGER.warn("CoverageMockerHandler handle error, operationName is empty, recordId:{}",
+              coverageMocker.getRecordId());
+
+          // getting operationName(Coverage key) as 0 but having recordId, meaning this is an extremely simple and meaningless case, remove it
+          mockSourceEditionService.removeByRecordId(ProviderNames.DEFAULT,
+              coverageMocker.getRecordId());
+          return;
+        }
         final RepositoryProvider<Mocker> pinedProvider = repositoryProviderFactory.findProvider(
             ProviderNames.AUTO_PINNED);
         assert pinedProvider != null;
@@ -113,27 +118,61 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
         }
       } catch (Exception e) {
         LOGGER.error("CoverageMockerHandler handle error", e);
+      } finally {
+        MDCTracer.clear();
+      }
+    }
+
+    private void transferEntry(AREXMocker coverageMocker, String incomingCaseId) {
+      Mocker oldCoverageMocker = coverageRepository.upsertOne(coverageMocker);
+      // there is an existing AutoPinnedMocker with the same key, delete the related AutoPinnedMocker
+      if (oldCoverageMocker != null) {
+        String oldCaseId = oldCoverageMocker.getRecordId();
+        boolean removed = mockSourceEditionService.removeByRecordId(ProviderNames.AUTO_PINNED,
+            oldCaseId);
+        if (!removed) {
+          LOGGER.error("remove old auto pinned failed, caseId:{}", oldCaseId);
+        }
+      }
+
+      // move entry to auto pinned
+      boolean moved = mockSourceEditionService.moveTo(ProviderNames.DEFAULT, incomingCaseId,
+          ProviderNames.AUTO_PINNED);
+      if (!moved) {
+        LOGGER.error("move entry to auto pinned failed, caseId:{}", incomingCaseId);
       }
     }
   }
 
-  private void transferEntry(AREXMocker coverageMocker, String incomingCaseId) {
-    Mocker oldCoverageMocker = coverageRepository.upsertOne(coverageMocker);
-    // there is an existing AutoPinnedMocker with the same key, delete the related AutoPinnedMocker
-    if (oldCoverageMocker != null) {
-      String oldCaseId = oldCoverageMocker.getRecordId();
-      boolean removed = mockSourceEditionService.removeByRecordId(ProviderNames.AUTO_PINNED,
-          oldCaseId);
-      if (!removed) {
-        LOGGER.error("remove old auto pinned failed, caseId:{}", oldCaseId);
-      }
-    }
+  /**
+   * async task for coverage mocker received during record phase
+   */
+  @AllArgsConstructor
+  private class RecordTask implements Runnable {
+    private final ScenePoolProvider scenePoolProvider;
+    private final AREXMocker coverageMocker;
+    @Override
+    public void run() {
+      try {
+        String appId = coverageMocker.getAppId();
+        String sceneKey = coverageMocker.getOperationName();
+        MDCTracer.addAppId(appId);
 
-    // move entry to auto pinned
-    boolean moved = mockSourceEditionService.moveTo(ProviderNames.DEFAULT, incomingCaseId,
-        ProviderNames.AUTO_PINNED);
-    if (!moved) {
-      LOGGER.error("move entry to auto pinned failed, caseId:{}", incomingCaseId);
+        // scene exist remove Rolling mocker
+        if (scenePoolProvider.checkSceneExist(appId, sceneKey)) {
+          mockSourceEditionService.removeByRecordId(ProviderNames.DEFAULT, coverageMocker.getRecordId());
+          LOGGER.info("CoverageMockerHandler receive exist case, recordId: {}, pathKey: {}",
+              coverageMocker.getRecordId(), coverageMocker.getOperationName());
+        } else {
+          // scene not exist, do nothing
+          LOGGER.info("CoverageMockerHandler receive new case, recordId: {}, pathKey: {}",
+              coverageMocker.getRecordId(), coverageMocker.getOperationName());
+        }
+      } catch (Exception e) {
+        LOGGER.error("CoverageMockerHandler handle error", e);
+      } finally {
+        MDCTracer.clear();
+      }
     }
   }
 }

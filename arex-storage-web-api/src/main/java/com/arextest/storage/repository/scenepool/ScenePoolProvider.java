@@ -6,10 +6,8 @@ import com.mongodb.client.MongoDatabase;
 
 public interface ScenePoolProvider {
   String getProviderName();
-  MongoDatabase getDataBase();
 
-  default MongoCollection<Scene> getCollection() {
-    String categoryName = this.getProviderName() + "ScenePool";
-    return getDataBase().getCollection(categoryName, Scene.class);
-  }
+  boolean checkSceneExist(String appId, String sceneKey);
+
+  void upsertOne(Scene scene);
 }
