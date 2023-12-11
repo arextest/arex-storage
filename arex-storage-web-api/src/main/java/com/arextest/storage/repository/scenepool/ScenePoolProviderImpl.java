@@ -31,7 +31,7 @@ public class ScenePoolProviderImpl extends AbstractScenePoolProvider {
     Bson filter = Filters.and(Filters.eq(Fields.appId, scene.getAppId()),
         Filters.eq(Fields.sceneKey, scene.getSceneKey()));
 
-    Date expire = Date.from(LocalDateTime.now().plusDays(7).atZone(ZoneId.systemDefault()).toInstant());
+    Date expire = Date.from(LocalDateTime.now().plusDays(30).atZone(ZoneId.systemDefault()).toInstant());
     Bson update = Updates.combine(
         Updates.set(Fields.appId, scene.getAppId()),
         Updates.set(Fields.sceneKey, scene.getSceneKey()),
