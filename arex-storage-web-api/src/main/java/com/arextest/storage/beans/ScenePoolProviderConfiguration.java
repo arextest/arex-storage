@@ -10,12 +10,12 @@ import org.springframework.context.annotation.Configuration;
 public class ScenePoolProviderConfiguration {
 
   @Bean
-  public ScenePoolProviderImpl getRecordingPool(MongoDatabase mongoDatabase) {
-    return new ScenePoolProviderImpl(ProviderNames.RECORDING_SCENE_POOL, mongoDatabase);
+  public ScenePoolProviderImpl getRecordingPool() {
+    return new ScenePoolProviderImpl(ProviderNames.RECORDING_SCENE_POOL);
   }
 
   @Bean
-  public ScenePoolProviderImpl getReplayPool(MongoDatabase mongoDatabase) {
-    return new ScenePoolProviderImpl(ProviderNames.REPLAY_SCENE_POOL, mongoDatabase);
+  public ScenePoolProviderImpl getReplayPool() {
+    return new ScenePoolProviderImpl(ProviderNames.REPLAY_SCENE_POOL);
   }
 }

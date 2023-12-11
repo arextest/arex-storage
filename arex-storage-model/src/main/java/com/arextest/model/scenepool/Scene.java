@@ -9,6 +9,7 @@ import lombok.experimental.FieldNameConstants;
 public class Scene {
   private String sceneKey;
   private String appId;
+  private String recordId;
 
   private Date creationTime;
   private Date updateTime;

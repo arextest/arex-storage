@@ -35,10 +35,11 @@ public class ScenePoolProviderImpl extends AbstractScenePoolProvider {
     Bson update = Updates.combine(
         Updates.set(Fields.appId, scene.getAppId()),
         Updates.set(Fields.sceneKey, scene.getSceneKey()),
+        Updates.set(Fields.recordId, scene.getRecordId()),
 
         Updates.setOnInsert(Fields.creationTime, new Date()),
         Updates.set(Fields.updateTime, new Date()),
-        Updates.set(Fields.creationTime, expire)
+        Updates.set(Fields.expirationTime, expire)
     );
     getCollection().updateOne(filter, update, new UpdateOptions().upsert(true));
   }
