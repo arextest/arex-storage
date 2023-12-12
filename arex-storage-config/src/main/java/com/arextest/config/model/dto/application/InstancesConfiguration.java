@@ -17,6 +17,7 @@ public class InstancesConfiguration extends AbstractConfiguration {
   private String host;
   private Date dataUpdateTime;
   private String agentStatus;
+  private Map<String, String> tags;
   private Map<String, String> systemEnv;
   private Map<String, String> systemProperties;
 }

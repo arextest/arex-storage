@@ -12,7 +12,6 @@ import com.arextest.config.model.vo.AgentRemoteConfigurationRequest;
 import com.arextest.config.model.vo.AgentRemoteConfigurationResponse;
 import com.arextest.config.model.vo.AgentStatusRequest;
 import com.arextest.config.model.vo.AgentStatusType;
-import com.arextest.storage.beans.StorageConfigurationProperties;
 import com.arextest.storage.service.config.ConfigurableHandler;
 import com.arextest.storage.service.config.impl.ApplicationConfigurableHandler;
 import com.arextest.storage.service.config.impl.ApplicationInstancesConfigurableHandler;
@@ -23,10 +22,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.CompletableFuture;
@@ -41,7 +38,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -58,15 +54,12 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @Slf4j
 @Controller
 @RequestMapping(path = "/api/config/agent", produces = MediaType.APPLICATION_JSON_VALUE)
-@EnableConfigurationProperties({StorageConfigurationProperties.class})
 public final class AgentRemoteConfigurationController {
 
   private static final String NOT_RECORDING = "(not recording)";
 
   private static final String EMPTY_TIME = "0";
   private static final String LAST_MODIFY_TIME = "If-Modified-Since";
-
-  private static final String TAG_PREFIX = "arex.tags.";
   @Resource
   private ConfigurableHandler<DynamicClassConfiguration> dynamicClassHandler;
   @Resource
@@ -86,9 +79,6 @@ public final class AgentRemoteConfigurationController {
 
   @Resource
   private ObjectMapper objectMapper;
-
-  @Resource
-  private StorageConfigurationProperties storageConfigurationProperties;
 
   @PostMapping("/load")
   @ResponseBody
@@ -213,8 +203,7 @@ public final class AgentRemoteConfigurationController {
   private void asyncUpdateAppEnv(InstancesConfiguration instancesConfiguration) {
     try {
       CompletableFuture.runAsync(
-          new AddEnvRunnable(instancesConfiguration, applicationConfigurableHandler,
-              storageConfigurationProperties),
+          new AddEnvRunnable(instancesConfiguration, applicationConfigurableHandler),
           envUpdateHandlerExecutor);
     } catch (RejectedExecutionException e) {
       LOGGER.error("envUpdateHandlerExecutor is full, appId:{}",
@@ -233,27 +222,13 @@ public final class AgentRemoteConfigurationController {
 
     private ApplicationConfigurableHandler applicationConfigurableHandler;
 
-    private StorageConfigurationProperties storageConfigurationProperties;
-
     @Override
     public void run() {
       try {
-        Map<String, String> systemProperties = instance.getSystemProperties();
-        if (MapUtils.isEmpty(systemProperties)) {
+        Map<String, String> tags = instance.getTags();
+        if (MapUtils.isEmpty(tags)) {
           return;
         }
-
-        List<String> supportTags = storageConfigurationProperties.getSupportTags();
-        if (CollectionUtils.isEmpty(supportTags)) {
-          return;
-        }
-
-        Map<String, String> tags = new HashMap<>();
-        supportTags.stream().filter(StringUtils::isNotEmpty).forEach(item -> {
-          String identifier = TAG_PREFIX + item;
-          Optional.ofNullable(systemProperties.get(identifier))
-              .ifPresent(value -> tags.put(item, value));
-        });
         applicationConfigurableHandler.addEnvToApp(instance.getAppId(), tags);
       } catch (RuntimeException e) {
         LOGGER.error("add env error", e);

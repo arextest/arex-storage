@@ -24,7 +24,6 @@ public class StorageConfigurationProperties {
   private Map<String, Long> expirationDurationMap;
   private Long defaultExpirationDuration;
   private int allowReRunDays;
-  private List<String> supportTags;
 
   @Getter
   @Setter

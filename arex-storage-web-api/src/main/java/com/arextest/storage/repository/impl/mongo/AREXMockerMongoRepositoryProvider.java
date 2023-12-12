@@ -389,7 +389,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     if (MapUtils.isNotEmpty(rangeRequestType.getTags())) {
       for (Map.Entry<String, String> entry : rangeRequestType.getTags().entrySet()) {
         String tagName = entry.getKey();
-        if (properties.getSupportTags() == null || !properties.getSupportTags().contains(tagName)) {
+        if (StringUtils.isEmpty(tagName)){
           continue;
         }
         item = Filters.eq(TAGS_COLUMN_NAME + DOT_OP + tagName, entry.getValue());
