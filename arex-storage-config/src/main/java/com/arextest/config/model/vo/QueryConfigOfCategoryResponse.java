@@ -1,5 +1,7 @@
 package com.arextest.config.model.vo;
 
+import java.util.List;
+import java.util.Set;
 import lombok.Data;
 
 /**
@@ -8,4 +10,13 @@ import lombok.Data;
 @Data
 public class QueryConfigOfCategoryResponse {
   private QueryConfigOfCategory body;
+
+  @Data
+  public class QueryConfigOfCategory {
+    private String operationName;
+
+    private Set<List<String>> exclusionList;
+
+    private Set<String> ignoreNodeSet;
+  }
 }

@@ -2,7 +2,7 @@ package com.arextest.storage.mock.impl;
 
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.common.utils.CompressionUtils;
-import com.arextest.config.model.vo.QueryConfigOfCategory;
+import com.arextest.config.model.vo.QueryConfigOfCategoryResponse.QueryConfigOfCategory;
 import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
@@ -248,7 +248,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   }
 
   @Override
-  public void calculateEigen(Mocker item, boolean saveMocker) {
+  public void calculateEigen(Mocker item, boolean queryConfig) {
     try {
       if (item.getCategoryType().isEntryPoint()) {
         return;
@@ -262,7 +262,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
       // get exclusion and ignore node from arex-api.use this to reduction noise
       Collection<List<String>> exclusions = null;
       Collection<String> ignoreNodes = null;
-      if (saveMocker) {
+      if (queryConfig) {
         QueryConfigOfCategory queryConfigOfCategory = queryConfigService.queryConfigOfCategory(
             item);
         if (queryConfigOfCategory != null) {
