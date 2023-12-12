@@ -19,6 +19,7 @@ import com.mongodb.client.result.InsertOneResult;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
@@ -29,6 +30,8 @@ public class ApplicationConfigurationRepositoryImpl implements
     ConfigRepositoryProvider<ApplicationConfiguration> {
 
   private static final String UNKNOWN_APP_NAME = "unknown app name";
+  private static final String DOT_OP = ".";
+
   private MongoDatabase mongoDatabase;
   private MongoCollection<AppCollection> mongoCollection;
   @Resource
@@ -108,7 +111,8 @@ public class ApplicationConfigurationRepositoryImpl implements
             AppCollection.Fields.features,
             AppCollection.Fields.appName,
             AppCollection.Fields.owners,
-            AppCollection.Fields.visibilityLevel));
+            AppCollection.Fields.visibilityLevel,
+            AppCollection.Fields.tags));
     Bson updateCombine = Updates.combine(updateList);
 
     return mongoCollection.updateMany(filter, updateCombine).getModifiedCount() > 0;
@@ -132,6 +136,27 @@ public class ApplicationConfigurationRepositoryImpl implements
     AppCollection appCollection = AppMapper.INSTANCE.daoFromDto(configuration);
     InsertOneResult insertOneResult = mongoCollection.insertOne(appCollection);
     return insertOneResult.getInsertedId() != null;
+  }
+
+  public boolean addEnvToApp(String appId, Map<String, String> tags) {
+    if (StringUtils.isBlank(appId) || tags == null || tags.isEmpty()) {
+      return false;
+    }
+    List<Bson> updateList = new ArrayList<>();
+    Bson filter = Filters.eq(AppCollection.Fields.appId, appId);
+    for (Map.Entry<String, String> entry : tags.entrySet()) {
+      String key = entry.getKey();
+      String value = entry.getValue();
+      if (StringUtils.isBlank(value)) {
+        continue;
+      }
+      Bson update = Updates.addToSet(AppCollection.Fields.tags + DOT_OP + key, value);
+      updateList.add(update);
+    }
+    if (updateList.isEmpty()) {
+      return false;
+    }
+    return mongoCollection.updateOne(filter, Updates.combine(updateList)).getModifiedCount() > 0;
   }
 
 }

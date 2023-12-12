@@ -4,10 +4,12 @@ import com.arextest.config.model.dto.StatusType;
 import com.arextest.config.model.dto.application.ApplicationConfiguration;
 import com.arextest.config.model.dto.application.ApplicationDescription;
 import com.arextest.config.repository.ConfigRepositoryProvider;
+import com.arextest.config.repository.impl.ApplicationConfigurationRepositoryImpl;
 import com.arextest.storage.service.config.AbstractConfigurableHandler;
 import com.arextest.storage.service.config.provider.ApplicationDescriptionProvider;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import javax.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,10 +20,12 @@ import org.springframework.stereotype.Component;
  * @since 2022/1/23
  */
 @Component
-class ApplicationConfigurableHandler extends AbstractConfigurableHandler<ApplicationConfiguration> {
+public class ApplicationConfigurableHandler extends AbstractConfigurableHandler<ApplicationConfiguration> {
 
   @Resource
   private ApplicationDescriptionProvider applicationDescriptionProvider;
+  @Resource
+  private ApplicationConfigurationRepositoryImpl applicationConfigurationRepository;
 
   protected ApplicationConfigurableHandler(
       @Autowired ConfigRepositoryProvider<ApplicationConfiguration> repositoryProvider) {
@@ -60,4 +64,9 @@ class ApplicationConfigurableHandler extends AbstractConfigurableHandler<Applica
     this.insert(applicationConfiguration);
     return Collections.singletonList(applicationConfiguration);
   }
+
+  public boolean addEnvToApp(String appId, Map<String, String> tags) {
+    return applicationConfigurationRepository.addEnvToApp(appId, tags);
+  }
+
 }

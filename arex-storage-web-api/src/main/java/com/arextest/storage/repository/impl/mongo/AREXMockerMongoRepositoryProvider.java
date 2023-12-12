@@ -33,6 +33,7 @@ import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -55,14 +56,21 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
   private static final String ENV_COLUMN_NAME = "recordEnvironment";
   private static final String OPERATION_COLUMN_NAME = "operationName";
   private static final String COLLECTION_PREFIX = "Mocker";
-  private static final String PLACE_HOLDER = "$";
+
   private static final String VALUE_COLUMN = "value";
 
+  private static final String AGENT_RECORD_VERSION_COLUMN_NAME = "recordVersion";
+  private static final String TARGET_RESPONSE_COLUMN_NAME = "targetResponse";
+  private static final String TAGS_COLUMN_NAME = "tags";
+
+  // region: the options of mongodb
+  private static final String PLACE_HOLDER = "$";
   private static final String GROUP_OP = "$group";
   private static final String SUM_OP = "$sum";
   private static final String PROJECT_OP = "$project";
-  private static final String AGENT_RECORD_VERSION_COLUMN_NAME = "recordVersion";
-  private static final String TARGET_RESPONSE_COLUMN_NAME = "targetResponse";
+  private static final String DOT_OP = ".";
+  // endregion
+
   private static final String EIGEN_MAP_COLUMN_NAME = "eigenMap";
   private final static Bson CREATE_TIME_ASCENDING_SORT = Sorts.ascending(CREATE_TIME_COLUMN_NAME);
   private final static Bson CREATE_TIME_DESCENDING_SORT = Sorts.descending(CREATE_TIME_COLUMN_NAME);
@@ -377,7 +385,17 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     }
     item = buildTimeRangeFilter(rangeRequestType.getBeginTime(), rangeRequestType.getEndTime());
     filters.add(item);
-
+    // add the filter by tag
+    if (MapUtils.isNotEmpty(rangeRequestType.getTags())) {
+      for (Map.Entry<String, String> entry : rangeRequestType.getTags().entrySet()) {
+        String tagName = entry.getKey();
+        if (StringUtils.isEmpty(tagName)){
+          continue;
+        }
+        item = Filters.eq(TAGS_COLUMN_NAME + DOT_OP + tagName, entry.getValue());
+        filters.add(item);
+      }
+    }
     return filters;
   }
 
