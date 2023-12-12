@@ -177,7 +177,7 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
         // scene exist remove Rolling mocker
         if (scenePoolProvider.checkSceneExist(appId, sceneKey)) {
           mockSourceEditionService.removeByRecordId(ProviderNames.DEFAULT, coverageMocker.getRecordId());
-          LOGGER.info("CoverageMockerHandler receive exist case, recordId: {}, pathKey: {}",
+          LOGGER.info("CoverageMockerHandler received existing case, recordId: {}, pathKey: {}",
               coverageMocker.getRecordId(), coverageMocker.getOperationName());
         } else {
           Scene scene = new Scene();
@@ -187,7 +187,7 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
           scene.setExecutionPath(executionPath);
 
           scenePoolProvider.upsertOne(scene);
-          LOGGER.info("CoverageMockerHandler receive new case, recordId: {}, pathKey: {}",
+          LOGGER.info("CoverageMockerHandler received new case, recordId: {}, pathKey: {}",
               coverageMocker.getRecordId(), coverageMocker.getOperationName());
         }
       } catch (Exception e) {
