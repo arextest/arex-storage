@@ -9,8 +9,6 @@ arex:
       ConfigFile: 3456000000
     defaultExpirationDuration: 345600000
     allowReRunDays: 1
-    supportTags:
-      - env
   api:
     config:
       agent:
