@@ -68,7 +68,6 @@ public class AgentWorkingService {
       return false;
     }
 
-    mockResultProvider.calculateEigen(item);
     MockerSaveHandler<T> handler = mockerHandlerFactory.getHandler(item.getCategoryType());
     if (handler != null) {
       try {
@@ -80,6 +79,7 @@ public class AgentWorkingService {
       return true;
     }
 
+    mockResultProvider.calculateEigen(item);
     RepositoryProvider<T> repositoryWriter = repositoryProviderFactory.defaultProvider();
     return repositoryWriter != null && repositoryWriter.save(item);
   }
