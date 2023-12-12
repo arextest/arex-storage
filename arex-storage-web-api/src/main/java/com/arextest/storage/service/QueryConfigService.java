@@ -38,7 +38,7 @@ public class QueryConfigService {
     }
     QueryConfigOfCategory configCache = getConfigCache(mocker.getAppId(), mocker.getOperationName());
     if (configCache != null) {
-      return null;
+      return configCache;
     }
 
     QueryConfigOfCategoryRequest queryConfigOfCategoryRequest = new QueryConfigOfCategoryRequest();
