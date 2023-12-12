@@ -4,6 +4,7 @@ import com.arextest.common.cache.CacheProvider;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
+import com.arextest.model.mock.Mocker.Target;
 import com.arextest.model.scenepool.Scene;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
@@ -167,6 +168,8 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
         String appId = coverageMocker.getAppId();
         String sceneKey = coverageMocker.getOperationName();
         String recordId = coverageMocker.getRecordId();
+        String executionPath = Optional.ofNullable(coverageMocker.getTargetResponse()).map(
+            Target::getBody).orElse(null);
 
         MDCTracer.addAppId(appId);
         MDCTracer.addRecordId(recordId);
@@ -181,6 +184,7 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
           scene.setSceneKey(sceneKey);
           scene.setAppId(appId);
           scene.setRecordId(recordId);
+          scene.setExecutionPath(executionPath);
 
           scenePoolProvider.upsertOne(scene);
           LOGGER.info("CoverageMockerHandler receive new case, recordId: {}, pathKey: {}",
