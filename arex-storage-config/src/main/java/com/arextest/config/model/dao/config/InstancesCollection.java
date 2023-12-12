@@ -21,6 +21,7 @@ public class InstancesCollection extends BaseEntity {
   private String recordVersion;
   private Date dataUpdateTime;
   private String agentStatus;
+  private Map<String, String> tags;
   private Map<String, String> systemEnv;
   private Map<String, String> systemProperties;
 }
