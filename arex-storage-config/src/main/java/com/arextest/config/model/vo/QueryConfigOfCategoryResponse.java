@@ -12,7 +12,7 @@ public class QueryConfigOfCategoryResponse {
   private QueryConfigOfCategory body;
 
   @Data
-  public class QueryConfigOfCategory {
+  public static class QueryConfigOfCategory {
     private String operationName;
 
     private Set<List<String>> exclusionList;
