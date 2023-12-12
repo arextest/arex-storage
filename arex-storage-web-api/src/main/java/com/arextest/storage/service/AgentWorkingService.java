@@ -79,7 +79,7 @@ public class AgentWorkingService {
       return true;
     }
 
-    mockResultProvider.calculateEigen(item);
+    mockResultProvider.calculateEigen(item, true);
     RepositoryProvider<T> repositoryWriter = repositoryProviderFactory.defaultProvider();
     return repositoryWriter != null && repositoryWriter.save(item);
   }
