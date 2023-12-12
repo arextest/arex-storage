@@ -59,10 +59,10 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
 
     // if replayId is empty, meaning this coverage mocker is received during record phase
     if (StringUtils.isEmpty(coverageMocker.getReplayId())) {
-      scenePoolProvider = scenePoolFactory.getProvider(ProviderNames.RECORDING_SCENE_POOL);
+      scenePoolProvider = scenePoolFactory.getProvider(ScenePoolFactory.RECORDING_SCENE_POOL);
       task = new RecordTask(scenePoolProvider, coverageMocker);
     } else {
-      scenePoolProvider = scenePoolFactory.getProvider(ProviderNames.REPLAY_SCENE_POOL);
+      scenePoolProvider = scenePoolFactory.getProvider(ScenePoolFactory.REPLAY_SCENE_POOL);
       // todo: implement task for replay phase
     }
 
