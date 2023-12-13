@@ -150,7 +150,7 @@
       <dependency>
         <artifactId>compare-sdk</artifactId>
         <groupId>com.arextest</groupId>
-        <version>0.2.0</version>
+        <version>0.2.3</version>
       </dependency>
       <dependency>
         <artifactId>jsr250-api</artifactId>
