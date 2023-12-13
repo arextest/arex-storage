@@ -63,6 +63,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   private String notUseSimilarityStrategyAppIds;
   @Value("${arex.storage.use.eigen.match}")
   private boolean useEigenMatch;
+  @Value("${arex.storage.query.config:true}")
+  private boolean queryConfigSwitch;
   @Resource
   private CacheProvider redisCacheProvider;
   @Resource
@@ -262,7 +264,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
       // get exclusion and ignore node from arex-api.use this to reduction noise
       Collection<List<String>> exclusions = null;
       Collection<String> ignoreNodes = null;
-      if (queryConfig) {
+      if (queryConfig && queryConfigSwitch) {
         QueryConfigOfCategory queryConfigOfCategory = queryConfigService.queryConfigOfCategory(
             item);
         if (queryConfigOfCategory != null) {
