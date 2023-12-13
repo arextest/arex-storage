@@ -15,6 +15,11 @@ public class InvalidCaseRequest {
      * FastReject or QueueOverFlow
      */
     private String reason;
+    /**
+     * Replay id
+     * replay scene must be not null
+     */
+    private String replayId;
 
     @Override
     public String toString() {
@@ -22,6 +27,7 @@ public class InvalidCaseRequest {
                 "appId='" + appId + '\'' +
                 ", recordId='" + recordId + '\'' +
                 ", reason=" + reason +
+                ", replayId='" + replayId + '\'' +
                 '}';
     }
 }

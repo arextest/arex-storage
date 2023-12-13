@@ -35,7 +35,7 @@ import org.springframework.web.client.RestTemplate;
  */
 @Component
 @Slf4j
-public final class HttpWepServiceApiClient {
+public final class HttpWebServiceApiClient {
 
   private final static int TEN_SECONDS_TIMEOUT = 10_000;
   private RestTemplate restTemplate;

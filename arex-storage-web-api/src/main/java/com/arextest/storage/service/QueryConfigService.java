@@ -6,7 +6,7 @@ import com.arextest.config.model.vo.QueryConfigOfCategoryRequest;
 import com.arextest.config.model.vo.QueryConfigOfCategoryResponse;
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.cache.CacheKeyUtils;
-import com.arextest.storage.client.HttpWepServiceApiClient;
+import com.arextest.storage.client.HttpWebServiceApiClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -28,7 +28,7 @@ public class QueryConfigService {
   @Value("${arex.query.config.cache.expired.seconds:600}")
   private long cacheExpiredSeconds;
   @Resource
-  private HttpWepServiceApiClient httpWepServiceApiClient;
+  private HttpWebServiceApiClient httpWebServiceApiClient;
   @Resource
   private CacheProvider redisCacheProvider;
 
@@ -52,7 +52,7 @@ public class QueryConfigService {
     queryConfigOfCategoryRequest.setEntryPoint(mocker.getCategoryType().isEntryPoint());
     queryConfigOfCategoryRequest.setOperationName(operationName);
     QueryConfigOfCategoryResponse queryConfigOfCategoryResponse =
-            httpWepServiceApiClient.jsonPost(queryConfigOfCategoryUrl, queryConfigOfCategoryRequest, QueryConfigOfCategoryResponse.class);
+            httpWebServiceApiClient.jsonPost(queryConfigOfCategoryUrl, queryConfigOfCategoryRequest, QueryConfigOfCategoryResponse.class);
     if (queryConfigOfCategoryResponse != null && queryConfigOfCategoryResponse.getBody() != null) {
       putConfigCache(appId, categoryName, operationName, queryConfigOfCategoryResponse.getBody());
       return queryConfigOfCategoryResponse.getBody();

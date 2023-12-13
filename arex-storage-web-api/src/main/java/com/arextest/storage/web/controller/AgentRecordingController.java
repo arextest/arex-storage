@@ -145,10 +145,11 @@ public class AgentRecordingController {
   @ResponseBody
   public Response invalidCase(@RequestBody InvalidCaseRequest requestType) {
       if (StringUtils.isEmpty(requestType.getRecordId())) {
-          LOGGER.warn("agent invalid case recordId empty, {}", requestType);
+          LOGGER.warn("[[title=invalidCase]]agent invalid case recordId empty, {}", requestType);
           return ResponseUtils.emptyRecordIdResponse();
       }
-      LOGGER.info("agent invalid case, request:{}", requestType);
+      MDCTracer.addRecordId(requestType.getRecordId());
+      LOGGER.info("[[title=invalidCase]]agent invalid case, request:{}", requestType);
       CompletableFuture.runAsync(() -> agentWorkingMetricService.invalidCase(requestType));
       return ResponseUtils.successResponse(true);
   }

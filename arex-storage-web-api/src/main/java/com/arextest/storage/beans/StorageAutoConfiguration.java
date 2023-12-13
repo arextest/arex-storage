@@ -22,6 +22,7 @@ import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.AgentWorkingListener;
 import com.arextest.storage.service.AgentWorkingService;
 import com.arextest.storage.service.AutoDiscoveryEntryPointListener;
+import com.arextest.storage.service.InvalidReplayCaseService;
 import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.service.PrepareMockResultService;
 import com.arextest.storage.service.ScheduleReplayingService;
@@ -151,8 +152,9 @@ public class StorageAutoConfiguration {
   public AgentWorkingMetricService agentWorkingMetricService(
       AgentWorkingService agentWorkingService,
       MockSourceEditionService editableService,
-      List<MetricListener> metricListeners) {
-    return new AgentWorkingMetricService(agentWorkingService, editableService, metricListeners);
+      List<MetricListener> metricListeners,
+      InvalidReplayCaseService invalidReplayCaseService) {
+    return new AgentWorkingMetricService(agentWorkingService, editableService, metricListeners, invalidReplayCaseService);
   }
 
   @Bean
@@ -166,8 +168,10 @@ public class StorageAutoConfiguration {
   @ConditionalOnMissingBean(ScheduleReplayQueryController.class)
   public ScheduleReplayQueryController scheduleReplayQueryController(
       ScheduleReplayingService scheduleReplayingService,
-      PrepareMockResultService prepareMockResultService) {
-    return new ScheduleReplayQueryController(scheduleReplayingService, prepareMockResultService);
+      PrepareMockResultService prepareMockResultService,
+      InvalidReplayCaseService invalidReplayCaseService) {
+    return new ScheduleReplayQueryController(scheduleReplayingService, prepareMockResultService,
+            invalidReplayCaseService);
   }
 
   @Bean

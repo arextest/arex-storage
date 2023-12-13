@@ -17,6 +17,7 @@ import com.arextest.model.replay.holder.ListResultHolder;
 import com.arextest.model.response.Response;
 import com.arextest.storage.mock.MockerPostProcessor;
 import com.arextest.storage.repository.ProviderNames;
+import com.arextest.storage.service.InvalidReplayCaseService;
 import com.arextest.storage.service.PrepareMockResultService;
 import com.arextest.storage.service.ScheduleReplayingService;
 import com.arextest.storage.trace.MDCTracer;
@@ -53,6 +54,8 @@ public class ScheduleReplayQueryController {
 
   private final PrepareMockResultService prepareMockResultService;
 
+  private final InvalidReplayCaseService invalidReplayCaseService;
+
   /**
    * fetch the replay result for compare
    *
@@ -81,6 +84,7 @@ public class ScheduleReplayQueryController {
           scheduleReplayingService.queryReplayResult(recordId, replayResultId);
       QueryReplayResultResponseType responseType = new QueryReplayResultResponseType();
       responseType.setResultHolderList(resultHolderList);
+      responseType.setInvalidResult(invalidReplayCaseService.isInvalidCase(replayResultId));
       return ResponseUtils.successResponse(responseType);
     } catch (Throwable throwable) {
       LOGGER.error("replayResult error:{} ,recordId:{} ,replayResultId:{}",
