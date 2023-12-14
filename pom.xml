@@ -140,7 +140,7 @@
           </exclusion>
         </exclusions>
         <groupId>com.arextest</groupId>
-        <version>0.1.18</version>
+        <version>0.1.15</version>
       </dependency>
       <dependency>
         <artifactId>arex-extension</artifactId>

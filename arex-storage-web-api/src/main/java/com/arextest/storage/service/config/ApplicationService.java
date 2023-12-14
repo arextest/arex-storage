@@ -105,14 +105,14 @@ public class ApplicationService {
     // remove Mockers
     PROVIDERS.forEach(provider -> mockSourceEditionService.removeAllByAppId(provider, appId));
 
+    // remove redis
+    autoDiscoveryEntryPointListener.removeAllCacheByAppId(appId);
+
     // remove ServiceOperation
     applicationOperationRepository.removeByAppId(appId);
 
     // remove App
     applicationConfigurationRepository.removeByAppId(request.getAppId());
-
-    // remove redis
-    autoDiscoveryEntryPointListener.removeAllCacheByAppId(appId);
     return true;
   }
 
