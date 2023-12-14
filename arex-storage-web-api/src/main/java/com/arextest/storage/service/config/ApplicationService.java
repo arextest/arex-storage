@@ -5,20 +5,24 @@ import com.arextest.config.model.dto.StatusType;
 import com.arextest.config.model.dto.application.ApplicationConfiguration;
 import com.arextest.config.model.vo.AddApplicationRequest;
 import com.arextest.config.model.vo.AddApplicationResponse;
+import com.arextest.config.model.vo.DeleteApplicationRequest;
 import com.arextest.config.model.vo.UpdateApplicationRequest;
 import com.arextest.config.repository.impl.ApplicationConfigurationRepositoryImpl;
+import com.arextest.config.repository.impl.ApplicationOperationConfigurationRepositoryImpl;
 import com.arextest.storage.cache.CacheKeyUtils;
+import com.arextest.storage.repository.ProviderNames;
+import com.arextest.storage.service.AutoDiscoveryEntryPointListener;
+import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.utils.RandomUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.Resource;
-import java.util.List;
-import java.util.Set;
 
 /**
  * @author wildeslam.
@@ -32,12 +36,21 @@ public class ApplicationService {
 
   private static final long cacheExpiredSeconds = 3600;
 
+  private static final List<String> PROVIDERS = Arrays.asList(ProviderNames.DEFAULT,
+      ProviderNames.PINNED, ProviderNames.AUTO_PINNED);
+
   @Resource
   private ObjectMapper objectMapper;
-  @Autowired
+  @Resource
   private ApplicationConfigurationRepositoryImpl applicationConfigurationRepository;
   @Resource
+  private ApplicationOperationConfigurationRepositoryImpl applicationOperationRepository;
+  @Resource
   private CacheProvider redisCacheProvider;
+  @Resource
+  private MockSourceEditionService mockSourceEditionService;
+  @Resource
+  private AutoDiscoveryEntryPointListener autoDiscoveryEntryPointListener;
 
   public AddApplicationResponse addApplication(AddApplicationRequest request) {
     AddApplicationResponse response = new AddApplicationResponse();
@@ -85,6 +98,22 @@ public class ApplicationService {
       applicationConfiguration.setVisibilityLevel(request.getVisibilityLevel());
     }
     return applicationConfigurationRepository.update(applicationConfiguration);
+  }
+
+  public boolean deleteApplication(DeleteApplicationRequest request) {
+    final String appId = request.getAppId();
+    // remove Mockers
+    PROVIDERS.forEach(provider -> mockSourceEditionService.removeAllByAppId(provider, appId));
+
+    // remove ServiceOperation
+    applicationOperationRepository.removeByAppId(appId);
+
+    // remove App
+    applicationConfigurationRepository.removeByAppId(request.getAppId());
+
+    // remove redis
+    autoDiscoveryEntryPointListener.removeAllCacheByAppId(appId);
+    return true;
   }
 
 

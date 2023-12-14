@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 public class AutoDiscoveryEntryPointListener implements AgentWorkingListener {
 
   private static final String DASH = "_";
+  private static final String WILDCARD = "*";
   // private static final int SERVICE_TYPE_NORMAL = 4;
   private static final String SERVICE_MAPPINGS_PREFIX = "service_mappings_";
   private static final byte[] EMPTY_BYTE_ARRAY = CacheKeyUtils.toUtf8Bytes(StringUtils.EMPTY);
@@ -81,4 +82,16 @@ public class AutoDiscoveryEntryPointListener implements AgentWorkingListener {
     return false;
   }
 
+  public boolean removeAllCacheByAppId(String appId) {
+    byte[] appServiceKey = CacheKeyUtils.toUtf8Bytes(SERVICE_MAPPINGS_PREFIX + appId);
+    byte[] appServiceValue = cacheProvider.get(appServiceKey);
+    if (appServiceValue == null) {
+      return true;
+    }
+    String serviceId = CacheKeyUtils.fromUtf8Bytes(appServiceValue);
+    cacheProvider.remove(appServiceKey);
+    cacheProvider.removeByPrefix(
+        CacheKeyUtils.toUtf8Bytes(SERVICE_MAPPINGS_PREFIX + serviceId + WILDCARD));
+    return true;
+  }
 }
