@@ -97,10 +97,6 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     while (valueIterator.hasNext()) {
       T value = valueIterator.next();
       mockList.add(value);
-      // Determine whether grouping through operation is necessary
-      if (!shouldRecordCallReplayMax) {
-        continue;
-      }
       byte[] recordOperationKey = CacheKeyUtils.buildRecordOperationKey(category, recordId,
           getOperationNameWithCategory(value));
       int count = updateMapsAndGetCount(mockSequenceKeyMaps, recordOperationKey);
