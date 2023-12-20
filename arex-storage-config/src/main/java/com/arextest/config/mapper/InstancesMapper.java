@@ -38,7 +38,7 @@ public interface InstancesMapper {
     if (systemProperties == null || systemProperties.isEmpty()) {
       return null;
     }
-    HashMap<String, String> tags = new HashMap<>();
+    Map<String, String> tags = new HashMap<>();
     for (Map.Entry<String, String> entry : systemProperties.entrySet()) {
       String key = entry.getKey();
       Optional.ofNullable(key).ifPresent(k -> {
@@ -51,6 +51,6 @@ public interface InstancesMapper {
         }
       });
     }
-    return tags;
+    return tags.isEmpty() ? null : tags;
   }
 }

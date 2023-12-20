@@ -59,8 +59,6 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
    */
   @Value("${arex.storage.cache.expired.seconds:7200}")
   private long cacheExpiredSeconds;
-  @Value("${arex.storage.not.use.similarity.strategy.appIds}")
-  private String notUseSimilarityStrategyAppIds;
   @Value("${arex.storage.use.eigen.match}")
   private boolean useEigenMatch;
   @Value("${arex.storage.query.config:true}")
@@ -99,10 +97,6 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     while (valueIterator.hasNext()) {
       T value = valueIterator.next();
       mockList.add(value);
-      // Determine whether grouping through operation is necessary
-      if (!shouldBuildRecordOperationKey(value) && !shouldRecordCallReplayMax) {
-        continue;
-      }
       byte[] recordOperationKey = CacheKeyUtils.buildRecordOperationKey(category, recordId,
           getOperationNameWithCategory(value));
       int count = updateMapsAndGetCount(mockSequenceKeyMaps, recordOperationKey);
@@ -202,14 +196,6 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
 
   private boolean shouldUseIdOfInstanceToMockResult(MockCategoryType category) {
     return !category.isEntryPoint();
-  }
-
-  private boolean shouldBuildRecordOperationKey(Mocker mocker) {
-    if (StringUtils.isEmpty(notUseSimilarityStrategyAppIds)) {
-      return true;
-    }
-    String[] appIds = notUseSimilarityStrategyAppIds.split(COMMA_STRING);
-    return !Arrays.asList(appIds).contains(mocker.getAppId());
   }
 
   private boolean shouldRecordCallReplayMax(MockCategoryType category) {
@@ -394,7 +380,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
           operationName);
       int count = resultCount(recordOperationKey);
       LOGGER.info("get record result with operation:{}, count: {}", operationName, count);
-      if (useSequenceMatch(context.getMockStrategy(), category, mockItem, count)) {
+      if (useSequenceMatch(context.getMockStrategy(), category, count)) {
         return getMockResultWithSequenceMatch(mockItem, context, category, mockKeyList,
             recordIdBytes, replayIdBytes);
       }
@@ -414,10 +400,10 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   }
 
   private boolean useSequenceMatch(MockResultMatchStrategy mockStrategy, MockCategoryType category,
-      Mocker mockItem, int recordDataCount) {
+      int recordDataCount) {
     return category.isSkipComparison()
         || mockStrategy == MockResultMatchStrategy.STRICT_MATCH
-        || recordDataCount <= 1 || !shouldBuildRecordOperationKey(mockItem);
+        || recordDataCount <= 1;
   }
 
   private String getOperationNameWithCategory(Mocker mockItem) {

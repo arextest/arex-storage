@@ -167,9 +167,11 @@ public class MockSourceEditionService {
       LOGGER.warn("Could not found provider for {}", providerName);
       return false;
     }
+    long deleteCount = 0;
     for (MockCategoryType categoryType : providerFactory.getCategoryTypes()) {
-      repositoryWriter.removeBy(categoryType, recordId);
+      deleteCount += repositoryWriter.removeBy(categoryType, recordId);
     }
+    LOGGER.info("removeByRecordId deleted {} mockers for recordId: {}", deleteCount, recordId);
     return true;
   }
 

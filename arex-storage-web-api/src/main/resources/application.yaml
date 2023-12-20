@@ -38,11 +38,6 @@ arex:
   prometheus:
     port: 20093
   storage:
-    not:
-      use:
-        similarity:
-          strategy:
-            appIds:
     use:
       eigen:
         match: false

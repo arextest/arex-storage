@@ -21,7 +21,7 @@ import com.arextest.storage.trace.MDCTracer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.text.SimpleDateFormat;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -60,6 +60,7 @@ public final class AgentRemoteConfigurationController {
 
   private static final String EMPTY_TIME = "0";
   private static final String LAST_MODIFY_TIME = "If-Modified-Since";
+  private static final String INCLUDE_SERVICE_OPERATIONS = "includeServiceOperations";
   @Resource
   private ConfigurableHandler<DynamicClassConfiguration> dynamicClassHandler;
   @Resource
@@ -186,17 +187,29 @@ public final class AgentRemoteConfigurationController {
 
   private Map<String, String> getExtendField(
       ServiceCollectConfiguration serviceCollectConfiguration) {
-    Map<String, String> extendField = null;
+    Map<String, String> extendField = new HashMap<>();
+    // set the skipped field of serialization
     if (serviceCollectConfiguration != null && CollectionUtils.isNotEmpty(
         serviceCollectConfiguration.getSerializeSkipInfoList())) {
       try {
         String infoListStr = objectMapper.writeValueAsString(
             serviceCollectConfiguration.getSerializeSkipInfoList());
-        extendField = Collections.singletonMap("serializeSkipInfoList", infoListStr);
+        extendField.put("serializeSkipInfoList", infoListStr);
       } catch (JsonProcessingException e) {
         LOGGER.error("getExtendField error", e);
       }
     }
+
+    if (serviceCollectConfiguration != null && MapUtils.isNotEmpty(
+        serviceCollectConfiguration.getExtendField())) {
+      // set includeServiceOperations to allow which operations to record
+      String includeServiceOperations = serviceCollectConfiguration.getExtendField()
+          .getOrDefault(INCLUDE_SERVICE_OPERATIONS, null);
+      if (StringUtils.isNotEmpty(includeServiceOperations)) {
+        extendField.put(INCLUDE_SERVICE_OPERATIONS, includeServiceOperations);
+      }
+    }
+
     return extendField;
   }
 
