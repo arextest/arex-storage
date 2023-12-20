@@ -175,10 +175,6 @@ public class MockSourceEditionService {
     return true;
   }
 
-  public void invalidCase(String srcProviderName, String recordId) {
-    removeAll(srcProviderName, recordId);
-  }
-
   private List<Mocker> createTargetList(List<AREXMocker> srcMockers, String targetRecordId) {
     List<Mocker> targetList = null;
     long now = System.currentTimeMillis();

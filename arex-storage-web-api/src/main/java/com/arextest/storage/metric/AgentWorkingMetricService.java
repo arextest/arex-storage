@@ -3,8 +3,7 @@ package com.arextest.storage.metric;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.mock.MockResultContext;
-import com.arextest.storage.model.InvalidCaseRequest;
-import com.arextest.storage.repository.ProviderNames;
+import com.arextest.storage.model.InvalidIncompleteRecordRequest;
 import com.arextest.storage.service.AgentWorkingService;
 import java.util.HashMap;
 import java.util.List;
@@ -12,9 +11,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.validation.constraints.NotNull;
 
-import com.arextest.storage.service.InvalidReplayCaseService;
-import com.arextest.storage.service.MockSourceEditionService;
-import com.arextest.storage.trace.MDCTracer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -31,22 +27,19 @@ public class AgentWorkingMetricService {
   private static final String CLIENT_APP_ID = "clientAppId";
   private static final String PATH = "path";
   private static final String CATEGORY = "category";
-
   private static final String REASON = "reason";
   private static final String INVALID_CASE_METHOD_NAME = "invalidCase";
   private static final String INVALID_REPLAY_CASE_METHOD_NAME = "invalidReplayCase";
+  private static final String SCENE = "scene";
+  private static final String SCENE_RECORD = "record";
+  private static final String SCENE_REPLAY = "replay";
   public final List<MetricListener> metricListeners;
   private final AgentWorkingService agentWorkingService;
-  private final MockSourceEditionService editableService;
-  private final InvalidReplayCaseService invalidReplayCaseService;
 
   public AgentWorkingMetricService(AgentWorkingService agentWorkingService,
-                                   MockSourceEditionService editableService,
-      List<MetricListener> metricListeners, InvalidReplayCaseService invalidReplayCaseService) {
+                                   List<MetricListener> metricListeners) {
     this.agentWorkingService = agentWorkingService;
-    this.editableService = editableService;
     this.metricListeners = metricListeners;
-    this.invalidReplayCaseService = invalidReplayCaseService;
   }
 
   private static long nanosToMillis(long duration) {
@@ -79,26 +72,11 @@ public class AgentWorkingMetricService {
     recordEntryTime(QUERY_MOCK_METHOD_NAME, (AREXMocker) recordItem, nanosToMillis(totalTimeNanos));
     return queryMockResult;
   }
-
-  public void invalidCase(InvalidCaseRequest requestType) {
-    // replayId is not empty, means this is a replay case
-    if (StringUtils.isNotEmpty(requestType.getReplayId())) {
-        invalidReplayCase(requestType);
-        return;
-    }
-    // recordId is not empty, means this is a record case
-    editableService.invalidCase(ProviderNames.DEFAULT, requestType.getRecordId());
-    if (CollectionUtils.isEmpty(metricListeners)) {
-      return;
-    }
-    Map<String, String> tags = new HashMap<>(4);
-    tags.put(CLIENT_APP_ID, requestType.getAppId());
-    tags.put(PATH, INVALID_CASE_METHOD_NAME);
-    tags.put(REASON, requestType.getReason());
-
-    for (MetricListener metricListener : metricListeners) {
-      metricListener.recordMatchingCount(METRIC_NAME, tags);
-    }
+  public void invalidIncompleteRecord(InvalidIncompleteRecordRequest requestType) {
+    // do invalid
+    agentWorkingService.invalidIncompleteRecord(requestType);
+    // record count
+    recordInvalidIncompleteCount(requestType);
   }
 
   private void recordEntryTime(String path, AREXMocker item, long timeMillis) {
@@ -112,20 +90,15 @@ public class AgentWorkingMetricService {
     }
   }
 
-  private void invalidReplayCase(InvalidCaseRequest request) {
+  public void recordInvalidIncompleteCount(InvalidIncompleteRecordRequest request) {
     // save into redis
-    String replayId = request.getReplayId();
-    MDCTracer.addReplayId(replayId);
-    invalidReplayCaseService.saveInvalidCase(replayId);
-    LOGGER.info("[[title=invalidReplayCase]]invalid replayId:{}", replayId);
-    MDCTracer.clear();
-    // metric
     if (CollectionUtils.isEmpty(metricListeners)) {
       return;
     }
+    String scene = StringUtils.isNotEmpty(request.getReplayId()) ? SCENE_REPLAY : SCENE_RECORD;
     Map<String, String> tags = new HashMap<>(3);
     tags.put(CLIENT_APP_ID, request.getAppId());
-    tags.put(PATH, INVALID_REPLAY_CASE_METHOD_NAME);
+    tags.put(SCENE, scene);
     tags.put(REASON, request.getReason());
 
     for (MetricListener metricListener : metricListeners) {
