@@ -9,6 +9,7 @@ import com.arextest.config.model.vo.DeleteApplicationRequest;
 import com.arextest.config.model.vo.UpdateApplicationRequest;
 import com.arextest.model.replay.AppVisibilityLevelEnum;
 import com.arextest.storage.service.config.ApplicationService;
+import java.util.concurrent.CompletableFuture;
 import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +55,7 @@ public class ApplicationController {
   @PostMapping("/delete")
   @ResponseBody
   public Response delete(@RequestBody @Valid DeleteApplicationRequest request) {
-    return ResponseUtils.successResponse(applicationService.deleteApplication(request));
+    CompletableFuture.runAsync(() -> applicationService.deleteApplication(request));
+    return ResponseUtils.successResponse(true);
   }
 }
