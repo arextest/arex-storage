@@ -3,6 +3,7 @@ package com.arextest.storage.service;
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.config.model.dto.StatusType;
 import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
+import com.arextest.config.model.dto.application.ApplicationOperationConfiguration.Fields;
 import com.arextest.config.model.dto.application.ApplicationServiceConfiguration;
 import com.arextest.config.repository.impl.ApplicationOperationConfigurationRepositoryImpl;
 import com.arextest.config.repository.impl.ApplicationServiceConfigurationRepositoryImpl;
@@ -10,7 +11,9 @@ import com.arextest.model.mock.Mocker;
 import com.arextest.storage.cache.CacheKeyUtils;
 import com.arextest.storage.mock.MockResultContext;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -81,4 +84,27 @@ public class AutoDiscoveryEntryPointListener implements AgentWorkingListener {
     return false;
   }
 
+  public boolean removeAllCacheByAppId(String appId) {
+    byte[] appServiceKey = CacheKeyUtils.toUtf8Bytes(SERVICE_MAPPINGS_PREFIX + appId);
+    byte[] appServiceValue = cacheProvider.get(appServiceKey);
+    if (appServiceValue == null) {
+      return true;
+    }
+    String serviceId = CacheKeyUtils.fromUtf8Bytes(appServiceValue);
+    cacheProvider.remove(appServiceKey);
+
+    Map<String, Object> conditions = new HashMap<>();
+    conditions.put(Fields.appId, appId);
+    List<ApplicationOperationConfiguration> applicationOperationConfigurations =
+        serviceOperationRepository.queryByMultiCondition(conditions);
+
+    applicationOperationConfigurations.forEach(operation -> {
+      String operationName = operation.getOperationName();
+      String operationType = operation.getOperationType();
+      byte[] operationKey = CacheKeyUtils.toUtf8Bytes(SERVICE_MAPPINGS_PREFIX + serviceId + DASH
+          + operationName + DASH + operationType);
+      cacheProvider.remove(operationKey);
+    });
+    return true;
+  }
 }

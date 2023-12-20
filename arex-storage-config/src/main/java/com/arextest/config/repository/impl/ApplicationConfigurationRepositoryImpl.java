@@ -123,10 +123,15 @@ public class ApplicationConfigurationRepositoryImpl implements
     if (StringUtils.isBlank(configuration.getAppId())) {
       return false;
     }
+    return this.removeByAppId(configuration.getAppId());
+  }
+
+  @Override
+  public boolean removeByAppId(String appId) {
     for (ConfigRepositoryProvider configRepositoryProvider : configRepositoryProviders) {
-      configRepositoryProvider.removeByAppId(configuration.getAppId());
+      configRepositoryProvider.removeByAppId(appId);
     }
-    Bson filter = Filters.eq(AppCollection.Fields.appId, configuration.getAppId());
+    Bson filter = Filters.eq(AppCollection.Fields.appId, appId);
     DeleteResult deleteResult = mongoCollection.deleteMany(filter);
     return deleteResult.getDeletedCount() > 0;
   }
