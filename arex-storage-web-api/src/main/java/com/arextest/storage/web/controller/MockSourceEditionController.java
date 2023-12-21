@@ -181,15 +181,18 @@ public class MockSourceEditionController {
 
     try {
       Integer index = body.getIndex();
+      boolean updateResult = false;
       if (index != null) {
         // splitMocker
         AREXMocker mocker = editableService.editMergedMocker(srcProviderName, body);
         if (mocker == null) {
           return ResponseUtils.resourceNotFoundResponse();
         }
-        body = (SplitAREXMocker) mocker;
+        updateResult = editableService.update(srcProviderName, mocker);
+      } else {
+        updateResult = editableService.update(srcProviderName, body);
       }
-      boolean updateResult = editableService.update(srcProviderName, body);
+
       if (updateResult) {
         storageCache.removeRecord(srcProviderName, category, body.getRecordId());
       }

@@ -1,15 +1,17 @@
 package com.arextest.model.mock;
 
 import java.util.Map;
-import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @author wildeslam.
  * @create 2023/12/18 20:03
  */
 @Data
-@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class MergeRecordDTO {
     private Object arexOriginalResult;
     private String arexResultClazz;

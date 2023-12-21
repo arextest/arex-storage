@@ -106,6 +106,14 @@ public class ScheduleReplayingService {
   }
 
   public List<AREXMocker> queryRecordList(ViewRecordRequestType viewRecordRequestType) {
+    List<AREXMocker> result = queryRecordListInner(viewRecordRequestType);
+    if (Boolean.TRUE.equals(viewRecordRequestType.getSplitMergeRecord())) {
+      return splitMergedMockers(result);
+    }
+    return result;
+  }
+
+  private List<AREXMocker> queryRecordListInner(ViewRecordRequestType viewRecordRequestType) {
     String sourceProvider = viewRecordRequestType.getSourceProvider();
     String recordId = viewRecordRequestType.getRecordId();
     RepositoryProvider<Mocker> repositoryReader = repositoryProviderFactory.findProvider(
@@ -125,9 +133,6 @@ public class ScheduleReplayingService {
       if (CollectionUtils.isNotEmpty(mockers)) {
         readableResult.addAll(mockers);
       }
-    }
-    if (Boolean.TRUE.equals(viewRecordRequestType.getSplitMergeRecord())) {
-      return splitMergedMockers(readableResult);
     }
     return readableResult;
   }
@@ -152,17 +157,18 @@ public class ScheduleReplayingService {
     String json = mocker.getTargetResponse().getBody();
     try {
       List<MergeRecordDTO> mergeRecords = objectMapper.readValue(json, new TypeReference<List<MergeRecordDTO>>() {});
-      SplitAREXMocker splitMocker = new SplitAREXMocker();
-      splitMocker.setAppId(mocker.getAppId());
-      splitMocker.setCategoryType(mocker.getCategoryType());
-      splitMocker.setRecordId(mocker.getRecordId());
-      splitMocker.setReplayId(mocker.getReplayId());
-      splitMocker.setCreationTime(mocker.getCreationTime());
-      splitMocker.setRecordVersion(mocker.getRecordVersion());
-      splitMocker.setRecordEnvironment(mocker.getRecordEnvironment());
-      splitMocker.setId(mocker.getId());
       for (int i = 0; i < mergeRecords.size(); i++) {
         MergeRecordDTO mergeRecord = mergeRecords.get(i);
+
+        SplitAREXMocker splitMocker = new SplitAREXMocker();
+        splitMocker.setAppId(mocker.getAppId());
+        splitMocker.setCategoryType(mocker.getCategoryType());
+        splitMocker.setRecordId(mocker.getRecordId());
+        splitMocker.setReplayId(mocker.getReplayId());
+        splitMocker.setCreationTime(mocker.getCreationTime());
+        splitMocker.setRecordVersion(mocker.getRecordVersion());
+        splitMocker.setRecordEnvironment(mocker.getRecordEnvironment());
+        splitMocker.setId(mocker.getId());
         splitMocker.setIndex(i);
 
         splitMocker.setOperationName(mergeRecord.getOperationName());

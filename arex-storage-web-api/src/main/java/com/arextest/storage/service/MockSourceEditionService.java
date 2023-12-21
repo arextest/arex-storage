@@ -49,8 +49,8 @@ public class MockSourceEditionService {
       LOGGER.warn("The id is empty");
       return null;
     }
-    T mergedMocker = repositoryProvider.queryById(MockCategoryType.create(providerName),
-        item.getId());
+    T mergedMocker = repositoryProvider.queryById(item.getCategoryType(), item.getId());
+    mergedMocker.setCategoryType(item.getCategoryType());
     try {
       List<MergeRecordDTO> mergeRecordDTOS = new ArrayList<>(
           objectMapper.readValue(mergedMocker.getTargetResponse().getBody(),
