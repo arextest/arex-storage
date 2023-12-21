@@ -130,6 +130,12 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
   }
 
   @Override
+  public AREXMocker queryById(MockCategoryType categoryType, String id) {
+    MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
+    return collectionSource.find(Filters.eq(PRIMARY_KEY_COLUMN_NAME, id)).first();
+  }
+
+  @Override
   public Iterable<AREXMocker> queryByRange(PagedRequestType pagedRequestType) {
     MockCategoryType categoryType = pagedRequestType.getCategory();
     Integer pageIndex = pagedRequestType.getPageIndex();
