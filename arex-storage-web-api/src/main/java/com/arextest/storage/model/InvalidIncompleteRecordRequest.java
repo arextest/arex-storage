@@ -8,7 +8,7 @@ import lombok.Data;
  * @date: 2023/11/27 16:10
  **/
 @Data
-public class InvalidCaseRequest {
+public class InvalidIncompleteRecordRequest {
     private String appId;
     private String recordId;
     /**
@@ -23,7 +23,7 @@ public class InvalidCaseRequest {
 
     @Override
     public String toString() {
-        return "InvalidCaseRequest{" +
+        return "InvalidIncompleteRecordRequest{" +
                 "appId='" + appId + '\'' +
                 ", recordId='" + recordId + '\'' +
                 ", reason=" + reason +
