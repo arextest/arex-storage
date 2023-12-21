@@ -1,8 +1,12 @@
 package com.arextest.storage.service.config;
 
+import static com.arextest.storage.cache.CacheKeyUtils.DASH;
+import static com.arextest.storage.cache.CacheKeyUtils.SERVICE_MAPPINGS_PREFIX;
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.config.model.dto.StatusType;
 import com.arextest.config.model.dto.application.ApplicationConfiguration;
+import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
+import com.arextest.config.model.dto.application.ApplicationOperationConfiguration.Fields;
 import com.arextest.config.model.vo.AddApplicationRequest;
 import com.arextest.config.model.vo.AddApplicationResponse;
 import com.arextest.config.model.vo.DeleteApplicationRequest;
@@ -11,12 +15,13 @@ import com.arextest.config.repository.impl.ApplicationConfigurationRepositoryImp
 import com.arextest.config.repository.impl.ApplicationOperationConfigurationRepositoryImpl;
 import com.arextest.storage.cache.CacheKeyUtils;
 import com.arextest.storage.repository.ProviderNames;
-import com.arextest.storage.service.AutoDiscoveryEntryPointListener;
 import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.utils.RandomUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -50,7 +55,7 @@ public class ApplicationService {
   @Resource
   private MockSourceEditionService mockSourceEditionService;
   @Resource
-  private AutoDiscoveryEntryPointListener autoDiscoveryEntryPointListener;
+  private ApplicationOperationConfigurationRepositoryImpl serviceOperationRepository;
 
   public AddApplicationResponse addApplication(AddApplicationRequest request) {
     AddApplicationResponse response = new AddApplicationResponse();
@@ -106,7 +111,7 @@ public class ApplicationService {
     PROVIDERS.forEach(provider -> mockSourceEditionService.removeAllByAppId(provider, appId));
 
     // remove redis
-    autoDiscoveryEntryPointListener.removeAllCacheByAppId(appId);
+    removeAllCacheByAppId(appId);
 
     // remove ServiceOperation
     applicationOperationRepository.removeByAppId(appId);
@@ -114,6 +119,29 @@ public class ApplicationService {
     // remove App
     applicationConfigurationRepository.removeByAppId(request.getAppId());
     return true;
+  }
+
+  private void removeAllCacheByAppId(String appId) {
+    byte[] appServiceKey = CacheKeyUtils.toUtf8Bytes(SERVICE_MAPPINGS_PREFIX + appId);
+    byte[] appServiceValue = redisCacheProvider.get(appServiceKey);
+    if (appServiceValue == null) {
+      return;
+    }
+    String serviceId = CacheKeyUtils.fromUtf8Bytes(appServiceValue);
+    redisCacheProvider.remove(appServiceKey);
+
+    Map<String, Object> conditions = new HashMap<>();
+    conditions.put(Fields.appId, appId);
+    List<ApplicationOperationConfiguration> applicationOperationConfigurations =
+        serviceOperationRepository.queryByMultiCondition(conditions);
+
+    applicationOperationConfigurations.forEach(operation -> {
+      String operationName = operation.getOperationName();
+      String operationType = operation.getOperationType();
+      byte[] operationKey = CacheKeyUtils.toUtf8Bytes(SERVICE_MAPPINGS_PREFIX + serviceId + DASH
+          + operationName + DASH + operationType);
+      redisCacheProvider.remove(operationKey);
+    });
   }
 
 

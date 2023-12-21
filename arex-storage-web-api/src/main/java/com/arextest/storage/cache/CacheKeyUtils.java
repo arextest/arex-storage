@@ -8,6 +8,10 @@ import javax.validation.constraints.NotNull;
 
 
 public final class CacheKeyUtils {
+  public static final String DASH = "_";
+  // private static final int SERVICE_TYPE_NORMAL = 4;
+  public static final String SERVICE_MAPPINGS_PREFIX = "service_mappings_";
+
 
   public static final byte[] EMPTY_BYTE = new byte[]{};
 
