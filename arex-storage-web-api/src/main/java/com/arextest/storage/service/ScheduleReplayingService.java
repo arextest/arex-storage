@@ -9,7 +9,6 @@ import com.arextest.model.mock.MergeRecordDTO;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.model.mock.Mocker.Target;
-import com.arextest.model.mock.SplitAREXMocker;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.ViewRecordRequestType;
 import com.arextest.model.replay.holder.ListResultHolder;
@@ -141,7 +140,7 @@ public class ScheduleReplayingService {
     List<AREXMocker> result = new ArrayList<>();
     for (AREXMocker mocker : mockerList) {
       if (MERGE_RECORD_OPERATION_NAME.equals(mocker.getOperationName())) {
-        List<SplitAREXMocker> splitMockers = splitMergedMocker(mocker);
+        List<AREXMocker> splitMockers = splitMergedMocker(mocker);
         if (CollectionUtils.isNotEmpty(splitMockers)) {
           result.addAll(splitMockers);
         }
@@ -152,15 +151,15 @@ public class ScheduleReplayingService {
     return result;
   }
 
-  private List<SplitAREXMocker> splitMergedMocker(AREXMocker mocker) {
-    List<SplitAREXMocker> result = new ArrayList<>();
+  private List<AREXMocker> splitMergedMocker(AREXMocker mocker) {
+    List<AREXMocker> result = new ArrayList<>();
     String json = mocker.getTargetResponse().getBody();
     try {
       List<MergeRecordDTO> mergeRecords = objectMapper.readValue(json, new TypeReference<List<MergeRecordDTO>>() {});
       for (int i = 0; i < mergeRecords.size(); i++) {
         MergeRecordDTO mergeRecord = mergeRecords.get(i);
 
-        SplitAREXMocker splitMocker = new SplitAREXMocker();
+        AREXMocker splitMocker = new AREXMocker();
         splitMocker.setAppId(mocker.getAppId());
         splitMocker.setCategoryType(mocker.getCategoryType());
         splitMocker.setRecordId(mocker.getRecordId());

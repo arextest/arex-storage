@@ -2,7 +2,6 @@ package com.arextest.storage.web.controller;
 
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
-import com.arextest.model.mock.SplitAREXMocker;
 import com.arextest.model.response.Response;
 import com.arextest.model.response.ResponseStatusType;
 import com.arextest.storage.repository.ProviderNames;
@@ -160,7 +159,7 @@ public class MockSourceEditionController {
    */
   @PostMapping("/pinned/update/")
   @ResponseBody
-  public Response pinnedUpdate(@RequestBody SplitAREXMocker body) {
+  public Response pinnedUpdate(@RequestBody AREXMocker body) {
     return this.update(ProviderNames.PINNED, body);
   }
 
@@ -172,7 +171,7 @@ public class MockSourceEditionController {
    */
   @PostMapping("/update/")
   @ResponseBody
-  public  Response update(@RequestHeader String srcProviderName, @RequestBody SplitAREXMocker body) {
+  public  Response update(@RequestHeader String srcProviderName, @RequestBody AREXMocker body) {
     Response response = checkRequiredParameters(srcProviderName, body);
     if (response != null) {
       return response;
@@ -181,17 +180,16 @@ public class MockSourceEditionController {
 
     try {
       Integer index = body.getIndex();
-      boolean updateResult = false;
       if (index != null) {
         // splitMocker
         AREXMocker mocker = editableService.editMergedMocker(srcProviderName, body);
+        body = mocker;
         if (mocker == null) {
           return ResponseUtils.resourceNotFoundResponse();
         }
-        updateResult = editableService.update(srcProviderName, mocker);
-      } else {
-        updateResult = editableService.update(srcProviderName, body);
       }
+      boolean updateResult = editableService.update(srcProviderName, body);
+
 
       if (updateResult) {
         storageCache.removeRecord(srcProviderName, category, body.getRecordId());

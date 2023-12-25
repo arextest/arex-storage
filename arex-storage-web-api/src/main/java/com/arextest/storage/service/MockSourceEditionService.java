@@ -5,7 +5,6 @@ import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MergeRecordDTO;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
-import com.arextest.model.mock.SplitAREXMocker;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -39,7 +38,7 @@ public class MockSourceEditionService {
     return repositoryWriter != null && repositoryWriter.save(item);
   }
 
-  public <T extends Mocker> T editMergedMocker(String providerName, SplitAREXMocker item) {
+  public <T extends Mocker> T editMergedMocker(String providerName, AREXMocker item) {
     RepositoryProvider<T> repositoryProvider = providerFactory.findProvider(providerName);
     if (repositoryProvider == null) {
       LOGGER.warn("Could not found provider for {}", providerName);
