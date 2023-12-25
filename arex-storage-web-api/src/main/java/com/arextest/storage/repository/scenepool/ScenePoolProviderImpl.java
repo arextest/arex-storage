@@ -15,6 +15,8 @@ import org.bson.conversions.Bson;
 @AllArgsConstructor
 public class ScenePoolProviderImpl extends AbstractScenePoolProvider {
   private final String providerName;
+  private static final long EXPIRATION_DAYS = 14L;
+
   @Override
   public String getProviderName() {
     return providerName;
@@ -31,7 +33,7 @@ public class ScenePoolProviderImpl extends AbstractScenePoolProvider {
     Bson filter = Filters.and(Filters.eq(Fields.appId, scene.getAppId()),
         Filters.eq(Fields.sceneKey, scene.getSceneKey()));
 
-    Date expire = Date.from(LocalDateTime.now().plusDays(30).atZone(ZoneId.systemDefault()).toInstant());
+    Date expire = Date.from(LocalDateTime.now().plusDays(EXPIRATION_DAYS).atZone(ZoneId.systemDefault()).toInstant());
     Bson update = Updates.combine(
         Updates.set(Fields.appId, scene.getAppId()),
         Updates.set(Fields.sceneKey, scene.getSceneKey()),

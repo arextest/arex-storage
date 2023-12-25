@@ -5,6 +5,9 @@ import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
+import java.sql.Date;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -171,6 +174,24 @@ public class MockSourceEditionService {
       repositoryWriter.removeBy(categoryType, recordId);
     }
     return true;
+  }
+
+  public boolean extendMockerExpirationByRecordId(String providerName, String recordId, Long extensionDays) {
+    RepositoryProvider<?> repositoryWriter = providerFactory.findProvider(providerName);
+    if (repositoryWriter == null) {
+      LOGGER.warn("Could not found provider for {}", providerName);
+      return false;
+    }
+    long updateCount = 0;
+    for (MockCategoryType categoryType : providerFactory.getCategoryTypes()) {
+      boolean updated = repositoryWriter.extendExpirationTo(categoryType, recordId,
+          Date.from(LocalDateTime.now().plusDays(extensionDays).atZone(
+              ZoneId.systemDefault()).toInstant()));
+      updateCount += updated ? 1 : 0;
+    }
+    LOGGER.info("extendMockerExpirationByRecordId updated {} mockers for recordId: {}",
+        updateCount, recordId);
+    return updateCount > 0;
   }
 
   public void invalidCase(String srcProviderName, String recordId) {
