@@ -24,6 +24,7 @@ import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.CompletableFuture;
@@ -61,6 +62,7 @@ public final class AgentRemoteConfigurationController {
   private static final String EMPTY_TIME = "0";
   private static final String LAST_MODIFY_TIME = "If-Modified-Since";
   private static final String INCLUDE_SERVICE_OPERATIONS = "includeServiceOperations";
+
   @Resource
   private ConfigurableHandler<DynamicClassConfiguration> dynamicClassHandler;
   @Resource
@@ -112,6 +114,12 @@ public final class AgentRemoteConfigurationController {
           serviceCollectConfiguration.getRecordMachineCountLimit());
       Set<String> recordingHosts =
           instances.stream().map(InstancesConfiguration::getHost).collect(Collectors.toSet());
+      InstancesConfiguration sourceInstance = instances.stream()
+          .filter(instance -> Objects.equals(instance.getHost(), (request.getHost())))
+          .findFirst().orElse(null);
+      if (sourceInstance != null && sourceInstance.getExtendField() != null) {
+        body.getExtendField().putAll(sourceInstance.getExtendField());
+      }
       if (recordingHosts.contains(request.getHost())) {
         body.setTargetAddress(request.getHost());
       } else {
