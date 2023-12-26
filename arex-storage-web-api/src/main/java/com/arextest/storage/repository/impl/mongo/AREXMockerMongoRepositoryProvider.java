@@ -316,12 +316,10 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
   }
 
   @Override
-  public boolean extendExpirationTo(MockCategoryType categoryType, String recordId, Date expireTime) {
+  public long extendExpirationTo(MockCategoryType categoryType, String recordId, Date expireTime) {
     MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
-    collectionSource.findOneAndUpdate(buildRecordIdFilter(categoryType, recordId),
-        Updates.set(EXPIRATION_TIME_COLUMN_NAME, expireTime));
-
-    return true;
+    return collectionSource.updateMany(buildRecordIdFilter(categoryType, recordId),
+        Updates.set(EXPIRATION_TIME_COLUMN_NAME, expireTime)).getModifiedCount();
   }
   @Override
   public long removeByAppId(MockCategoryType categoryType, String appId) {

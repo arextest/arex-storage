@@ -22,9 +22,9 @@ public interface RepositoryWriter<T extends Mocker> {
    * @param categoryType the category type of the mockers to be extended
    * @param recordId the record id of the mockers to be extended
    * @param expireTime the expiration time to be extended to
-   * @return true if the operation is successful, false otherwise
+   * @return document count of the mockers extended
    */
-  boolean extendExpirationTo(MockCategoryType categoryType, String recordId, Date expireTime);
+  long extendExpirationTo(MockCategoryType categoryType, String recordId, Date expireTime);
 
   boolean update(T value);
 

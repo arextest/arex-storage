@@ -220,10 +220,9 @@ public class MockSourceEditionService {
     }
     long updateCount = 0;
     for (MockCategoryType categoryType : providerFactory.getCategoryTypes()) {
-      boolean updated = repositoryWriter.extendExpirationTo(categoryType, recordId,
+      updateCount += repositoryWriter.extendExpirationTo(categoryType, recordId,
           Date.from(LocalDateTime.now().plusDays(extensionDays).atZone(
               ZoneId.systemDefault()).toInstant()));
-      updateCount += updated ? 1 : 0;
     }
     LOGGER.info("extendMockerExpirationByRecordId updated {} mockers for recordId: {}",
         updateCount, recordId);
