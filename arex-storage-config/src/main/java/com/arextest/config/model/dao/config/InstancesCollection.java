@@ -24,4 +24,5 @@ public class InstancesCollection extends BaseEntity {
   private Map<String, String> tags;
   private Map<String, String> systemEnv;
   private Map<String, String> systemProperties;
+  private Map<String, String> extendField;
 }
