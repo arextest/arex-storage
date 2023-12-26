@@ -162,6 +162,7 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
   private class RecordTask implements Runnable {
     private final ScenePoolProvider scenePoolProvider;
     private final AREXMocker coverageMocker;
+    private static final long EXPIRATION_EXTENSION_DAYS = 14L;
     @Override
     public void run() {
       try {
@@ -180,6 +181,7 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
           LOGGER.info("CoverageMockerHandler received existing case, recordId: {}, pathKey: {}",
               coverageMocker.getRecordId(), coverageMocker.getOperationName());
         } else {
+          // new scene: extend mocker expiration and insert scene
           Scene scene = new Scene();
           scene.setSceneKey(sceneKey);
           scene.setAppId(appId);
@@ -187,6 +189,8 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
           scene.setExecutionPath(executionPath);
 
           scenePoolProvider.upsertOne(scene);
+          mockSourceEditionService.extendMockerExpirationByRecordId(ProviderNames.DEFAULT,
+              coverageMocker.getRecordId(), EXPIRATION_EXTENSION_DAYS);
           LOGGER.info("CoverageMockerHandler received new case, recordId: {}, pathKey: {}",
               coverageMocker.getRecordId(), coverageMocker.getOperationName());
         }

@@ -7,9 +7,15 @@ import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
+import java.sql.Date;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Collections;
+import java.util.Comparator;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -204,6 +210,23 @@ public class MockSourceEditionService {
     }
     LOGGER.info("removeByRecordId deleted {} mockers for recordId: {}", deleteCount, recordId);
     return true;
+  }
+
+  public boolean extendMockerExpirationByRecordId(String providerName, String recordId, Long extensionDays) {
+    RepositoryProvider<?> repositoryWriter = providerFactory.findProvider(providerName);
+    if (repositoryWriter == null) {
+      LOGGER.warn("Could not found provider for {}", providerName);
+      return false;
+    }
+    long updateCount = 0;
+    for (MockCategoryType categoryType : providerFactory.getCategoryTypes()) {
+      updateCount += repositoryWriter.extendExpirationTo(categoryType, recordId,
+          Date.from(LocalDateTime.now().plusDays(extensionDays).atZone(
+              ZoneId.systemDefault()).toInstant()));
+    }
+    LOGGER.info("extendMockerExpirationByRecordId updated {} mockers for recordId: {}",
+        updateCount, recordId);
+    return updateCount > 0;
   }
 
   private List<Mocker> createTargetList(List<AREXMocker> srcMockers, String targetRecordId) {
