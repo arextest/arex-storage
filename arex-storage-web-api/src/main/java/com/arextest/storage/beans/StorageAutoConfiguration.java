@@ -22,7 +22,7 @@ import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.AgentWorkingListener;
 import com.arextest.storage.service.AgentWorkingService;
 import com.arextest.storage.service.AutoDiscoveryEntryPointListener;
-import com.arextest.storage.service.InvalidReplayCaseService;
+import com.arextest.storage.service.InvalidIncompleteRecordService;
 import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.service.PrepareMockResultService;
 import com.arextest.storage.service.ScheduleReplayingService;
@@ -137,10 +137,11 @@ public class StorageAutoConfiguration {
       MockerHandlerFactory mockerHandlerFactory,
       ZstdJacksonSerializer zstdJacksonSerializer,
       PrepareMockResultService prepareMockResultService,
-      List<AgentWorkingListener> agentWorkingListeners) {
+      List<AgentWorkingListener> agentWorkingListeners,
+      InvalidIncompleteRecordService invalidIncompleteRecordService) {
     AgentWorkingService workingService =
         new AgentWorkingService(mockResultProvider, repositoryProviderFactory, mockerHandlerFactory,
-            agentWorkingListeners);
+            agentWorkingListeners, invalidIncompleteRecordService);
     workingService.setPrepareMockResultService(prepareMockResultService);
     workingService.setZstdJacksonSerializer(zstdJacksonSerializer);
     workingService.setRecordEnvType(properties.getRecordEnv());
@@ -151,10 +152,8 @@ public class StorageAutoConfiguration {
   @ConditionalOnMissingBean(AgentWorkingMetricService.class)
   public AgentWorkingMetricService agentWorkingMetricService(
       AgentWorkingService agentWorkingService,
-      MockSourceEditionService editableService,
-      List<MetricListener> metricListeners,
-      InvalidReplayCaseService invalidReplayCaseService) {
-    return new AgentWorkingMetricService(agentWorkingService, editableService, metricListeners, invalidReplayCaseService);
+      List<MetricListener> metricListeners) {
+    return new AgentWorkingMetricService(agentWorkingService, metricListeners);
   }
 
   @Bean
@@ -169,9 +168,9 @@ public class StorageAutoConfiguration {
   public ScheduleReplayQueryController scheduleReplayQueryController(
       ScheduleReplayingService scheduleReplayingService,
       PrepareMockResultService prepareMockResultService,
-      InvalidReplayCaseService invalidReplayCaseService) {
+      InvalidIncompleteRecordService invalidIncompleteRecordService) {
     return new ScheduleReplayQueryController(scheduleReplayingService, prepareMockResultService,
-            invalidReplayCaseService);
+            invalidIncompleteRecordService);
   }
 
   @Bean

@@ -16,7 +16,8 @@ import com.arextest.storage.repository.scenepool.ScenePoolProviderImpl;
 import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.trace.MDCTracer;
 import java.util.Optional;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -30,7 +31,7 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
   private MockSourceEditionService mockSourceEditionService;
   private CoverageRepository coverageRepository;
   private CacheProvider cacheProvider;
-  private ThreadPoolExecutor coverageHandlerExecutor;
+  private ScheduledExecutorService coverageHandleDelayedPool;
   private ScenePoolFactory scenePoolFactory;
 
   @Override
@@ -67,11 +68,10 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
     }
 
     Optional.ofNullable(task).ifPresent((t) -> {
-      coverageHandlerExecutor.submit(t);
+      coverageHandleDelayedPool.schedule(t, 5, TimeUnit.SECONDS);
       LOGGER.info(
-          "CoverageMockerHandler submitted async task, recordId: {}, pathKey: {}, pool queue size: {}",
-          coverageMocker.getRecordId(), coverageMocker.getOperationName(),
-          coverageHandlerExecutor.getQueue().size());
+          "CoverageMockerHandler submitted async task, recordId: {}, pathKey: {}",
+          coverageMocker.getRecordId(), coverageMocker.getOperationName());
     });
   }
 

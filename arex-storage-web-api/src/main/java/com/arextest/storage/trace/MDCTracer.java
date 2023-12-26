@@ -41,6 +41,9 @@ public final class MDCTracer {
   }
 
   public static void addReplayId(String replayId) {
+    if (StringUtils.isEmpty(replayId)) {
+      return;
+    }
     addAppType();
     put(REPLAY_ID, replayId);
   }

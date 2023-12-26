@@ -11,7 +11,7 @@ import com.arextest.model.response.Response;
 import com.arextest.storage.metric.AgentWorkingMetricService;
 import com.arextest.storage.mock.MockResultContext;
 import com.arextest.storage.mock.MockResultMatchStrategy;
-import com.arextest.storage.model.InvalidCaseRequest;
+import com.arextest.storage.model.InvalidIncompleteRecordRequest;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.AgentWorkingService;
 import com.arextest.storage.trace.MDCTracer;
@@ -141,17 +141,27 @@ public class AgentRecordingController {
     return saveTest(arexMocker(MockCategoryType.create(category)));
   }
 
-  @PostMapping(value = "/invalidCase", produces = {MediaType.APPLICATION_JSON_VALUE})
+  @PostMapping(value = {"/invalidCase", "/invalidIncompleteRecord"}, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseBody
-  public Response invalidCase(@RequestBody InvalidCaseRequest requestType) {
+  public Response invalidIncompleteRecord(@RequestBody InvalidIncompleteRecordRequest requestType) {
+    try {
       if (StringUtils.isEmpty(requestType.getRecordId())) {
-          LOGGER.warn("[[title=invalidCase]]agent invalid case recordId empty, {}", requestType);
-          return ResponseUtils.emptyRecordIdResponse();
+        LOGGER.warn("[[title=invalidIncompleteRecord]]agent invalid case recordId empty, {}", requestType);
+        return ResponseUtils.emptyRecordIdResponse();
       }
+
       MDCTracer.addRecordId(requestType.getRecordId());
-      LOGGER.info("[[title=invalidCase]]agent invalid case, request:{}", requestType);
-      CompletableFuture.runAsync(() -> agentWorkingMetricService.invalidCase(requestType));
+      MDCTracer.addReplayId(requestType.getReplayId());
+      LOGGER.info("[[title=invalidIncompleteRecord]]agent invalid case, request:{}", requestType);
+
+      CompletableFuture.runAsync(() -> agentWorkingMetricService.invalidIncompleteRecord(requestType));
       return ResponseUtils.successResponse(true);
+    } catch (Throwable throwable) {
+      LOGGER.error("[[title=invalidIncompleteRecord]] invalidCase error:{}", throwable.getMessage());
+      return ResponseUtils.exceptionResponse(throwable.getMessage());
+    } finally {
+        MDCTracer.clear();
+    }
   }
   private AREXMocker arexMocker(MockCategoryType categoryType) {
     AREXMocker mocker = new AREXMocker(categoryType);

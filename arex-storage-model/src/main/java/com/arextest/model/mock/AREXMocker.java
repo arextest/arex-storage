@@ -47,6 +47,11 @@ public class AREXMocker implements Mocker {
    */
   private Map<String, String> tags;
 
+  /**
+   * index for mergedRecord.
+   */
+  private Integer index;
+
   public AREXMocker() {
 
   }

@@ -46,6 +46,8 @@ public interface Mocker {
 
   MockCategoryType getCategoryType();
 
+  void setCategoryType(MockCategoryType categoryType);
+
   String getOperationName();
 
   Target getTargetRequest();

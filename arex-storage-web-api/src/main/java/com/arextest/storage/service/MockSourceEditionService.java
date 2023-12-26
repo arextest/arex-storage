@@ -1,6 +1,8 @@
 package com.arextest.storage.service;
 
+import static com.arextest.diff.utils.JacksonHelperUtil.objectMapper;
 import com.arextest.model.mock.AREXMocker;
+import com.arextest.model.mock.MergeRecordDTO;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.repository.RepositoryProvider;
@@ -10,6 +12,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Comparator;
+import com.fasterxml.jackson.core.type.TypeReference;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -38,6 +42,36 @@ public class MockSourceEditionService {
   public <T extends Mocker> boolean add(String providerName, T item) {
     RepositoryProvider<T> repositoryWriter = providerFactory.findProvider(providerName);
     return repositoryWriter != null && repositoryWriter.save(item);
+  }
+
+  public <T extends Mocker> T editMergedMocker(String providerName, AREXMocker item) {
+    RepositoryProvider<T> repositoryProvider = providerFactory.findProvider(providerName);
+    if (repositoryProvider == null) {
+      LOGGER.warn("Could not found provider for {}", providerName);
+      return null;
+    }
+    if (item.getId() == null) {
+      LOGGER.warn("The id is empty");
+      return null;
+    }
+    T mergedMocker = repositoryProvider.queryById(item.getCategoryType(), item.getId());
+    mergedMocker.setCategoryType(item.getCategoryType());
+    try {
+      List<MergeRecordDTO> mergeRecordDTOS = new ArrayList<>(
+          objectMapper.readValue(mergedMocker.getTargetResponse().getBody(),
+              new TypeReference<List<MergeRecordDTO>>() {
+              }));
+      MergeRecordDTO mergeRecordDTO = mergeRecordDTOS.get(item.getIndex());
+      mergeRecordDTO.setRequest(item.getTargetRequest().getBody());
+      mergeRecordDTO.setArexOriginalResult(
+          objectMapper.readValue(item.getTargetResponse().getBody(),
+              new TypeReference<Map<String, Object>>() {
+              }));
+      mergedMocker.getTargetResponse().setBody(objectMapper.writeValueAsString(mergeRecordDTOS));
+    } catch (Exception e) {
+      LOGGER.error("parse merge record error:{}", e.getMessage(), e);
+    }
+    return mergedMocker;
   }
 
   public <T extends Mocker> boolean update(String providerName, T item) {
@@ -170,9 +204,11 @@ public class MockSourceEditionService {
       LOGGER.warn("Could not found provider for {}", providerName);
       return false;
     }
+    long deleteCount = 0;
     for (MockCategoryType categoryType : providerFactory.getCategoryTypes()) {
-      repositoryWriter.removeBy(categoryType, recordId);
+      deleteCount += repositoryWriter.removeBy(categoryType, recordId);
     }
+    LOGGER.info("removeByRecordId deleted {} mockers for recordId: {}", deleteCount, recordId);
     return true;
   }
 

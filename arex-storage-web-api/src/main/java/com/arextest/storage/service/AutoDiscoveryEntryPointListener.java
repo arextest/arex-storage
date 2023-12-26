@@ -1,5 +1,7 @@
 package com.arextest.storage.service;
 
+import static com.arextest.storage.cache.CacheKeyUtils.DASH;
+import static com.arextest.storage.cache.CacheKeyUtils.SERVICE_MAPPINGS_PREFIX;
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.config.model.dto.StatusType;
 import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
@@ -18,10 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 public class AutoDiscoveryEntryPointListener implements AgentWorkingListener {
-
-  private static final String DASH = "_";
-  // private static final int SERVICE_TYPE_NORMAL = 4;
-  private static final String SERVICE_MAPPINGS_PREFIX = "service_mappings_";
   private static final byte[] EMPTY_BYTE_ARRAY = CacheKeyUtils.toUtf8Bytes(StringUtils.EMPTY);
   private final ApplicationServiceConfigurationRepositoryImpl serviceRepository;
   private final ApplicationOperationConfigurationRepositoryImpl serviceOperationRepository;
@@ -80,5 +78,4 @@ public class AutoDiscoveryEntryPointListener implements AgentWorkingListener {
   public boolean onRecordMocking(Mocker instance, MockResultContext context) {
     return false;
   }
-
 }

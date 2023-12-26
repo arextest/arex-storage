@@ -6,6 +6,7 @@ import com.arextest.model.mock.Mocker;
 import com.arextest.storage.mock.MockResultContext;
 import com.arextest.storage.mock.MockResultMatchStrategy;
 import com.arextest.storage.mock.MockResultProvider;
+import com.arextest.storage.model.InvalidIncompleteRecordRequest;
 import com.arextest.storage.model.RecordEnvType;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
@@ -34,6 +35,7 @@ public class AgentWorkingService {
   private final RepositoryProviderFactory repositoryProviderFactory;
   private final MockerHandlerFactory mockerHandlerFactory;
   private final List<AgentWorkingListener> agentWorkingListeners;
+  private final InvalidIncompleteRecordService invalidIncompleteRecordService;
   @Setter
   private ZstdJacksonSerializer zstdJacksonSerializer;
   @Setter
@@ -44,11 +46,13 @@ public class AgentWorkingService {
   public AgentWorkingService(MockResultProvider mockResultProvider,
       RepositoryProviderFactory repositoryProviderFactory,
       MockerHandlerFactory mockerHandlerFactory,
-      List<AgentWorkingListener> agentWorkingListeners) {
+      List<AgentWorkingListener> agentWorkingListeners,
+      InvalidIncompleteRecordService invalidIncompleteRecordService) {
     this.mockResultProvider = mockResultProvider;
     this.repositoryProviderFactory = repositoryProviderFactory;
     this.agentWorkingListeners = agentWorkingListeners;
     this.mockerHandlerFactory = mockerHandlerFactory;
+    this.invalidIncompleteRecordService = invalidIncompleteRecordService;
   }
 
   /**
@@ -174,5 +178,9 @@ public class AgentWorkingService {
       return zstdJacksonSerializer.serialize(arexMocker);
     }
     return ZstdJacksonSerializer.EMPTY_INSTANCE;
+  }
+
+  public void invalidIncompleteRecord(InvalidIncompleteRecordRequest request) {
+    invalidIncompleteRecordService.invalidIncompleteRecord(request.getRecordId(), request.getReplayId());
   }
 }

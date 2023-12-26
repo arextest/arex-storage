@@ -16,4 +16,6 @@ public class ViewRecordRequestType {
   private String recordId;
   private String sourceProvider;
   private String categoryType;
+  // default: false
+  private Boolean splitMergeRecord;
 }

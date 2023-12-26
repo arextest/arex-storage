@@ -171,7 +171,7 @@ public class MockSourceEditionController {
    */
   @PostMapping("/update/")
   @ResponseBody
-  public Response update(@RequestHeader String srcProviderName, @RequestBody AREXMocker body) {
+  public  Response update(@RequestHeader String srcProviderName, @RequestBody AREXMocker body) {
     Response response = checkRequiredParameters(srcProviderName, body);
     if (response != null) {
       return response;
@@ -179,7 +179,18 @@ public class MockSourceEditionController {
     MockCategoryType category = body.getCategoryType();
 
     try {
+      Integer index = body.getIndex();
+      if (index != null) {
+        // splitMocker
+        AREXMocker mocker = editableService.editMergedMocker(srcProviderName, body);
+        body = mocker;
+        if (mocker == null) {
+          return ResponseUtils.resourceNotFoundResponse();
+        }
+      }
       boolean updateResult = editableService.update(srcProviderName, body);
+
+
       if (updateResult) {
         storageCache.removeRecord(srcProviderName, category, body.getRecordId());
       }

@@ -1,9 +1,14 @@
 package com.arextest.storage.beans;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor.AbortPolicy;
+import java.util.concurrent.ThreadPoolExecutor.DiscardPolicy;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -14,12 +19,10 @@ import org.springframework.context.annotation.Configuration;
 public class ExecutorsConfiguration implements Thread.UncaughtExceptionHandler {
 
   @Bean
-  public ThreadPoolExecutor coverageHandlerExecutor() {
-    return new ThreadPoolExecutor(4, 4,
-        0L, TimeUnit.MILLISECONDS,
-        new LinkedBlockingQueue<>(),
+  public ScheduledExecutorService coverageHandleDelayedPool() {
+    return new ScheduledThreadPoolExecutor(4,
         createThreadFac("coverage-handler-%d"),
-        new ThreadPoolExecutor.CallerRunsPolicy());
+        new DiscardPolicy());
   }
 
   @Bean

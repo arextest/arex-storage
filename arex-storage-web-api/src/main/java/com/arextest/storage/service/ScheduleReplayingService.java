@@ -1,11 +1,14 @@
 package com.arextest.storage.service;
 
+import static com.arextest.diff.utils.JacksonHelperUtil.objectMapper;
 import com.arextest.common.utils.CompressionUtils;
 import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
 import com.arextest.model.mock.AREXMocker;
+import com.arextest.model.mock.MergeRecordDTO;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
+import com.arextest.model.mock.Mocker.Target;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.ViewRecordRequestType;
 import com.arextest.model.replay.holder.ListResultHolder;
@@ -14,6 +17,7 @@ import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.RepositoryReader;
 import com.arextest.storage.trace.MDCTracer;
+import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -37,6 +41,8 @@ import org.apache.commons.collections4.MapUtils;
  */
 @Slf4j
 public class ScheduleReplayingService {
+
+  private static final String MERGE_RECORD_OPERATION_NAME = "arex.mergeRecord";
 
   private final MockResultProvider mockResultProvider;
   private final RepositoryProviderFactory repositoryProviderFactory;
@@ -99,6 +105,14 @@ public class ScheduleReplayingService {
   }
 
   public List<AREXMocker> queryRecordList(ViewRecordRequestType viewRecordRequestType) {
+    List<AREXMocker> result = queryRecordListInner(viewRecordRequestType);
+    if (Boolean.TRUE.equals(viewRecordRequestType.getSplitMergeRecord())) {
+      return splitMergedMockers(result);
+    }
+    return result;
+  }
+
+  private List<AREXMocker> queryRecordListInner(ViewRecordRequestType viewRecordRequestType) {
     String sourceProvider = viewRecordRequestType.getSourceProvider();
     String recordId = viewRecordRequestType.getRecordId();
     RepositoryProvider<Mocker> repositoryReader = repositoryProviderFactory.findProvider(
@@ -120,6 +134,61 @@ public class ScheduleReplayingService {
       }
     }
     return readableResult;
+  }
+
+  private List<AREXMocker> splitMergedMockers(List<AREXMocker> mockerList) {
+    List<AREXMocker> result = new ArrayList<>();
+    for (AREXMocker mocker : mockerList) {
+      if (MERGE_RECORD_OPERATION_NAME.equals(mocker.getOperationName())) {
+        List<AREXMocker> splitMockers = splitMergedMocker(mocker);
+        if (CollectionUtils.isNotEmpty(splitMockers)) {
+          result.addAll(splitMockers);
+        }
+      } else {
+        result.add(mocker);
+      }
+    }
+    return result;
+  }
+
+  private List<AREXMocker> splitMergedMocker(AREXMocker mocker) {
+    List<AREXMocker> result = new ArrayList<>();
+    String json = mocker.getTargetResponse().getBody();
+    try {
+      List<MergeRecordDTO> mergeRecords = objectMapper.readValue(json, new TypeReference<List<MergeRecordDTO>>() {});
+      for (int i = 0; i < mergeRecords.size(); i++) {
+        MergeRecordDTO mergeRecord = mergeRecords.get(i);
+
+        AREXMocker splitMocker = new AREXMocker();
+        splitMocker.setAppId(mocker.getAppId());
+        splitMocker.setCategoryType(mocker.getCategoryType());
+        splitMocker.setRecordId(mocker.getRecordId());
+        splitMocker.setReplayId(mocker.getReplayId());
+        splitMocker.setCreationTime(mocker.getCreationTime());
+        splitMocker.setRecordVersion(mocker.getRecordVersion());
+        splitMocker.setRecordEnvironment(mocker.getRecordEnvironment());
+        splitMocker.setId(mocker.getId());
+        splitMocker.setIndex(i);
+
+        splitMocker.setOperationName(mergeRecord.getOperationName());
+        Target request = new Target();
+        request.setBody(mergeRecord.getRequest());
+        request.setAttributes(mergeRecord.getRequestAttributes());
+        splitMocker.setTargetRequest(request);
+
+        Target response = new Target();
+        response.setBody(objectMapper.writeValueAsString(mergeRecord.getArexOriginalResult()));
+        response.setAttributes(mergeRecord.getResponseAttributes());
+        response.setType(mergeRecord.getArexResultClazz());
+        splitMocker.setTargetResponse(response);
+
+        result.add(splitMocker);
+      }
+    } catch (Exception e) {
+      LOGGER.error("failed to split mocker", e);
+      return null;
+    }
+    return result;
   }
 
   public List<AREXMocker> queryRecordList(RepositoryProvider<Mocker> repositoryReader,

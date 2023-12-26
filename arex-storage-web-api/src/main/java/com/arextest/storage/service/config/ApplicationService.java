@@ -1,24 +1,33 @@
 package com.arextest.storage.service.config;
 
+import static com.arextest.storage.cache.CacheKeyUtils.DASH;
+import static com.arextest.storage.cache.CacheKeyUtils.SERVICE_MAPPINGS_PREFIX;
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.config.model.dto.StatusType;
 import com.arextest.config.model.dto.application.ApplicationConfiguration;
+import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
+import com.arextest.config.model.dto.application.ApplicationOperationConfiguration.Fields;
 import com.arextest.config.model.vo.AddApplicationRequest;
 import com.arextest.config.model.vo.AddApplicationResponse;
+import com.arextest.config.model.vo.DeleteApplicationRequest;
 import com.arextest.config.model.vo.UpdateApplicationRequest;
 import com.arextest.config.repository.impl.ApplicationConfigurationRepositoryImpl;
+import com.arextest.config.repository.impl.ApplicationOperationConfigurationRepositoryImpl;
 import com.arextest.storage.cache.CacheKeyUtils;
+import com.arextest.storage.repository.ProviderNames;
+import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.utils.RandomUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.Resource;
-import java.util.List;
-import java.util.Set;
 
 /**
  * @author wildeslam.
@@ -32,12 +41,21 @@ public class ApplicationService {
 
   private static final long cacheExpiredSeconds = 3600;
 
+  private static final List<String> PROVIDERS = Arrays.asList(ProviderNames.DEFAULT,
+      ProviderNames.PINNED, ProviderNames.AUTO_PINNED);
+
   @Resource
   private ObjectMapper objectMapper;
-  @Autowired
+  @Resource
   private ApplicationConfigurationRepositoryImpl applicationConfigurationRepository;
   @Resource
+  private ApplicationOperationConfigurationRepositoryImpl applicationOperationRepository;
+  @Resource
   private CacheProvider redisCacheProvider;
+  @Resource
+  private MockSourceEditionService mockSourceEditionService;
+  @Resource
+  private ApplicationOperationConfigurationRepositoryImpl serviceOperationRepository;
 
   public AddApplicationResponse addApplication(AddApplicationRequest request) {
     AddApplicationResponse response = new AddApplicationResponse();
@@ -85,6 +103,45 @@ public class ApplicationService {
       applicationConfiguration.setVisibilityLevel(request.getVisibilityLevel());
     }
     return applicationConfigurationRepository.update(applicationConfiguration);
+  }
+
+  public boolean deleteApplication(DeleteApplicationRequest request) {
+    final String appId = request.getAppId();
+    // remove Mockers
+    PROVIDERS.forEach(provider -> mockSourceEditionService.removeAllByAppId(provider, appId));
+
+    // remove redis
+    removeAllCacheByAppId(appId);
+
+    // remove ServiceOperation
+    applicationOperationRepository.removeByAppId(appId);
+
+    // remove App
+    applicationConfigurationRepository.removeByAppId(request.getAppId());
+    return true;
+  }
+
+  private void removeAllCacheByAppId(String appId) {
+    byte[] appServiceKey = CacheKeyUtils.toUtf8Bytes(SERVICE_MAPPINGS_PREFIX + appId);
+    byte[] appServiceValue = redisCacheProvider.get(appServiceKey);
+    if (appServiceValue == null) {
+      return;
+    }
+    String serviceId = CacheKeyUtils.fromUtf8Bytes(appServiceValue);
+    redisCacheProvider.remove(appServiceKey);
+
+    Map<String, Object> conditions = new HashMap<>();
+    conditions.put(Fields.appId, appId);
+    List<ApplicationOperationConfiguration> applicationOperationConfigurations =
+        serviceOperationRepository.queryByMultiCondition(conditions);
+
+    applicationOperationConfigurations.forEach(operation -> {
+      String operationName = operation.getOperationName();
+      String operationType = operation.getOperationType();
+      byte[] operationKey = CacheKeyUtils.toUtf8Bytes(SERVICE_MAPPINGS_PREFIX + serviceId + DASH
+          + operationName + DASH + operationType);
+      redisCacheProvider.remove(operationKey);
+    });
   }
 
 
