@@ -59,8 +59,6 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
    */
   @Value("${arex.storage.cache.expired.seconds:7200}")
   private long cacheExpiredSeconds;
-  @Value("${arex.storage.use.eigen.match}")
-  private boolean useEigenMatch;
   @Value("${arex.storage.query.config:true}")
   private boolean queryConfigSwitch;
   @Resource
@@ -134,7 +132,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   private <T extends Mocker> int sequencePutRecordData(MockCategoryType category,
       byte[] recordIdBytes, int size, byte[] recordKey, T value, int sequence,
       Map<byte[], Integer> mockSequenceKeyMaps) {
-    if (useEigenMatch && MapUtils.isEmpty(value.getEigenMap())) {
+    if (MapUtils.isEmpty(value.getEigenMap())) {
       calculateEigen(value, true);
     }
     List<byte[]> mockKeyList = matchKeyFactory.build(value);
@@ -361,9 +359,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     String replayId = mockItem.getReplayId();
     try {
       long start = System.currentTimeMillis();
-      if (useEigenMatch) {
-        calculateEigen(mockItem, false);
-      }
+      calculateEigen(mockItem, false);
       List<byte[]> mockKeyList = matchKeyFactory.build(mockItem);
       long end = System.currentTimeMillis();
       LOGGER.info("build mock keys cost:{} ms", end - start);
@@ -385,12 +381,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
             recordIdBytes, replayIdBytes);
       }
 
-      if (useEigenMatch) {
-        return getMockResultWithEigenMatch(category, recordIdBytes, replayIdBytes,
-            mockKeyList, mockItem, operationName, context);
-      }
-      return getMockResultWithSimilarityMatch(category, recordIdBytes, replayIdBytes, mockKeyList,
-          mockItem, operationName, context);
+      return getMockResultWithEigenMatch(category, recordIdBytes, replayIdBytes,
+          mockKeyList, mockItem, operationName, context);
     } catch (Throwable throwable) {
       LOGGER.error(
           "from agent's sequence consumeResult error: {} for category: {}, recordId: {}, replayId: {}",

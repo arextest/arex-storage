@@ -18,7 +18,6 @@ import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -56,8 +55,6 @@ public class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
   private static final List<String> SQL_TABLE_KEYS = Arrays.asList("from", "join", "update",
       "into");
   private final ObjectMapper objectMapper;
-  @Value("${arex.storage.use.eigen.match}")
-  private boolean useEigenMatch;
 
   DatabaseMatchKeyBuilderImpl(ObjectMapper objectMapper) {
     this.objectMapper = objectMapper;
@@ -171,7 +168,7 @@ public class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
     md5Digest.update(dbNameBytes);
     md5Digest.update(operationBytes);
     byte[] dbNameMatchKey = md5Digest.digest();
-    if (useEigenMatch && MapUtils.isNotEmpty(databaseMocker.getEigenMap())) {
+    if (MapUtils.isNotEmpty(databaseMocker.getEigenMap())) {
       try {
         md5Digest.update(CacheKeyUtils.toUtf8Bytes(
             objectMapper.writeValueAsString(databaseMocker.getEigenMap())));
