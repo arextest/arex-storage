@@ -21,7 +21,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -29,9 +28,6 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Order(15)
 final class HttpClientMatchKeyBuilderImpl implements MatchKeyBuilder {
-
-  @Value("${arex.storage.use.eigen.match}")
-  private boolean useEigenMatch;
 
   private final ObjectMapper objectMapper;
   private static final String BODY = "body";
@@ -64,7 +60,7 @@ final class HttpClientMatchKeyBuilderImpl implements MatchKeyBuilder {
       return Arrays.asList(httpMethodWithUrlBytes, operationBytes);
     }
     String body = request.getBody();
-    if (useEigenMatch && MapUtils.isNotEmpty(instance.getEigenMap())) {
+    if (MapUtils.isNotEmpty(instance.getEigenMap())) {
       try {
         body = objectMapper.writeValueAsString(instance.getEigenMap());
       } catch (JsonProcessingException e) {

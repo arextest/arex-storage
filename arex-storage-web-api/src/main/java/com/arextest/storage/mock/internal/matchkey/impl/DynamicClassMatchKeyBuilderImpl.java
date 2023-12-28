@@ -15,7 +15,6 @@ import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -23,9 +22,6 @@ import org.springframework.stereotype.Component;
 @Order(10)
 @Slf4j
 final class DynamicClassMatchKeyBuilderImpl implements MatchKeyBuilder {
-
-  @Value("${arex.storage.use.eigen.match}")
-  private boolean useEigenMatch;
 
   @Override
   public boolean isSupported(MockCategoryType categoryType) {
@@ -44,7 +40,7 @@ final class DynamicClassMatchKeyBuilderImpl implements MatchKeyBuilder {
     messageDigest.update(operationNameBytes);
 
     String body = targetRequest.getBody();
-    if (useEigenMatch && MapUtils.isNotEmpty(instance.getEigenMap())) {
+    if (MapUtils.isNotEmpty(instance.getEigenMap())) {
       try {
         body = objectMapper.writeValueAsString(instance.getEigenMap());
       } catch (JsonProcessingException e) {

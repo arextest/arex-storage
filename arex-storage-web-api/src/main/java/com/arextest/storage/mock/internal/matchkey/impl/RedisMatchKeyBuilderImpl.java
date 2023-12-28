@@ -16,7 +16,6 @@ import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -27,8 +26,6 @@ final class RedisMatchKeyBuilderImpl implements MatchKeyBuilder {
 
   private final ObjectMapper objectMapper;
   private static final String BODY = "body";
-  @Value("${arex.storage.use.eigen.match}")
-  private boolean useEigenMatch;
   RedisMatchKeyBuilderImpl(ObjectMapper objectMapper) {
     this.objectMapper = objectMapper;
   }
@@ -47,7 +44,7 @@ final class RedisMatchKeyBuilderImpl implements MatchKeyBuilder {
     }
     MessageDigest messageDigest = MessageDigestWriter.getMD5Digest();
     messageDigest.update(operationBytes);
-    if (useEigenMatch && MapUtils.isNotEmpty(instance.getEigenMap())) {
+    if (MapUtils.isNotEmpty(instance.getEigenMap())) {
       String eigenBody = request.getBody();
       try {
         eigenBody = objectMapper.writeValueAsString(instance.getEigenMap());

@@ -37,9 +37,5 @@ arex:
           timeMock: true
   prometheus:
     port: 20093
-  storage:
-    use:
-      eigen:
-        match: false
 pom:
   version: ${project.version}
