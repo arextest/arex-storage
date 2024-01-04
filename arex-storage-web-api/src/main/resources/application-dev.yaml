@@ -1,0 +1,23 @@
+server:
+  port: 8093
+logging:
+  config: classpath:log4j2-dev.xml
+arex:
+  storage:
+    cache:
+      uri: redis://10.144.62.53:6379/
+    enableDiscoveryEntryPoint: true
+    mongodbUri: mongodb://arex:iLoveArex@10.144.62.53:27017/arex_storage_db
+    recordEnv: TEST
+    expirationDurationMap:
+      ConfigFile: 3456000000
+    defaultExpirationDuration: 345600000
+    allowReRunDays: 1
+  api:
+    config:
+      agent:
+        url: http://10.144.62.53:8090
+#    categoryTypes:
+#      - name: Hi
+#        entryPoint: true
+#        skipComparison: true
