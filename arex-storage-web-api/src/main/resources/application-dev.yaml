@@ -7,7 +7,7 @@ arex:
     cache:
       uri: redis://10.144.62.53:6379/
     enableDiscoveryEntryPoint: true
-    mongodbUri: mongodb://arex:iLoveArex@10.144.62.53:27017/arex_storage_db
+    mongodbUri: mongodb://arex:password@10.144.62.53:27017/arex_storage_db
     recordEnv: TEST
     expirationDurationMap:
       ConfigFile: 3456000000
