@@ -17,4 +17,9 @@ public interface MetricListener {
    * record match strategy count with tags.
    */
   void recordMatchingCount(String metricName, Map<String, String> tags);
+
+  /**
+   * record size with tags.
+   */
+  void recordSize(String metricName, Map<String, String> tags, int size);
 }

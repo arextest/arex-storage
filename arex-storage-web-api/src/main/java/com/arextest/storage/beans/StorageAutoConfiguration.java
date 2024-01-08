@@ -7,6 +7,7 @@ import com.arextest.config.repository.impl.ApplicationServiceConfigurationReposi
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.storage.converter.ZstdJacksonMessageConverter;
+import com.arextest.storage.interceptor.RequestResponseMetricInterceptor;
 import com.arextest.storage.metric.AgentWorkingMetricService;
 import com.arextest.storage.metric.MatchStrategyMetricService;
 import com.arextest.storage.metric.MetricListener;
