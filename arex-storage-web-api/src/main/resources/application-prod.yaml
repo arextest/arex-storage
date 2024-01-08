@@ -3,7 +3,7 @@ arex:
     cache:
       uri: ${arex.redis.uri:redis://redis:6379/}
     enableDiscoveryEntryPoint: true
-    mongodbUri: ${arex.mongo.uri:mongodb://arex:iLoveArex@mongodb:27017/arex_storage_db}
+    mongodbUri: ${arex.mongo.uri:mongodb://arex:password@mongodb:27017/arex_storage_db}
     recordEnv: TEST
     expirationDurationMap:
       ConfigFile: 3456000000
