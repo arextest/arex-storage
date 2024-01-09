@@ -231,14 +231,12 @@ public class MockSourceEditionService {
 
   private List<Mocker> createTargetList(List<AREXMocker> srcMockers, String targetRecordId) {
     List<Mocker> targetList = null;
-    long now = System.currentTimeMillis();
     for (Mocker mocker: srcMockers) {
       if (targetList == null) {
         targetList = new LinkedList<>();
       }
       mocker.setRecordId(targetRecordId);
       mocker.setId(null);
-      mocker.setCreationTime(now);
       targetList.add(mocker);
     }
     return targetList;
