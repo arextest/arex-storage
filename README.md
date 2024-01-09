@@ -8,13 +8,13 @@ This HTTP web API manages and accesses recording and replaying resources from a 
 
 ### Key Functions
 
-1.	Agent Recording
+1. Agent Recording
 	- Assigns version numbers to configuration files.
 	- Saves entry points and dependent instances implementing MockItem.
-2.	Agent Replaying
+2. Agent Replaying
 	- Reads configuration files by version number prior to replaying.
 	- Handles requests, performs diffs, and retrieves mock results as responses.
-3.	Scheduled Replaying
+3. Scheduled Replaying
 	- Uses MainEntry (extending MockItem) as replay trigger sources.
 	- Provides diff response sources saved from agent’s replay.
 
@@ -51,9 +51,49 @@ The base interface MockItem, defined in arex.storage.model.mocker, is structured
 - **`MainEntry` Interface:** Defined in `arex.storage.model.mocker`, `MainEntry` extends `MockItem` and includes methods for accessing request details, category type, format, and more.
 
    ```java
-   public interface MainEntry extends MockItem {
-       // Method descriptions and functionality...
-   }
+     public interface MainEntry extends MockItem {
+
+         /**
+          * @return utc format without timezone
+          */
+         long getCreateTime();
+         /**
+           * The request's content encoded by base64
+           *
+           */
+         String getRequest();
+
+         /**
+          * @return the mock category type value from MockCategoryType
+          * @see MockCategoryType
+          */
+         @JsonIgnore
+         int getCategoryType();
+
+         /**
+          * How to serialize the request's body to target ,default using application/json
+          *
+          * @return application/json or others
+          */
+         default String getFormat() {
+             return null;
+         }         
+
+         /**
+          * @return default http post
+          */
+         default String getMethod() {
+             return "POST";
+         }
+
+         default Map<String, String> getRequestHeaders() {
+             return null;
+         }
+
+         default String getPath() {
+             return null;
+         }
+     }
    ```
 
 ## Getting Started
