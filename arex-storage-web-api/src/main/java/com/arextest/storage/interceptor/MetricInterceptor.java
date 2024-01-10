@@ -2,6 +2,7 @@ package com.arextest.storage.interceptor;
 
 import com.arextest.storage.metric.MetricListener;
 import com.google.common.collect.Maps;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.ServletRequest;
@@ -12,10 +13,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
@@ -48,11 +47,14 @@ public class MetricInterceptor implements HandlerInterceptor {
   }
 
   @Override
-  public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
-      @Nullable ModelAndView modelAndView) throws Exception {
+  public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex)
+      throws IOException {
     ContentCachingRequestWrapper cachingRequest= toCachingRequest(request);
     ContentCachingResponseWrapper cachingResponse = toCachingResponse(response);
     if (cachingRequest == null || cachingResponse == null) {
+      if (cachingResponse != null) {
+        cachingResponse.copyBodyToResponse();
+      }
       return;
     }
 
@@ -62,21 +64,13 @@ public class MetricInterceptor implements HandlerInterceptor {
     int requestLength = requestBody.length;
 
     int responseLength = cachingResponse.getContentSize();
+    cachingResponse.copyBodyToResponse();
 
     long startTime = (Long) request.getAttribute(START_TIME);
 
     String clientApp = request.getHeader(CLIENT_APP_HEADER);
     String category = request.getHeader(CATEGORY_TYPE_HEADER);
     recordPayloadInfo(clientApp, category, request.getRequestURI(), requestLength, responseLength, endTime - startTime);
-  }
-
-  @Override
-  public void afterCompletion(HttpServletRequest request, HttpServletResponse response,
-      Object handler, Exception ex) throws Exception {
-    ContentCachingResponseWrapper cachingResponse = toCachingResponse(response);
-    if (cachingResponse != null) {
-      cachingResponse.copyBodyToResponse();
-    }
   }
 
   private ContentCachingRequestWrapper toCachingRequest(HttpServletRequest request) {
