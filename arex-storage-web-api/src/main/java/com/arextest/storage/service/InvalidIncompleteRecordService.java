@@ -31,10 +31,10 @@ public class InvalidIncompleteRecordService {
     private static final byte[] INVALID_CASE_KEY = "invalid_case".getBytes(StandardCharsets.UTF_8);
     private static final byte[] INVALID_CASE_VALUE = "1".getBytes(StandardCharsets.UTF_8);
     private static final long THREE_MINUTES_EXPIRE = 3 * 60L;
-
+    private static final String NULL = "null";
     public void invalidIncompleteRecord(String recordId, String replayId) {
         // replaying scene
-        if (StringUtils.isNotEmpty(replayId)) {
+        if (StringUtils.isNotEmpty(replayId) && !NULL.equalsIgnoreCase(replayId)) {
             invalidReplayIncompleteRecords(replayId);
         } else {
             // recording scene
