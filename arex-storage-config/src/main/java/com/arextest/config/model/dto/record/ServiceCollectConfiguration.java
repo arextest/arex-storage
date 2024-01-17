@@ -60,7 +60,7 @@ public class ServiceCollectConfiguration extends AbstractConfiguration
   /**
    * Multi environment configuration
    */
-  private List<ServiceCollectConfiguration> multiEnvConfigs;
+  private List<MultiEnvConfig<ServiceCollectConfiguration>> multiEnvConfigs;
 
   /**
    * Multi environment tags
