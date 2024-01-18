@@ -285,6 +285,20 @@
             <version>3.4.0</version>
           </plugin>
           <plugin>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+              </execution>
+            </executions>
+            <groupId>org.apache.maven.plugins</groupId>
+            <version>3.0.1</version>
+          </plugin>
+          <plugin>
             <artifactId>nexus-staging-maven-plugin</artifactId>
             <configuration>
               <autoReleaseAfterClose>true</autoReleaseAfterClose>
@@ -353,7 +367,6 @@
       <id>jar-local</id>
       <properties>
         <packagingType>jar</packagingType>
-        <snapshots.repo>http://maven.release.ctripcorp.com/nexus/content/repositories/flightsnapshot</snapshots.repo>
       </properties>
     </profile>
   </profiles>
