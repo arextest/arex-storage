@@ -23,6 +23,14 @@ public class AgentRemoteConfigurationResponse {
   private Integer status;
 
   private String targetAddress;
+  /**
+   * Description of agent startup
+   */
+  private String message;
+  /**
+   * Determine whether to start the agent
+   */
+  private Boolean agentEnabled;
 
   private Map<String, String> extendField;
 }
