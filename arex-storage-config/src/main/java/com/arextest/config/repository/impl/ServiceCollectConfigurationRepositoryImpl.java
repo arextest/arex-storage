@@ -1,6 +1,7 @@
 package com.arextest.config.repository.impl;
 
 import com.arextest.config.mapper.RecordServiceConfigMapper;
+import com.arextest.config.model.dao.MultiEnvBaseEntity.Fields;
 import com.arextest.config.model.dao.config.RecordServiceConfigCollection;
 import com.arextest.config.model.dto.record.ServiceCollectConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
@@ -71,7 +72,10 @@ public class ServiceCollectConfigurationRepositoryImpl
             RecordServiceConfigCollection.Fields.excludeServiceOperationSet,
             RecordServiceConfigCollection.Fields.timeMock,
             RecordServiceConfigCollection.Fields.extendField,
-            RecordServiceConfigCollection.Fields.serializeSkipInfoList),
+            RecordServiceConfigCollection.Fields.serializeSkipInfoList,
+            Fields.multiEnvConfigs,
+            Fields.envTags
+        ),
         Updates.set(RecordServiceConfigCollection.Fields.recordMachineCountLimit,
             configuration.getRecordMachineCountLimit() == null ? 1
                 : configuration.getRecordMachineCountLimit())

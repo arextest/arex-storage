@@ -7,5 +7,6 @@ package com.arextest.config.model.dto;
 public enum ModifyType {
   REMOVE,
   INSERT,
-  UPDATE
+  UPDATE,
+  UPDATE_MULTI_ENV
 }

@@ -2,6 +2,8 @@ package com.arextest.config.model.dto.record;
 
 
 import com.arextest.config.model.dto.AbstractConfiguration;
+import com.arextest.config.model.dto.AbstractMultiEnvConfiguration;
+import com.arextest.config.model.dto.MultiEnvConfig;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -14,9 +16,7 @@ import lombok.Setter;
  */
 @Setter
 @Getter
-public class ServiceCollectConfiguration extends AbstractConfiguration
-    implements MultiEnvConfig<ServiceCollectConfiguration> {
-
+public class ServiceCollectConfiguration extends AbstractMultiEnvConfiguration<ServiceCollectConfiguration> {
   private String appId;
   /**
    * The sample rate means for in 100 seconds should be occurred the number of records. example: if
@@ -56,14 +56,4 @@ public class ServiceCollectConfiguration extends AbstractConfiguration
   private Map<String, String> extendField;
 
   private List<SerializeSkipInfoConfiguration> serializeSkipInfoList;
-
-  /**
-   * Multi environment configuration
-   */
-  private List<MultiEnvConfig<ServiceCollectConfiguration>> multiEnvConfigs;
-
-  /**
-   * Multi environment tags
-   */
-  private Map<String, String> envTags;
 }

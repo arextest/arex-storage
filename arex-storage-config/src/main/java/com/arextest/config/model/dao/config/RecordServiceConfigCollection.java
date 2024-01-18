@@ -1,6 +1,7 @@
 package com.arextest.config.model.dao.config;
 
 import com.arextest.config.model.dao.BaseEntity;
+import com.arextest.config.model.dao.MultiEnvBaseEntity;
 import com.arextest.config.model.dto.record.SerializeSkipInfoConfiguration;
 import java.util.List;
 import java.util.Map;
@@ -13,7 +14,8 @@ import lombok.experimental.FieldNameConstants;
 @Data
 @NoArgsConstructor
 @FieldNameConstants
-public class RecordServiceConfigCollection extends BaseEntity {
+public class RecordServiceConfigCollection extends
+    MultiEnvBaseEntity<RecordServiceConfigCollection> {
 
   public static final String DOCUMENT_NAME = "RecordServiceConfig";
 
