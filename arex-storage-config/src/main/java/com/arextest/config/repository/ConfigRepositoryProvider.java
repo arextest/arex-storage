@@ -6,7 +6,7 @@ import java.util.List;
  * @author jmo
  * @since 2022/1/25
  */
-public interface ConfigRepositoryProvider<T> extends ConfigRepository {
+public interface ConfigRepositoryProvider<T> extends ConfigRepository<T> {
 
   List<T> list();
 

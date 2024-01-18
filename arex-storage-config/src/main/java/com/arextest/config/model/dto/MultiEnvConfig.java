@@ -7,6 +7,6 @@ public interface MultiEnvConfig<T> {
   List<T> getMultiEnvConfigs();
   void setMultiEnvConfigs(List<T> multiEnvConfigs);
 
-  Map<String, String> getEnvTags();
-  void setEnvTags(Map<String, String> envTags);
+  Map<String, List<String>> getEnvTags();
+  void setEnvTags(Map<String, List<String>> envTags);
 }

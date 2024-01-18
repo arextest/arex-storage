@@ -18,5 +18,5 @@ public abstract class MultiEnvBaseEntity<T> extends BaseEntity {
   /**
    * Multi environment tags
    */
-  private Map<String, String> envTags;
+  private Map<String, List<String>> envTags;
 }

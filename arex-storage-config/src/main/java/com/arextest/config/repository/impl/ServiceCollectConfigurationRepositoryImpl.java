@@ -5,6 +5,7 @@ import com.arextest.config.model.dao.MultiEnvBaseEntity.Fields;
 import com.arextest.config.model.dao.config.RecordServiceConfigCollection;
 import com.arextest.config.model.dto.record.ServiceCollectConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
+import com.arextest.config.repository.MultiEnvConfigRepositoryProvider;
 import com.arextest.config.utils.MongoHelper;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
@@ -21,7 +22,7 @@ import javax.annotation.PostConstruct;
 import org.bson.conversions.Bson;
 
 public class ServiceCollectConfigurationRepositoryImpl
-    implements ConfigRepositoryProvider<ServiceCollectConfiguration> {
+    implements MultiEnvConfigRepositoryProvider<ServiceCollectConfiguration> {
 
   private MongoDatabase mongoDatabase;
 
@@ -108,5 +109,12 @@ public class ServiceCollectConfigurationRepositoryImpl
     Bson filter = Filters.eq(RecordServiceConfigCollection.Fields.appId, appId);
     DeleteResult deleteResult = mongoCollection.deleteMany(filter);
     return deleteResult.getDeletedCount() > 0;
+  }
+
+  @Override
+  public boolean updateMultiEnvConfig(ServiceCollectConfiguration configuration) {
+    Bson filter = Filters.eq(RecordServiceConfigCollection.Fields.appId, configuration.getAppId());
+    Bson update = Updates.set(Fields.multiEnvConfigs, configuration.getMultiEnvConfigs());
+    return mongoCollection.updateOne(filter, update).getModifiedCount() > 0;
   }
 }

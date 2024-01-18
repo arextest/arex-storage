@@ -18,5 +18,5 @@ public abstract class AbstractMultiEnvConfiguration<T>
   /**
    * Multi environment tags
    */
-  private Map<String, String> envTags;
+  private Map<String, List<String>> envTags;
 }
