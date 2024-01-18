@@ -122,8 +122,12 @@ public final class AgentRemoteConfigurationController {
       }
       if (recordingHosts.contains(request.getHost())) {
         body.setTargetAddress(request.getHost());
+        body.setMessage(request.getHost());
+        body.setAgentEnabled(Boolean.TRUE);
       } else {
         body.setTargetAddress(request.getHost() + NOT_RECORDING);
+        body.setMessage(request.getHost() + NOT_RECORDING);
+        body.setAgentEnabled(Boolean.FALSE);
       }
 
       // asynchronously update application env
