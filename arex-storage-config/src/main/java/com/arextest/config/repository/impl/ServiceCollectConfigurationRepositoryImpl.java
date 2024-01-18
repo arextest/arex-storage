@@ -17,7 +17,10 @@ import com.mongodb.client.result.InsertOneResult;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import org.bson.conversions.Bson;
 
@@ -73,9 +76,7 @@ public class ServiceCollectConfigurationRepositoryImpl
             RecordServiceConfigCollection.Fields.excludeServiceOperationSet,
             RecordServiceConfigCollection.Fields.timeMock,
             RecordServiceConfigCollection.Fields.extendField,
-            RecordServiceConfigCollection.Fields.serializeSkipInfoList,
-            Fields.multiEnvConfigs,
-            Fields.envTags
+            RecordServiceConfigCollection.Fields.serializeSkipInfoList
         ),
         Updates.set(RecordServiceConfigCollection.Fields.recordMachineCountLimit,
             configuration.getRecordMachineCountLimit() == null ? 1
@@ -114,7 +115,13 @@ public class ServiceCollectConfigurationRepositoryImpl
   @Override
   public boolean updateMultiEnvConfig(ServiceCollectConfiguration configuration) {
     Bson filter = Filters.eq(RecordServiceConfigCollection.Fields.appId, configuration.getAppId());
-    Bson update = Updates.set(Fields.multiEnvConfigs, configuration.getMultiEnvConfigs());
+
+    List<RecordServiceConfigCollection> configs = Optional.ofNullable(configuration.getMultiEnvConfigs())
+        .orElse(Collections.emptyList())
+        .stream().map(RecordServiceConfigMapper.INSTANCE::daoFromDto)
+        .collect(Collectors.toList());
+
+    Bson update = Updates.set(Fields.multiEnvConfigs, configs);
     return mongoCollection.updateOne(filter, update).getModifiedCount() > 0;
   }
 }
