@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MergeRecordDTO {
-    private Object arexOriginalResult;
+    private Object response;
     private String arexResultClazz;
     private String category;
     private int methodSignatureHash;
