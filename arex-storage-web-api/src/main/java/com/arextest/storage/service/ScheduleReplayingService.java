@@ -177,7 +177,7 @@ public class ScheduleReplayingService {
         splitMocker.setTargetRequest(request);
 
         Target response = new Target();
-        response.setBody(objectMapper.writeValueAsString(mergeRecord.getArexOriginalResult()));
+        response.setBody(objectMapper.writeValueAsString(mergeRecord.getResponse()));
         response.setAttributes(mergeRecord.getResponseAttributes());
         response.setType(mergeRecord.getArexResultClazz());
         splitMocker.setTargetResponse(response);

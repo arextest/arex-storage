@@ -7,15 +7,12 @@ import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
+import com.fasterxml.jackson.core.type.TypeReference;
 import java.sql.Date;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Collections;
-import java.util.Comparator;
-import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -63,7 +60,7 @@ public class MockSourceEditionService {
               }));
       MergeRecordDTO mergeRecordDTO = mergeRecordDTOS.get(item.getIndex());
       mergeRecordDTO.setRequest(item.getTargetRequest().getBody());
-      mergeRecordDTO.setArexOriginalResult(
+      mergeRecordDTO.setResponse(
           objectMapper.readValue(item.getTargetResponse().getBody(),
               new TypeReference<Map<String, Object>>() {
               }));
