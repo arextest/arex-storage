@@ -67,10 +67,16 @@ public final class ServiceCollectConfigurableHandler extends
     return true;
   }
 
+  /**
+   * Query service collect config from db,
+   * merge multi env config into root config according to the tags sent from agent.
+   * Match the first config having the same tag with agent.
+   * @param serverTags server tags sent from agent, e.g. env: fat
+   */
   public ServiceCollectConfiguration queryConfigByEnv(String appId,
       Map<String, String> serverTags) {
     ServiceCollectConfiguration config = useResult(appId);
-    if (serverTags == null || serverTags.isEmpty()) {
+    if (serverTags == null || serverTags.isEmpty() || config == null) {
       return config;
     }
 
