@@ -1,9 +1,7 @@
 package com.arextest.config.model.dto.record;
 
 
-import com.arextest.config.model.dto.AbstractConfiguration;
 import com.arextest.config.model.dto.AbstractMultiEnvConfiguration;
-import com.arextest.config.model.dto.MultiEnvConfig;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,8 +57,19 @@ public class ServiceCollectConfiguration extends AbstractMultiEnvConfiguration<S
 
   @Override
   public void validateEnvConfigs() throws Exception {
-    if (this.getEnvTags() == null || this.getEnvTags().isEmpty()) {
-      throw new RuntimeException("envTags is empty");
+    if (this.getAppId() == null || this.getAppId().isEmpty()) {
+      throw new RuntimeException("appid is empty");
+    }
+
+    if (this.getMultiEnvConfigs() == null || this.getMultiEnvConfigs().isEmpty()) {
+      throw new RuntimeException("multiEnvConfigs is empty");
+    }
+
+    for (int i = 0; i < this.getMultiEnvConfigs().size(); i++) {
+      ServiceCollectConfiguration current = this.getMultiEnvConfigs().get(i);
+      if (current.getEnvTags() == null || current.getEnvTags().isEmpty()) {
+        throw new RuntimeException("No." + (i + 1) + " config's envTags is empty");
+      }
     }
   }
 }
