@@ -56,4 +56,11 @@ public class ServiceCollectConfiguration extends AbstractMultiEnvConfiguration<S
   private Map<String, String> extendField;
 
   private List<SerializeSkipInfoConfiguration> serializeSkipInfoList;
+
+  @Override
+  public void validateEnvConfigs() throws Exception {
+    if (this.getEnvTags() == null || this.getEnvTags().isEmpty()) {
+      throw new RuntimeException("envTags is empty");
+    }
+  }
 }

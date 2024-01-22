@@ -19,4 +19,7 @@ public abstract class AbstractMultiEnvConfiguration<T>
    * Multi environment tags
    */
   private Map<String, List<String>> envTags;
+
+  public void validateEnvConfigs() throws Exception {
+  }
 }
