@@ -14,7 +14,8 @@ import lombok.Setter;
  */
 @Setter
 @Getter
-public class ServiceCollectConfiguration extends AbstractConfiguration {
+public class ServiceCollectConfiguration extends AbstractConfiguration
+    implements MultiEnvConfig<ServiceCollectConfiguration> {
 
   private String appId;
   /**
@@ -55,4 +56,14 @@ public class ServiceCollectConfiguration extends AbstractConfiguration {
   private Map<String, String> extendField;
 
   private List<SerializeSkipInfoConfiguration> serializeSkipInfoList;
+
+  /**
+   * Multi environment configuration
+   */
+  private List<MultiEnvConfig<ServiceCollectConfiguration>> multiEnvConfigs;
+
+  /**
+   * Multi environment tags
+   */
+  private Map<String, String> envTags;
 }
