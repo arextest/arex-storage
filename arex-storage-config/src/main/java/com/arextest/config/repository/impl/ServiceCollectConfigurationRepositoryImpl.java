@@ -2,10 +2,9 @@ package com.arextest.config.repository.impl;
 
 import com.arextest.config.mapper.RecordServiceConfigMapper;
 import com.arextest.config.model.dao.BaseEntity;
-import com.arextest.config.model.dao.MultiEnvBaseEntity.Fields;
+import com.arextest.config.model.dao.MultiEnvBaseEntity;
 import com.arextest.config.model.dao.config.RecordServiceConfigCollection;
 import com.arextest.config.model.dto.record.ServiceCollectConfiguration;
-import com.arextest.config.repository.ConfigRepositoryProvider;
 import com.arextest.config.repository.MultiEnvConfigRepositoryProvider;
 import com.arextest.config.utils.MongoHelper;
 import com.mongodb.client.MongoCollection;
@@ -123,7 +122,7 @@ public class ServiceCollectConfigurationRepositoryImpl
         .collect(Collectors.toList());
 
     Bson update = Updates.combine(
-        Updates.set(Fields.multiEnvConfigs, configs),
+        Updates.set(MultiEnvBaseEntity.Fields.multiEnvConfigs, configs),
         Updates.set(BaseEntity.Fields.dataChangeUpdateTime, System.currentTimeMillis())
     );
     return mongoCollection.updateOne(filter, update).getModifiedCount() > 0;
