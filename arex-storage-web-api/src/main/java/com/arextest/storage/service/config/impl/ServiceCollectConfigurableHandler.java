@@ -107,6 +107,8 @@ public final class ServiceCollectConfigurableHandler extends
       config.setAllowTimeOfDayTo(matched.getAllowTimeOfDayTo());
       config.setRecordMachineCountLimit(matched.getRecordMachineCountLimit());
     });
+    // clear multi env config to avoid confusion
+    config.setMultiEnvConfigs(Collections.emptyList());
     return config;
   }
 
