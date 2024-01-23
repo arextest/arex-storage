@@ -14,7 +14,7 @@ import com.arextest.storage.mock.MatchKeyFactory;
 import com.arextest.storage.mock.MockResultContext;
 import com.arextest.storage.mock.MockResultMatchStrategy;
 import com.arextest.storage.mock.MockResultProvider;
-import com.arextest.storage.mock.internal.matchkey.impl.DatabaseMatchKeyBuilderImpl;
+import com.arextest.storage.mock.internal.matchkey.impl.DubboConsumerMatchKeyBuilderImpl;
 import com.arextest.storage.model.MockResultType;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.QueryConfigService;
@@ -51,7 +51,6 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   private static final String STRICT_MATCH = "strictMatch";
   private static final String MULTI_OPERATION_WITH_STRICT_MATCH = "multiOperationStrictMatch";
   private static final String FUZZY_MATCH = "fuzzyMatch";
-  private static final String SIMILARITY_MATCH = "similarityMatch";
   private static final String EIGEN_MATCH = "eigenMatch";
   private static final String COMMA_STRING = ",";
   /**
@@ -70,7 +69,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   @Resource
   private MatchStrategyMetricService matchStrategyMetricService;
   @Resource
-  private DatabaseMatchKeyBuilderImpl databaseMatchKeyBuilder;
+  private DubboConsumerMatchKeyBuilderImpl dubboConsumerMatchKeyBuilder;
   @Resource
   private QueryConfigService queryConfigService;
 
@@ -95,11 +94,16 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     while (valueIterator.hasNext()) {
       T value = valueIterator.next();
       mockList.add(value);
-      byte[] recordOperationKey = CacheKeyUtils.buildRecordOperationKey(category, recordId,
-          getOperationNameWithCategory(value));
-      int count = updateMapsAndGetCount(mockSequenceKeyMaps, recordOperationKey);
-      LOGGER.info("update record operation cache, count: {}, operation: {}", count, getOperationNameWithCategory(value));
-      putRedisValue(recordOperationKey, count);
+      if (shouldRecordCallReplayMax) {
+        // Dubbo type mock needs to calculate the number of body and methods combined
+        byte[] operationByte = getOperationNameWithCategory(value);
+        byte[] recordOperationKey = CacheKeyUtils.buildRecordOperationKey(category, recordId,
+            operationByte);
+        int count = updateMapsAndGetCount(mockSequenceKeyMaps, recordOperationKey);
+        LOGGER.info("update record operation cache, count: {}, operation: {}", count,
+            value.getOperationName());
+        putRedisValue(recordOperationKey, count);
+      }
     }
     mockList.sort(Comparator.comparing(Mocker::getCreationTime));
     int mockListSize = mockList.size();
@@ -108,7 +112,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
       // Place the maximum number of playback times corresponding to the operations into the recorded data
       if (shouldRecordCallReplayMax) {
         byte[] recordOperationKey = CacheKeyUtils.buildRecordOperationKey(category, recordId,
-            value.getOperationName());
+            getOperationNameWithCategory(value));
         int count = resultCount(recordOperationKey);
         Mocker.Target targetResponse = value.getTargetResponse();
         if (targetResponse != null) {
@@ -371,18 +375,19 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
       final byte[] recordIdBytes = CacheKeyUtils.toUtf8Bytes(recordId);
       final byte[] replayIdBytes = CacheKeyUtils.toUtf8Bytes(replayId);
 
-      String operationName = getOperationNameWithCategory(mockItem);
-      byte[] recordOperationKey = CacheKeyUtils.buildRecordOperationKey(category, recordId,
-          operationName);
-      int count = resultCount(recordOperationKey);
-      LOGGER.info("get record result with operation:{}, count: {}", operationName, count);
+      byte[] fuzzMockKeyBytes = mockKeyList.get(mockKeyList.size() - 1);
+      byte[] fuzzMockSourceKey = CacheKeyUtils.buildRecordKey(category, recordIdBytes,
+          fuzzMockKeyBytes);
+      int count = resultCount(fuzzMockSourceKey);
+      LOGGER.info("get record result with operation:{}, count: {}",
+          CacheKeyUtils.fromUtf8Bytes(fuzzMockKeyBytes), count);
       if (useSequenceMatch(context.getMockStrategy(), category, count)) {
         return getMockResultWithSequenceMatch(mockItem, context, category, mockKeyList,
             recordIdBytes, replayIdBytes);
       }
 
       return getMockResultWithEigenMatch(category, recordIdBytes, replayIdBytes,
-          mockKeyList, mockItem, operationName, context);
+          mockKeyList, fuzzMockSourceKey, mockItem, count, context);
     } catch (Throwable throwable) {
       LOGGER.error(
           "from agent's sequence consumeResult error: {} for category: {}, recordId: {}, replayId: {}",
@@ -398,15 +403,25 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
         || recordDataCount <= 1;
   }
 
-  private String getOperationNameWithCategory(Mocker mockItem) {
+  /**
+   * Get the method name corresponding to the type. For dubbo, it is necessary to obtain the exact
+   * matching key as the method name to calculate the quantity.
+   *
+   * @param mockItem
+   * @return
+   */
+  private byte[] getOperationNameWithCategory(Mocker mockItem) {
     String operationName = mockItem.getOperationName();
-
-    if (MockCategoryType.DATABASE.equals(mockItem.getCategoryType())) {
-      String tableNames = databaseMatchKeyBuilder.findDBTableNames(mockItem);
-      Object dbName = mockItem.getTargetRequest().getAttribute(MockAttributeNames.DB_NAME);
-      operationName = String.format("%s_%s_%s", operationName, tableNames, dbName);
+    byte[] operationKey = CacheKeyUtils.toUtf8Bytes(operationName);
+    if (!mockItem.getCategoryType().isEntryPoint() &&
+        mockItem.getCategoryType().getName().startsWith(DUBBO_PREFIX)) {
+      List<byte[]> build = dubboConsumerMatchKeyBuilder.build(mockItem);
+      if (CollectionUtils.isEmpty(build)) {
+        return operationKey;
+      }
+      return build.get(0);
     }
-    return operationName;
+    return operationKey;
   }
 
   private byte[] getMockResultWithSequenceMatch(Mocker mockItem, MockResultContext context,
@@ -473,32 +488,6 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     }
   }
 
-  /**
-   * Calculates the sum of the lengths of the common prefix and the common suffix of two strings.
-   *
-   * @param val1
-   * @param val2
-   * @return the sum of the lengths of the common prefix and the common suffix of two strings
-   */
-  private int calc(String val1, String val2) {
-    int len1 = 0, len2 = 0;
-    int len = Math.min(val1.length(), val2.length());
-    for (int i = 0; i < len; i++) {
-      if (val1.charAt(i) != val2.charAt(i)) {
-        len1 = i;
-        break;
-      }
-    }
-
-    for (int i = 1; i <= len; i++) {
-      if (val1.charAt(val1.length() - i) != val2.charAt(val2.length() - i)) {
-        len2 = i;
-        break;
-      }
-    }
-    return len1 + len2;
-  }
-
   private int coincidePath(Map<Integer, Long> replayEigenMap, Map<Integer, Long> recordEigenMap) {
     int row = 0;
     if (MapUtils.isEmpty(replayEigenMap) || MapUtils.isEmpty(recordEigenMap)) {
@@ -551,143 +540,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     return null;
   }
 
-  /**
-   * the matching result is obtained by similarity.
-   *
-   * @param category
-   * @param recordIdBytes
-   * @param replayIdBytes
-   * @param mockKeyList
-   * @param mockItem
-   * @param operationName
-   * @return the matching result.
-   */
-  private byte[] getMockResultWithSimilarityMatch(MockCategoryType category,
-      final byte[] recordIdBytes, byte[] replayIdBytes,
-      List<byte[]> mockKeyList, @NotNull Mocker mockItem, String operationName,
-      MockResultContext context) {
-    try {
-      // 1. determine whether it can be accurately matched in multiple call scenarios
-      byte[] result = sequenceMockResult(category, recordIdBytes, replayIdBytes, mockKeyList.get(0),
-          context);
-
-      // 2. the data on the exact match is returned directly
-      if (result != null) {
-        byte[] mockResultId = getIdOfRecordInstance(context.getValueRefKey());
-        String id = CacheKeyUtils.fromUtf8Bytes(mockResultId);
-        mockItem.setId(id);
-        long increasesCount = increasesReplayConsumer(category, recordIdBytes, replayIdBytes, mockResultId);
-        if (increasesCount <= 1L) {
-          matchStrategyMetricService.recordMatchingCount(MULTI_OPERATION_WITH_STRICT_MATCH,
-              (AREXMocker) mockItem);
-          LOGGER.info(
-              "[[title=similarityMatch]]get mock result with strictly match, instanceId: {}, increasesCount: {}",
-              id, increasesCount);
-          return result;
-        }
-      }
-
-      // 3. use similarity match
-      byte[] fuzzMockKeyBytes = mockKeyList.get(mockKeyList.size() - 1);
-      byte[] sourceKey = CacheKeyUtils.buildRecordKey(category, recordIdBytes, fuzzMockKeyBytes);
-      int count = resultCount(sourceKey);
-      if (count == EMPTY_SIZE) {
-        return null;
-      }
-      boolean tryFindLastValue =
-          context.getMockStrategy() == MockResultMatchStrategy.TRY_FIND_LAST_VALUE;
-
-      // 4. gets replay request content.
-      String replayRequestBody = getRequestBody(mockItem.getTargetRequest(), category);
-
-      // 5. iterate over all records, calculating the similarity between replay requests and record requests.
-      Map<Integer, List<Pair<String, byte[]>>> invocationMap = Maps.newHashMap();
-      for (int sequence = 1; sequence <= count; sequence++) {
-        byte[] mockDataBytes = getMockerDataBytesFromMockKey(sourceKey, sequence);
-        if (mockDataBytes == null) {
-          continue;
-        }
-
-        AREXMocker mocker = serializer.deserialize(mockDataBytes, AREXMocker.class);
-        String recordInstanceId = mocker.getId();
-
-        int consumerCount = getReplayConsumerCount(category, recordIdBytes, replayIdBytes, recordInstanceId);
-        if (consumerCount > EMPTY_SIZE) {
-          if (tryFindLastValue && sequence == count) {
-            LOGGER.info(
-                "[[title=similarityMatch]]try find last value, recordInstanceId: {}, consumerCount: {}",
-                recordInstanceId, consumerCount);
-            return mockDataBytes;
-          }
-          LOGGER.info("[[title=similarityMatch]]operation: {}, recordInstanceId: {} is matched.", operationName, recordInstanceId);
-          continue;
-        }
-
-        String recordRequestBody = getRequestBody(mocker.getTargetRequest(), category);
-        int sumLength = calc(replayRequestBody, recordRequestBody);
-
-        LOGGER.info("[[title=similarityMatch]]recordInstanceId: {}, sumLength: {}",
-            recordInstanceId, sumLength);
-        Pair<String, byte[]> pair = ImmutablePair.of(recordInstanceId, mockDataBytes);
-        if (MapUtils.isEmpty(invocationMap) || invocationMap.get(sumLength) == null) {
-          List<Pair<String, byte[]>> pairs = Lists.newArrayListWithExpectedSize(1);
-          pairs.add(pair);
-          invocationMap.put(sumLength, pairs);
-        } else {
-          List<Pair<String, byte[]>> pairs = invocationMap.get(sumLength);
-          pairs.add(pair);
-          invocationMap.put(sumLength, pairs);
-        }
-      }
-
-      if (MapUtils.isEmpty(invocationMap)) {
-        return null;
-      }
-
-      // 6. sort the matching results by similarity.
-      List<Integer> scores = new ArrayList<>(invocationMap.keySet());
-      scores.sort((o1, o2) -> {
-        if (o1.equals(o2)) {
-          return 0;
-        }
-        return o2 - o1 > 0 ? 1 : -1;
-      });
-
-      // 7. get the matched recording result.
-      for (Integer score: scores) {
-        List<Pair<String, byte[]>> pairList = invocationMap.get(score);
-        for (Pair<String, byte[]> pair : pairList) {
-          String instanceId = pair.getLeft();
-          if (StringUtils.isEmpty(instanceId)) {
-            continue;
-          }
-
-          long increaseCount = increasesReplayConsumer(category, recordIdBytes, replayIdBytes,
-              CacheKeyUtils.toUtf8Bytes(instanceId));
-          if (increaseCount > 1) {
-            LOGGER.info(
-                "[[title=similarityMatch]]operation: {}, recordInstanceId: {} is matched.", operationName, instanceId);
-            continue;
-          }
-          mockItem.setId(instanceId);
-          LOGGER.info(
-              "[[title=similarityMatch]]get mock result with similarity match, operation: {}, length: {}, matchedInstanceId: {}}",
-              operationName, score, instanceId);
-          // 7.1. buried point record the number of times similarity is used.
-          matchStrategyMetricService.recordMatchingCount(SIMILARITY_MATCH, (AREXMocker) mockItem);
-          return pair.getRight();
-        }
-      }
-      return null;
-    } catch (Throwable throwable) {
-      LOGGER.error(
-          "[[title=similarityMatch]]getMockResultWithSimilarityMatch error: {}, category:{}",
-          throwable.getMessage(), category, throwable);
-    }
-    return null;
-  }
-
-  private int getReplayConsumerCount(MockCategoryType category, byte[] recordIdBytes, byte[] replayIdBytes,
+  private int getReplayConsumerCount(MockCategoryType category, byte[] recordIdBytes,
+      byte[] replayIdBytes,
       String recordInstanceId) {
     byte[] usedRecordInstanceIdsKey = buildMatchedRecordInstanceIdsKey(category, recordIdBytes,
         replayIdBytes, CacheKeyUtils.toUtf8Bytes(recordInstanceId));
@@ -702,8 +556,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
    * 2.2 Find the value with the highest number of overlapping nodes and return it as matching data
    */
   public byte[] getMockResultWithEigenMatch(MockCategoryType category,
-      final byte[] recordIdBytes, byte[] replayIdBytes, List<byte[]> mockKeyList, @NotNull Mocker mockItem,
-      String operationName, MockResultContext context) {
+      final byte[] recordIdBytes, byte[] replayIdBytes, List<byte[]> mockKeyList,
+      byte[] sourceKey, @NotNull Mocker mockItem, int count, MockResultContext context) {
     try {
       // 1. determine whether it can be accurately matched in multiple call scenarios
       byte[] result = sequenceMockResult(category, recordIdBytes, replayIdBytes, mockKeyList.get(0),
@@ -726,12 +580,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
       }
 
       // 3. use eigen to match
-      byte[] fuzzMockKeyBytes = mockKeyList.get(mockKeyList.size() - 1);
-      byte[] sourceKey = CacheKeyUtils.buildRecordKey(category, recordIdBytes, fuzzMockKeyBytes);
-      int count = resultCount(sourceKey);
-      if (count == EMPTY_SIZE) {
-        return null;
-      }
+      String operationName = mockItem.getOperationName();
       boolean tryFindLastValue =
           context.getMockStrategy() == MockResultMatchStrategy.TRY_FIND_LAST_VALUE;
       LOGGER.info(
@@ -761,22 +610,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
               operationName, recordInstanceId);
           continue;
         }
-
-        Map<Integer, Long> recordEigenMap = mocker.getEigenMap();
-        int coincidePath = coincidePath(mockItem.getEigenMap(), recordEigenMap);
-        LOGGER.info("[[title=eigenMatch]]recordInstanceId: {}, paths: {}", recordInstanceId,
-            coincidePath);
-
-        Pair<String, byte[]> pair = ImmutablePair.of(recordInstanceId, mockDataBytes);
-        if (MapUtils.isEmpty(invocationMap) || invocationMap.get(coincidePath) == null) {
-          List<Pair<String, byte[]>> pairs = Lists.newArrayListWithExpectedSize(1);
-          pairs.add(pair);
-          invocationMap.put(coincidePath, pairs);
-        } else {
-          List<Pair<String, byte[]>> pairs = invocationMap.get(coincidePath);
-          pairs.add(pair);
-          invocationMap.put(coincidePath, pairs);
-        }
+        addToInvocationMap(mockItem, mocker, recordInstanceId, mockDataBytes, invocationMap);
       }
 
       if (MapUtils.isEmpty(invocationMap)) {
@@ -784,28 +618,15 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
       }
 
       // 3.2 sort the matching results by eigen map.
-      List<Integer> scores = new ArrayList<>(invocationMap.keySet());
-      scores.sort((o1, o2) -> {
-        if (o1.equals(o2)) {
-          return 0;
-        }
-        return o2 - o1 > 0 ? 1 : -1;
-      });
-
+      List<Integer> scores = getScores(invocationMap);
       for (Integer score : scores) {
         List<Pair<String, byte[]>> pairList = invocationMap.get(score);
         for (Pair<String, byte[]> pair : pairList) {
           // 3.3 put the matched recording id into the cache.
           String instanceId = pair.getLeft();
-          if (StringUtils.isEmpty(instanceId)) {
-            continue;
-          }
-
-          long consumerKeyCount = increasesReplayConsumer(category, recordIdBytes, replayIdBytes,
-              CacheKeyUtils.toUtf8Bytes(instanceId));
-          if (consumerKeyCount > 1L) {
-            LOGGER.info(
-                "[[title=eigenMatch]]operation: {}, recordInstanceId: {} is matched.", operationName, instanceId);
+          if (StringUtils.isEmpty(instanceId) || increasesReplayConsumer(category, recordIdBytes, replayIdBytes,
+                  CacheKeyUtils.toUtf8Bytes(instanceId)) > 1L) {
+            LOGGER.info("[[title=eigenMatch]]operation: {}, recordInstanceId: {} is matched.", operationName, instanceId);
             continue;
           }
           mockItem.setId(instanceId);
@@ -827,22 +648,39 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   }
 
   /**
-   * Gets the request body content and returns null if the request body is empty. if it is a
-   * database mock type, the request parameters are added to the request body.
-   *
-   * @param target
-   * @param category
-   * @return request body
+   * Sort by similarity and overlap
    */
-  private String getRequestBody(Mocker.Target target, MockCategoryType category) {
-    if (target == null) {
-      return null;
+  private static List<Integer> getScores(Map<Integer, List<Pair<String, byte[]>>> invocationMap) {
+    List<Integer> scores = new ArrayList<>(invocationMap.keySet());
+    scores.sort((o1, o2) -> {
+      if (o1.equals(o2)) {
+        return 0;
+      }
+      return o2 - o1 > 0 ? 1 : -1;
+    });
+    return scores;
+  }
+
+  /**
+   * Put the similarity value and the corresponding mock information in the map
+   */
+  private void addToInvocationMap(Mocker mockItem, AREXMocker mocker, String recordInstanceId,
+      byte[] mockDataBytes, Map<Integer, List<Pair<String, byte[]>>> invocationMap) {
+    Map<Integer, Long> recordEigenMap = mocker.getEigenMap();
+    int coincidePath = coincidePath(mockItem.getEigenMap(), recordEigenMap);
+    LOGGER.info("[[title=eigenMatch]]recordInstanceId: {}, paths: {}", recordInstanceId,
+        coincidePath);
+
+    Pair<String, byte[]> pair = ImmutablePair.of(recordInstanceId, mockDataBytes);
+    if (MapUtils.isEmpty(invocationMap) || invocationMap.get(coincidePath) == null) {
+      List<Pair<String, byte[]>> pairs = Lists.newArrayListWithExpectedSize(1);
+      pairs.add(pair);
+      invocationMap.put(coincidePath, pairs);
+    } else {
+      List<Pair<String, byte[]>> pairs = invocationMap.get(coincidePath);
+      pairs.add(pair);
+      invocationMap.put(coincidePath, pairs);
     }
-    String body = target.getBody();
-    if (MockCategoryType.DATABASE.equals(category)) {
-      body += target.getAttribute(MockAttributeNames.DB_PARAMETERS);
-    }
-    return body;
   }
 
   private byte[] getMockerDataBytesFromMockKey(byte[] sourceKey, int sequence) {

@@ -44,9 +44,9 @@ public final class CacheKeyUtils {
   }
 
   public static byte[] buildRecordOperationKey(MockCategoryType category, String recordId,
-      String operation) {
+      byte[] operationByte) {
     return buildSourceKey(MockResultType.RECORD_WITH_OPERATION, category,
-        toUtf8Bytes(recordId + operation));
+        operationByte, toUtf8Bytes(recordId));
   }
 
   public static byte[] buildConsumeKey(MockCategoryType category, byte[] recordIdBytes,
