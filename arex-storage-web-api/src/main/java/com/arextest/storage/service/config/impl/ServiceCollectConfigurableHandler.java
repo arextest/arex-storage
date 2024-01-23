@@ -3,10 +3,11 @@ package com.arextest.storage.service.config.impl;
 import com.arextest.config.model.dto.record.ServiceCollectConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
 import com.arextest.storage.service.config.AbstractConfigurableHandler;
+import com.google.common.collect.Sets;
+import com.google.common.collect.Sets.SetView;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Resource;
@@ -29,7 +30,7 @@ public final class ServiceCollectConfigurableHandler extends
   @Resource
   private ServiceCollectConfiguration globalDefaultConfiguration;
 
-  protected ServiceCollectConfigurableHandler(
+  private ServiceCollectConfigurableHandler(
       @Autowired ConfigRepositoryProvider<ServiceCollectConfiguration> repositoryProvider) {
     super(repositoryProvider);
   }
@@ -45,10 +46,9 @@ public final class ServiceCollectConfigurableHandler extends
         globalDefaultConfiguration.getAllowTimeOfDayFrom());
     serviceCollectConfiguration.setAllowTimeOfDayTo(
         globalDefaultConfiguration.getAllowTimeOfDayTo());
-    serviceCollectConfiguration
-        .setRecordMachineCountLimit(
-            globalDefaultConfiguration.getRecordMachineCountLimit() == null ? 1
-                : globalDefaultConfiguration.getRecordMachineCountLimit());
+    serviceCollectConfiguration.setRecordMachineCountLimit(
+        globalDefaultConfiguration.getRecordMachineCountLimit() == null ? 1
+            : globalDefaultConfiguration.getRecordMachineCountLimit());
     update(serviceCollectConfiguration);
     return Collections.singletonList(serviceCollectConfiguration);
   }
@@ -68,9 +68,9 @@ public final class ServiceCollectConfigurableHandler extends
   }
 
   /**
-   * Query service collect config from db,
-   * merge multi env config into root config according to the tags sent from agent.
-   * Match the first config having the same tag with agent.
+   * Query service collect config from db, merge multi env config into root config according to the
+   * tags sent from agent. Match the first config having the same tag with agent.
+   *
    * @param serverTags server tags sent from agent, e.g. env: fat
    */
   public ServiceCollectConfiguration queryConfigByEnv(String appId,
@@ -80,31 +80,33 @@ public final class ServiceCollectConfigurableHandler extends
       return config;
     }
 
-    List<ServiceCollectConfiguration> multiEnvConfigs = Optional
-        .ofNullable(config.getMultiEnvConfigs())
-        .orElse(Collections.emptyList());
+    List<ServiceCollectConfiguration> multiEnvConfigs = Optional.ofNullable(
+        config.getMultiEnvConfigs()).orElse(Collections.emptyList());
 
-   multiEnvConfigs.stream()
-        .filter(envConfig -> {
-          Map<String, List<String>> configEnv = envConfig.getEnvTags();
-          if (configEnv == null || configEnv.isEmpty()) {
-            return false;
-          }
-          for (Entry<String, String> tagPair : serverTags.entrySet()) {
-            if (configEnv.get(tagPair.getKey()).contains(tagPair.getValue())) {
-              return true;
-            }
-          }
-          return false;
-        })
-        .findFirst()
-        .ifPresent(matched -> {
-          config.setSampleRate(matched.getSampleRate());
-          config.setAllowDayOfWeeks(matched.getAllowDayOfWeeks());
-          config.setAllowTimeOfDayFrom(matched.getAllowTimeOfDayFrom());
-          config.setAllowTimeOfDayTo(matched.getAllowTimeOfDayTo());
-          config.setRecordMachineCountLimit(matched.getRecordMachineCountLimit());
+    multiEnvConfigs.stream().filter(envConfig -> {
+      Map<String, List<String>> configEnv = envConfig.getEnvTags();
+      if (configEnv == null || configEnv.isEmpty()) {
+        return false;
+      }
+
+      SetView<String> keyToCheck = Sets.intersection(serverTags.keySet(), configEnv.keySet());
+      // config and server tags have no common key, skip
+      if (keyToCheck.isEmpty()) {
+        return false;
+      } else {
+        // config and server tags have common key, check if all values are matched
+        return keyToCheck.stream().allMatch(key -> {
+          List<String> configEnvVals = Optional.ofNullable(configEnv.get(key)).orElse(Collections.emptyList());
+          return configEnvVals.contains(serverTags.get(key));
         });
+      }
+    }).findFirst().ifPresent(matched -> {
+      config.setSampleRate(matched.getSampleRate());
+      config.setAllowDayOfWeeks(matched.getAllowDayOfWeeks());
+      config.setAllowTimeOfDayFrom(matched.getAllowTimeOfDayFrom());
+      config.setAllowTimeOfDayTo(matched.getAllowTimeOfDayTo());
+      config.setRecordMachineCountLimit(matched.getRecordMachineCountLimit());
+    });
     return config;
   }
 

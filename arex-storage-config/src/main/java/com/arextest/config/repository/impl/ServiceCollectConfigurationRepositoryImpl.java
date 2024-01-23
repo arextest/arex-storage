@@ -1,6 +1,7 @@
 package com.arextest.config.repository.impl;
 
 import com.arextest.config.mapper.RecordServiceConfigMapper;
+import com.arextest.config.model.dao.BaseEntity;
 import com.arextest.config.model.dao.MultiEnvBaseEntity.Fields;
 import com.arextest.config.model.dao.config.RecordServiceConfigCollection;
 import com.arextest.config.model.dto.record.ServiceCollectConfiguration;
@@ -121,7 +122,10 @@ public class ServiceCollectConfigurationRepositoryImpl
         .stream().map(RecordServiceConfigMapper.INSTANCE::daoFromDto)
         .collect(Collectors.toList());
 
-    Bson update = Updates.set(Fields.multiEnvConfigs, configs);
+    Bson update = Updates.combine(
+        Updates.set(Fields.multiEnvConfigs, configs),
+        Updates.set(BaseEntity.Fields.dataChangeUpdateTime, System.currentTimeMillis())
+    );
     return mongoCollection.updateOne(filter, update).getModifiedCount() > 0;
   }
 }
