@@ -4,6 +4,7 @@ package com.arextest.config.model.dto.record;
 import com.arextest.config.model.dto.AbstractMultiEnvConfiguration;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
@@ -69,6 +70,11 @@ public class ServiceCollectConfiguration extends AbstractMultiEnvConfiguration<S
       ServiceCollectConfiguration current = this.getMultiEnvConfigs().get(i);
       if (current.getEnvTags() == null || current.getEnvTags().isEmpty()) {
         throw new RuntimeException("No." + (i + 1) + " config's envTags is empty");
+      }
+      for (Entry<String, List<String>> tagPairs : current.getEnvTags().entrySet()) {
+        if (tagPairs.getValue() == null || tagPairs.getValue().isEmpty()) {
+          throw new RuntimeException("No." + (i + 1) + " config's envTags's value is empty");
+        }
       }
     }
   }

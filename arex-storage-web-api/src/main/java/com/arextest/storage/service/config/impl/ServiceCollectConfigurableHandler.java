@@ -88,18 +88,10 @@ public final class ServiceCollectConfigurableHandler extends
       if (configEnv == null || configEnv.isEmpty()) {
         return false;
       }
-
-      SetView<String> keyToCheck = Sets.intersection(serverTags.keySet(), configEnv.keySet());
-      // config and server tags have no common key, skip
-      if (keyToCheck.isEmpty()) {
-        return false;
-      } else {
-        // config and server tags have common key, check if all values are matched
-        return keyToCheck.stream().allMatch(key -> {
-          List<String> configEnvVals = Optional.ofNullable(configEnv.get(key)).orElse(Collections.emptyList());
-          return configEnvVals.contains(serverTags.get(key));
-        });
-      }
+      return configEnv.keySet().stream().allMatch(tagKey -> {
+        List<String> tagVals = configEnv.get(tagKey);
+        return tagVals.contains(serverTags.get(tagKey));
+      });
     }).findFirst().ifPresent(matched -> {
       config.setSampleRate(matched.getSampleRate());
       config.setAllowDayOfWeeks(matched.getAllowDayOfWeeks());
