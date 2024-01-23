@@ -1,9 +1,10 @@
 package com.arextest.config.model.dto.record;
 
 
-import com.arextest.config.model.dto.AbstractConfiguration;
+import com.arextest.config.model.dto.AbstractMultiEnvConfiguration;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,9 +15,7 @@ import lombok.Setter;
  */
 @Setter
 @Getter
-public class ServiceCollectConfiguration extends AbstractConfiguration
-    implements MultiEnvConfig<ServiceCollectConfiguration> {
-
+public class ServiceCollectConfiguration extends AbstractMultiEnvConfiguration<ServiceCollectConfiguration> {
   private String appId;
   /**
    * The sample rate means for in 100 seconds should be occurred the number of records. example: if
@@ -57,13 +56,26 @@ public class ServiceCollectConfiguration extends AbstractConfiguration
 
   private List<SerializeSkipInfoConfiguration> serializeSkipInfoList;
 
-  /**
-   * Multi environment configuration
-   */
-  private List<MultiEnvConfig<ServiceCollectConfiguration>> multiEnvConfigs;
+  @Override
+  public void validateEnvConfigs() throws Exception {
+    if (this.getAppId() == null || this.getAppId().isEmpty()) {
+      throw new RuntimeException("appid is empty");
+    }
 
-  /**
-   * Multi environment tags
-   */
-  private Map<String, String> envTags;
+    if (this.getMultiEnvConfigs() == null || this.getMultiEnvConfigs().isEmpty()) {
+      throw new RuntimeException("multiEnvConfigs is empty");
+    }
+
+    for (int i = 0; i < this.getMultiEnvConfigs().size(); i++) {
+      ServiceCollectConfiguration current = this.getMultiEnvConfigs().get(i);
+      if (current.getEnvTags() == null || current.getEnvTags().isEmpty()) {
+        throw new RuntimeException("No." + (i + 1) + " config's envTags is empty");
+      }
+      for (Entry<String, List<String>> tagPairs : current.getEnvTags().entrySet()) {
+        if (tagPairs.getValue() == null || tagPairs.getValue().isEmpty()) {
+          throw new RuntimeException("No." + (i + 1) + " config's envTags's value is empty");
+        }
+      }
+    }
+  }
 }

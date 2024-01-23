@@ -1,9 +1,12 @@
 package com.arextest.config.repository.impl;
 
 import com.arextest.config.mapper.RecordServiceConfigMapper;
+import com.arextest.config.model.dao.BaseEntity;
+import com.arextest.config.model.dao.MultiEnvBaseEntity.Fields;
 import com.arextest.config.model.dao.config.RecordServiceConfigCollection;
 import com.arextest.config.model.dto.record.ServiceCollectConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
+import com.arextest.config.repository.MultiEnvConfigRepositoryProvider;
 import com.arextest.config.utils.MongoHelper;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
@@ -15,12 +18,15 @@ import com.mongodb.client.result.InsertOneResult;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import org.bson.conversions.Bson;
 
 public class ServiceCollectConfigurationRepositoryImpl
-    implements ConfigRepositoryProvider<ServiceCollectConfiguration> {
+    implements MultiEnvConfigRepositoryProvider<ServiceCollectConfiguration> {
 
   private MongoDatabase mongoDatabase;
 
@@ -71,7 +77,8 @@ public class ServiceCollectConfigurationRepositoryImpl
             RecordServiceConfigCollection.Fields.excludeServiceOperationSet,
             RecordServiceConfigCollection.Fields.timeMock,
             RecordServiceConfigCollection.Fields.extendField,
-            RecordServiceConfigCollection.Fields.serializeSkipInfoList),
+            RecordServiceConfigCollection.Fields.serializeSkipInfoList
+        ),
         Updates.set(RecordServiceConfigCollection.Fields.recordMachineCountLimit,
             configuration.getRecordMachineCountLimit() == null ? 1
                 : configuration.getRecordMachineCountLimit())
@@ -104,5 +111,21 @@ public class ServiceCollectConfigurationRepositoryImpl
     Bson filter = Filters.eq(RecordServiceConfigCollection.Fields.appId, appId);
     DeleteResult deleteResult = mongoCollection.deleteMany(filter);
     return deleteResult.getDeletedCount() > 0;
+  }
+
+  @Override
+  public boolean updateMultiEnvConfig(ServiceCollectConfiguration configuration) {
+    Bson filter = Filters.eq(RecordServiceConfigCollection.Fields.appId, configuration.getAppId());
+
+    List<RecordServiceConfigCollection> configs = Optional.ofNullable(configuration.getMultiEnvConfigs())
+        .orElse(Collections.emptyList())
+        .stream().map(RecordServiceConfigMapper.INSTANCE::daoFromDto)
+        .collect(Collectors.toList());
+
+    Bson update = Updates.combine(
+        Updates.set(Fields.multiEnvConfigs, configs),
+        Updates.set(BaseEntity.Fields.dataChangeUpdateTime, System.currentTimeMillis())
+    );
+    return mongoCollection.updateOne(filter, update).getModifiedCount() > 0;
   }
 }

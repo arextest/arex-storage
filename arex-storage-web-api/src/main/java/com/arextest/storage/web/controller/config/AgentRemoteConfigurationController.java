@@ -98,16 +98,18 @@ public final class AgentRemoteConfigurationController {
         LOGGER.error("from appId: {} , load config resource not found", appId);
         return ResponseUtils.resourceNotFoundResponse();
       }
-      ServiceCollectConfiguration serviceCollectConfiguration = serviceCollectHandler.useResult(
-          appId);
+      InstancesConfiguration instancesConfiguration = InstancesMapper.INSTANCE.dtoFromContract(
+          request);
+
+      ServiceCollectConfiguration serviceCollectConfiguration = serviceCollectHandler.queryConfigByEnv(
+          appId, instancesConfiguration.getTags());
       applicationServiceHandler.createOrUpdate(request.getAppId());
       AgentRemoteConfigurationResponse body = new AgentRemoteConfigurationResponse();
       body.setDynamicClassConfigurationList(dynamicClassHandler.useResultAsList(appId));
       body.setServiceCollectConfiguration(serviceCollectConfiguration);
       body.setExtendField(getExtendField(serviceCollectConfiguration));
       body.setStatus(applicationConfiguration.getStatus());
-      InstancesConfiguration instancesConfiguration = InstancesMapper.INSTANCE.dtoFromContract(
-          request);
+
       applicationInstancesConfigurableHandler.createOrUpdate(instancesConfiguration);
       List<InstancesConfiguration> instances = applicationInstancesConfigurableHandler.useResultAsList(
           appId,
