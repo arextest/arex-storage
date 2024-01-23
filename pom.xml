@@ -140,7 +140,7 @@
           </exclusion>
         </exclusions>
         <groupId>com.arextest</groupId>
-        <version>0.1.15</version>
+        <version>0.1.18</version>
       </dependency>
       <dependency>
         <artifactId>arex-extension</artifactId>
@@ -408,5 +408,5 @@
   <url>https://github.com/arextest/arex-storage</url>
 
 
-  <version>1.1.8</version>
+  <version>1.1.9</version>
 </project>
