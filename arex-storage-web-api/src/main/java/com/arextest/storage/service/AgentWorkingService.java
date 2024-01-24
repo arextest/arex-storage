@@ -72,9 +72,9 @@ public class AgentWorkingService {
       return false;
     }
 
-    List<MockerSaveHandler<Mocker>> handlers = mockerHandlerFactory.getHandlers(item.getCategoryType());
+    List<MockerSaveHandler> handlers = mockerHandlerFactory.getHandlers(item.getCategoryType());
     if (!CollectionUtils.isEmpty(handlers)) {
-      for (MockerSaveHandler<Mocker> handler : handlers) {
+      for (MockerSaveHandler handler : handlers) {
         try {
           handler.handle(item);
           LOGGER.info("Mocker handler success, recordId: {} , handler:{}", item.getRecordId(),

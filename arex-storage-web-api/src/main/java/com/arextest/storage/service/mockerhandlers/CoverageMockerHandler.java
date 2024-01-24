@@ -26,7 +26,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 @AllArgsConstructor
-public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
+public class CoverageMockerHandler implements MockerSaveHandler {
   private RepositoryProviderFactory repositoryProviderFactory;
   private MockSourceEditionService mockSourceEditionService;
   private CoverageRepository coverageRepository;
@@ -47,7 +47,7 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
    * if is new case: if it has same path key: replace old case else: store
    */
   @Override
-  public void handle(AREXMocker coverageMocker) {
+  public void handle(Mocker coverageMocker) {
     ScenePoolProvider scenePoolProvider;
     Runnable task = null;
 
@@ -158,7 +158,7 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
   @AllArgsConstructor
   private class RecordTask implements Runnable {
     private final ScenePoolProvider scenePoolProvider;
-    private final AREXMocker coverageMocker;
+    private final Mocker coverageMocker;
     private static final long EXPIRATION_EXTENSION_DAYS = 14L;
     @Override
     public void run() {

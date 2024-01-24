@@ -11,14 +11,14 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class MockerHandlerFactory {
-  private final Map<MockCategoryType, List<MockerSaveHandler<Mocker>>> categoryHandlers;
-  public MockerHandlerFactory(@Autowired List<MockerSaveHandler<Mocker>> handlers) {
+  private final Map<MockCategoryType, List<MockerSaveHandler>> categoryHandlers;
+  public MockerHandlerFactory(@Autowired List<MockerSaveHandler> handlers) {
     this.categoryHandlers = handlers
         .stream()
         .collect(Collectors.groupingBy(MockerSaveHandler::getMockCategoryType));
   }
 
-  public List<MockerSaveHandler<Mocker>> getHandlers(MockCategoryType type) {
+  public List<MockerSaveHandler> getHandlers(MockCategoryType type) {
     return categoryHandlers.getOrDefault(type, Collections.emptyList());
   }
 }
