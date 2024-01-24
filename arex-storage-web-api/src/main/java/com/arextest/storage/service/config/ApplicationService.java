@@ -2,6 +2,7 @@ package com.arextest.storage.service.config;
 
 import static com.arextest.storage.cache.CacheKeyUtils.DASH;
 import static com.arextest.storage.cache.CacheKeyUtils.SERVICE_MAPPINGS_PREFIX;
+
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.config.model.dto.StatusType;
 import com.arextest.config.model.dto.application.ApplicationConfiguration;
@@ -16,6 +17,7 @@ import com.arextest.config.repository.impl.ApplicationOperationConfigurationRepo
 import com.arextest.storage.cache.CacheKeyUtils;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.service.MockSourceEditionService;
+import com.arextest.storage.service.config.impl.ServiceCollectConfigurableHandler;
 import com.arextest.storage.utils.RandomUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Arrays;
@@ -57,6 +59,9 @@ public class ApplicationService {
   @Resource
   private ApplicationOperationConfigurationRepositoryImpl serviceOperationRepository;
 
+  @Resource
+  private ServiceCollectConfigurableHandler serviceCollectConfigurableHandler;
+
   public AddApplicationResponse addApplication(AddApplicationRequest request) {
     AddApplicationResponse response = new AddApplicationResponse();
 
@@ -80,6 +85,7 @@ public class ApplicationService {
     applicationConfiguration.setAppId(appId);
 
     boolean success = applicationConfigurationRepository.insert(applicationConfiguration);
+    serviceCollectConfigurableHandler.createFromGlobalDefault(appId);
     response.setAppId(appId);
     response.setSuccess(success);
     return response;

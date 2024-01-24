@@ -3,8 +3,6 @@ package com.arextest.storage.service.config.impl;
 import com.arextest.config.model.dto.record.ServiceCollectConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
 import com.arextest.storage.service.config.AbstractConfigurableHandler;
-import com.google.common.collect.Sets;
-import com.google.common.collect.Sets.SetView;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +34,7 @@ public final class ServiceCollectConfigurableHandler extends
   }
 
   @Override
-  protected List<ServiceCollectConfiguration> createFromGlobalDefault(String appId) {
+  public List<ServiceCollectConfiguration> createFromGlobalDefault(String appId) {
     ServiceCollectConfiguration serviceCollectConfiguration = new ServiceCollectConfiguration();
     serviceCollectConfiguration.setAppId(appId);
     serviceCollectConfiguration.setSampleRate(globalDefaultConfiguration.getSampleRate());
