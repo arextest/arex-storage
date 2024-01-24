@@ -2,25 +2,22 @@ package com.arextest.storage.service.mockerhandlers;
 
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import javax.annotation.Resource;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 @Component
-@SuppressWarnings("unchecked")
-public class MockerHandlerFactory {
+public class MockerHandlerFactory<T extends Mocker> {
+  private final Map<MockCategoryType, List<MockerSaveHandler<T>>> categoryHandlers;
+  public MockerHandlerFactory(List<MockerSaveHandler<T>> handlers) {
+    this.categoryHandlers = handlers
+        .stream()
+        .collect(Collectors.groupingBy(MockerSaveHandler::getMockCategoryType));
+  }
 
-  @Resource
-  List<MockerSaveHandler<?>> handlers;
-
-  public <T extends Mocker> List<MockerSaveHandler<T>> getHandler(MockCategoryType type) {
-    List<MockerSaveHandler<T>> result = new ArrayList<>();
-    for (MockerSaveHandler<?> handler : handlers) {
-      if (handler.getMockCategoryType().equals(type)) {
-        result.add((MockerSaveHandler<T>) handler);
-      }
-    }
-    return result;
+  public List<MockerSaveHandler<T>> getHandlers(MockCategoryType type) {
+    return categoryHandlers.getOrDefault(type, Collections.emptyList());
   }
 }

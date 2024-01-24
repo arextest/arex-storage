@@ -33,7 +33,7 @@ public class AgentWorkingService {
 
   private final MockResultProvider mockResultProvider;
   private final RepositoryProviderFactory repositoryProviderFactory;
-  private final MockerHandlerFactory mockerHandlerFactory;
+  private final MockerHandlerFactory<Mocker> mockerHandlerFactory;
   private final List<AgentWorkingListener> agentWorkingListeners;
   private final InvalidIncompleteRecordService invalidIncompleteRecordService;
   @Setter
@@ -45,7 +45,7 @@ public class AgentWorkingService {
 
   public AgentWorkingService(MockResultProvider mockResultProvider,
       RepositoryProviderFactory repositoryProviderFactory,
-      MockerHandlerFactory mockerHandlerFactory,
+      MockerHandlerFactory<Mocker> mockerHandlerFactory,
       List<AgentWorkingListener> agentWorkingListeners,
       InvalidIncompleteRecordService invalidIncompleteRecordService) {
     this.mockResultProvider = mockResultProvider;
@@ -72,9 +72,9 @@ public class AgentWorkingService {
       return false;
     }
 
-    List<MockerSaveHandler<T>> handlers = mockerHandlerFactory.getHandler(item.getCategoryType());
+    List<MockerSaveHandler<Mocker>> handlers = mockerHandlerFactory.getHandlers(item.getCategoryType());
     if (!CollectionUtils.isEmpty(handlers)) {
-      for (MockerSaveHandler<T> handler : handlers) {
+      for (MockerSaveHandler<Mocker> handler : handlers) {
         try {
           handler.handle(item);
           LOGGER.info("Mocker handler success, recordId: {} , handler:{}", item.getRecordId(),
