@@ -72,13 +72,16 @@ public class AgentWorkingService {
       return false;
     }
 
-    MockerSaveHandler<T> handler = mockerHandlerFactory.getHandler(item.getCategoryType());
-    if (handler != null) {
-      try {
-        handler.handle(item);
-      } catch (Exception e) {
-        LOGGER.error("Mocker handler error", e);
-        return false;
+    List<MockerSaveHandler<Mocker>> handlers = mockerHandlerFactory.getHandlers(item.getCategoryType());
+    if (!CollectionUtils.isEmpty(handlers)) {
+      for (MockerSaveHandler<Mocker> handler : handlers) {
+        try {
+          handler.handle(item);
+          LOGGER.info("Mocker handler success, recordId: {} , handler:{}", item.getRecordId(),
+              handler.getClass().getSimpleName());
+        } catch (Exception e) {
+          LOGGER.error("Mocker handler error", e);
+        }
       }
       return true;
     }
