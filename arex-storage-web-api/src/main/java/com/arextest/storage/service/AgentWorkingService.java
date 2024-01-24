@@ -33,7 +33,7 @@ public class AgentWorkingService {
 
   private final MockResultProvider mockResultProvider;
   private final RepositoryProviderFactory repositoryProviderFactory;
-  private final MockerHandlerFactory<Mocker> mockerHandlerFactory;
+  private final MockerHandlerFactory mockerHandlerFactory;
   private final List<AgentWorkingListener> agentWorkingListeners;
   private final InvalidIncompleteRecordService invalidIncompleteRecordService;
   @Setter
@@ -45,7 +45,7 @@ public class AgentWorkingService {
 
   public AgentWorkingService(MockResultProvider mockResultProvider,
       RepositoryProviderFactory repositoryProviderFactory,
-      MockerHandlerFactory<Mocker> mockerHandlerFactory,
+      MockerHandlerFactory mockerHandlerFactory,
       List<AgentWorkingListener> agentWorkingListeners,
       InvalidIncompleteRecordService invalidIncompleteRecordService) {
     this.mockResultProvider = mockResultProvider;

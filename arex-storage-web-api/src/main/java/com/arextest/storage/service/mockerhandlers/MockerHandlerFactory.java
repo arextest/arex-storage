@@ -10,15 +10,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
-public class MockerHandlerFactory<T extends Mocker> {
-  private final Map<MockCategoryType, List<MockerSaveHandler<T>>> categoryHandlers;
-  public MockerHandlerFactory(@Autowired List<MockerSaveHandler<T>> handlers) {
+public class MockerHandlerFactory {
+  private final Map<MockCategoryType, List<MockerSaveHandler<Mocker>>> categoryHandlers;
+  public MockerHandlerFactory(@Autowired List<MockerSaveHandler<Mocker>> handlers) {
     this.categoryHandlers = handlers
         .stream()
         .collect(Collectors.groupingBy(MockerSaveHandler::getMockCategoryType));
   }
 
-  public List<MockerSaveHandler<T>> getHandlers(MockCategoryType type) {
+  public List<MockerSaveHandler<Mocker>> getHandlers(MockCategoryType type) {
     return categoryHandlers.getOrDefault(type, Collections.emptyList());
   }
 }
