@@ -77,7 +77,8 @@ public class AgentWorkingService {
       for (MockerSaveHandler<T> handler : handlers) {
         try {
           handler.handle(item);
-          LOGGER.info("Mocker handler success, handler:{}", handler.getClass().getSimpleName());
+          LOGGER.info("Mocker handler success, recordId: {} , handler:{}", item.getRecordId(),
+              handler.getClass().getSimpleName());
         } catch (Exception e) {
           LOGGER.error("Mocker handler error", e);
         }

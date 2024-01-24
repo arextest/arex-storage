@@ -69,9 +69,6 @@ public class CoverageMockerHandler implements MockerSaveHandler<AREXMocker> {
 
     Optional.ofNullable(task).ifPresent((t) -> {
       coverageHandleDelayedPool.schedule(t, 5, TimeUnit.SECONDS);
-      LOGGER.info(
-          "CoverageMockerHandler submitted async task, recordId: {}, pathKey: {}",
-          coverageMocker.getRecordId(), coverageMocker.getOperationName());
     });
   }
 
