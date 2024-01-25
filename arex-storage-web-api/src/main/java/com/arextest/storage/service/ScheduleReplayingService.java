@@ -43,6 +43,7 @@ import org.apache.commons.collections4.MapUtils;
 public class ScheduleReplayingService {
 
   private static final String MERGE_RECORD_OPERATION_NAME = "arex.mergeRecord";
+  private static final String EXCEED_MAX_SIZE = "isExceedMaxSize";
 
   private final MockResultProvider mockResultProvider;
   private final RepositoryProviderFactory repositoryProviderFactory;
@@ -177,9 +178,9 @@ public class ScheduleReplayingService {
         splitMocker.setTargetRequest(request);
 
         Target response = new Target();
-        response.setBody(objectMapper.writeValueAsString(mergeRecord.getResponse()));
+        response.setBody(mergeRecord.getResponse());
         response.setAttributes(mergeRecord.getResponseAttributes());
-        response.setType(mergeRecord.getArexResultClazz());
+        response.setType(mergeRecord.getResponseType());
         splitMocker.setTargetResponse(response);
 
         result.add(splitMocker);

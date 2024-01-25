@@ -1,5 +1,6 @@
 package com.arextest.model.mock;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,11 +13,13 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class MergeRecordDTO {
-    private Object response;
-    private String arexResultClazz;
+    private String response;
+    private String responseType;
     private String category;
     private int methodSignatureHash;
+    private int methodRequestTypeHash;
     private String operationName;
     private String request;
     private String serializeType;

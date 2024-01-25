@@ -60,10 +60,7 @@ public class MockSourceEditionService {
               }));
       MergeRecordDTO mergeRecordDTO = mergeRecordDTOS.get(item.getIndex());
       mergeRecordDTO.setRequest(item.getTargetRequest().getBody());
-      mergeRecordDTO.setResponse(
-          objectMapper.readValue(item.getTargetResponse().getBody(),
-              new TypeReference<Map<String, Object>>() {
-              }));
+      mergeRecordDTO.setResponse(item.getTargetResponse().getBody());
       mergedMocker.getTargetResponse().setBody(objectMapper.writeValueAsString(mergeRecordDTOS));
     } catch (Exception e) {
       LOGGER.error("parse merge record error:{}", e.getMessage(), e);
