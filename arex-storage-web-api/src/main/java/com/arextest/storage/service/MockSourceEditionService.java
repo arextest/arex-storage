@@ -1,12 +1,12 @@
 package com.arextest.storage.service;
 
-import static com.arextest.diff.utils.JacksonHelperUtil.objectMapper;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MergeRecordDTO;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
+import com.arextest.storage.utils.JsonUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.sql.Date;
 import java.time.LocalDateTime;
@@ -55,13 +55,14 @@ public class MockSourceEditionService {
     mergedMocker.setCategoryType(item.getCategoryType());
     try {
       List<MergeRecordDTO> mergeRecordDTOS = new ArrayList<>(
-          objectMapper.readValue(mergedMocker.getTargetResponse().getBody(),
+          JsonUtil.OBJECT_MAPPER.readValue(mergedMocker.getTargetResponse().getBody(),
               new TypeReference<List<MergeRecordDTO>>() {
               }));
       MergeRecordDTO mergeRecordDTO = mergeRecordDTOS.get(item.getIndex());
       mergeRecordDTO.setRequest(item.getTargetRequest().getBody());
       mergeRecordDTO.setResponse(item.getTargetResponse().getBody());
-      mergedMocker.getTargetResponse().setBody(objectMapper.writeValueAsString(mergeRecordDTOS));
+      mergedMocker.getTargetResponse()
+          .setBody(JsonUtil.OBJECT_MAPPER.writeValueAsString(mergeRecordDTOS));
     } catch (Exception e) {
       LOGGER.error("parse merge record error:{}", e.getMessage(), e);
     }

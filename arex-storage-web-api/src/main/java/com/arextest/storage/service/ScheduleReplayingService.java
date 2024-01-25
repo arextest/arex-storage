@@ -1,6 +1,5 @@
 package com.arextest.storage.service;
 
-import static com.arextest.diff.utils.JacksonHelperUtil.objectMapper;
 import com.arextest.common.utils.CompressionUtils;
 import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
@@ -17,6 +16,7 @@ import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.RepositoryReader;
 import com.arextest.storage.trace.MDCTracer;
+import com.arextest.storage.utils.JsonUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -156,7 +156,9 @@ public class ScheduleReplayingService {
     List<AREXMocker> result = new ArrayList<>();
     String json = mocker.getTargetResponse().getBody();
     try {
-      List<MergeRecordDTO> mergeRecords = objectMapper.readValue(json, new TypeReference<List<MergeRecordDTO>>() {});
+      List<MergeRecordDTO> mergeRecords = JsonUtil.OBJECT_MAPPER.readValue(json,
+          new TypeReference<List<MergeRecordDTO>>() {
+          });
       for (int i = 0; i < mergeRecords.size(); i++) {
         MergeRecordDTO mergeRecord = mergeRecords.get(i);
 
