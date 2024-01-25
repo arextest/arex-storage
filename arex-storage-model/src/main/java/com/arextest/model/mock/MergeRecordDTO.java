@@ -13,10 +13,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MergeRecordDTO {
-    private Object response;
-    private String arexResultClazz;
+    private String response;
+    private String responseType;
     private String category;
     private int methodSignatureHash;
+    private int methodRequestTypeHash;
     private String operationName;
     private String request;
     private String serializeType;

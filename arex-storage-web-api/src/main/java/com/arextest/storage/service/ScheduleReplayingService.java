@@ -1,6 +1,5 @@
 package com.arextest.storage.service;
 
-import static com.arextest.diff.utils.JacksonHelperUtil.objectMapper;
 import com.arextest.common.utils.CompressionUtils;
 import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
@@ -17,6 +16,7 @@ import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.RepositoryReader;
 import com.arextest.storage.trace.MDCTracer;
+import com.arextest.storage.utils.JsonUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -43,6 +43,7 @@ import org.apache.commons.collections4.MapUtils;
 public class ScheduleReplayingService {
 
   private static final String MERGE_RECORD_OPERATION_NAME = "arex.mergeRecord";
+  private static final String EXCEED_MAX_SIZE = "isExceedMaxSize";
 
   private final MockResultProvider mockResultProvider;
   private final RepositoryProviderFactory repositoryProviderFactory;
@@ -155,7 +156,9 @@ public class ScheduleReplayingService {
     List<AREXMocker> result = new ArrayList<>();
     String json = mocker.getTargetResponse().getBody();
     try {
-      List<MergeRecordDTO> mergeRecords = objectMapper.readValue(json, new TypeReference<List<MergeRecordDTO>>() {});
+      List<MergeRecordDTO> mergeRecords = JsonUtil.OBJECT_MAPPER.readValue(json,
+          new TypeReference<List<MergeRecordDTO>>() {
+          });
       for (int i = 0; i < mergeRecords.size(); i++) {
         MergeRecordDTO mergeRecord = mergeRecords.get(i);
 
@@ -177,9 +180,9 @@ public class ScheduleReplayingService {
         splitMocker.setTargetRequest(request);
 
         Target response = new Target();
-        response.setBody(objectMapper.writeValueAsString(mergeRecord.getResponse()));
+        response.setBody(mergeRecord.getResponse());
         response.setAttributes(mergeRecord.getResponseAttributes());
-        response.setType(mergeRecord.getArexResultClazz());
+        response.setType(mergeRecord.getResponseType());
         splitMocker.setTargetResponse(response);
 
         result.add(splitMocker);
