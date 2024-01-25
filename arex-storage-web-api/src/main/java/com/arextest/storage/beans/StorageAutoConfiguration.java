@@ -18,6 +18,7 @@ import com.arextest.storage.repository.impl.mongo.AREXMockerMongoRepositoryProvi
 import com.arextest.storage.repository.impl.mongo.AdditionalCodecProviderFactory;
 import com.arextest.storage.repository.impl.mongo.AutoPinedMockerRepository;
 import com.arextest.storage.repository.impl.mongo.MongoDbUtils;
+import com.arextest.storage.repository.scenepool.ScenePoolFactory;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.AgentWorkingListener;
 import com.arextest.storage.service.AgentWorkingService;
@@ -25,6 +26,7 @@ import com.arextest.storage.service.AutoDiscoveryEntryPointListener;
 import com.arextest.storage.service.InvalidIncompleteRecordService;
 import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.service.PrepareMockResultService;
+import com.arextest.storage.service.ScenePoolService;
 import com.arextest.storage.service.ScheduleReplayingService;
 import com.arextest.storage.service.mockerhandlers.MockerHandlerFactory;
 import com.arextest.storage.web.controller.MockSourceEditionController;
@@ -177,9 +179,10 @@ public class StorageAutoConfiguration {
   @ConditionalOnMissingBean(ScheduleReplayingService.class)
   public ScheduleReplayingService scheduleReplayingService(MockResultProvider mockResultProvider,
       RepositoryProviderFactory repositoryProviderFactory,
-      ApplicationOperationConfigurationRepositoryImpl serviceOperationRepository) {
+      ApplicationOperationConfigurationRepositoryImpl serviceOperationRepository,
+      ScenePoolService scenePoolService) {
     return new ScheduleReplayingService(mockResultProvider, repositoryProviderFactory,
-        serviceOperationRepository);
+        serviceOperationRepository, scenePoolService);
   }
 
   @Bean
