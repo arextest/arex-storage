@@ -37,5 +37,10 @@ arex:
           timeMock: true
   prometheus:
     port: 20093
+  common:
+    record:
+      payload:
+        with:
+          metric: false
 pom:
   version: ${project.version}

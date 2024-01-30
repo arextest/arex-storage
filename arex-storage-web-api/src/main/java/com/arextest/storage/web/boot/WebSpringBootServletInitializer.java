@@ -18,7 +18,7 @@ import org.springframework.retry.annotation.EnableRetry;
  * @since 2021/8/18
  */
 @EnableRetry
-@SpringBootApplication(scanBasePackages = "com.arextest.storage")
+@SpringBootApplication(scanBasePackages = {"com.arextest.storage", "com.arextest.common"})
 public class WebSpringBootServletInitializer extends SpringBootServletInitializer {
 
   @Value("${arex.prometheus.port}")
