@@ -15,7 +15,8 @@ public interface RecordServiceConfigMapper {
 
   @Mappings({
       @Mapping(target = "modifiedTime", expression = "java(dao.getDataChangeUpdateTime() == null ? null : new java.sql.Timestamp(dao.getDataChangeUpdateTime()))"),
-      @Mapping(target = "recordMachineCountLimit", expression = "java(dao.getRecordMachineCountLimit() == null ? 1 : dao.getRecordMachineCountLimit())")
+      @Mapping(target = "recordMachineCountLimit", expression = "java(dao.getRecordMachineCountLimit() == null ? 1 : dao.getRecordMachineCountLimit())"),
+      @Mapping(target = "timeMock", expression = "java(true)")
   })
   ServiceCollectConfiguration dtoFromDao(RecordServiceConfigCollection dao);
 
