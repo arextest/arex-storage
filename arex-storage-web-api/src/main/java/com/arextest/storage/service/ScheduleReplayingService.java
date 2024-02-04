@@ -18,6 +18,7 @@ import com.arextest.storage.repository.RepositoryReader;
 import com.arextest.storage.trace.MDCTracer;
 import com.arextest.storage.utils.JsonUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -27,9 +28,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * When user create a plan, the schedule fired to replaying, which should be know how many replay
@@ -47,15 +51,17 @@ public class ScheduleReplayingService {
 
   private final MockResultProvider mockResultProvider;
   private final RepositoryProviderFactory repositoryProviderFactory;
-
   private final ConfigRepositoryProvider<ApplicationOperationConfiguration> serviceOperationRepository;
+  private final ScenePoolService scenePoolService;
 
   public ScheduleReplayingService(MockResultProvider mockResultProvider,
       RepositoryProviderFactory repositoryProviderFactory,
-      ConfigRepositoryProvider<ApplicationOperationConfiguration> serviceOperationRepository) {
+      ConfigRepositoryProvider<ApplicationOperationConfiguration> serviceOperationRepository,
+      ScenePoolService scenePoolService) {
     this.mockResultProvider = mockResultProvider;
     this.repositoryProviderFactory = repositoryProviderFactory;
     this.serviceOperationRepository = serviceOperationRepository;
+    this.scenePoolService = scenePoolService;
   }
 
   public List<ListResultHolder> queryReplayResult(String recordId, String replayResultId) {
@@ -113,28 +119,50 @@ public class ScheduleReplayingService {
     return result;
   }
 
-  private List<AREXMocker> queryRecordListInner(ViewRecordRequestType viewRecordRequestType) {
-    String sourceProvider = viewRecordRequestType.getSourceProvider();
-    String recordId = viewRecordRequestType.getRecordId();
-    RepositoryProvider<Mocker> repositoryReader = repositoryProviderFactory.findProvider(
-        sourceProvider);
+  private List<AREXMocker> queryRecordListInner(ViewRecordRequestType requestType) {
+    String sourceProvider = requestType.getSourceProvider();
+    String recordId = requestType.getRecordId();
+    RepositoryProvider<Mocker> repositoryReader = repositoryProviderFactory.findProvider(sourceProvider);
     if (repositoryReader == null) {
       return Collections.emptyList();
     }
-    MockCategoryType categoryType = repositoryProviderFactory.findCategory(
-        viewRecordRequestType.getCategoryType());
+    // single request category
+    MockCategoryType categoryType = repositoryProviderFactory.findCategory(requestType.getCategoryType());
     if (categoryType != null) {
       return queryRecordList(repositoryReader, categoryType, recordId);
     }
-    List<AREXMocker> readableResult = new LinkedList<>();
-    for (MockCategoryType category : repositoryProviderFactory.getCategoryTypes()) {
-      MDCTracer.addCategory(category);
-      List<AREXMocker> mockers = queryRecordList(repositoryReader, category, recordId);
-      if (CollectionUtils.isNotEmpty(mockers)) {
-        readableResult.addAll(mockers);
+
+    // request category list
+    Set<MockCategoryType> mockCategoryTypes;
+    boolean includeCoverage = false;
+    if (requestType.getCategoryTypes() == null) {
+      mockCategoryTypes = repositoryProviderFactory.getCategoryTypes();
+    } else {
+      mockCategoryTypes = new HashSet<>(requestType.getCategoryTypes().size());
+      for (String category : requestType.getCategoryTypes()) {
+        if (StringUtils.equals(category, MockCategoryType.COVERAGE.getName())) {
+          includeCoverage = true;
+          continue;
+        }
+        MockCategoryType findCategory = repositoryProviderFactory.findCategory(category);
+        if (findCategory == null) {
+          continue;
+        }
+        mockCategoryTypes.add(findCategory);
       }
     }
-    return readableResult;
+
+    List<AREXMocker> arexMockerList = mockCategoryTypes.stream()
+        .flatMap(category -> queryRecordList(repositoryReader, category, recordId).stream())
+        .collect(Collectors.toList());
+
+    if (includeCoverage) {
+      AREXMocker coverageMocker = scenePoolService.getCoverageMocker(requestType.getRecordId());
+      if (coverageMocker != null) {
+        arexMockerList.add(coverageMocker);
+      }
+    }
+    return arexMockerList;
   }
 
   private List<AREXMocker> splitMergedMockers(List<AREXMocker> mockerList) {
