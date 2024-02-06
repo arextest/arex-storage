@@ -96,7 +96,11 @@ public class IndexesSettingConfiguration {
         long timestamp = System.currentTimeMillis();
         LOGGER.info("start to set indexes");
         for (MongoIndexConfigEnum indexConfigEnum : MongoIndexConfigEnum.values()) {
-          setIndexByEnum(indexConfigEnum, mongoDatabase);
+          try {
+            setIndexByEnum(indexConfigEnum, mongoDatabase);
+          } catch (Exception e) {
+            LOGGER.error("set index failed for {}", indexConfigEnum.getCollectionName(), e);
+          }
         }
         ensureMockerQueryIndex(mongoDatabase);
         LOGGER.info("set indexes success. cost: {}ms", System.currentTimeMillis() - timestamp);
