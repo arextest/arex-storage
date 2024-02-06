@@ -1,8 +1,8 @@
 package com.arextest.storage.beans;
 
-import com.arextest.model.enums.MongoIndexConfigEnum;
-import com.arextest.model.enums.MongoIndexConfigEnum.FieldConfig;
-import com.arextest.model.enums.MongoIndexConfigEnum.TtlIndexConfig;
+import com.arextest.storage.enums.MongoIndexConfigEnum;
+import com.arextest.storage.enums.MongoIndexConfigEnum.FieldConfig;
+import com.arextest.storage.enums.MongoIndexConfigEnum.TtlIndexConfig;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.storage.repository.ProviderNames;
@@ -95,9 +95,9 @@ public class IndexesSettingConfiguration {
       try {
         long timestamp = System.currentTimeMillis();
         LOGGER.info("start to set indexes");
-        MongoIndexConfigEnum.INDEX_CONFIGS.forEach(indexConfigEnum -> {
+        for (MongoIndexConfigEnum indexConfigEnum : MongoIndexConfigEnum.values()) {
           setIndexByEnum(indexConfigEnum, mongoDatabase);
-        });
+        }
         ensureMockerQueryIndex(mongoDatabase);
         LOGGER.info("set indexes success. cost: {}ms", System.currentTimeMillis() - timestamp);
       } catch (Exception e) {

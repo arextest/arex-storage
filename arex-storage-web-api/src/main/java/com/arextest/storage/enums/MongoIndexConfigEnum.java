@@ -1,13 +1,11 @@
-package com.arextest.model.enums;
+package com.arextest.storage.enums;
 
 import com.sun.tools.javac.util.Pair;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -134,15 +132,4 @@ public enum MongoIndexConfigEnum {
       }
     }
   }
-
-
-  public static final Set<MongoIndexConfigEnum> INDEX_CONFIGS;
-
-  // new index config added here
-  static {
-    INDEX_CONFIGS = new HashSet<>();
-    INDEX_CONFIGS.addAll(Arrays.asList(MongoIndexConfigEnum.values()));
-
-  }
-
 }
