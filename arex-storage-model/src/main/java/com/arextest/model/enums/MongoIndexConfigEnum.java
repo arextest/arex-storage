@@ -44,7 +44,7 @@ public enum MongoIndexConfigEnum {
 
   INSTANCES_INDEX("Instances",
       Collections.singletonList(FieldConfig.build("dataUpdateTime", true)),
-      true,
+      false,
       new TtlIndexConfig(65L, TimeUnit.SECONDS)),
 
   // report index config

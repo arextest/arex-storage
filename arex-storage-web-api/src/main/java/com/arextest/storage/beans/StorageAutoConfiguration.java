@@ -18,7 +18,6 @@ import com.arextest.storage.repository.impl.mongo.AREXMockerMongoRepositoryProvi
 import com.arextest.storage.repository.impl.mongo.AdditionalCodecProviderFactory;
 import com.arextest.storage.repository.impl.mongo.AutoPinedMockerRepository;
 import com.arextest.storage.repository.impl.mongo.MongoDbUtils;
-import com.arextest.storage.repository.scenepool.ScenePoolFactory;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.AgentWorkingListener;
 import com.arextest.storage.service.AgentWorkingService;
@@ -55,7 +54,7 @@ public class StorageAutoConfiguration {
   private final StorageConfigurationProperties properties;
 
   @Resource
-  IndexsSettingConfiguration indexsSettingConfiguration;
+  IndexesSettingConfiguration indexesSettingConfiguration;
 
   public StorageAutoConfiguration(StorageConfigurationProperties configurationProperties) {
     properties = configurationProperties;
@@ -67,7 +66,7 @@ public class StorageAutoConfiguration {
       AdditionalCodecProviderFactory additionalCodecProviderFactory) {
     MongoDatabase database = MongoDbUtils.create(properties.getMongodbUri(),
         additionalCodecProviderFactory);
-    indexsSettingConfiguration.setIndexes(database);
+    indexesSettingConfiguration.setIndexes(database);
     return database;
   }
 

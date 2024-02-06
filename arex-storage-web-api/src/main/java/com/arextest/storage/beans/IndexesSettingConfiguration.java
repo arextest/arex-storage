@@ -20,7 +20,7 @@ import org.springframework.context.annotation.Configuration;
 
 @Slf4j
 @Configuration(proxyBeanMethods = false)
-public class IndexsSettingConfiguration {
+public class IndexesSettingConfiguration {
 
   static final String EXPIRATION_TIME_COLUMN_NAME = "expirationTime";
   private static final String COLLECTION_SUFFIX = "Mocker";
@@ -62,13 +62,11 @@ public class IndexsSettingConfiguration {
         } catch (MongoCommandException e) {
           LOGGER.info("create index failed for {}", category.getName(), e);
         }
-      }
-    }
-  }
 
-  private void setTtlIndexes(MongoDatabase mongoDatabase) {
-    for (MockCategoryType category : MockCategoryType.DEFAULTS) {
-      setTTLIndexInMockerCollection(category, mongoDatabase);
+        if (providerName.equals(ProviderNames.DEFAULT)) {
+          setTTLIndexInMockerCollection(category, database);
+        }
+      }
     }
   }
 
@@ -100,7 +98,6 @@ public class IndexsSettingConfiguration {
         MongoIndexConfigEnum.INDEX_CONFIGS.forEach(indexConfigEnum -> {
           setIndexByEnum(indexConfigEnum, mongoDatabase);
         });
-        setTtlIndexes(mongoDatabase);
         ensureMockerQueryIndex(mongoDatabase);
         LOGGER.info("set indexes success. cost: {}ms", System.currentTimeMillis() - timestamp);
       } catch (Exception e) {
