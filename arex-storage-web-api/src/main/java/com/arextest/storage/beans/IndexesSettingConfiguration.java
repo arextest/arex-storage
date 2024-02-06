@@ -125,6 +125,9 @@ public class IndexesSettingConfiguration {
       TtlIndexConfig ttlIndexConfig = indexConfigEnum.getTtlIndexConfig();
       indexOptions.expireAfter(ttlIndexConfig.getExpireAfter(), ttlIndexConfig.getTimeUnit());
     }
+
+    // default, not configurable
+    indexOptions.background(true);
     try {
       collection.createIndex(index, indexOptions);
     } catch (MongoCommandException e) {
