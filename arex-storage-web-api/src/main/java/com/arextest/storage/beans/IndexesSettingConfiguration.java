@@ -1,10 +1,10 @@
 package com.arextest.storage.beans;
 
-import com.arextest.storage.enums.MongoIndexConfigEnum;
-import com.arextest.storage.enums.MongoIndexConfigEnum.FieldConfig;
-import com.arextest.storage.enums.MongoIndexConfigEnum.TtlIndexConfig;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
+import com.arextest.storage.enums.MongoCollectionIndexConfigEnum;
+import com.arextest.storage.enums.MongoCollectionIndexConfigEnum.FieldConfig;
+import com.arextest.storage.enums.MongoCollectionIndexConfigEnum.TtlIndexConfig;
 import com.arextest.storage.repository.ProviderNames;
 import com.mongodb.MongoCommandException;
 import com.mongodb.client.MongoCollection;
@@ -95,7 +95,7 @@ public class IndexesSettingConfiguration {
       try {
         long timestamp = System.currentTimeMillis();
         LOGGER.info("start to set indexes");
-        for (MongoIndexConfigEnum indexConfigEnum : MongoIndexConfigEnum.values()) {
+        for (MongoCollectionIndexConfigEnum indexConfigEnum : MongoCollectionIndexConfigEnum.values()) {
           try {
             setIndexByEnum(indexConfigEnum, mongoDatabase);
           } catch (Exception e) {
@@ -112,32 +112,37 @@ public class IndexesSettingConfiguration {
     thread.start();
   }
 
-  private void setIndexByEnum(MongoIndexConfigEnum indexConfigEnum, MongoDatabase mongoDatabase) {
+  private void setIndexByEnum(MongoCollectionIndexConfigEnum indexConfigEnum, MongoDatabase mongoDatabase) {
     MongoCollection<Document> collection = mongoDatabase.getCollection(
         indexConfigEnum.getCollectionName());
 
-    List<FieldConfig> fieldConfigs = indexConfigEnum.getFieldConfigs();
-    Document index = new Document();
-    for (FieldConfig fieldConfig : fieldConfigs) {
-      index.append(fieldConfig.getFieldName(), fieldConfig.getAscending() != Boolean.FALSE ? 1 : -1);
-    }
-    IndexOptions indexOptions = new IndexOptions();
-    if (indexConfigEnum.getUnique() != null) {
-      indexOptions.unique(indexConfigEnum.getUnique());
-    }
-    if (indexConfigEnum.getTtlIndexConfig() != null) {
-      TtlIndexConfig ttlIndexConfig = indexConfigEnum.getTtlIndexConfig();
-      indexOptions.expireAfter(ttlIndexConfig.getExpireAfter(), ttlIndexConfig.getTimeUnit());
-    }
+    // Clean all existing indexes, then create new indexes.
+    // This is a mechanism for preparing deleting indexes.
+    collection.dropIndexes();
+    indexConfigEnum.getIndexConfigs().forEach(indexConfig -> {
+      List<FieldConfig> fieldConfigs = indexConfig.getFieldConfigs();
+      Document index = new Document();
+      for (FieldConfig fieldConfig : fieldConfigs) {
+        index.append(fieldConfig.getFieldName(), fieldConfig.getAscending() != Boolean.FALSE ? 1 : -1);
+      }
+      IndexOptions indexOptions = new IndexOptions();
+      if (indexConfig.getUnique() != null) {
+        indexOptions.unique(indexConfig.getUnique());
+      }
+      if (indexConfig.getTtlIndexConfig() != null) {
+        TtlIndexConfig ttlIndexConfig = indexConfig.getTtlIndexConfig();
+        indexOptions.expireAfter(ttlIndexConfig.getExpireAfter(), ttlIndexConfig.getTimeUnit());
+      }
 
-    // default, not configurable
-    indexOptions.background(true);
-    try {
-      collection.createIndex(index, indexOptions);
-    } catch (MongoCommandException e) {
-      LOGGER.info("create index failed for {}", indexConfigEnum.getCollectionName(), e);
-      collection.dropIndex(index);
-      collection.createIndex(index, indexOptions);
-    }
+      // default, not configurable
+      indexOptions.background(true);
+      try {
+        collection.createIndex(index, indexOptions);
+      } catch (MongoCommandException e) {
+        LOGGER.info("create index failed for {}", indexConfigEnum.getCollectionName(), e);
+        collection.dropIndex(index);
+        collection.createIndex(index, indexOptions);
+      }
+    });
   }
 }
