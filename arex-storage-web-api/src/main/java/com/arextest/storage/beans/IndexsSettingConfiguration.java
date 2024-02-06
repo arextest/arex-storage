@@ -1,9 +1,8 @@
 package com.arextest.storage.beans;
 
-import com.arextest.config.model.dao.config.AppCollection;
-import com.arextest.config.model.dao.config.InstancesCollection;
-import com.arextest.config.model.dao.config.RecordServiceConfigCollection;
-import com.arextest.config.model.dao.config.ServiceOperationCollection;
+import com.arextest.model.enums.MongoIndexConfigEnum;
+import com.arextest.model.enums.MongoIndexConfigEnum.FieldConfig;
+import com.arextest.model.enums.MongoIndexConfigEnum.TtlIndexConfig;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.storage.repository.ProviderNames;
@@ -11,9 +10,8 @@ import com.mongodb.MongoCommandException;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.IndexOptions;
-import com.mongodb.client.model.Indexes;
 import java.lang.reflect.Field;
-import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
@@ -43,20 +41,17 @@ public class IndexsSettingConfiguration {
                 AREXMocker.class);
 
         try {
-          Document index = new Document();
-          index.append(AREXMocker.Fields.recordId, 1);
-          collection.createIndex(index);
+          collection.dropIndexes();
         } catch (MongoCommandException e) {
-          LOGGER.info("create index failed for {}", category.getName(), e);
+          LOGGER.info("drop index failed for {}", category.getName(), e);
         }
 
         try {
           Document index = new Document();
           index.append(AREXMocker.Fields.recordId, 1);
-          index.append(AREXMocker.Fields.creationTime, -1);
-          collection.dropIndex(index);
+          collection.createIndex(index);
         } catch (MongoCommandException e) {
-          LOGGER.info("drop index failed for {}", category.getName(), e);
+          LOGGER.info("create index failed for {}", category.getName(), e);
         }
 
         try {
@@ -74,45 +69,6 @@ public class IndexsSettingConfiguration {
   private void setTtlIndexes(MongoDatabase mongoDatabase) {
     for (MockCategoryType category : MockCategoryType.DEFAULTS) {
       setTTLIndexInMockerCollection(category, mongoDatabase);
-    }
-  }
-
-  private void setIndexAboutConfig(MongoDatabase mongoDatabase) {
-
-    // AppCollection
-    MongoCollection<AppCollection> appCollectionMongoCollection =
-        mongoDatabase.getCollection(AppCollection.DOCUMENT_NAME, AppCollection.class);
-    appCollectionMongoCollection.createIndex(new Document(AppCollection.Fields.appId, 1),
-        new IndexOptions().unique(true));
-
-    // RecordServiceConfigCollection
-    MongoCollection<RecordServiceConfigCollection> recordServiceConfigCollectionMongoCollection = mongoDatabase
-        .getCollection(RecordServiceConfigCollection.DOCUMENT_NAME,
-            RecordServiceConfigCollection.class);
-    recordServiceConfigCollectionMongoCollection.createIndex(
-        Indexes.ascending(RecordServiceConfigCollection.Fields.appId),
-        new IndexOptions().unique(true));
-
-    // ServiceOperationCollection
-    MongoCollection<ServiceOperationCollection> serviceOperationCollectionMongoCollection =
-        mongoDatabase.getCollection(ServiceOperationCollection.DOCUMENT_NAME,
-            ServiceOperationCollection.class);
-    serviceOperationCollectionMongoCollection.createIndex(
-        Indexes.ascending(ServiceOperationCollection.Fields.appId,
-            ServiceOperationCollection.Fields.serviceId,
-            ServiceOperationCollection.Fields.operationName),
-        new IndexOptions().unique(true));
-
-    // InstancesCollection
-    Bson instancesTtlIndex = Indexes.ascending(InstancesCollection.Fields.dataUpdateTime);
-    IndexOptions instancesTtlIndexOptions = new IndexOptions().expireAfter(65L, TimeUnit.SECONDS);
-    MongoCollection<InstancesCollection> instancesCollectionMongoCollection =
-        mongoDatabase.getCollection(InstancesCollection.DOCUMENT_NAME, InstancesCollection.class);
-    try {
-      instancesCollectionMongoCollection.createIndex(instancesTtlIndex, instancesTtlIndexOptions);
-    } catch (Throwable throwable) {
-      instancesCollectionMongoCollection.dropIndex(instancesTtlIndex);
-      instancesCollectionMongoCollection.createIndex(instancesTtlIndex, instancesTtlIndexOptions);
     }
   }
 
@@ -141,15 +97,43 @@ public class IndexsSettingConfiguration {
       try {
         long timestamp = System.currentTimeMillis();
         LOGGER.info("start to set indexes");
-        setIndexAboutConfig(mongoDatabase);
+        MongoIndexConfigEnum.INDEX_CONFIGS.forEach(indexConfigEnum -> {
+          setIndexByEnum(indexConfigEnum, mongoDatabase);
+        });
         setTtlIndexes(mongoDatabase);
         ensureMockerQueryIndex(mongoDatabase);
         LOGGER.info("set indexes success. cost: {}ms", System.currentTimeMillis() - timestamp);
-      }catch (Exception e){
+      } catch (Exception e) {
         LOGGER.error("set indexes failed", e);
       }
     };
     Thread thread = new Thread(runnable);
     thread.start();
+  }
+
+  private void setIndexByEnum(MongoIndexConfigEnum indexConfigEnum, MongoDatabase mongoDatabase) {
+    MongoCollection<Document> collection = mongoDatabase.getCollection(
+        indexConfigEnum.getCollectionName());
+
+    List<FieldConfig> fieldConfigs = indexConfigEnum.getFieldConfigs();
+    Document index = new Document();
+    for (FieldConfig fieldConfig : fieldConfigs) {
+      index.append(fieldConfig.getFieldName(), fieldConfig.getAscending() != Boolean.FALSE ? 1 : -1);
+    }
+    IndexOptions indexOptions = new IndexOptions();
+    if (indexConfigEnum.getUnique() != null) {
+      indexOptions.unique(indexConfigEnum.getUnique());
+    }
+    if (indexConfigEnum.getTtlIndexConfig() != null) {
+      TtlIndexConfig ttlIndexConfig = indexConfigEnum.getTtlIndexConfig();
+      indexOptions.expireAfter(ttlIndexConfig.getExpireAfter(), ttlIndexConfig.getTimeUnit());
+    }
+    try {
+      collection.createIndex(index, indexOptions);
+    } catch (MongoCommandException e) {
+      LOGGER.info("create index failed for {}", indexConfigEnum.getCollectionName(), e);
+      collection.dropIndex(index);
+      collection.createIndex(index, indexOptions);
+    }
   }
 }
