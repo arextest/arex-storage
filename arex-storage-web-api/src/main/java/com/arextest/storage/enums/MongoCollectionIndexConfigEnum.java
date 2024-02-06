@@ -77,7 +77,7 @@ public enum MongoCollectionIndexConfigEnum {
               .ttlIndexConfig(new TtlIndexConfig(10L, TimeUnit.DAYS))
               .build())),
 
-  APP_CONTRACT_INDEX_1("AppContract",
+  APP_CONTRACT_INDEX("AppContract",
       Arrays.asList(
           IndexConfig.builder()
               .fieldConfigs(Collections.singletonList(FieldConfig.build("appId", true)))
