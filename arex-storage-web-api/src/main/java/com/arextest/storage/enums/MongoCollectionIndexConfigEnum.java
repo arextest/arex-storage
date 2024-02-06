@@ -131,12 +131,14 @@ public enum MongoCollectionIndexConfigEnum {
   ;
 
   private String collectionName;
+  // indexes at same collection
   private List<IndexConfig> indexConfigs;
 
   @Data
   @Builder
   public static class IndexConfig {
 
+    // index fields, if not compound index, only one field
     private List<FieldConfig> fieldConfigs;
     private Boolean unique;
     private TtlIndexConfig ttlIndexConfig;
