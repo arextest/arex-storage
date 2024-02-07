@@ -5,6 +5,7 @@ import com.arextest.config.model.dto.application.ApplicationConfiguration;
 import com.arextest.config.model.dto.application.ApplicationDescription;
 import com.arextest.config.repository.ConfigRepositoryProvider;
 import com.arextest.config.repository.impl.ApplicationConfigurationRepositoryImpl;
+import com.arextest.storage.model.event.ApplicationCreationEvent;
 import com.arextest.storage.service.config.AbstractConfigurableHandler;
 import com.arextest.storage.service.config.provider.ApplicationDescriptionProvider;
 import java.util.Collections;
@@ -13,6 +14,7 @@ import java.util.Map;
 import javax.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 /**
@@ -26,6 +28,9 @@ public class ApplicationConfigurableHandler extends AbstractConfigurableHandler<
   private ApplicationDescriptionProvider applicationDescriptionProvider;
   @Resource
   private ApplicationConfigurationRepositoryImpl applicationConfigurationRepository;
+
+  @Resource
+  private ApplicationEventPublisher applicationEventPublisher;
 
   protected ApplicationConfigurableHandler(
       @Autowired ConfigRepositoryProvider<ApplicationConfiguration> repositoryProvider) {
@@ -62,6 +67,7 @@ public class ApplicationConfigurableHandler extends AbstractConfigurableHandler<
     applicationConfiguration.setRecordedCaseCount(0);
     applicationConfiguration.setStatus(StatusType.RECORD.getMask() | StatusType.REPLAY.getMask());
     this.insert(applicationConfiguration);
+    applicationEventPublisher.publishEvent(new ApplicationCreationEvent(appId));
     return Collections.singletonList(applicationConfiguration);
   }
 

@@ -35,6 +35,8 @@ arex:
           allowTimeOfDayTo: '23:59'
           sampleRate: 1
           timeMock: true
+      compare:
+        ignoredCategoryTypes: Redis,Database,HttpClient,DubboConsumer,QMessageConsumer,DynamicClass
   prometheus:
     port: 20093
   common:
