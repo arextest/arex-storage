@@ -1,5 +1,7 @@
 package com.arextest.storage.beans;
 
+import com.arextest.common.cache.CacheProvider;
+import com.arextest.common.cache.LockWrapper;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.storage.enums.MongoCollectionIndexConfigEnum;
@@ -11,13 +13,14 @@ import com.mongodb.client.ListIndexesIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.IndexOptions;
-import com.sun.tools.javac.util.Pair;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.springframework.context.annotation.Configuration;
@@ -34,6 +37,9 @@ public class IndexesSettingConfiguration {
   private static final String ID = "_id_";
   private static final String KEY = "key";
   private static final String NAME = "name";
+
+  @Resource
+  private CacheProvider cacheProvider;
 
 
   private void ensureMockerQueryIndex(MongoDatabase database) {
@@ -110,17 +116,24 @@ public class IndexesSettingConfiguration {
   public void setIndexes(MongoDatabase mongoDatabase) {
     Runnable runnable = () -> {
       try {
-        long timestamp = System.currentTimeMillis();
-        LOGGER.info("start to set indexes");
-        for (MongoCollectionIndexConfigEnum indexConfigEnum : MongoCollectionIndexConfigEnum.values()) {
-          try {
-            setIndexByEnum(indexConfigEnum, mongoDatabase);
-          } catch (Exception e) {
-            LOGGER.error("set index failed for {}", indexConfigEnum.getCollectionName(), e);
+        LockWrapper lock = cacheProvider.getLock("setIndexes");
+        try {
+          lock.lock(30, TimeUnit.SECONDS);
+
+          long timestamp = System.currentTimeMillis();
+          LOGGER.info("start to set indexes");
+          for (MongoCollectionIndexConfigEnum indexConfigEnum : MongoCollectionIndexConfigEnum.values()) {
+            try {
+              setIndexByEnum(indexConfigEnum, mongoDatabase);
+            } catch (Exception e) {
+              LOGGER.error("set index failed for {}", indexConfigEnum.getCollectionName(), e);
+            }
           }
+          ensureMockerQueryIndex(mongoDatabase);
+          LOGGER.info("set indexes success. cost: {}ms", System.currentTimeMillis() - timestamp);
+        } finally {
+          lock.unlock();
         }
-        ensureMockerQueryIndex(mongoDatabase);
-        LOGGER.info("set indexes success. cost: {}ms", System.currentTimeMillis() - timestamp);
       } catch (Exception e) {
         LOGGER.error("set indexes failed", e);
       }
@@ -153,21 +166,21 @@ public class IndexesSettingConfiguration {
         indexOptions.expireAfter(ttlIndexConfig.getExpireAfter(), ttlIndexConfig.getTimeUnit());
       }
       indexOptions.background(true);
-      toAddIndexes.add(new Pair<>(index, indexOptions));
+      toAddIndexes.add(Pair.of(index, indexOptions));
     });
-
-    // add new indexes which not exist
-    for (Pair<Document, IndexOptions> newIndex : toAddIndexes) {
-      if (!isIndexExist(existedIndexes, newIndex.fst, newIndex.snd)) {
-        String indexName = collection.createIndex(newIndex.fst, newIndex.snd);
-      }
-    }
 
     // remove old indexes which not exist in toAddIndexes
     for (Document existedIndex : existedIndexes) {
       if (!Objects.equals(existedIndex.getString(NAME), ID) &&
           !isIndexExist(toAddIndexes, existedIndex)) {
         collection.dropIndex(existedIndex.get(KEY, Document.class));
+      }
+    }
+
+    // add new indexes which not exist
+    for (Pair<Document, IndexOptions> newIndex : toAddIndexes) {
+      if (!isIndexExist(existedIndexes, newIndex.getLeft(), newIndex.getRight())) {
+        collection.createIndex(newIndex.getLeft(), newIndex.getRight());
       }
     }
   }
@@ -184,8 +197,8 @@ public class IndexesSettingConfiguration {
 
   private boolean isIndexExist(Iterable<Pair<Document, IndexOptions>> indexes, Document index) {
     for (Pair<Document, IndexOptions> newIndexPair : indexes) {
-      Document document = newIndexPair.fst;
-      IndexOptions indexOptions = newIndexPair.snd;
+      Document document = newIndexPair.getLeft();
+      IndexOptions indexOptions = newIndexPair.getRight();
       if (isMatch(index, document, indexOptions)) {
         return true;
       }
