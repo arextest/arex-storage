@@ -156,16 +156,10 @@ public class IndexesSettingConfiguration {
       toAddIndexes.add(new Pair<>(index, indexOptions));
     });
 
-    LOGGER.info("collection: {}", indexConfigEnum.getCollectionName());
-    for (Document existedIndex : existedIndexes) {
-      LOGGER.info("existed index: {}", existedIndex);
-    }
-
     // add new indexes which not exist
     for (Pair<Document, IndexOptions> newIndex : toAddIndexes) {
       if (!isIndexExist(existedIndexes, newIndex.fst, newIndex.snd)) {
         String indexName = collection.createIndex(newIndex.fst, newIndex.snd);
-        LOGGER.info("create index: {}", indexName);
       }
     }
 
