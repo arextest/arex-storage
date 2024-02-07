@@ -4,6 +4,7 @@ import com.arextest.common.cache.CacheProvider;
 import com.arextest.common.cache.LockWrapper;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
+import com.arextest.storage.cache.CacheKeyUtils;
 import com.arextest.storage.enums.MongoCollectionIndexConfigEnum;
 import com.arextest.storage.enums.MongoCollectionIndexConfigEnum.FieldConfig;
 import com.arextest.storage.enums.MongoCollectionIndexConfigEnum.TtlIndexConfig;
@@ -23,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 @Slf4j
@@ -37,14 +39,26 @@ public class IndexesSettingConfiguration {
   private static final String ID = "_id_";
   private static final String KEY = "key";
   private static final String NAME = "name";
+  private static final String REDIS_KEY_VERSION = "storage_version_%s";
 
+  @Value("${pom.version}")
+  private String VERSION;
 
   @Resource
   private CacheProvider cacheProvider;
 
   public void setIndexes(MongoDatabase mongoDatabase) {
     Runnable runnable = () -> {
+      LockWrapper lock = cacheProvider.getLock("setIndexes");
       try {
+        lock.lock(30, TimeUnit.SECONDS);
+        byte[] versionKey = CacheKeyUtils.toUtf8Bytes(String.format(REDIS_KEY_VERSION, VERSION));
+        if (cacheProvider.get(versionKey) != null) {
+          LOGGER.info("indexes already set");
+          return;
+        } else {
+          cacheProvider.put(versionKey, CacheKeyUtils.toUtf8Bytes("1"));
+        }
         long timestamp = System.currentTimeMillis();
         LOGGER.info("start to set indexes");
         for (MongoCollectionIndexConfigEnum indexConfigEnum : MongoCollectionIndexConfigEnum.values()) {
@@ -58,6 +72,8 @@ public class IndexesSettingConfiguration {
         LOGGER.info("set indexes success. cost: {}ms", System.currentTimeMillis() - timestamp);
       } catch (Exception e) {
         LOGGER.error("set indexes failed", e);
+      } finally {
+        lock.unlock();
       }
     };
     Thread thread = new Thread(runnable);
@@ -66,9 +82,6 @@ public class IndexesSettingConfiguration {
 
   private void ensureMockerQueryIndex(MongoDatabase database) {
     for (MockCategoryType category : MockCategoryType.DEFAULTS) {
-      LockWrapper lock = cacheProvider.getLock(category.getName());
-      try {
-        lock.lock(30, TimeUnit.SECONDS);
         for (Field field : ProviderNames.class.getDeclaredFields()) {
           String providerName = null;
           try {
@@ -114,12 +127,6 @@ public class IndexesSettingConfiguration {
             setTTLIndexInMockerCollection(category, database);
           }
         }
-      } catch (Exception e) {
-        LOGGER.error("ensure mocker query index failed", e);
-      } finally {
-        lock.unlock();
-      }
-
     }
   }
 
@@ -145,9 +152,6 @@ public class IndexesSettingConfiguration {
   }
 
   private void setIndexByEnum(MongoCollectionIndexConfigEnum indexConfigEnum, MongoDatabase mongoDatabase) {
-    LockWrapper lock = cacheProvider.getLock(indexConfigEnum.getCollectionName());
-    try {
-      lock.lock(30, TimeUnit.SECONDS);
       MongoCollection<Document> collection = mongoDatabase.getCollection(
           indexConfigEnum.getCollectionName());
 
@@ -188,11 +192,7 @@ public class IndexesSettingConfiguration {
           collection.createIndex(newIndex.getLeft(), newIndex.getRight());
         }
       }
-    } catch (Exception e) {
-      LOGGER.error("set index failed for {}", indexConfigEnum.getCollectionName(), e);
-    } finally {
-      lock.unlock();
-    }
+
   }
 
   private boolean isIndexExist(Iterable<Document> existedIndexes, Document index,
