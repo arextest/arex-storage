@@ -176,7 +176,12 @@ public class IndexesSettingConfiguration {
       // add new indexes which not exist
       for (Pair<Document, IndexOptions> newIndex : toAddIndexes) {
         if (!isIndexExist(existedIndexes, newIndex.getLeft(), newIndex.getRight())) {
-          collection.createIndex(newIndex.getLeft(), newIndex.getRight());
+          try {
+            collection.createIndex(newIndex.getLeft(), newIndex.getRight());
+          } catch (MongoCommandException e) {
+            collection.dropIndex(newIndex.getLeft());
+            collection.createIndex(newIndex.getLeft(), newIndex.getRight());
+          }
         }
       }
 
