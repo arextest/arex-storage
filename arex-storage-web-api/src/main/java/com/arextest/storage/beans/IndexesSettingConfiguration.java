@@ -45,51 +45,60 @@ public class IndexesSettingConfiguration {
 
   private void ensureMockerQueryIndex(MongoDatabase database) {
     for (MockCategoryType category : MockCategoryType.DEFAULTS) {
-      for (Field field : ProviderNames.class.getDeclaredFields()) {
-        String providerName = null;
-        try {
-          providerName = (String) field.get(ProviderNames.class);
-        } catch (IllegalAccessException e) {
-          LOGGER.error("get provider name failed", e);
-          continue;
-        }
-
-        MongoCollection<AREXMocker> collection =
-            database.getCollection(getCollectionName(category, providerName),
-                AREXMocker.class);
-        ListIndexesIterable<Document> indexes = collection.listIndexes();
-        try {
-          Document index = new Document();
-          index.append(AREXMocker.Fields.recordId, 1);
-          collection.createIndex(index);
-        } catch (MongoCommandException e) {
-          LOGGER.info("create index failed for {}", category.getName(), e);
-        }
-
-        try {
-          Document index = new Document();
-          index.append(AREXMocker.Fields.appId, 1);
-          index.append(AREXMocker.Fields.operationName, 1);
-          collection.createIndex(index);
-        } catch (MongoCommandException e) {
-          LOGGER.info("create index failed for {}", category.getName(), e);
-        }
-
-        try {
-          Document index = new Document();
-          index.append(AREXMocker.Fields.recordId, 1);
-          index.append(AREXMocker.Fields.creationTime, -1);
-          if (isIndexExist(indexes, index, null)) {
-            collection.dropIndex(index);
+      LockWrapper lock = cacheProvider.getLock(category.getName());
+      try {
+        lock.lock(30, TimeUnit.SECONDS);
+        for (Field field : ProviderNames.class.getDeclaredFields()) {
+          String providerName = null;
+          try {
+            providerName = (String) field.get(ProviderNames.class);
+          } catch (IllegalAccessException e) {
+            LOGGER.error("get provider name failed", e);
+            continue;
           }
-        } catch (MongoCommandException e) {
-          LOGGER.info("drop index failed for {}", category.getName(), e);
-        }
 
-        if (providerName.equals(ProviderNames.DEFAULT)) {
-          setTTLIndexInMockerCollection(category, database);
+          MongoCollection<AREXMocker> collection =
+              database.getCollection(getCollectionName(category, providerName),
+                  AREXMocker.class);
+          ListIndexesIterable<Document> indexes = collection.listIndexes();
+          try {
+            Document index = new Document();
+            index.append(AREXMocker.Fields.recordId, 1);
+            collection.createIndex(index);
+          } catch (MongoCommandException e) {
+            LOGGER.info("create index failed for {}", category.getName(), e);
+          }
+
+          try {
+            Document index = new Document();
+            index.append(AREXMocker.Fields.appId, 1);
+            index.append(AREXMocker.Fields.operationName, 1);
+            collection.createIndex(index);
+          } catch (MongoCommandException e) {
+            LOGGER.info("create index failed for {}", category.getName(), e);
+          }
+
+          try {
+            Document index = new Document();
+            index.append(AREXMocker.Fields.recordId, 1);
+            index.append(AREXMocker.Fields.creationTime, -1);
+            if (isIndexExist(indexes, index, null)) {
+              collection.dropIndex(index);
+            }
+          } catch (MongoCommandException e) {
+            LOGGER.info("drop index failed for {}", category.getName(), e);
+          }
+
+          if (providerName.equals(ProviderNames.DEFAULT)) {
+            setTTLIndexInMockerCollection(category, database);
+          }
         }
+      } catch (Exception e) {
+        LOGGER.error("ensure mocker query index failed", e);
+      } finally {
+        lock.unlock();
       }
+
     }
   }
 
@@ -117,10 +126,6 @@ public class IndexesSettingConfiguration {
   public void setIndexes(MongoDatabase mongoDatabase) {
     Runnable runnable = () -> {
       try {
-        LockWrapper lock = cacheProvider.getLock("setIndexes");
-        try {
-          lock.lock(30, TimeUnit.SECONDS);
-
           long timestamp = System.currentTimeMillis();
           LOGGER.info("start to set indexes");
           for (MongoCollectionIndexConfigEnum indexConfigEnum : MongoCollectionIndexConfigEnum.values()) {
@@ -132,9 +137,6 @@ public class IndexesSettingConfiguration {
           }
           ensureMockerQueryIndex(mongoDatabase);
           LOGGER.info("set indexes success. cost: {}ms", System.currentTimeMillis() - timestamp);
-        } finally {
-          lock.unlock();
-        }
       } catch (Exception e) {
         LOGGER.error("set indexes failed", e);
       }
@@ -144,45 +146,53 @@ public class IndexesSettingConfiguration {
   }
 
   private void setIndexByEnum(MongoCollectionIndexConfigEnum indexConfigEnum, MongoDatabase mongoDatabase) {
-    MongoCollection<Document> collection = mongoDatabase.getCollection(
-        indexConfigEnum.getCollectionName());
+    LockWrapper lock = cacheProvider.getLock(indexConfigEnum.getCollectionName());
+    try {
+      lock.lock(30, TimeUnit.SECONDS);
+      MongoCollection<Document> collection = mongoDatabase.getCollection(
+          indexConfigEnum.getCollectionName());
 
-    ListIndexesIterable<Document> existedIndexes = collection.listIndexes();
+      ListIndexesIterable<Document> existedIndexes = collection.listIndexes();
 
-    List<Pair<Document, IndexOptions>> toAddIndexes = new ArrayList<>();
+      List<Pair<Document, IndexOptions>> toAddIndexes = new ArrayList<>();
 
-    indexConfigEnum.getIndexConfigs().forEach(indexConfig -> {
-      List<FieldConfig> fieldConfigs = indexConfig.getFieldConfigs();
-      Document index = new Document();
-      for (FieldConfig fieldConfig : fieldConfigs) {
-        index.append(fieldConfig.getFieldName(),
-            fieldConfig.getAscending() != Boolean.FALSE ? 1 : -1);
-      }
-      IndexOptions indexOptions = new IndexOptions();
-      if (indexConfig.getUnique() != null) {
-        indexOptions.unique(indexConfig.getUnique());
-      }
-      if (indexConfig.getTtlIndexConfig() != null) {
-        TtlIndexConfig ttlIndexConfig = indexConfig.getTtlIndexConfig();
-        indexOptions.expireAfter(ttlIndexConfig.getExpireAfter(), ttlIndexConfig.getTimeUnit());
-      }
-      indexOptions.background(true);
-      toAddIndexes.add(Pair.of(index, indexOptions));
-    });
+      indexConfigEnum.getIndexConfigs().forEach(indexConfig -> {
+        List<FieldConfig> fieldConfigs = indexConfig.getFieldConfigs();
+        Document index = new Document();
+        for (FieldConfig fieldConfig : fieldConfigs) {
+          index.append(fieldConfig.getFieldName(),
+              fieldConfig.getAscending() != Boolean.FALSE ? 1 : -1);
+        }
+        IndexOptions indexOptions = new IndexOptions();
+        if (indexConfig.getUnique() != null) {
+          indexOptions.unique(indexConfig.getUnique());
+        }
+        if (indexConfig.getTtlIndexConfig() != null) {
+          TtlIndexConfig ttlIndexConfig = indexConfig.getTtlIndexConfig();
+          indexOptions.expireAfter(ttlIndexConfig.getExpireAfter(), ttlIndexConfig.getTimeUnit());
+        }
+        indexOptions.background(true);
+        toAddIndexes.add(Pair.of(index, indexOptions));
+      });
 
-    // remove old indexes which not exist in toAddIndexes
-    for (Document existedIndex : existedIndexes) {
-      if (!Objects.equals(existedIndex.getString(NAME), ID) &&
-          !isIndexExist(toAddIndexes, existedIndex)) {
-        collection.dropIndex(existedIndex.get(KEY, Document.class));
+      // remove old indexes which not exist in toAddIndexes
+      for (Document existedIndex : existedIndexes) {
+        if (!Objects.equals(existedIndex.getString(NAME), ID) &&
+            !isIndexExist(toAddIndexes, existedIndex)) {
+          collection.dropIndex(existedIndex.get(KEY, Document.class));
+        }
       }
-    }
 
-    // add new indexes which not exist
-    for (Pair<Document, IndexOptions> newIndex : toAddIndexes) {
-      if (!isIndexExist(existedIndexes, newIndex.getLeft(), newIndex.getRight())) {
-        collection.createIndex(newIndex.getLeft(), newIndex.getRight());
+      // add new indexes which not exist
+      for (Pair<Document, IndexOptions> newIndex : toAddIndexes) {
+        if (!isIndexExist(existedIndexes, newIndex.getLeft(), newIndex.getRight())) {
+          collection.createIndex(newIndex.getLeft(), newIndex.getRight());
+        }
       }
+    } catch (Exception e) {
+      LOGGER.error("set index failed for {}", indexConfigEnum.getCollectionName(), e);
+    } finally {
+      lock.unlock();
     }
   }
 
