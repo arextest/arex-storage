@@ -29,7 +29,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration(proxyBeanMethods = false)
 public class IndexesSettingConfiguration {
 
-  static final String EXPIRATION_TIME_COLUMN_NAME = "expirationTime";
+  private static final String EXPIRATION_TIME_COLUMN_NAME = "expirationTime";
   private static final String COLLECTION_SUFFIX = "Mocker";
   private static final String BACKGROUND = "background";
   private static final String UNIQUE = "unique";
@@ -42,6 +42,27 @@ public class IndexesSettingConfiguration {
   @Resource
   private CacheProvider cacheProvider;
 
+  public void setIndexes(MongoDatabase mongoDatabase) {
+    Runnable runnable = () -> {
+      try {
+        long timestamp = System.currentTimeMillis();
+        LOGGER.info("start to set indexes");
+        for (MongoCollectionIndexConfigEnum indexConfigEnum : MongoCollectionIndexConfigEnum.values()) {
+          try {
+            setIndexByEnum(indexConfigEnum, mongoDatabase);
+          } catch (Exception e) {
+            LOGGER.error("set index failed for {}", indexConfigEnum.getCollectionName(), e);
+          }
+        }
+        ensureMockerQueryIndex(mongoDatabase);
+        LOGGER.info("set indexes success. cost: {}ms", System.currentTimeMillis() - timestamp);
+      } catch (Exception e) {
+        LOGGER.error("set indexes failed", e);
+      }
+    };
+    Thread thread = new Thread(runnable);
+    thread.start();
+  }
 
   private void ensureMockerQueryIndex(MongoDatabase database) {
     for (MockCategoryType category : MockCategoryType.DEFAULTS) {
@@ -121,28 +142,6 @@ public class IndexesSettingConfiguration {
 
   private String getCollectionName(MockCategoryType category, String providerName) {
     return providerName + category.getName() + COLLECTION_SUFFIX;
-  }
-
-  public void setIndexes(MongoDatabase mongoDatabase) {
-    Runnable runnable = () -> {
-      try {
-          long timestamp = System.currentTimeMillis();
-          LOGGER.info("start to set indexes");
-          for (MongoCollectionIndexConfigEnum indexConfigEnum : MongoCollectionIndexConfigEnum.values()) {
-            try {
-              setIndexByEnum(indexConfigEnum, mongoDatabase);
-            } catch (Exception e) {
-              LOGGER.error("set index failed for {}", indexConfigEnum.getCollectionName(), e);
-            }
-          }
-          ensureMockerQueryIndex(mongoDatabase);
-          LOGGER.info("set indexes success. cost: {}ms", System.currentTimeMillis() - timestamp);
-      } catch (Exception e) {
-        LOGGER.error("set indexes failed", e);
-      }
-    };
-    Thread thread = new Thread(runnable);
-    thread.start();
   }
 
   private void setIndexByEnum(MongoCollectionIndexConfigEnum indexConfigEnum, MongoDatabase mongoDatabase) {
