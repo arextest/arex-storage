@@ -38,6 +38,7 @@ public class IndexesSettingConfiguration {
   private static final String KEY = "key";
   private static final String NAME = "name";
 
+
   @Resource
   private CacheProvider cacheProvider;
 

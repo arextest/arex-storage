@@ -57,7 +57,7 @@ public enum MongoCollectionIndexConfigEnum {
           IndexConfig.builder()
               .fieldConfigs(Collections.singletonList(FieldConfig.build("dataUpdateTime", true)))
               .unique(false)
-              .ttlIndexConfig(new TtlIndexConfig(65L, TimeUnit.SECONDS))
+              .ttlIndexConfig(new TtlIndexConfig(66L, TimeUnit.SECONDS))
               .build())),
 
   // report index config
