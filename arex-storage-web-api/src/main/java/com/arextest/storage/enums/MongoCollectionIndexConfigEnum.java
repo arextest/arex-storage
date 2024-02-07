@@ -45,7 +45,7 @@ public enum MongoCollectionIndexConfigEnum {
           IndexConfig.builder()
               .fieldConfigs(Arrays.asList(
                   FieldConfig.build("appId", true),
-                  FieldConfig.build("operationId", true),
+                  FieldConfig.build("serviceId", true),
                   FieldConfig.build("operationName", true))
               )
               .unique(true)

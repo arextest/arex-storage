@@ -7,11 +7,15 @@ import com.arextest.storage.enums.MongoCollectionIndexConfigEnum.FieldConfig;
 import com.arextest.storage.enums.MongoCollectionIndexConfigEnum.TtlIndexConfig;
 import com.arextest.storage.repository.ProviderNames;
 import com.mongodb.MongoCommandException;
+import com.mongodb.client.ListIndexesIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.IndexOptions;
+import com.sun.tools.javac.util.Pair;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
@@ -24,6 +28,13 @@ public class IndexesSettingConfiguration {
 
   static final String EXPIRATION_TIME_COLUMN_NAME = "expirationTime";
   private static final String COLLECTION_SUFFIX = "Mocker";
+  private static final String BACKGROUND = "background";
+  private static final String UNIQUE = "unique";
+  private static final String EXPIRE_AFTER_SECONDS = "expireAfterSeconds";
+  private static final String ID = "_id_";
+  private static final String KEY = "key";
+  private static final String NAME = "name";
+
 
   private void ensureMockerQueryIndex(MongoDatabase database) {
     for (MockCategoryType category : MockCategoryType.DEFAULTS) {
@@ -39,13 +50,7 @@ public class IndexesSettingConfiguration {
         MongoCollection<AREXMocker> collection =
             database.getCollection(getCollectionName(category, providerName),
                 AREXMocker.class);
-
-        try {
-          collection.dropIndexes();
-        } catch (MongoCommandException e) {
-          LOGGER.info("drop index failed for {}", category.getName(), e);
-        }
-
+        ListIndexesIterable<Document> indexes = collection.listIndexes();
         try {
           Document index = new Document();
           index.append(AREXMocker.Fields.recordId, 1);
@@ -63,6 +68,17 @@ public class IndexesSettingConfiguration {
           LOGGER.info("create index failed for {}", category.getName(), e);
         }
 
+        try {
+          Document index = new Document();
+          index.append(AREXMocker.Fields.recordId, 1);
+          index.append(AREXMocker.Fields.creationTime, -1);
+          if (isIndexExist(indexes, index, null)) {
+            collection.dropIndex(index);
+          }
+        } catch (MongoCommandException e) {
+          LOGGER.info("drop index failed for {}", category.getName(), e);
+        }
+
         if (providerName.equals(ProviderNames.DEFAULT)) {
           setTTLIndexInMockerCollection(category, database);
         }
@@ -77,6 +93,7 @@ public class IndexesSettingConfiguration {
         AREXMocker.class);
     Bson index = new Document(EXPIRATION_TIME_COLUMN_NAME, 1);
     IndexOptions indexOptions = new IndexOptions().expireAfter(0L, TimeUnit.SECONDS);
+    indexOptions.background(true);
     try {
       collection.createIndex(index, indexOptions);
     } catch (MongoCommandException e) {
@@ -116,14 +133,16 @@ public class IndexesSettingConfiguration {
     MongoCollection<Document> collection = mongoDatabase.getCollection(
         indexConfigEnum.getCollectionName());
 
-    // Clean all existing indexes, then create new indexes.
-    // This is a mechanism for preparing deleting indexes.
-    collection.dropIndexes();
+    ListIndexesIterable<Document> existedIndexes = collection.listIndexes();
+
+    List<Pair<Document, IndexOptions>> toAddIndexes = new ArrayList<>();
+
     indexConfigEnum.getIndexConfigs().forEach(indexConfig -> {
       List<FieldConfig> fieldConfigs = indexConfig.getFieldConfigs();
       Document index = new Document();
       for (FieldConfig fieldConfig : fieldConfigs) {
-        index.append(fieldConfig.getFieldName(), fieldConfig.getAscending() != Boolean.FALSE ? 1 : -1);
+        index.append(fieldConfig.getFieldName(),
+            fieldConfig.getAscending() != Boolean.FALSE ? 1 : -1);
       }
       IndexOptions indexOptions = new IndexOptions();
       if (indexConfig.getUnique() != null) {
@@ -133,16 +152,71 @@ public class IndexesSettingConfiguration {
         TtlIndexConfig ttlIndexConfig = indexConfig.getTtlIndexConfig();
         indexOptions.expireAfter(ttlIndexConfig.getExpireAfter(), ttlIndexConfig.getTimeUnit());
       }
-
-      // default, not configurable
       indexOptions.background(true);
-      try {
-        collection.createIndex(index, indexOptions);
-      } catch (MongoCommandException e) {
-        LOGGER.info("create index failed for {}", indexConfigEnum.getCollectionName(), e);
-        collection.dropIndex(index);
-        collection.createIndex(index, indexOptions);
-      }
+      toAddIndexes.add(new Pair<>(index, indexOptions));
     });
+
+    LOGGER.info("collection: {}", indexConfigEnum.getCollectionName());
+    for (Document existedIndex : existedIndexes) {
+      LOGGER.info("existed index: {}", existedIndex);
+    }
+
+    // add new indexes which not exist
+    for (Pair<Document, IndexOptions> newIndex : toAddIndexes) {
+      if (!isIndexExist(existedIndexes, newIndex.fst, newIndex.snd)) {
+        String indexName = collection.createIndex(newIndex.fst, newIndex.snd);
+        LOGGER.info("create index: {}", indexName);
+      }
+    }
+
+    // remove old indexes which not exist in toAddIndexes
+    for (Document existedIndex : existedIndexes) {
+      if (!Objects.equals(existedIndex.getString(NAME), ID) &&
+          !isIndexExist(toAddIndexes, existedIndex)) {
+        collection.dropIndex(existedIndex.get(KEY, Document.class));
+      }
+    }
+  }
+
+  private boolean isIndexExist(Iterable<Document> existedIndexes, Document index,
+      IndexOptions indexOptions) {
+    for (Document oldIndex : existedIndexes) {
+      if (isMatch(oldIndex, index, indexOptions)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean isIndexExist(Iterable<Pair<Document, IndexOptions>> indexes, Document index) {
+    for (Pair<Document, IndexOptions> newIndexPair : indexes) {
+      Document document = newIndexPair.fst;
+      IndexOptions indexOptions = newIndexPair.snd;
+      if (isMatch(index, document, indexOptions)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean isMatch(Document oldIndex, Document newIndex, IndexOptions newIndexOptions) {
+    Document key = (Document) oldIndex.get(KEY);
+    if (!newIndex.equals(key)) {
+      return false;
+    }
+    if (newIndexOptions == null) {
+      return false;
+    }
+    if (!Objects.equals(newIndexOptions.isBackground(), oldIndex.getBoolean(BACKGROUND))) {
+      return false;
+    }
+    if (!Objects.equals(newIndexOptions.isUnique(), oldIndex.getBoolean(UNIQUE))) {
+      return false;
+    }
+    if (!Objects.equals(newIndexOptions.getExpireAfter(TimeUnit.SECONDS),
+        oldIndex.getLong(EXPIRE_AFTER_SECONDS))) {
+      return false;
+    }
+    return true;
   }
 }
