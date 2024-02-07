@@ -24,7 +24,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bson.Document;
 import org.bson.conversions.Bson;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 @Slf4j
@@ -41,8 +40,8 @@ public class IndexesSettingConfiguration {
   private static final String NAME = "name";
   private static final String REDIS_KEY_VERSION = "storage_version_%s";
 
-  @Value("${pom.version}")
-  private String VERSION;
+  // increment this version when you want to recreate indexes
+  private static final int INDEX_VERSION = 1;
 
   @Resource
   private CacheProvider cacheProvider;
@@ -52,7 +51,7 @@ public class IndexesSettingConfiguration {
       LockWrapper lock = cacheProvider.getLock("setIndexes");
       try {
         lock.lock(30, TimeUnit.SECONDS);
-        byte[] versionKey = CacheKeyUtils.toUtf8Bytes(String.format(REDIS_KEY_VERSION, VERSION));
+        byte[] versionKey = CacheKeyUtils.toUtf8Bytes(String.format(REDIS_KEY_VERSION, INDEX_VERSION));
         if (cacheProvider.get(versionKey) != null) {
           LOGGER.info("indexes already set");
           return;
