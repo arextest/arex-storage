@@ -101,7 +101,6 @@ public class IndexesSettingConfiguration {
           MongoCollection<AREXMocker> collection =
               database.getCollection(getCollectionName(category, providerName),
                   AREXMocker.class);
-          ListIndexesIterable<Document> indexes = collection.listIndexes();
           try {
             Document index = new Document();
             index.append(AREXMocker.Fields.recordId, 1);
@@ -117,17 +116,6 @@ public class IndexesSettingConfiguration {
             collection.createIndex(index);
           } catch (MongoCommandException e) {
             LOGGER.info("create index failed for {}", category.getName(), e);
-          }
-
-          try {
-            Document index = new Document();
-            index.append(AREXMocker.Fields.recordId, 1);
-            index.append(AREXMocker.Fields.creationTime, -1);
-            if (isIndexExist(indexes, index, null)) {
-              collection.dropIndex(index);
-            }
-          } catch (MongoCommandException e) {
-            LOGGER.info("drop index failed for {}", category.getName(), e);
           }
 
           if (providerName.equals(ProviderNames.DEFAULT)) {
@@ -185,14 +173,6 @@ public class IndexesSettingConfiguration {
         toAddIndexes.add(Pair.of(index, indexOptions));
       });
 
-      // remove old indexes which not exist in toAddIndexes
-      for (Document existedIndex : existedIndexes) {
-        if (!Objects.equals(existedIndex.getString(NAME), ID) &&
-            !isIndexExist(toAddIndexes, existedIndex)) {
-          collection.dropIndex(existedIndex.get(KEY, Document.class));
-        }
-      }
-
       // add new indexes which not exist
       for (Pair<Document, IndexOptions> newIndex : toAddIndexes) {
         if (!isIndexExist(existedIndexes, newIndex.getLeft(), newIndex.getRight())) {
@@ -206,17 +186,6 @@ public class IndexesSettingConfiguration {
       IndexOptions indexOptions) {
     for (Document oldIndex : existedIndexes) {
       if (isMatch(oldIndex, index, indexOptions)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private boolean isIndexExist(Iterable<Pair<Document, IndexOptions>> indexes, Document index) {
-    for (Pair<Document, IndexOptions> newIndexPair : indexes) {
-      Document document = newIndexPair.getLeft();
-      IndexOptions indexOptions = newIndexPair.getRight();
-      if (isMatch(index, document, indexOptions)) {
         return true;
       }
     }
