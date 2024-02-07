@@ -38,7 +38,7 @@ public class IndexesSettingConfiguration {
   private static final String ID = "_id_";
   private static final String KEY = "key";
   private static final String NAME = "name";
-  private static final String REDIS_KEY_VERSION = "storage_version_%s";
+  private static final String REDIS_KEY_VERSION = "storage_version";
 
   // increment this version when you want to recreate indexes
   private static final int INDEX_VERSION = 1;
@@ -50,14 +50,24 @@ public class IndexesSettingConfiguration {
     Runnable runnable = () -> {
       LockWrapper lock = cacheProvider.getLock("setIndexes");
       try {
-        lock.lock(30, TimeUnit.SECONDS);
-        byte[] versionKey = CacheKeyUtils.toUtf8Bytes(String.format(REDIS_KEY_VERSION, INDEX_VERSION));
-        if (cacheProvider.get(versionKey) != null) {
-          LOGGER.info("indexes already set");
+        try {
+          lock.lock(3, TimeUnit.SECONDS);
+          byte[] versionKey = CacheKeyUtils.toUtf8Bytes(REDIS_KEY_VERSION);
+          String versionValue = CacheKeyUtils.fromUtf8Bytes(cacheProvider.get(versionKey));
+          if (versionValue != null && INDEX_VERSION == Integer.parseInt(versionValue)) {
+            LOGGER.info("indexes already set");
+            return;
+          } else {
+            cacheProvider.put(versionKey, CacheKeyUtils.toUtf8Bytes(String.valueOf(INDEX_VERSION)));
+          }
+        } catch (Exception e) {
+          LOGGER.error("set version failed", e);
           return;
-        } else {
-          cacheProvider.put(versionKey, CacheKeyUtils.toUtf8Bytes("1"));
+        } finally {
+          lock.unlock();
         }
+
+
         long timestamp = System.currentTimeMillis();
         LOGGER.info("start to set indexes");
         for (MongoCollectionIndexConfigEnum indexConfigEnum : MongoCollectionIndexConfigEnum.values()) {
@@ -71,8 +81,6 @@ public class IndexesSettingConfiguration {
         LOGGER.info("set indexes success. cost: {}ms", System.currentTimeMillis() - timestamp);
       } catch (Exception e) {
         LOGGER.error("set indexes failed", e);
-      } finally {
-        lock.unlock();
       }
     };
     Thread thread = new Thread(runnable);
