@@ -6,7 +6,6 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
-import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -95,13 +94,8 @@ public class ApplicationCreationEventListener implements
             Updates.set(Constants.EXPIRATION_TIME, document.get(Constants.EXPIRATION_TIME))
         );
 
-        UpdateResult updateResult = mongoDatabase.getCollection(
-                Constants.CONFIG_COMPARISON_IGNORE_CATEGORY_COLLECTION_NAME)
-            .updateOne(
-                filter,
-                update,
-                new UpdateOptions().upsert(true));
-        System.out.println(updateResult.getModifiedCount());
+        mongoDatabase.getCollection(Constants.CONFIG_COMPARISON_IGNORE_CATEGORY_COLLECTION_NAME)
+            .updateOne(filter, update, new UpdateOptions().upsert(true));
       }
     }
   }
