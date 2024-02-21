@@ -14,12 +14,16 @@ import com.arextest.config.model.vo.DeleteApplicationRequest;
 import com.arextest.config.model.vo.UpdateApplicationRequest;
 import com.arextest.config.repository.impl.ApplicationConfigurationRepositoryImpl;
 import com.arextest.config.repository.impl.ApplicationOperationConfigurationRepositoryImpl;
+import com.arextest.config.repository.impl.ServiceCollectConfigurationRepositoryImpl;
 import com.arextest.storage.cache.CacheKeyUtils;
+import com.arextest.storage.model.Constants;
+import com.arextest.storage.model.event.ApplicationCreationEvent;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.service.config.impl.ServiceCollectConfigurableHandler;
 import com.arextest.storage.utils.RandomUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.client.MongoDatabase;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -29,6 +33,8 @@ import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.bson.Document;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 /**
@@ -61,6 +67,13 @@ public class ApplicationService {
 
   @Resource
   private ServiceCollectConfigurableHandler serviceCollectConfigurableHandler;
+  @Resource
+  private ApplicationEventPublisher applicationEventPublisher;
+  @Resource
+  private ServiceCollectConfigurationRepositoryImpl serviceCollectConfigurationRepository;
+
+  @Resource
+  private MongoDatabase mongoDatabase;
 
   public AddApplicationResponse addApplication(AddApplicationRequest request) {
     AddApplicationResponse response = new AddApplicationResponse();
@@ -86,6 +99,7 @@ public class ApplicationService {
 
     boolean success = applicationConfigurationRepository.insert(applicationConfiguration);
     serviceCollectConfigurableHandler.createFromGlobalDefault(appId);
+    applicationEventPublisher.publishEvent(new ApplicationCreationEvent(appId));
     response.setAppId(appId);
     response.setSuccess(success);
     return response;
@@ -123,7 +137,17 @@ public class ApplicationService {
     applicationOperationRepository.removeByAppId(appId);
 
     // remove App
-    applicationConfigurationRepository.removeByAppId(request.getAppId());
+    applicationConfigurationRepository.removeByAppId(appId);
+
+    // remove RecordServiceConfig
+    serviceCollectConfigurationRepository.removeByAppId(appId);
+
+    // remove ReplayScheduleConfig
+    mongoDatabase.getCollection(Constants.REPLAY_SCHEDULE_CONFIG_COLLECTION_NAME)
+        .deleteMany(new Document(Constants.APP_ID, appId));
+
+    // remove the config about comparison
+    removeComparisonConfig(appId);
     return true;
   }
 
@@ -175,5 +199,22 @@ public class ApplicationService {
       LOGGER.error("getAppOwners failed!", e);
       return null;
     }
+  }
+
+  private void removeComparisonConfig(String appId) {
+    // remove the config about comparison
+    List<String> COMPARISON_CONFIG_COLLECTIONS = Arrays.asList(
+        Constants.CONFIG_COMPARISON_ENCRYPTION_COLLECTION_NAME,
+        Constants.CONFIG_COMPARISON_EXCLUSIONS_COLLECTION_NAME,
+        Constants.CONFIG_COMPARISON_IGNORE_CATEGORY_COLLECTION_NAME,
+        Constants.CONFIG_COMPARISON_LIST_SORT_COLLECTION_NAME,
+        Constants.CONFIG_COMPARISON_REFERENCE_COLLECTION_NAME
+    );
+    COMPARISON_CONFIG_COLLECTIONS.forEach(collection -> {
+      Document document = new Document();
+      document.put(Constants.APP_ID, appId);
+      document.put("compareConfigType", 0);
+      mongoDatabase.getCollection(collection).deleteMany(document);
+    });
   }
 }
