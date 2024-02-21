@@ -16,4 +16,15 @@ public interface Constants{
 
   String CONFIG_COMPARISON_REFERENCE_COLLECTION_NAME = "ConfigComparisonReference";
 
+  // region: fieldNames of Config
+  String COMPARE_CONFIG_TYPE = "compareConfigType";
+  String OPERATION_ID = "operationId";
+  String FS_INTERFACE_ID = "fsInterfaceId";
+  String DEPENDENCY_ID = "dependencyId";
+  String DATA_CHANGE_CREATE_TIME  = "dataChangeCreateTime";
+  String DATA_CHANGE_UPDATE_TIME = "dataChangeUpdateTime";
+  String EXPIRATION_TYPE = "expirationType";
+  String EXPIRATION_TIME = "expirationTime";
+  // endregion
+
 }
