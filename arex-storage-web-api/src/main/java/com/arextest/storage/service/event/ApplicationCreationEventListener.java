@@ -10,26 +10,28 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import javax.annotation.Resource;
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.bson.Document;
 import org.bson.conversions.Bson;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Service;
 
 @Service
 public class ApplicationCreationEventListener implements
     ApplicationListener<ApplicationCreationEvent> {
 
-  @Value("#{'${arex.config.default.compare.ignoredCategoryTypes}'.split(',')}")
-  private List<String> defaultMockCompareIgnoreConfig;
-
-  private static final String IGNORE_CATEGORY_DETAIL = "ignoreCategoryDetail";
-  private static final String OPERATION_TYPE = "operationType";
-
   @Resource
   private MongoDatabase mongoDatabase;
+
+  @Resource
+  private CompareConfiguration compareConfiguration;
+
+  private static final String IGNORE_CATEGORY_DETAIL = "ignoreCategoryDetail";
 
   @Override
   public void onApplicationEvent(@NonNull ApplicationCreationEvent event) {
@@ -40,13 +42,14 @@ public class ApplicationCreationEventListener implements
 
 
   private void createDefaultMockCompareIgnoreConfig(String appId) {
-    if (CollectionUtils.isEmpty(defaultMockCompareIgnoreConfig)) {
+    List<CategoryDetail> ignoredCategoryTypes = compareConfiguration.getIgnoredCategoryTypes();
+    if (CollectionUtils.isEmpty(ignoredCategoryTypes)) {
       return;
     }
 
     List<Document> mockCompareIgnoreConfig = new ArrayList<>();
-    for (String category : defaultMockCompareIgnoreConfig) {
-      if (category == null || category.isEmpty()) {
+    for (CategoryDetail category : ignoredCategoryTypes) {
+      if (category == null || category.getOperationType().isEmpty()) {
         continue;
       }
       long currentTimeMillis = System.currentTimeMillis();
@@ -64,7 +67,7 @@ public class ApplicationCreationEventListener implements
       // it represents the config pinned forever use it
       document.put(Constants.EXPIRATION_TYPE, 0);
       document.put(Constants.EXPIRATION_TIME, new Date());
-      document.put(IGNORE_CATEGORY_DETAIL, new Document(OPERATION_TYPE, category));
+      document.put(IGNORE_CATEGORY_DETAIL, category);
       mockCompareIgnoreConfig.add(document);
     }
 
@@ -99,4 +102,24 @@ public class ApplicationCreationEventListener implements
       }
     }
   }
+
+  @Configuration
+  @ConfigurationProperties(prefix = "arex.config.default.compare")
+  @Getter
+  @Setter
+  public static class CompareConfiguration {
+
+    private List<CategoryDetail> ignoredCategoryTypes;
+
+  }
+
+  @Getter
+  @Setter
+  public static class CategoryDetail {
+
+    private String operationType;
+    private String operationName;
+  }
+
+
 }

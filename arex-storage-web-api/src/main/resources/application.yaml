@@ -36,7 +36,7 @@ arex:
           sampleRate: 1
           timeMock: true
       compare:
-        ignoredCategoryTypes: Redis,Database,HttpClient,DubboConsumer,QMessageConsumer,DynamicClass
+        ignoredCategoryTypes: [ { operationType: Redis }, { operationType: QMessageConsumer }, { operationType: DynamicClass } ]
   prometheus:
     port: 20093
   common:
