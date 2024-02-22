@@ -1,7 +1,6 @@
 package com.arextest.storage.beans;
 
 import com.arextest.common.cache.CacheProvider;
-import com.arextest.common.cache.DefaultRedisCacheProvider;
 import com.arextest.config.repository.impl.ApplicationOperationConfigurationRepositoryImpl;
 import com.arextest.config.repository.impl.ApplicationServiceConfigurationRepositoryImpl;
 import com.arextest.model.mock.AREXMocker;
@@ -18,7 +17,6 @@ import com.arextest.storage.repository.impl.mongo.AREXMockerMongoRepositoryProvi
 import com.arextest.storage.repository.impl.mongo.AdditionalCodecProviderFactory;
 import com.arextest.storage.repository.impl.mongo.AutoPinedMockerRepository;
 import com.arextest.storage.repository.impl.mongo.MongoDbUtils;
-import com.arextest.storage.repository.scenepool.ScenePoolFactory;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.AgentWorkingListener;
 import com.arextest.storage.service.AgentWorkingService;
@@ -38,7 +36,6 @@ import java.util.Set;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.http.HttpMessageConverters;
@@ -55,7 +52,7 @@ public class StorageAutoConfiguration {
   private final StorageConfigurationProperties properties;
 
   @Resource
-  IndexsSettingConfiguration indexsSettingConfiguration;
+  IndexesSettingConfiguration indexesSettingConfiguration;
 
   public StorageAutoConfiguration(StorageConfigurationProperties configurationProperties) {
     properties = configurationProperties;
@@ -67,7 +64,7 @@ public class StorageAutoConfiguration {
       AdditionalCodecProviderFactory additionalCodecProviderFactory) {
     MongoDatabase database = MongoDbUtils.create(properties.getMongodbUri(),
         additionalCodecProviderFactory);
-    indexsSettingConfiguration.setIndexes(database);
+    indexesSettingConfiguration.setIndexes(database);
     return database;
   }
 
@@ -77,14 +74,6 @@ public class StorageAutoConfiguration {
     return new AdditionalCodecProviderFactory();
   }
 
-  @Bean
-  @ConditionalOnMissingBean(CacheProvider.class)
-  public CacheProvider cacheProvider() {
-    if (StringUtils.isEmpty(properties.getCache().getUri())) {
-      return new DefaultRedisCacheProvider();
-    }
-    return new DefaultRedisCacheProvider(properties.getCache().getUri());
-  }
 
   @Bean
   public Set<MockCategoryType> categoryTypes() {
