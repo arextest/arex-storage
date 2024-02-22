@@ -6,6 +6,7 @@ import com.arextest.config.repository.impl.ApplicationServiceConfigurationReposi
 import com.arextest.config.repository.impl.DynamicClassConfigurationRepositoryImpl;
 import com.arextest.config.repository.impl.InstancesConfigurationRepositoryImpl;
 import com.arextest.config.repository.impl.ServiceCollectConfigurationRepositoryImpl;
+import com.arextest.config.repository.impl.SystemConfigurationRepositoryImpl;
 import com.mongodb.client.MongoDatabase;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -48,5 +49,11 @@ public class ConfigServiceAutoConfiguration {
   public DynamicClassConfigurationRepositoryImpl
   dynamicClassConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
     return new DynamicClassConfigurationRepositoryImpl(mongoDatabase);
+  }
+
+  @Bean
+  public SystemConfigurationRepositoryImpl systemConfigurationRepositoryImpl(
+      MongoDatabase mongoDatabase) {
+    return new SystemConfigurationRepositoryImpl(mongoDatabase);
   }
 }
