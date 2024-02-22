@@ -14,4 +14,6 @@ public interface SystemConfigurationRepository {
 
   SystemConfiguration getSystemConfigByKey(String key);
 
+  boolean deleteConfig(String key);
+
 }

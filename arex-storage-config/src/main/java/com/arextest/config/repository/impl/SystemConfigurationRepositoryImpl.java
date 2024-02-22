@@ -65,4 +65,10 @@ public class SystemConfigurationRepositoryImpl implements SystemConfigurationRep
     SystemConfigurationCollection collection =  mongoCollection.find(filter).first();
     return collection == null ? null : SystemConfigurationMapper.INSTANCE.dtoFromDao(collection);
   }
+
+  @Override
+  public boolean deleteConfig(String key) {
+    Bson filter = Filters.eq(SystemConfigurationCollection.Fields.key, key);
+    return mongoCollection.deleteOne(filter).getDeletedCount() > 0;
+  }
 }
