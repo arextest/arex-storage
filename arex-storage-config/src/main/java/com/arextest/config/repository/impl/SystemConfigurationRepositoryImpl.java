@@ -2,7 +2,6 @@ package com.arextest.config.repository.impl;
 
 import com.arextest.config.mapper.SystemConfigurationMapper;
 import com.arextest.config.model.dao.config.SystemConfigurationCollection;
-import com.arextest.config.model.dao.config.SystemConfigurationCollection.Fields;
 import com.arextest.config.model.dto.SystemConfiguration;
 import com.arextest.config.repository.SystemConfigurationRepository;
 import com.arextest.config.utils.MongoHelper;
@@ -39,7 +38,7 @@ public class SystemConfigurationRepositoryImpl implements SystemConfigurationRep
 
   @Override
   public boolean saveConfig(SystemConfiguration systemConfig) {
-    Bson filter = Filters.eq(Fields.key, systemConfig.getKey());
+    Bson filter = Filters.eq(SystemConfigurationCollection.Fields.key, systemConfig.getKey());
     List<Bson> updateList = Arrays.asList(MongoHelper.getUpdate(),
         MongoHelper.getFullProperties(systemConfig));
     Bson updateCombine = Updates.combine(updateList);
@@ -62,7 +61,7 @@ public class SystemConfigurationRepositoryImpl implements SystemConfigurationRep
 
   @Override
   public SystemConfiguration getSystemConfigByKey(String key) {
-    Bson filter = Filters.eq(Fields.key, key);
+    Bson filter = Filters.eq(SystemConfigurationCollection.Fields.key, key);
     SystemConfigurationCollection collection =  mongoCollection.find(filter).first();
     return collection == null ? null : SystemConfigurationMapper.INSTANCE.dtoFromDao(collection);
   }
