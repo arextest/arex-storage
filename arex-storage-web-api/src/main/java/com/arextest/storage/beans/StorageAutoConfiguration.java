@@ -45,24 +45,27 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties({StorageConfigurationProperties.class})
+@EnableConfigurationProperties({StorageConfigurationProperties.class, MongoConfigProperties.class})
 @Slf4j
 public class StorageAutoConfiguration {
 
   private final StorageConfigurationProperties properties;
+  private final MongoConfigProperties mongoProperties;
 
   @Resource
   IndexesSettingConfiguration indexesSettingConfiguration;
 
-  public StorageAutoConfiguration(StorageConfigurationProperties configurationProperties) {
+  public StorageAutoConfiguration(StorageConfigurationProperties configurationProperties,
+      MongoConfigProperties mongoConfigProperties) {
     properties = configurationProperties;
+    mongoProperties = mongoConfigProperties;
   }
 
   @Bean
   @ConditionalOnMissingBean(MongoDatabase.class)
   public MongoDatabase mongoDatabase(
       AdditionalCodecProviderFactory additionalCodecProviderFactory) {
-    MongoDatabase database = MongoDbUtils.create(properties.getMongodbUri(),
+    MongoDatabase database = MongoDbUtils.create(properties.getMongodbUri(), mongoProperties,
         additionalCodecProviderFactory);
     indexesSettingConfiguration.setIndexes(database);
     return database;

@@ -47,3 +47,10 @@ arex:
           metric: false
 pom:
   version: ${project.version}
+mongo:
+  config:
+    # milliseconds
+    maxIdleTime:
+    connectTimeout:
+    socketTimeout:
+    serverSelectionTimeout:

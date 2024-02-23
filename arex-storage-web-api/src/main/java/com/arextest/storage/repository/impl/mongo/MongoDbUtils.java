@@ -1,6 +1,7 @@
 package com.arextest.storage.repository.impl.mongo;
 
 import com.arextest.model.mock.Mocker;
+import com.arextest.storage.beans.MongoConfigProperties;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistries;
@@ -25,8 +27,8 @@ public final class MongoDbUtils {
   private static final String AREX_STORAGE_DB = "arex_storage_db";
   private static final String DEFAULT_CONNECTION_STRING = "mongodb://localhost";
 
-  public static MongoDatabase create(String host) {
-    MongoDatabase mongoDatabase = getMongoClient(host);
+  public static MongoDatabase create(String host, MongoConfigProperties mongoConfigProperties) {
+    MongoDatabase mongoDatabase = getMongoClient(host, mongoConfigProperties);
     AREXMockerCodecProvider arexMockerCodecProvider =
         AREXMockerCodecProvider.builder()
             .targetCodec(new CompressionCodecImpl<>(Mocker.Target.class)).build();
@@ -34,9 +36,9 @@ public final class MongoDbUtils {
         customCodecRegistry(Collections.singletonList(arexMockerCodecProvider)));
   }
 
-  public static MongoDatabase create(String host,
+  public static MongoDatabase create(String host, MongoConfigProperties mongoConfigProperties,
       AdditionalCodecProviderFactory additionalCodecProviderFactory) {
-    MongoDatabase mongoDatabase = getMongoClient(host);
+    MongoDatabase mongoDatabase = getMongoClient(host, mongoConfigProperties);
     additionalCodecProviderFactory.setMongoDatabase(mongoDatabase);
     List<CodecProvider> additionalCodecProviders = additionalCodecProviderFactory.get();
     return mongoDatabase.withCodecRegistry(customCodecRegistry(additionalCodecProviders));
@@ -57,8 +59,12 @@ public final class MongoDbUtils {
         customPojo);
   }
 
-  private static MongoDatabase getMongoClient(String host) {
+  private static MongoDatabase getMongoClient(String host,
+      MongoConfigProperties mongoConfig) {
     MongoClientSettings.Builder settingsBuilder = MongoClientSettings.builder();
+
+    applyMongoConfig(mongoConfig, settingsBuilder);
+
     if (StringUtils.isEmpty(host)) {
       host = DEFAULT_CONNECTION_STRING;
     }
@@ -70,5 +76,31 @@ public final class MongoDbUtils {
     settingsBuilder.applyConnectionString(connectionString);
     MongoClient mongoClient = MongoClients.create(settingsBuilder.build());
     return mongoClient.getDatabase(dbName);
+  }
+
+  private static void applyMongoConfig(MongoConfigProperties mongoConfig,
+      MongoClientSettings.Builder settingsBuilder) {
+    if (mongoConfig.getMaxIdleTime() != null) {
+      settingsBuilder.applyToConnectionPoolSettings(
+          builder -> builder.maxConnectionIdleTime(mongoConfig.getMaxIdleTime(),
+              TimeUnit.MILLISECONDS));
+    }
+    if (mongoConfig.getConnectTimeout() != null || mongoConfig.getSocketTimeout() != null) {
+      settingsBuilder.applyToSocketSettings(builder -> {
+        if (mongoConfig.getConnectTimeout() != null) {
+          builder.connectTimeout(Math.toIntExact(mongoConfig.getConnectTimeout()),
+              TimeUnit.MILLISECONDS);
+        }
+        if (mongoConfig.getSocketTimeout() != null) {
+          builder.readTimeout(Math.toIntExact(mongoConfig.getSocketTimeout()),
+              TimeUnit.MILLISECONDS);
+        }
+      });
+    }
+    if (mongoConfig.getServerSelectionTimeout() != null) {
+      settingsBuilder.applyToClusterSettings(
+          builder -> builder.serverSelectionTimeout(mongoConfig.getServerSelectionTimeout(),
+              TimeUnit.MILLISECONDS));
+    }
   }
 }

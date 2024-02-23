@@ -17,7 +17,3 @@ arex:
     config:
       agent:
         url: http://10.144.62.53:8090
-#    categoryTypes:
-#      - name: Hi
-#        entryPoint: true
-#        skipComparison: true
