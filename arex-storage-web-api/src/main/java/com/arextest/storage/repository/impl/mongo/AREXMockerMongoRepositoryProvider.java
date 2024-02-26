@@ -422,7 +422,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
 
   private Bson buildTimeRangeFilter(long beginTime, long endTime) {
     Bson newItemFrom = Filters.gt(CREATE_TIME_COLUMN_NAME, new Date(beginTime));
-    Bson newItemTo = Filters.lte(CREATE_TIME_COLUMN_NAME, new Date(endTime));
+    Bson newItemTo = Filters.lt(CREATE_TIME_COLUMN_NAME, new Date(endTime));
     return Filters.and(newItemFrom, newItemTo);
   }
 
