@@ -232,6 +232,7 @@ public class MockSourceEditionService {
       }
       mocker.setRecordId(targetRecordId);
       mocker.setId(null);
+      mocker.setUpdateTime(System.currentTimeMillis());
       targetList.add(mocker);
     }
     return targetList;
