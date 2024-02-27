@@ -1,8 +1,12 @@
 package com.arextest.storage.beans;
 
 import com.arextest.common.cache.CacheProvider;
+import com.arextest.config.model.dao.config.SystemConfigurationCollection;
+import com.arextest.config.model.dao.config.SystemConfigurationCollection.KeySummary;
+import com.arextest.config.model.dto.SystemConfiguration;
 import com.arextest.config.repository.impl.ApplicationOperationConfigurationRepositoryImpl;
 import com.arextest.config.repository.impl.ApplicationServiceConfigurationRepositoryImpl;
+import com.arextest.config.utils.MongoHelper;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.storage.converter.ZstdJacksonMessageConverter;
@@ -29,13 +33,20 @@ import com.arextest.storage.service.ScheduleReplayingService;
 import com.arextest.storage.service.mockerhandlers.MockerHandlerFactory;
 import com.arextest.storage.web.controller.MockSourceEditionController;
 import com.arextest.storage.web.controller.ScheduleReplayQueryController;
+import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.model.Updates;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.bson.conversions.Bson;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.http.HttpMessageConverters;
@@ -54,6 +65,10 @@ public class StorageAutoConfiguration {
   @Resource
   IndexesSettingConfiguration indexesSettingConfiguration;
 
+  @Value("${arex.app.auth.switch}")
+  private boolean authSwitch;
+
+
   public StorageAutoConfiguration(StorageConfigurationProperties configurationProperties) {
     properties = configurationProperties;
   }
@@ -65,6 +80,7 @@ public class StorageAutoConfiguration {
     MongoDatabase database = MongoDbUtils.create(properties.getMongodbUri(),
         additionalCodecProviderFactory);
     indexesSettingConfiguration.setIndexes(database);
+    syncAuthSwitch(database);
     return database;
   }
 
@@ -202,5 +218,25 @@ public class StorageAutoConfiguration {
   public RepositoryProvider<AREXMocker> defaultMockerProvider(MongoDatabase mongoDatabase,
       Set<MockCategoryType> entryPointTypes) {
     return new AREXMockerMongoRepositoryProvider(mongoDatabase, properties, entryPointTypes);
+  }
+
+  private void syncAuthSwitch(MongoDatabase database) {
+    try {
+      MongoCollection<SystemConfigurationCollection> mongoCollection = database.getCollection(
+          SystemConfigurationCollection.DOCUMENT_NAME, SystemConfigurationCollection.class);
+      Bson filter = Filters.eq(SystemConfigurationCollection.Fields.key, KeySummary.AUTH_SWITCH);
+      SystemConfiguration systemConfig = new SystemConfiguration();
+      systemConfig.setAuthSwitch(authSwitch);
+      systemConfig.setKey(KeySummary.AUTH_SWITCH);
+
+      List<Bson> updateList = Arrays.asList(MongoHelper.getUpdate(),
+          MongoHelper.getFullProperties(systemConfig));
+      Bson updateCombine = Updates.combine(updateList);
+      mongoCollection.updateOne(filter, updateCombine, new UpdateOptions().upsert(true))
+          .getModifiedCount();
+    } catch (Exception e) {
+      LOGGER.error("sync auth switch failed", e);
+    }
+
   }
 }

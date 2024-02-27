@@ -18,6 +18,7 @@ public class SystemConfiguration {
   private Map<String, Integer> refreshTaskMark;
   private DesensitizationJar desensitizationJar;
   private String callbackUrl;
+  private Boolean AuthSwitch;
 
   public static SystemConfiguration mergeConfigs(List<SystemConfiguration> systemConfigurations) {
     if (systemConfigurations == null || systemConfigurations.isEmpty()) {

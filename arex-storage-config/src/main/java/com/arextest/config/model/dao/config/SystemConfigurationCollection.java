@@ -24,12 +24,14 @@ public class SystemConfigurationCollection extends BaseEntity {
   private Map<String, Integer> refreshTaskMark;
   private DesensitizationJar desensitizationJar;
   private String callbackUrl;
+  private Boolean AuthSwitch;
 
 
   public interface KeySummary {
     String REFRESH_DATA = "refresh_data";
     String DESERIALIZATION_JAR = "deserialization_jar";
     String CALLBACK_URL = "callback_url";
+    String AUTH_SWITCH = "auth_switch";
 
   }
 }
