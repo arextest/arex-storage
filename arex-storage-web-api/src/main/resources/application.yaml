@@ -11,7 +11,7 @@ spring:
 arex:
   app:
     auth:
-      switch: true
+      switch: false
   query:
     config:
       url: ${arex.api.service.api:http://arex-api-service:8080}/api/config/comparison/summary/queryConfigOfCategory
