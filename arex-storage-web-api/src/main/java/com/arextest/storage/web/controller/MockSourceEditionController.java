@@ -141,6 +141,7 @@ public class MockSourceEditionController {
     }
     MockCategoryType category = body.getCategoryType();
     try {
+      body.setUpdateTime(System.currentTimeMillis());
       boolean updateResult = editableService.add(srcProviderName, body);
       LOGGER.info("add record result:{},category:{},id:{}", updateResult, category, body.getId());
       return ResponseUtils.successResponse(updateResult);
@@ -188,6 +189,7 @@ public class MockSourceEditionController {
           return ResponseUtils.resourceNotFoundResponse();
         }
       }
+      body.setUpdateTime(System.currentTimeMillis());
       boolean updateResult = editableService.update(srcProviderName, body);
 
 
