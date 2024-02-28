@@ -24,7 +24,7 @@ public class SystemConfigurationCollection extends BaseEntity {
   private Map<String, Integer> refreshTaskMark;
   private DesensitizationJar desensitizationJar;
   private String callbackUrl;
-  private Boolean AuthSwitch;
+  private Boolean authSwitch;
 
 
   public interface KeySummary {
