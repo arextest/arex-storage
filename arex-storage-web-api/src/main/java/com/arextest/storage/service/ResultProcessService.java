@@ -13,6 +13,7 @@ import com.arextest.storage.repository.impl.mongo.AutoPinedMockerRepository;
 import com.arextest.storage.repository.impl.mongo.CoverageRepository;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +21,6 @@ import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.bson.internal.Base64;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -182,7 +182,7 @@ public class ResultProcessService {
     List<AREXMocker> decodedResult = new ArrayList<>(base64List.size());
     for (int i = 0; i < base64List.size(); i++) {
       String base64 = base64List.get(i);
-      AREXMocker source = zstdJacksonSerializer.deserialize(Base64.decode(base64),
+      AREXMocker source = zstdJacksonSerializer.deserialize(Base64.getDecoder().decode(base64),
           AREXMocker.class);
       if (source == null) {
         continue;

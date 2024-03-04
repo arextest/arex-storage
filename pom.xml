@@ -397,7 +397,7 @@
 
     <lombok.version>1.18.6</lombok.version>
     <!-- single jacoco.exec file relative to root directory of the project -->
-    <maven-compiler-plugin.version>3.6.0</maven-compiler-plugin.version>
+    <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
     <maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
     <maven-install-plugin.version>2.5.2</maven-install-plugin.version>
     <maven-jar-plugin.version>3.0.2</maven-jar-plugin.version>
@@ -411,7 +411,7 @@
       **/model/**
     </sonar.exclusions>
     <!-- Users could specify this property as true to skip the deploy process -->
-    <spring.boot.version>2.6.3</spring.boot.version>
+    <spring.boot.version>2.7.18</spring.boot.version>
   </properties>
   <scm>
     <connection>scm:git:git://github.com/arextest/arex-storage.git</connection>
