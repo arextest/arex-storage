@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 @Order(5)
-final class DubboConsumerMatchKeyBuilderImpl implements MatchKeyBuilder {
+public class DubboConsumerMatchKeyBuilderImpl implements MatchKeyBuilder {
 
   @Override
   public boolean isSupported(MockCategoryType categoryType) {
