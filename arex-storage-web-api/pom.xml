@@ -87,10 +87,6 @@
       <version>1.2.0.Final</version>
     </dependency>
     <dependency>
-      <artifactId>jmockit</artifactId>
-      <groupId>org.jmockit</groupId>
-    </dependency>
-    <dependency>
       <artifactId>commons-lang3</artifactId>
       <groupId>org.apache.commons</groupId>
     </dependency>
@@ -116,7 +112,11 @@
       <artifactId>log4j-mongodb4</artifactId>
       <groupId>org.apache.logging.log4j</groupId>
     </dependency>
-
+    <dependency>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <groupId>org.springframework.boot</groupId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <modelVersion>4.0.0</modelVersion>
   <packaging>${packagingType}</packaging>
