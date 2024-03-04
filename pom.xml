@@ -67,6 +67,10 @@
     </pluginManagement>
     <plugins>
       <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <groupId>org.apache.maven.plugins</groupId>
+      </plugin>
+      <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
         <version>0.8.11</version>
@@ -398,7 +402,7 @@
     <maven-install-plugin.version>2.5.2</maven-install-plugin.version>
     <maven-jar-plugin.version>3.0.2</maven-jar-plugin.version>
     <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
-    <maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
+    <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
     <maven-war-plugin.version>3.0.0</maven-war-plugin.version>
     <maven.deploy.skip>false</maven.deploy.skip>
     <maven.source.skip>false</maven.source.skip>
