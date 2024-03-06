@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
+import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -79,10 +80,6 @@ public final class ServiceCollectConfigurableHandler extends
       String appId, List<InstancesConfiguration> instances, InstancesConfiguration requestInstance) {
 
     ServiceCollectConfiguration rootConfig = useResult(appId);
-    if (rootConfig == null) {
-      ServiceCollectConfiguration defaultConfig = createFromGlobalDefault(appId).get(0);
-      return Pair.of(defaultConfig, instances);
-    }
 
     List<ServiceCollectConfiguration> multiEnvConfigs = Optional.ofNullable(
         rootConfig.getMultiEnvConfigs()).orElse(Collections.emptyList());
@@ -127,7 +124,7 @@ public final class ServiceCollectConfigurableHandler extends
         continue;
       }
 
-      Map<String, String> serverTags = instance.getTags();
+      Map<String, String> serverTags = Optional.ofNullable(instance.getTags()).orElse(Collections.emptyMap());
       if (configEnv.keySet().stream().allMatch(tagKey -> {
         List<String> tagVals = configEnv.get(tagKey);
         return tagVals.contains(serverTags.get(tagKey));
