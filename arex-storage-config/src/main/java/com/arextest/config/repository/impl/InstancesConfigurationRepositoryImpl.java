@@ -60,15 +60,11 @@ public class InstancesConfigurationRepositoryImpl implements
     return dtos;
   }
 
-  public List<InstancesConfiguration> listBy(String appId, int top) {
-    if (top == 0) {
-      return Collections.emptyList();
-    }
+  public List<InstancesConfiguration> listByAppOrdered(String appId) {
     Bson filter = Filters.eq(InstancesCollection.Fields.appId, appId);
     Bson sort = Sorts.ascending(DASH_ID);
     List<InstancesConfiguration> instancesDTOList = new ArrayList<>();
-    try (MongoCursor<InstancesCollection> cursor = mongoCollection.find(filter).sort(sort)
-        .limit(top).iterator()) {
+    try (MongoCursor<InstancesCollection> cursor = mongoCollection.find(filter).sort(sort).iterator()) {
       while (cursor.hasNext()) {
         InstancesCollection document = cursor.next();
         InstancesConfiguration dto = InstancesMapper.INSTANCE.dtoFromDao(document);

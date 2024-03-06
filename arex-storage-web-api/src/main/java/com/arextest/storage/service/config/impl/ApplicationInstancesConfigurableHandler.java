@@ -31,8 +31,8 @@ public final class ApplicationInstancesConfigurableHandler extends
     super.update(instancesConfiguration);
   }
 
-  public List<InstancesConfiguration> useResultAsList(String appId, int top) {
-    return instancesConfigurationRepository.listBy(appId, top);
+  public List<InstancesConfiguration> listByAppOrdered(String appId) {
+    return instancesConfigurationRepository.listByAppOrdered(appId);
   }
 
   public boolean deleteByAppIdAndHost(String appId, String host) {
