@@ -59,7 +59,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 public final class AgentRemoteConfigurationController {
 
   private static final String NOT_RECORDING = "(not recording)";
-
   private static final String EMPTY_TIME = "0";
   private static final String LAST_MODIFY_TIME = "If-Modified-Since";
   private static final String INCLUDE_SERVICE_OPERATIONS = "includeServiceOperations";
