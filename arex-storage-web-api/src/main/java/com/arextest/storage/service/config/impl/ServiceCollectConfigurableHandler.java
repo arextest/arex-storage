@@ -74,7 +74,8 @@ public final class ServiceCollectConfigurableHandler extends
    * Allocate service collect config for instances.
    * @param appId appid
    * @param instances all instances of the app
-   * @return map of instances and their service collect config
+   * @param requestInstance the instance that is requesting service collect config
+   * @return pair of service collect config and instances that will use this config
    */
   public Pair<ServiceCollectConfiguration, List<InstancesConfiguration>> allocateServiceCollectConfig(
       String appId, List<InstancesConfiguration> instances, InstancesConfiguration requestInstance) {
@@ -113,6 +114,8 @@ public final class ServiceCollectConfigurableHandler extends
 
   /**
    * Find the index of the config that matches the tags of the instance.
+   * @param instance instance
+   * @param multiEnvConfigs multi env configs
    * @return index of the config, -1 if not found
    */
   private Integer findConfigIndex(InstancesConfiguration instance,
@@ -135,18 +138,6 @@ public final class ServiceCollectConfigurableHandler extends
       }
     }
     return -1;
-  }
-
-
-  private <T> Set<T> mergeValues(Set<T> source, Set<T> globalValues) {
-    if (CollectionUtils.isEmpty(globalValues)) {
-      return source;
-    }
-    if (CollectionUtils.isEmpty(source)) {
-      return globalValues;
-    }
-    source.addAll(globalValues);
-    return source;
   }
 
   public void updateServiceCollectTime(String appId) {
