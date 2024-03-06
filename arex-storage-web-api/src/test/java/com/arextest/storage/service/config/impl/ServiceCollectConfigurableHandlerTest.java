@@ -121,7 +121,6 @@ class ServiceCollectConfigurableHandlerTest {
     self.setTags(Collections.singletonMap("env", "pro"));
     Pair<ServiceCollectConfiguration, List<InstancesConfiguration>> result = service.allocateServiceCollectConfig(
         "appId", Collections.singletonList(self), self);
-    // instance with uat tag, should use pro config
     Assertions.assertEquals(0, result.getKey().getSampleRate());
     Assertions.assertEquals(1, result.getValue().size());
 
@@ -130,7 +129,6 @@ class ServiceCollectConfigurableHandlerTest {
     self.setTags(Collections.singletonMap("env", "pro"));
     result = service.allocateServiceCollectConfig(
         "appId", Collections.singletonList(self), self);
-    // instance with uat tag, should use pro config
     Assertions.assertEquals(0, result.getKey().getSampleRate());
     Assertions.assertEquals(1, result.getValue().size());
   }
@@ -145,9 +143,57 @@ class ServiceCollectConfigurableHandlerTest {
     self.setTags(serverTag);
     Pair<ServiceCollectConfiguration, List<InstancesConfiguration>> result = service.allocateServiceCollectConfig(
         "appId", Collections.singletonList(self), self);
-    // instance with uat tag, should use uat config
     Assertions.assertEquals(1, result.getKey().getSampleRate());
     Assertions.assertEquals(1, result.getValue().size());
+  }
+
+  @Test
+  void testMultiInstance() {
+    Mockito.when(repositoryProvider.listBy(Mockito.anyString())).thenReturn(Collections.singletonList(generateComplicatedEnvConfig()));
+    List<InstancesConfiguration> instances = multipleRandomInstances(10);
+    InstancesConfiguration self = instances.get(0);
+    HashMap<String, String> serverTag = new HashMap<>();
+    serverTag.put("env", "pro");
+    serverTag.put("group", "mirror");
+    self.setTags(serverTag);
+
+    InstancesConfiguration that = instances.get(1);
+    that.setTags(serverTag);
+
+    Pair<ServiceCollectConfiguration, List<InstancesConfiguration>> result = service.allocateServiceCollectConfig(
+        "appId", instances, self);
+    Assertions.assertEquals(1, result.getKey().getSampleRate());
+    Assertions.assertEquals(2, result.getValue().size());
+  }
+
+  @Test
+  void testMultiInstanceMismatch() {
+    Mockito.when(repositoryProvider.listBy(Mockito.anyString())).thenReturn(Collections.singletonList(generateComplicatedEnvConfig()));
+    List<InstancesConfiguration> instances = multipleRandomInstances(10);
+    InstancesConfiguration one = instances.get(0);
+    HashMap<String, String> serverTag = new HashMap<>();
+    serverTag.put("env", "pro");
+    serverTag.put("group", "mirror");
+    one.setTags(serverTag);
+
+    InstancesConfiguration two = instances.get(1);
+    two.setTags(serverTag);
+
+    InstancesConfiguration three = instances.get(2);
+
+    // no tag instance should be using root config, 8 of 10 instances
+    Pair<ServiceCollectConfiguration, List<InstancesConfiguration>> result = service.allocateServiceCollectConfig(
+        "appId", instances, three);
+    Assertions.assertEquals(0, result.getKey().getSampleRate());
+    Assertions.assertEquals(8, result.getValue().size());
+
+    // match one of two config tags, should miss and use root
+    three.setTags(Collections.singletonMap("env", "pro"));
+    Mockito.when(repositoryProvider.listBy(Mockito.anyString())).thenReturn(Collections.singletonList(generateComplicatedEnvConfig()));
+    result = service.allocateServiceCollectConfig(
+        "appId", instances, three);
+    Assertions.assertEquals(0, result.getKey().getSampleRate());
+    Assertions.assertEquals(8, result.getValue().size());
   }
 
   private static ServiceCollectConfiguration generateTwoEnvConfig() {
