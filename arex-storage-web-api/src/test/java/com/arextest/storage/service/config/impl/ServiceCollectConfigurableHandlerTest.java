@@ -74,14 +74,14 @@ class ServiceCollectConfigurableHandlerTest {
 
     Mockito.when(repositoryProvider.listBy(Mockito.anyString())).thenReturn(Collections.singletonList(generateTwoEnvConfig()));
     InstancesConfiguration self = selfInstance();
-    self.setSystemEnv(Collections.singletonMap("env", "uat"));
+    self.setTags(Collections.singletonMap("env", "uat"));
     result = service.allocateServiceCollectConfig("appId", Collections.singletonList(self), self);
     // instance with uat tag, should use uat config
     Assertions.assertEquals(1, result.getKey().getSampleRate());
 
     Mockito.when(repositoryProvider.listBy(Mockito.anyString())).thenReturn(Collections.singletonList(generateTwoEnvConfig()));
     self = selfInstance();
-    self.setSystemEnv(Collections.singletonMap("env", "pro"));
+    self.setTags(Collections.singletonMap("env", "pro"));
     result = service.allocateServiceCollectConfig("appId", Collections.singletonList(self), self);
     // instance with uat tag, should use pro config
     Assertions.assertEquals(10, result.getKey().getSampleRate());

@@ -121,6 +121,8 @@ public final class ServiceCollectConfigurableHandler extends
       ServiceCollectConfiguration envConfig = multiEnvConfigs.get(i);
       Map<String, List<String>> configEnv = envConfig.getEnvTags();
       if (configEnv == null || configEnv.isEmpty()) {
+        // this should not happen, data is validated before saving
+        LOGGER.error("Invalid multi env config, appid: {}", instance.getAppId());
         continue;
       }
 
