@@ -6,10 +6,11 @@ import com.arextest.config.repository.ConfigRepositoryProvider;
 import com.google.common.collect.Lists;
 import java.lang.reflect.Field;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -53,7 +54,7 @@ class ServiceCollectConfigurableHandlerTest {
   }
 
   @Test
-  void testSimpleEnv() {
+  void testUsingRoot() {
     Mockito.when(repositoryProvider.listBy(Mockito.anyString())).thenReturn(Collections.singletonList(generateTwoEnvConfig()));
     Pair<ServiceCollectConfiguration, List<InstancesConfiguration>> result =
         service.allocateServiceCollectConfig("appId", onlySelfInstances(), selfInstance());
@@ -71,20 +72,82 @@ class ServiceCollectConfigurableHandlerTest {
     // instance with no tag, should use root config, instance list should be size of 2
     Assertions.assertEquals(0, result.getKey().getSampleRate());
     Assertions.assertEquals(10, result.getValue().size());
+  }
 
+  @Test
+  void testMultiEnvNoMatch() {
+    Mockito.when(repositoryProvider.listBy(Mockito.anyString())).thenReturn(Collections.singletonList(generateTwoEnvConfig()));
+    InstancesConfiguration self = selfInstance();
+    self.setTags(Collections.singletonMap("env", "fws"));
+    Pair<ServiceCollectConfiguration, List<InstancesConfiguration>> result = service.allocateServiceCollectConfig(
+        "appId", Collections.singletonList(self), self);
+    // instance with tag not in config, should use root config
+    Assertions.assertEquals(0, result.getKey().getSampleRate());
+    Assertions.assertEquals(1, result.getValue().size());
+  }
+
+  @Test
+  void testMultiEnvMatchFirst() {
     Mockito.when(repositoryProvider.listBy(Mockito.anyString())).thenReturn(Collections.singletonList(generateTwoEnvConfig()));
     InstancesConfiguration self = selfInstance();
     self.setTags(Collections.singletonMap("env", "uat"));
-    result = service.allocateServiceCollectConfig("appId", Collections.singletonList(self), self);
+    Pair<ServiceCollectConfiguration, List<InstancesConfiguration>> result = service.allocateServiceCollectConfig(
+        "appId", Collections.singletonList(self), self);
     // instance with uat tag, should use uat config
     Assertions.assertEquals(1, result.getKey().getSampleRate());
+    Assertions.assertEquals(1, result.getValue().size());
+  }
 
+  @Test
+  void testMultiEnvMatchSecond() {
     Mockito.when(repositoryProvider.listBy(Mockito.anyString())).thenReturn(Collections.singletonList(generateTwoEnvConfig()));
-    self = selfInstance();
+    InstancesConfiguration self = selfInstance();
     self.setTags(Collections.singletonMap("env", "pro"));
-    result = service.allocateServiceCollectConfig("appId", Collections.singletonList(self), self);
+    Pair<ServiceCollectConfiguration, List<InstancesConfiguration>> result = service.allocateServiceCollectConfig(
+        "appId", Collections.singletonList(self), self);
     // instance with uat tag, should use pro config
     Assertions.assertEquals(10, result.getKey().getSampleRate());
+    Assertions.assertEquals(1, result.getValue().size());
+  }
+
+  /**
+   * matching only one tag of multi env config
+   * should be skipped and fallback to root config
+   */
+  @Test
+  void testComplicatedMismatch() {
+    Mockito.when(repositoryProvider.listBy(Mockito.anyString())).thenReturn(Collections.singletonList(generateComplicatedEnvConfig()));
+    InstancesConfiguration self = selfInstance();
+    self.setTags(Collections.singletonMap("env", "pro"));
+    Pair<ServiceCollectConfiguration, List<InstancesConfiguration>> result = service.allocateServiceCollectConfig(
+        "appId", Collections.singletonList(self), self);
+    // instance with uat tag, should use pro config
+    Assertions.assertEquals(0, result.getKey().getSampleRate());
+    Assertions.assertEquals(1, result.getValue().size());
+
+    Mockito.when(repositoryProvider.listBy(Mockito.anyString())).thenReturn(Collections.singletonList(generateComplicatedEnvConfig()));
+    self = selfInstance();
+    self.setTags(Collections.singletonMap("env", "pro"));
+    result = service.allocateServiceCollectConfig(
+        "appId", Collections.singletonList(self), self);
+    // instance with uat tag, should use pro config
+    Assertions.assertEquals(0, result.getKey().getSampleRate());
+    Assertions.assertEquals(1, result.getValue().size());
+  }
+
+  @Test
+  void testComplicatedMatch() {
+    Mockito.when(repositoryProvider.listBy(Mockito.anyString())).thenReturn(Collections.singletonList(generateComplicatedEnvConfig()));
+    InstancesConfiguration self = selfInstance();
+    HashMap<String, String> serverTag = new HashMap<>();
+    serverTag.put("env", "pro");
+    serverTag.put("group", "mirror");
+    self.setTags(serverTag);
+    Pair<ServiceCollectConfiguration, List<InstancesConfiguration>> result = service.allocateServiceCollectConfig(
+        "appId", Collections.singletonList(self), self);
+    // instance with uat tag, should use uat config
+    Assertions.assertEquals(1, result.getKey().getSampleRate());
+    Assertions.assertEquals(1, result.getValue().size());
   }
 
   private static ServiceCollectConfiguration generateTwoEnvConfig() {
@@ -101,6 +164,22 @@ class ServiceCollectConfigurableHandlerTest {
     pro.setEnvTags(Collections.singletonMap("env", Collections.singletonList("pro")));
     pro.setSampleRate(10);
     rootConfig.setMultiEnvConfigs(Lists.newArrayList(uat, pro));
+    return rootConfig;
+  }
+
+  private static ServiceCollectConfiguration generateComplicatedEnvConfig() {
+    ServiceCollectConfiguration rootConfig = new ServiceCollectConfiguration();
+    rootConfig.setSampleRate(0);
+    ServiceCollectConfiguration uat = new ServiceCollectConfiguration();
+
+    uat.setAppId("appId");
+    Map<String, List<String>> env = new HashMap<>();
+    env.put("env", Lists.newArrayList("uat", "pro"));
+    env.put("group", Lists.newArrayList("mirror"));
+    uat.setEnvTags(env);
+    uat.setSampleRate(1);
+
+    rootConfig.setMultiEnvConfigs(Lists.newArrayList(uat));
     return rootConfig;
   }
 
