@@ -80,7 +80,7 @@ public final class ServiceCollectConfigurableHandler extends
   public Pair<ServiceCollectConfiguration, List<InstancesConfiguration>> allocateServiceCollectConfig(
       String appId, List<InstancesConfiguration> instances, InstancesConfiguration requestInstance) {
 
-    ServiceCollectConfiguration rootConfig = useResult(appId);
+    ServiceCollectConfiguration rootConfig = super.useResult(appId);
 
     List<ServiceCollectConfiguration> multiEnvConfigs = Optional.ofNullable(
         rootConfig.getMultiEnvConfigs()).orElse(Collections.emptyList());
