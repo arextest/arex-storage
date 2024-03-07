@@ -101,7 +101,7 @@ public class ConfigLoadTest {
   }
 
   private void mockInstanceQuery() {
-    Mockito.when(instanceHandler.useResultAsList(Mockito.any()))
+    Mockito.when(instanceHandler.listByAppOrdered(Mockito.any()))
         .thenReturn(selfInstance());
   }
 
