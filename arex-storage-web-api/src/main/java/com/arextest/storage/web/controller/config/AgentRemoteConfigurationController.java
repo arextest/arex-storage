@@ -103,7 +103,7 @@ public final class AgentRemoteConfigurationController {
       applicationServiceHandler.createOrUpdate(request.getAppId());
 
       // all active instances of app
-      List<InstancesConfiguration> fullInstance = instanceHandler.useResultAsList(appId);
+      List<InstancesConfiguration> fullInstance = instanceHandler.listByAppOrdered(appId);
 
       Pair<ServiceCollectConfiguration, List<InstancesConfiguration>> collectConfigAndInstance =
           serviceCollectHandler.allocateServiceCollectConfig(appId, fullInstance, requestInstance);
