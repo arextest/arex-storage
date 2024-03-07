@@ -28,8 +28,10 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
+          build-args: |
+            -f=Dockerfile-Tomcat
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/arex-storage-serive:${{ vars.AREX_VER }}
-            registry.cn-hangzhou.aliyuncs.com/${{ secrets.DOCKERHUB_USERNAME }}/arex-storage-serive:${{ vars.AREX_VER }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/arex-storage-serive:${{ vars.AREX_VER }}-tomcat
+            registry.cn-hangzhou.aliyuncs.com/${{ secrets.DOCKERHUB_USERNAME }}/arex-storage-serive:${{ vars.AREX_VER }}-tomcat
