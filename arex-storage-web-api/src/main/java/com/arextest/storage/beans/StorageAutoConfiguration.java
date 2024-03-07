@@ -3,7 +3,7 @@ package com.arextest.storage.beans;
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.config.model.dao.config.SystemConfigurationCollection;
 import com.arextest.config.model.dao.config.SystemConfigurationCollection.KeySummary;
-import com.arextest.config.model.dto.SystemConfiguration;
+import com.arextest.config.model.dto.system.SystemConfiguration;
 import com.arextest.config.repository.impl.ApplicationOperationConfigurationRepositoryImpl;
 import com.arextest.config.repository.impl.ApplicationServiceConfigurationRepositoryImpl;
 import com.arextest.config.utils.MongoHelper;

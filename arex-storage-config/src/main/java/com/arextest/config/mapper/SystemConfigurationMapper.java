@@ -1,7 +1,7 @@
 package com.arextest.config.mapper;
 
 import com.arextest.config.model.dao.config.SystemConfigurationCollection;
-import com.arextest.config.model.dto.SystemConfiguration;
+import com.arextest.config.model.dto.system.SystemConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;

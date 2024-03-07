@@ -1,7 +1,8 @@
 package com.arextest.config.model.dao.config;
 
 import com.arextest.config.model.dao.BaseEntity;
-import com.arextest.config.model.dto.DesensitizationJar;
+import com.arextest.config.model.dto.system.ComparePluginInfo;
+import com.arextest.config.model.dto.system.DesensitizationJar;
 import java.util.Map;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
@@ -25,6 +26,7 @@ public class SystemConfigurationCollection extends BaseEntity {
   private DesensitizationJar desensitizationJar;
   private String callbackUrl;
   private Boolean authSwitch;
+  private ComparePluginInfo comparePluginInfo;
 
 
   public interface KeySummary {
@@ -32,6 +34,7 @@ public class SystemConfigurationCollection extends BaseEntity {
     String DESERIALIZATION_JAR = "deserialization_jar";
     String CALLBACK_URL = "callback_url";
     String AUTH_SWITCH = "auth_switch";
+    String COMPARE_PLUGIN_INFO = "compare_plugin_info";
 
   }
 }

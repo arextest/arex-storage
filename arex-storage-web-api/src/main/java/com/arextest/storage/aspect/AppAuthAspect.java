@@ -6,7 +6,7 @@ import com.arextest.common.model.response.ResponseCode;
 import com.arextest.common.utils.JwtUtil;
 import com.arextest.common.utils.ResponseUtils;
 import com.arextest.config.model.dao.config.SystemConfigurationCollection.KeySummary;
-import com.arextest.config.model.dto.SystemConfiguration;
+import com.arextest.config.model.dto.system.SystemConfiguration;
 import com.arextest.config.model.dto.application.ApplicationConfiguration;
 import com.arextest.config.repository.impl.ApplicationConfigurationRepositoryImpl;
 import com.arextest.config.repository.impl.SystemConfigurationRepositoryImpl;

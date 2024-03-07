@@ -1,4 +1,4 @@
-package com.arextest.config.model.dto;
+package com.arextest.config.model.dto.system;
 
 import lombok.Data;
 
