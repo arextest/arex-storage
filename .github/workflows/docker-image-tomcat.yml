@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: Docker Image CI - Tomcat(DEPRECATED)
 
 on:
   workflow_dispatch:
@@ -28,8 +28,9 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: ./Dockerfile-Tomcat
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/arex-storage-serive:${{ vars.AREX_VER }}
-            registry.cn-hangzhou.aliyuncs.com/${{ secrets.DOCKERHUB_USERNAME }}/arex-storage-serive:${{ vars.AREX_VER }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/arex-storage-serive:${{ vars.AREX_VER }}-tomcat
+            registry.cn-hangzhou.aliyuncs.com/${{ secrets.DOCKERHUB_USERNAME }}/arex-storage-serive:${{ vars.AREX_VER }}-tomcat
