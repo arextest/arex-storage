@@ -1,6 +1,6 @@
 package com.arextest.config.repository;
 
-import com.arextest.config.model.dto.SystemConfiguration;
+import com.arextest.config.model.dto.system.SystemConfiguration;
 import java.util.List;
 
 /**

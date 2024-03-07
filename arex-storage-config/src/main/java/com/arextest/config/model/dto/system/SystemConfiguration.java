@@ -1,4 +1,4 @@
-package com.arextest.config.model.dto;
+package com.arextest.config.model.dto.system;
 
 import java.util.List;
 import java.util.Map;
@@ -10,6 +10,7 @@ import lombok.Data;
  */
 @Data
 public class SystemConfiguration {
+
   /**
    * The problem of prohibiting concurrent repeated insertions, the key is unique the function of
    * this record
@@ -19,6 +20,7 @@ public class SystemConfiguration {
   private DesensitizationJar desensitizationJar;
   private String callbackUrl;
   private Boolean authSwitch;
+  private ComparePluginInfo comparePluginInfo;
 
   public static SystemConfiguration mergeConfigs(List<SystemConfiguration> systemConfigurations) {
     if (systemConfigurations == null || systemConfigurations.isEmpty()) {
@@ -37,6 +39,9 @@ public class SystemConfiguration {
       }
       if (systemConfiguration.getCallbackUrl() != null) {
         result.setCallbackUrl(systemConfiguration.getCallbackUrl());
+      }
+      if (systemConfiguration.getComparePluginInfo() != null) {
+        result.setComparePluginInfo(systemConfiguration.getComparePluginInfo());
       }
     }
     return result;
