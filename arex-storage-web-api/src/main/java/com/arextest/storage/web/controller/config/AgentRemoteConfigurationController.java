@@ -39,6 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -58,7 +59,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 public final class AgentRemoteConfigurationController {
 
   private static final String NOT_RECORDING = "(not recording)";
-
   private static final String EMPTY_TIME = "0";
   private static final String LAST_MODIFY_TIME = "If-Modified-Since";
   private static final String INCLUDE_SERVICE_OPERATIONS = "includeServiceOperations";
@@ -68,18 +68,15 @@ public final class AgentRemoteConfigurationController {
   @Resource
   private ConfigurableHandler<ApplicationConfiguration> applicationHandler;
   @Resource
-  private ApplicationInstancesConfigurableHandler applicationInstancesConfigurableHandler;
+  private ApplicationInstancesConfigurableHandler instanceHandler;
   @Resource
   private ApplicationServiceConfigurableHandler applicationServiceHandler;
-
   @Resource
   private ServiceCollectConfigurableHandler serviceCollectHandler;
-
   @Resource
   private ApplicationConfigurableHandler applicationConfigurableHandler;
   @Resource
   private ThreadPoolExecutor envUpdateHandlerExecutor;
-
   @Resource
   private ObjectMapper objectMapper;
 
@@ -98,31 +95,41 @@ public final class AgentRemoteConfigurationController {
         LOGGER.error("from appId: {} , load config resource not found", appId);
         return ResponseUtils.resourceNotFoundResponse();
       }
-      InstancesConfiguration instancesConfiguration = InstancesMapper.INSTANCE.dtoFromContract(
+      InstancesConfiguration requestInstance = InstancesMapper.INSTANCE.dtoFromContract(
           request);
 
-      ServiceCollectConfiguration serviceCollectConfiguration = serviceCollectHandler.queryConfigByEnv(
-          appId, instancesConfiguration.getTags());
+      // ensure new instance is created
+      instanceHandler.createOrUpdate(requestInstance);
       applicationServiceHandler.createOrUpdate(request.getAppId());
+
+      // all active instances of app
+      List<InstancesConfiguration> fullInstance = instanceHandler.useResultAsList(appId);
+
+      Pair<ServiceCollectConfiguration, List<InstancesConfiguration>> collectConfigAndInstance =
+          serviceCollectHandler.allocateServiceCollectConfig(appId, fullInstance, requestInstance);
+      ServiceCollectConfiguration collectConfig = collectConfigAndInstance.getLeft();
+      List<InstancesConfiguration> envInstance = collectConfigAndInstance.getRight();
+
       AgentRemoteConfigurationResponse body = new AgentRemoteConfigurationResponse();
       body.setDynamicClassConfigurationList(dynamicClassHandler.useResultAsList(appId));
-      body.setServiceCollectConfiguration(serviceCollectConfiguration);
-      body.setExtendField(getExtendField(serviceCollectConfiguration));
+      body.setServiceCollectConfiguration(collectConfig);
+      body.setExtendField(getExtendField(collectConfig));
       body.setStatus(applicationConfiguration.getStatus());
 
-      applicationInstancesConfigurableHandler.createOrUpdate(instancesConfiguration);
-      List<InstancesConfiguration> instances = applicationInstancesConfigurableHandler.useResultAsList(
-          appId,
-          serviceCollectConfiguration.getRecordMachineCountLimit());
-      Set<String> recordingHosts =
-          instances.stream().map(InstancesConfiguration::getHost).collect(Collectors.toSet());
-      InstancesConfiguration sourceInstance = instances.stream()
+      InstancesConfiguration sourceInstance = fullInstance.stream()
           .filter(instance -> Objects.equals(instance.getHost(), (request.getHost())))
           .findFirst().orElse(null);
       if (sourceInstance != null && sourceInstance.getExtendField() != null) {
         body.getExtendField().putAll(sourceInstance.getExtendField());
       }
-      if (recordingHosts.contains(request.getHost())) {
+
+      // only a limited number of machines IN THIS ENVIRONMENT are allowed to record
+      Set<String> allowRecordingHosts =
+          envInstance.stream()
+              .limit(collectConfig.getRecordMachineCountLimit())
+              .map(InstancesConfiguration::getHost)
+              .collect(Collectors.toSet());
+      if (allowRecordingHosts.contains(request.getHost())) {
         body.setTargetAddress(request.getHost());
         body.setMessage(request.getHost());
         body.setAgentEnabled(Boolean.TRUE);
@@ -133,7 +140,7 @@ public final class AgentRemoteConfigurationController {
       }
 
       // asynchronously update application env
-      asyncUpdateAppEnv(instancesConfiguration);
+      asyncUpdateAppEnv(requestInstance);
 
       return ResponseUtils.successResponse(body);
     } catch (Exception e) {
@@ -165,11 +172,11 @@ public final class AgentRemoteConfigurationController {
       InstancesConfiguration instancesConfiguration = InstancesMapper.INSTANCE.dtoFromContract(
           request);
       if (AgentStatusType.SHUTDOWN.equalsIgnoreCase(instancesConfiguration.getAgentStatus())) {
-        applicationInstancesConfigurableHandler.deleteByAppIdAndHost(
+        instanceHandler.deleteByAppIdAndHost(
             instancesConfiguration.getAppId(),
             instancesConfiguration.getHost());
       } else {
-        applicationInstancesConfigurableHandler.createOrUpdate(instancesConfiguration);
+        instanceHandler.createOrUpdate(instancesConfiguration);
         // get the latest time
         ServiceCollectConfiguration serviceConfig =
             serviceCollectHandler.useResult(instancesConfiguration.getAppId());

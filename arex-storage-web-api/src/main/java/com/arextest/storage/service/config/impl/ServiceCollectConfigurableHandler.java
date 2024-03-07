@@ -1,5 +1,6 @@
 package com.arextest.storage.service.config.impl;
 
+import com.arextest.config.model.dto.application.InstancesConfiguration;
 import com.arextest.config.model.dto.record.ServiceCollectConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
 import com.arextest.storage.service.config.AbstractConfigurableHandler;
@@ -8,9 +9,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.annotation.Resource;
+import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
@@ -66,51 +71,73 @@ public final class ServiceCollectConfigurableHandler extends
   }
 
   /**
-   * Query service collect config from db, merge multi env config into root config according to the
-   * tags sent from agent. Match the first config having the same tag with agent.
-   *
-   * @param serverTags server tags sent from agent, e.g. env: fat
+   * Allocate service collect config for instances.
+   * @param appId appid
+   * @param instances all instances of the app
+   * @param requestInstance the instance that is requesting service collect config
+   * @return pair of service collect config and instances that will use this config
    */
-  public ServiceCollectConfiguration queryConfigByEnv(String appId,
-      Map<String, String> serverTags) {
-    ServiceCollectConfiguration config = useResult(appId);
-    if (serverTags == null || serverTags.isEmpty() || config == null) {
-      return config;
-    }
+  public Pair<ServiceCollectConfiguration, List<InstancesConfiguration>> allocateServiceCollectConfig(
+      String appId, List<InstancesConfiguration> instances, InstancesConfiguration requestInstance) {
+
+    ServiceCollectConfiguration rootConfig = super.useResult(appId);
 
     List<ServiceCollectConfiguration> multiEnvConfigs = Optional.ofNullable(
-        config.getMultiEnvConfigs()).orElse(Collections.emptyList());
+        rootConfig.getMultiEnvConfigs()).orElse(Collections.emptyList());
+    // no multi env config, all instance use root config
+    if (CollectionUtils.isEmpty(multiEnvConfigs)) {
+      return Pair.of(rootConfig, instances);
+    }
 
-    multiEnvConfigs.stream().filter(envConfig -> {
-      Map<String, List<String>> configEnv = envConfig.getEnvTags();
-      if (configEnv == null || configEnv.isEmpty()) {
-        return false;
-      }
-      return configEnv.keySet().stream().allMatch(tagKey -> {
-        List<String> tagVals = configEnv.get(tagKey);
-        return tagVals.contains(serverTags.get(tagKey));
-      });
-    }).findFirst().ifPresent(matched -> {
-      config.setSampleRate(matched.getSampleRate());
-      config.setAllowDayOfWeeks(matched.getAllowDayOfWeeks());
-      config.setAllowTimeOfDayFrom(matched.getAllowTimeOfDayFrom());
-      config.setAllowTimeOfDayTo(matched.getAllowTimeOfDayTo());
-      config.setRecordMachineCountLimit(matched.getRecordMachineCountLimit());
-    });
+    // index of config -> instances that will use the config
+    Map<Integer, List<InstancesConfiguration>> configAllocation = instances.stream()
+        .collect(Collectors.groupingBy(instance -> findConfigIndex(instance, multiEnvConfigs)));
+
+    // selected config index of the incoming request instance
+    Integer requestInstanceConfigIndex = findConfigIndex(requestInstance, multiEnvConfigs);
+    // meaning using multi env config
+    if (requestInstanceConfigIndex != -1) {
+      ServiceCollectConfiguration envConfig = multiEnvConfigs.get(requestInstanceConfigIndex);
+      rootConfig.setSampleRate(envConfig.getSampleRate());
+      rootConfig.setAllowDayOfWeeks(envConfig.getAllowDayOfWeeks());
+      rootConfig.setAllowTimeOfDayFrom(envConfig.getAllowTimeOfDayFrom());
+      rootConfig.setAllowTimeOfDayTo(envConfig.getAllowTimeOfDayTo());
+      rootConfig.setRecordMachineCountLimit(envConfig.getRecordMachineCountLimit());
+    }
+
+    List<InstancesConfiguration> instancesOfEnv = configAllocation.get(requestInstanceConfigIndex);
+
     // clear multi env config to avoid confusion
-    config.setMultiEnvConfigs(Collections.emptyList());
-    return config;
+    rootConfig.setMultiEnvConfigs(Collections.emptyList());
+    return Pair.of(rootConfig, instancesOfEnv);
   }
 
-  private <T> Set<T> mergeValues(Set<T> source, Set<T> globalValues) {
-    if (CollectionUtils.isEmpty(globalValues)) {
-      return source;
+  /**
+   * Find the index of the config that matches the tags of the instance.
+   * @param instance instance
+   * @param multiEnvConfigs multi env configs
+   * @return index of the config, -1 if not found
+   */
+  private Integer findConfigIndex(InstancesConfiguration instance,
+      List<ServiceCollectConfiguration> multiEnvConfigs) {
+    for (int i = 0; i < multiEnvConfigs.size(); i++) {
+      ServiceCollectConfiguration envConfig = multiEnvConfigs.get(i);
+      Map<String, List<String>> configEnv = envConfig.getEnvTags();
+      if (configEnv == null || configEnv.isEmpty()) {
+        // this should not happen, data is validated before saving
+        LOGGER.error("Invalid multi env config, appid: {}", instance.getAppId());
+        continue;
+      }
+
+      Map<String, String> serverTags = Optional.ofNullable(instance.getTags()).orElse(Collections.emptyMap());
+      if (configEnv.keySet().stream().allMatch(tagKey -> {
+        List<String> tagVals = configEnv.get(tagKey);
+        return tagVals.contains(serverTags.get(tagKey));
+      })) {
+        return i;
+      }
     }
-    if (CollectionUtils.isEmpty(source)) {
-      return globalValues;
-    }
-    source.addAll(globalValues);
-    return source;
+    return -1;
   }
 
   public void updateServiceCollectTime(String appId) {
