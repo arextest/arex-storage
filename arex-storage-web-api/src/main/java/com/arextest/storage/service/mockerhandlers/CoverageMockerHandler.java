@@ -6,7 +6,7 @@ import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.model.mock.Mocker.Target;
 import com.arextest.model.scenepool.Scene;
-import com.arextest.storage.metric.AgentWorkingMetricService;
+import com.arextest.storage.metric.MetricListener;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
@@ -16,11 +16,15 @@ import com.arextest.storage.repository.scenepool.ScenePoolProvider;
 import com.arextest.storage.repository.scenepool.ScenePoolProviderImpl;
 import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.trace.MDCTracer;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -34,7 +38,12 @@ public class CoverageMockerHandler implements MockerSaveHandler {
   private CacheProvider cacheProvider;
   private ScheduledExecutorService coverageHandleDelayedPool;
   private ScenePoolFactory scenePoolFactory;
-  private AgentWorkingMetricService metricService;
+  public final List<MetricListener> metricListeners;
+  // coverage metric constants
+  private static final String COVERAGE_METRIC_NAME = "coverage.recording";
+  private static final String COVERAGE_OP_TAG_KEY = "operation";
+  private static final String COVERAGE_APP_TAG_KEY = "clientAppId";
+
 
   @Override
   public MockCategoryType getMockCategoryType() {
@@ -198,12 +207,24 @@ public class CoverageMockerHandler implements MockerSaveHandler {
               coverageMocker.getRecordId(), coverageMocker.getOperationName());
         }
 
-        metricService.recordCoverageHandle(appId, op);
+        recordCoverageHandle(appId, op);
       } catch (Exception e) {
         LOGGER.error("CoverageMockerHandler handle error", e);
       } finally {
         MDCTracer.clear();
       }
+    }
+  }
+
+  private void recordCoverageHandle(String appId, String op) {
+    if (CollectionUtils.isEmpty(metricListeners)) {
+      return;
+    }
+    Map<String, String> tags = new HashMap<>(2);
+    tags.put(COVERAGE_APP_TAG_KEY, appId);
+    tags.put(COVERAGE_OP_TAG_KEY, op);
+    for (MetricListener metricListener : metricListeners) {
+      metricListener.recordMatchingCount(COVERAGE_METRIC_NAME, tags);
     }
   }
 }
