@@ -105,5 +105,4 @@ public class AgentWorkingMetricService {
       metricListener.recordMatchingCount(METRIC_NAME, tags);
     }
   }
-
 }
