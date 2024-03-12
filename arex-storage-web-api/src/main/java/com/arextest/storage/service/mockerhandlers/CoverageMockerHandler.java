@@ -6,6 +6,7 @@ import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.model.mock.Mocker.Target;
 import com.arextest.model.scenepool.Scene;
+import com.arextest.storage.metric.AgentWorkingMetricService;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
@@ -33,6 +34,7 @@ public class CoverageMockerHandler implements MockerSaveHandler {
   private CacheProvider cacheProvider;
   private ScheduledExecutorService coverageHandleDelayedPool;
   private ScenePoolFactory scenePoolFactory;
+  private AgentWorkingMetricService metricService;
 
   @Override
   public MockCategoryType getMockCategoryType() {
@@ -160,6 +162,9 @@ public class CoverageMockerHandler implements MockerSaveHandler {
     private final ScenePoolProvider scenePoolProvider;
     private final Mocker coverageMocker;
     private static final long EXPIRATION_EXTENSION_DAYS = 14L;
+    private static final String NEW_SCENE_OP = "NEW_SCENE";
+    private static final String EXISTING_SCENE_OP = "EXISTING_SCENE";
+
     @Override
     public void run() {
       try {
@@ -168,7 +173,7 @@ public class CoverageMockerHandler implements MockerSaveHandler {
         String recordId = coverageMocker.getRecordId();
         String executionPath = Optional.ofNullable(coverageMocker.getTargetResponse()).map(
             Target::getBody).orElse(null);
-
+        String op = NEW_SCENE_OP;
         MDCTracer.addAppId(appId);
         MDCTracer.addRecordId(recordId);
 
@@ -178,6 +183,7 @@ public class CoverageMockerHandler implements MockerSaveHandler {
           LOGGER.info("CoverageMockerHandler received existing case, recordId: {}, pathKey: {}",
               coverageMocker.getRecordId(), coverageMocker.getOperationName());
         } else {
+          op = EXISTING_SCENE_OP;
           // new scene: extend mocker expiration and insert scene
           Scene scene = new Scene();
           scene.setSceneKey(sceneKey);
@@ -191,6 +197,8 @@ public class CoverageMockerHandler implements MockerSaveHandler {
           LOGGER.info("CoverageMockerHandler received new case, recordId: {}, pathKey: {}",
               coverageMocker.getRecordId(), coverageMocker.getOperationName());
         }
+
+        metricService.recordCoverageHandle(appId, op);
       } catch (Exception e) {
         LOGGER.error("CoverageMockerHandler handle error", e);
       } finally {
