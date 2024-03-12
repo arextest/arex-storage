@@ -111,6 +111,9 @@ public class AgentWorkingMetricService {
   }
 
   public void recordCoverageHandle(String appId, String op) {
+    if (CollectionUtils.isEmpty(metricListeners)) {
+      return;
+    }
     Map<String, String> tags = new HashMap<>(2);
     tags.put(CLIENT_APP_ID, appId);
     tags.put(COVERAGE_OP, op);
