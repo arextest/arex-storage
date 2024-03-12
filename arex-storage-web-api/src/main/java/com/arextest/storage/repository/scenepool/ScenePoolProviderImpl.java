@@ -4,6 +4,8 @@ import com.arextest.model.scenepool.Scene;
 import com.arextest.model.scenepool.Scene.Fields;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.FindOneAndUpdateOptions;
+import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
 import java.time.LocalDateTime;
@@ -30,12 +32,28 @@ public class ScenePoolProviderImpl extends AbstractScenePoolProvider {
     return getCollection().countDocuments(filter) > 0;
   }
 
+  @Override
+  public Scene findAndUpdate(Scene newScene) {
+    Bson filter = Filters.and(Filters.eq(Fields.appId, newScene.getAppId()),
+        Filters.eq(Fields.sceneKey, newScene.getSceneKey()));
+
+    Bson update = getUpdate(newScene);
+    FindOneAndUpdateOptions opt = new FindOneAndUpdateOptions().upsert(true);
+    opt.returnDocument(ReturnDocument.BEFORE);
+    return getCollection().findOneAndUpdate(filter, update, opt);
+  }
+
   public void upsertOne(Scene scene) {
     Bson filter = Filters.and(Filters.eq(Fields.appId, scene.getAppId()),
         Filters.eq(Fields.sceneKey, scene.getSceneKey()));
 
+    Bson update = getUpdate(scene);
+    getCollection().updateOne(filter, update, new UpdateOptions().upsert(true));
+  }
+
+  private Bson getUpdate(Scene scene) {
     Date expire = Date.from(LocalDateTime.now().plusDays(EXPIRATION_DAYS).atZone(ZoneId.systemDefault()).toInstant());
-    Bson update = Updates.combine(
+    return Updates.combine(
         Updates.set(Fields.appId, scene.getAppId()),
         Updates.set(Fields.sceneKey, scene.getSceneKey()),
         Updates.set(Fields.recordId, scene.getRecordId()),
@@ -45,12 +63,17 @@ public class ScenePoolProviderImpl extends AbstractScenePoolProvider {
         Updates.set(Fields.updateTime, new Date()),
         Updates.set(Fields.expirationTime, expire)
     );
-    getCollection().updateOne(filter, update, new UpdateOptions().upsert(true));
   }
 
   @Override
   public Scene findFirst(String recordId) {
     Bson filter = Filters.eq(Fields.recordId, recordId);
     return getCollection().find(filter).first();
+  }
+
+  @Override
+  public void clearSceneByAppid(String appid) {
+    Bson filter = Filters.eq(Fields.appId, appid);
+    getCollection().deleteMany(filter);
   }
 }

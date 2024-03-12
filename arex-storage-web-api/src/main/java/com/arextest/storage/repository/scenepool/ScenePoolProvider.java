@@ -7,7 +7,11 @@ public interface ScenePoolProvider {
 
   boolean checkSceneExist(String appId, String sceneKey);
 
+  Scene findAndUpdate(Scene scene);
+
   void upsertOne(Scene scene);
 
   Scene findFirst(String recordId);
+
+  void clearSceneByAppid(String appid);
 }
