@@ -13,5 +13,5 @@ public interface ScenePoolProvider {
 
   Scene findFirst(String recordId);
 
-  void clearSceneByAppid(String appid);
+  long clearSceneByAppid(String appid);
 }

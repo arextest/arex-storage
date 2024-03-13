@@ -2,7 +2,6 @@ package com.arextest.storage.repository.scenepool;
 
 import com.arextest.model.scenepool.Scene;
 import com.arextest.model.scenepool.Scene.Fields;
-import com.mongodb.client.FindIterable;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.ReturnDocument;
@@ -11,7 +10,6 @@ import com.mongodb.client.model.Updates;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
-import java.util.Iterator;
 import lombok.AllArgsConstructor;
 import org.bson.conversions.Bson;
 
@@ -72,8 +70,8 @@ public class ScenePoolProviderImpl extends AbstractScenePoolProvider {
   }
 
   @Override
-  public void clearSceneByAppid(String appid) {
+  public long clearSceneByAppid(String appid) {
     Bson filter = Filters.eq(Fields.appId, appid);
-    getCollection().deleteMany(filter);
+    return getCollection().deleteMany(filter).getDeletedCount();
   }
 }
