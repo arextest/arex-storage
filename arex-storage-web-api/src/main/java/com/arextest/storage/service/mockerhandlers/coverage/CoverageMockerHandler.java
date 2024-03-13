@@ -36,14 +36,12 @@ public class CoverageMockerHandler implements MockerSaveHandler {
   private static final String COVERAGE_METRIC_NAME = "coverage.recording";
   private static final String COVERAGE_OP_TAG_KEY = "operation";
   private static final String COVERAGE_APP_TAG_KEY = "clientAppId";
-
+  private static final String INVALID_SCENE_KEY = "0";
 
   @Override
   public MockCategoryType getMockCategoryType() {
     return MockCategoryType.COVERAGE;
   }
-
-  private static final String INVALID_SCENE_KEY = "0";
 
   /**
    * if is auto pined Case: update path
@@ -77,7 +75,6 @@ public class CoverageMockerHandler implements MockerSaveHandler {
 
   /**
    * async task for coverage mocker received during replay phase
-   * todo: use this task
    */
   @AllArgsConstructor
   private class ReplayTask implements Runnable {
@@ -102,9 +99,13 @@ public class CoverageMockerHandler implements MockerSaveHandler {
         // if the related case is already AUTO-PINNED, nothing needs to be done
         int movedCount = mockSourceEditionService.moveTo(ProviderNames.DEFAULT, recordId,
             ProviderNames.AUTO_PINNED);
-        LOGGER.info("Case {}, transferred {} cases to AUTO-PINNED", recordId, movedCount);
+
+        // todo should not happen, will handle case by case
+        if (movedCount == 0) {
+          LOGGER.error("Case {}, failed to transfer case to AUTO-PINNED", recordId);
+        }
       } catch (Exception e) {
-        LOGGER.error("Error handling replay task for record: {}", coverageMocker.getRecordId());
+        LOGGER.error("Error handling replay task for record: {}", coverageMocker.getRecordId(), e);
       } finally {
         MDCTracer.clear();
       }
