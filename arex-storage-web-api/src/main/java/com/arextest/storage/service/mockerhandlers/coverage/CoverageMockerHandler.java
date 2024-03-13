@@ -1,4 +1,4 @@
-package com.arextest.storage.service.mockerhandlers;
+package com.arextest.storage.service.mockerhandlers.coverage;
 
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
@@ -9,6 +9,7 @@ import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.scenepool.ScenePoolFactory;
 import com.arextest.storage.repository.scenepool.ScenePoolProvider;
 import com.arextest.storage.service.MockSourceEditionService;
+import com.arextest.storage.service.mockerhandlers.MockerSaveHandler;
 import com.arextest.storage.trace.MDCTracer;
 import java.util.HashMap;
 import java.util.List;
@@ -29,6 +30,7 @@ public class CoverageMockerHandler implements MockerSaveHandler {
   private MockSourceEditionService mockSourceEditionService;
   private ScheduledExecutorService coverageHandleDelayedPool;
   private ScenePoolFactory scenePoolFactory;
+  private CoverageHandlerSwitch handlerSwitch;
   public final List<MetricListener> metricListeners;
   // coverage metric constants
   private static final String COVERAGE_METRIC_NAME = "coverage.recording";
@@ -52,20 +54,21 @@ public class CoverageMockerHandler implements MockerSaveHandler {
   public void handle(Mocker coverageMocker) {
     ScenePoolProvider scenePoolProvider;
     Runnable task;
+    String appId = coverageMocker.getAppId();
 
     if (StringUtils.isEmpty(coverageMocker.getOperationName())
-        || coverageMocker.getOperationName().equals(INVALID_SCENE_KEY)) {
+        || coverageMocker.getOperationName().equals(INVALID_SCENE_KEY)
+        || StringUtils.isEmpty(appId)) {
       LOGGER.warn("CoverageMockerHandler got invalid case, operationName is empty, recordId:{}",
           coverageMocker.getRecordId());
       return;
     }
-
     // if replayId is empty, meaning this coverage mocker is received during record phase
-    if (StringUtils.isEmpty(coverageMocker.getReplayId())) {
+    if (StringUtils.isEmpty(coverageMocker.getReplayId()) && handlerSwitch.allowRecordTask(appId)) {
       scenePoolProvider = scenePoolFactory.getProvider(ScenePoolFactory.RECORDING_SCENE_POOL);
       task = new RecordTask(scenePoolProvider, coverageMocker);
       coverageHandleDelayedPool.schedule(task, 5, TimeUnit.SECONDS);
-    } else {
+    } else if (handlerSwitch.allowReplayTask(appId)) {
       scenePoolProvider = scenePoolFactory.getProvider(ScenePoolFactory.REPLAY_SCENE_POOL);
       task = new ReplayTask(scenePoolProvider, coverageMocker);
       coverageHandleDelayedPool.schedule(task, 1, TimeUnit.SECONDS);
@@ -89,15 +92,17 @@ public class CoverageMockerHandler implements MockerSaveHandler {
         MDCTracer.addRecordId(recordId);
 
         // todo: bug here, may insert multiple scene with same key, should be ensure by unique index
-        Scene scene = scenePoolProvider.findAndUpdate(newScene);
+        Scene oldScene = scenePoolProvider.findAndUpdate(newScene);
         // remove old related
-        if (scene != null) {
-          mockSourceEditionService.removeByRecordId(ProviderNames.AUTO_PINNED, scene.getRecordId());
+        if (oldScene != null) {
+          mockSourceEditionService.removeByRecordId(ProviderNames.AUTO_PINNED, oldScene.getRecordId());
         }
 
         // try moving from rolling to AP,
         // if the related case is already AUTO-PINNED, nothing needs to be done
-        mockSourceEditionService.moveTo(ProviderNames.DEFAULT, recordId, ProviderNames.AUTO_PINNED);
+        int movedCount = mockSourceEditionService.moveTo(ProviderNames.DEFAULT, recordId,
+            ProviderNames.AUTO_PINNED);
+        LOGGER.info("Case {}, transferred {} cases to AUTO-PINNED", recordId, movedCount);
       } catch (Exception e) {
         LOGGER.error("Error handling replay task for record: {}", coverageMocker.getRecordId());
       } finally {
