@@ -41,7 +41,7 @@ public class IndexesSettingConfiguration {
   private static final String REDIS_KEY_VERSION = "storage_version";
 
   // increment this version when you want to recreate indexes
-  private static final int INDEX_VERSION = 1;
+  private static final int INDEX_VERSION = 2;
 
   @Resource
   private CacheProvider cacheProvider;

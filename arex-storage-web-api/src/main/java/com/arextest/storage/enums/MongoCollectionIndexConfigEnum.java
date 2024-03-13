@@ -23,7 +23,7 @@ public enum MongoCollectionIndexConfigEnum {
   // new index config added here
   // collection dimension config
 
-  // storage index config
+  // region storage index config
   APP_INDEX("App",
       Collections.singletonList(
           IndexConfig.builder()
@@ -59,8 +59,9 @@ public enum MongoCollectionIndexConfigEnum {
               .unique(false)
               .ttlIndexConfig(new TtlIndexConfig(66L, TimeUnit.SECONDS))
               .build())),
+  // endregion
 
-  // report index config
+  // region report index config
   REPLAY_SCHEDULE_CONFIG_INDEX("ReplayScheduleConfig",
       Collections.singletonList(
           IndexConfig.builder()
@@ -70,12 +71,20 @@ public enum MongoCollectionIndexConfigEnum {
               .build())),
 
   LOGS_INDEX("logs",
-      Collections.singletonList(
+      Arrays.asList(
           IndexConfig.builder()
-              .fieldConfigs(Collections.singletonList(FieldConfig.build("appId", false)))
+              .fieldConfigs(Collections.singletonList(FieldConfig.build("date", false)))
               .unique(false)
               .ttlIndexConfig(new TtlIndexConfig(10L, TimeUnit.DAYS))
-              .build())),
+              .build(),
+          IndexConfig.builder()
+              .fieldConfigs(Arrays.asList(
+                  FieldConfig.build("level", true),
+                  FieldConfig.build("millis", true),
+                  FieldConfig.build("contextMap.app-type", true))
+              )
+              .build()
+      )),
 
   APP_CONTRACT_INDEX("AppContract",
       Arrays.asList(
@@ -108,9 +117,9 @@ public enum MongoCollectionIndexConfigEnum {
               .unique(true)
               .ttlIndexConfig(null)
               .build())),
+  // endregion
 
-  // schedule index config
-
+  // region schedule index config
   REPLAY_RUN_DETAILS_INDEX("ReplayRunDetails",
       Collections.singletonList(
           IndexConfig.builder()
@@ -129,6 +138,7 @@ public enum MongoCollectionIndexConfigEnum {
               .ttlIndexConfig(null)
               .build())),
   ;
+  // endregion
 
   private String collectionName;
   // indexes at same collection
