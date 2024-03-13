@@ -10,15 +10,9 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class DefaultCoverageSwitch implements CoverageHandlerSwitch {
-
   @Bean
   @ConditionalOnMissingBean
   public CoverageHandlerSwitch register() {
     return new DefaultCoverageSwitch();
-  }
-
-  @Override
-  public boolean allowReplayTask(String appId) {
-    return true;
   }
 }

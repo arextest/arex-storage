@@ -5,7 +5,9 @@ package com.arextest.storage.service.mockerhandlers.coverage;
  * @date: 2024/3/13 10:57
  */
 public interface CoverageHandlerSwitch {
-  boolean allowReplayTask(String appId);
+  default boolean allowReplayTask(String appId) {
+    return true;
+  }
   default boolean allowRecordTask(String appId) {
     return true;
   }
