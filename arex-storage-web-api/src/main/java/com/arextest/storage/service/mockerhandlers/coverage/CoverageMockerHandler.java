@@ -92,6 +92,10 @@ public class CoverageMockerHandler implements MockerSaveHandler {
         Scene oldScene = scenePoolProvider.findAndUpdate(newScene);
         // remove old related
         if (oldScene != null) {
+          // special case that may happen when manually debugging one case repeatedly
+          if (recordId.equals(oldScene.getRecordId())) {
+            return;
+          }
           mockSourceEditionService.removeByRecordId(ProviderNames.AUTO_PINNED, oldScene.getRecordId());
         }
 
