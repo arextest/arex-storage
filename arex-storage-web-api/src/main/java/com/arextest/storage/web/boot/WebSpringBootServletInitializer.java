@@ -7,6 +7,7 @@ import javax.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.retry.annotation.EnableRetry;
@@ -18,7 +19,8 @@ import org.springframework.retry.annotation.EnableRetry;
  * @since 2021/8/18
  */
 @EnableRetry
-@SpringBootApplication(scanBasePackages = {"com.arextest.storage", "com.arextest.common"})
+@SpringBootApplication(scanBasePackages = {"com.arextest.storage", "com.arextest.common"}, exclude = {
+    MongoAutoConfiguration.class})
 public class WebSpringBootServletInitializer extends SpringBootServletInitializer {
 
   @Value("${arex.prometheus.port}")
