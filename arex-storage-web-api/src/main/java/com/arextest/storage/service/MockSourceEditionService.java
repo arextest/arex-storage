@@ -187,10 +187,12 @@ public class MockSourceEditionService {
     return count;
   }
 
-  public boolean moveTo(String srcProviderName, String srcRecordId, String targetProviderName) {
-    copyTo(srcProviderName, srcRecordId, targetProviderName, srcRecordId);
-    removeByRecordId(srcProviderName, srcRecordId);
-    return true;
+  public int moveTo(String srcProviderName, String srcRecordId, String targetProviderName) {
+    int movedCount = copyTo(srcProviderName, srcRecordId, targetProviderName, srcRecordId);
+    if (movedCount != 0) {
+      removeByRecordId(srcProviderName, srcRecordId);
+    }
+    return movedCount;
   }
 
   public boolean removeByRecordId(String providerName, String recordId) {
