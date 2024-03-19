@@ -245,7 +245,6 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
       }
       String eigenBody = matchKeyFactory.getEigenBody(item);
       if (StringUtils.isEmpty(eigenBody)) {
-        LOGGER.warn("record eigen body is null");
         return;
       }
 
@@ -264,7 +263,6 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
       Map<Integer, Long> calculateEigen = EigenProcessor.calculateEigen(eigenBody,
           item.getCategoryType().getName(), exclusions, ignoreNodes);
       if (MapUtils.isEmpty(calculateEigen)) {
-        LOGGER.warn("calculate eigen is null");
         return;
       }
       item.setEigenMap(calculateEigen);

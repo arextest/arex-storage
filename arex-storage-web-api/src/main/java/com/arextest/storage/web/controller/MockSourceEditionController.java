@@ -2,6 +2,7 @@ package com.arextest.storage.web.controller;
 
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
+import com.arextest.model.replay.MockEditionRequestType;
 import com.arextest.model.response.Response;
 import com.arextest.model.response.ResponseStatusType;
 import com.arextest.storage.repository.ProviderNames;
@@ -41,12 +42,20 @@ public class MockSourceEditionController {
     this.storageCache = storageCache;
   }
 
+  @Deprecated
   @GetMapping(value = "/pinned/{srcRecordId}/{targetRecordId}/")
   @ResponseBody
   public Response pinned(@PathVariable String srcRecordId, @PathVariable String targetRecordId) {
     return copyTo(ProviderNames.DEFAULT, srcRecordId, ProviderNames.PINNED, targetRecordId);
   }
 
+  @PostMapping(value = "/pinned")
+  @ResponseBody
+  public Response pinned(@RequestBody MockEditionRequestType requestType) {
+    return copyTo(requestType);
+  }
+
+  @Deprecated
   @GetMapping(value = "/copy/")
   @ResponseBody
   public Response copyTo(String srcProviderName,
@@ -72,6 +81,29 @@ public class MockSourceEditionController {
     return ResponseUtils.successResponse(copyResponseType);
   }
 
+  @PostMapping(value = "/copy")
+  @ResponseBody
+  public Response copyTo(@RequestBody MockEditionRequestType requestType) {
+    if (StringUtils.isEmpty(requestType.getSrcProviderName())) {
+      return ResponseUtils.parameterInvalidResponse("The srcProviderName of requested is empty");
+    }
+    if (StringUtils.isEmpty(requestType.getRecordId())) {
+      return ResponseUtils.parameterInvalidResponse("The recordId of requested is empty");
+    }
+    if (StringUtils.isEmpty(requestType.getTargetProviderName())) {
+      return ResponseUtils.parameterInvalidResponse("The targetProviderName of requested is empty");
+    }
+    if (StringUtils.isEmpty(requestType.getTargetRecordId())) {
+      return ResponseUtils.parameterInvalidResponse("The targetRecordId of requested is empty");
+    }
+    CopyResponseType copyResponseType = new CopyResponseType();
+    int count = editableService.copyTo(requestType.getSrcProviderName(), requestType.getRecordId(), requestType.getTargetProviderName(),
+        requestType.getTargetRecordId());
+    copyResponseType.setCopied(count);
+    return ResponseUtils.successResponse(copyResponseType);
+  }
+
+  @Deprecated
   @GetMapping(value = "/removeAll/")
   @ResponseBody
   public Response removeAll(
@@ -81,6 +113,16 @@ public class MockSourceEditionController {
       return ResponseUtils.emptyRecordIdResponse();
     }
     return ResponseUtils.successResponse(editableService.removeAll(srcProviderName, recordId));
+  }
+
+  @PostMapping(value = "/removeAll")
+  @ResponseBody
+  public Response removeAll(@RequestBody MockEditionRequestType requestType) {
+    if (StringUtils.isEmpty(requestType.getRecordId())) {
+      return ResponseUtils.emptyRecordIdResponse();
+    }
+    return ResponseUtils.successResponse(
+        editableService.removeAll(requestType.getSrcProviderName(), requestType.getRecordId()));
   }
 
   @PostMapping(value = "/removeBy/")
@@ -104,6 +146,7 @@ public class MockSourceEditionController {
   }
 
 
+  @Deprecated
   @GetMapping(value = "/remove/")
   @ResponseBody
   public Response remove(
@@ -118,6 +161,19 @@ public class MockSourceEditionController {
     }
     return ResponseUtils.successResponse(
         editableService.remove(srcProviderName, category, recordId));
+  }
+
+  @PostMapping(value = "/remove")
+  @ResponseBody
+  public Response remove(@RequestBody MockEditionRequestType requestType) {
+    if (StringUtils.isEmpty(requestType.getRecordId())) {
+      return ResponseUtils.emptyRecordIdResponse();
+    }
+    if (StringUtils.isEmpty(requestType.getCategory())) {
+      return ResponseUtils.parameterInvalidResponse("The category of requested is empty");
+    }
+    return ResponseUtils.successResponse(
+        editableService.remove(requestType.getSrcProviderName(), requestType.getCategory(), requestType.getRecordId()));
   }
 
   @PostMapping("/pinned/add/")
