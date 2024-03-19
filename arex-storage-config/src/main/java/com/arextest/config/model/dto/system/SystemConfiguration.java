@@ -21,6 +21,7 @@ public class SystemConfiguration {
   private String callbackUrl;
   private Boolean authSwitch;
   private ComparePluginInfo comparePluginInfo;
+  private String jwtSeed;
 
   public static SystemConfiguration mergeConfigs(List<SystemConfiguration> systemConfigurations) {
     if (systemConfigurations == null || systemConfigurations.isEmpty()) {
