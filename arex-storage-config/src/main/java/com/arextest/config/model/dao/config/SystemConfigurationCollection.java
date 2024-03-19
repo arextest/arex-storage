@@ -27,7 +27,7 @@ public class SystemConfigurationCollection extends BaseEntity {
   private String callbackUrl;
   private Boolean authSwitch;
   private ComparePluginInfo comparePluginInfo;
-  private String saasCompanySeed;
+  private String jwtSeed;
 
 
   public interface KeySummary {
@@ -36,6 +36,6 @@ public class SystemConfigurationCollection extends BaseEntity {
     String CALLBACK_URL = "callback_url";
     String AUTH_SWITCH = "auth_switch";
     String COMPARE_PLUGIN_INFO = "compare_plugin_info";
-    String SAAS_COMPANY_SEED = "saas_company_seed";
+    String JWT_SEED = "jwt_seed";
   }
 }
