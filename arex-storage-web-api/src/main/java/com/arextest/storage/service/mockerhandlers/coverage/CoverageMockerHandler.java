@@ -5,6 +5,7 @@ import com.arextest.model.mock.Mocker;
 import com.arextest.model.mock.Mocker.Target;
 import com.arextest.model.scenepool.Scene;
 import com.arextest.storage.metric.MetricListener;
+import com.arextest.storage.model.Constants;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.scenepool.ScenePoolFactory;
 import com.arextest.storage.repository.scenepool.ScenePoolProvider;
@@ -17,6 +18,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import javax.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -49,7 +51,7 @@ public class CoverageMockerHandler implements MockerSaveHandler {
    * if is new case: if it has same path key: replace old case else: store
    */
   @Override
-  public void handle(Mocker coverageMocker) {
+  public void handle(Mocker coverageMocker, String forceRecord) {
     ScenePoolProvider scenePoolProvider;
     Runnable task;
     String appId = coverageMocker.getAppId();
@@ -64,7 +66,7 @@ public class CoverageMockerHandler implements MockerSaveHandler {
     // if replayId is empty, meaning this coverage mocker is received during record phase
     if (StringUtils.isEmpty(coverageMocker.getReplayId()) && handlerSwitch.allowRecordTask(appId)) {
       scenePoolProvider = scenePoolFactory.getProvider(ScenePoolFactory.RECORDING_SCENE_POOL);
-      task = new RecordTask(scenePoolProvider, coverageMocker);
+      task = new RecordTask(scenePoolProvider, coverageMocker, forceRecord);
       coverageHandleDelayedPool.schedule(task, 5, TimeUnit.SECONDS);
     } else if (handlerSwitch.allowReplayTask(appId)) {
       scenePoolProvider = scenePoolFactory.getProvider(ScenePoolFactory.REPLAY_SCENE_POOL);
@@ -123,6 +125,7 @@ public class CoverageMockerHandler implements MockerSaveHandler {
   private class RecordTask implements Runnable {
     private final ScenePoolProvider scenePoolProvider;
     private final Mocker coverageMocker;
+    private final String forceRecord;
     private static final long EXPIRATION_EXTENSION_DAYS = 14L;
     private static final String NEW_SCENE_OP = "NEW_SCENE";
     private static final String EXISTING_SCENE_OP = "EXISTING_SCENE";
@@ -137,6 +140,15 @@ public class CoverageMockerHandler implements MockerSaveHandler {
         MDCTracer.addAppId(appId);
         MDCTracer.addRecordId(recordId);
 
+        // new scene: extend mocker expiration and insert scene
+        Scene scene = convert(coverageMocker);
+        if (StringUtils.equalsIgnoreCase(forceRecord, Boolean.TRUE.toString())) {
+          scenePoolProvider.insertOne(scene);
+          LOGGER.info("CoverageMockerHandler received force record case, recordId: {}, pathKey: {}",
+              coverageMocker.getRecordId(), coverageMocker.getOperationName());
+          return;
+        }
+
         // scene exist remove Rolling mocker
         if (scenePoolProvider.checkSceneExist(appId, sceneKey)) {
           mockSourceEditionService.removeByRecordId(ProviderNames.DEFAULT, coverageMocker.getRecordId());
@@ -144,9 +156,6 @@ public class CoverageMockerHandler implements MockerSaveHandler {
               coverageMocker.getRecordId(), coverageMocker.getOperationName());
         } else {
           op = EXISTING_SCENE_OP;
-          // new scene: extend mocker expiration and insert scene
-          Scene scene = convert(coverageMocker);
-
           scenePoolProvider.upsertOne(scene);
           mockSourceEditionService.extendMockerExpirationByRecordId(ProviderNames.DEFAULT,
               coverageMocker.getRecordId(), EXPIRATION_EXTENSION_DAYS);

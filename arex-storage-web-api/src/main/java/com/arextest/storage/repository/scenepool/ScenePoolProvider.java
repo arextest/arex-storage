@@ -11,6 +11,8 @@ public interface ScenePoolProvider {
 
   void upsertOne(Scene scene);
 
+  void insertOne(Scene scene);
+
   Scene findFirst(String recordId);
 
   long clearSceneByAppid(String appid);
