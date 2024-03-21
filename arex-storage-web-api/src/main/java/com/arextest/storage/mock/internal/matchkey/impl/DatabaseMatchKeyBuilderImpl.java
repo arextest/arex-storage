@@ -18,7 +18,7 @@ import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
-import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.Statements;
 import net.sf.jsqlparser.util.TablesNamesFinder;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -194,7 +194,7 @@ public class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
     byte[] fullMatchKey = md5Digest.digest();
     keys.add(fullMatchKey);
 
-    findTableNameToMd5(sqlText, md5Digest);
+    findTableNameToMd5WithParser(sqlText, md5Digest);
     md5Digest.update(dbNameMatchKey);
     // 3,db+table+operationName
     byte[] tableMatchKey = md5Digest.digest();
@@ -234,19 +234,42 @@ public class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
 
   }
 
-  private void findTableNameToMd5(String sqlText, MessageDigest md5Digest) {
+  private void findTableNameToMd5WithParser(String sqlText, MessageDigest md5Digest) {
     try {
-      Statement statement = CCJSqlParserUtil.parse(sqlText);
+      Statements statements = CCJSqlParserUtil.parseStatements(sqlText);
       TablesNamesFinder tablesNamesFinder = new TablesNamesFinder();
-      List<String> tableList = tablesNamesFinder.getTableList(statement);
-      if (CollectionUtils.isNotEmpty(tableList)) {
-        for (String tableName : tableList) {
-          md5Digest.update(CacheKeyUtils.toUtf8Bytes(tableName));
+      statements.getStatements().forEach(statement -> {
+        List<String> tableList = tablesNamesFinder.getTableList(statement);
+        if (CollectionUtils.isNotEmpty(tableList)) {
+          for (String tableName : tableList) {
+            md5Digest.update(CacheKeyUtils.toUtf8Bytes(tableName));
+          }
         }
-      }
+      });
     } catch (JSQLParserException e) {
       LOGGER.warn("tryParseSqlTableName error:{},sqlText:{}", e.getMessage(), sqlText,
               e);
+      findTableNameToMd5(sqlText, md5Digest);
+    }
+  }
+
+  private void findTableNameToMd5(String sqlText, MessageDigest md5Digest) {
+    int sourceCount = sqlText.length();
+    for (int i = 0; i < SQL_TABLE_KEYS.size(); i++) {
+      String key = SQL_TABLE_KEYS.get(i);
+      int targetCount = key.length();
+      int fromIndex = 0;
+      int index = findIndexWholeIgnoreCase(sqlText, sourceCount, key, targetCount, fromIndex);
+      while (index != INDEX_NOT_FOUND) {
+        fromIndex = index + targetCount;
+        int skipWhitespaceCount = skipWhitespace(sqlText, fromIndex, sourceCount);
+        fromIndex += skipWhitespaceCount;
+        String value = readTableValue(sqlText, fromIndex, sourceCount);
+        int valueLength = value.length();
+        fromIndex += valueLength;
+        md5Digest.update(CacheKeyUtils.toUtf8Bytes(value));
+        index = findIndexWholeIgnoreCase(sqlText, sourceCount, key, targetCount, fromIndex);
+      }
     }
   }
 
