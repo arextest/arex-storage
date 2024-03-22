@@ -12,12 +12,14 @@ import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.ViewRecordRequestType;
 import com.arextest.model.replay.holder.ListResultHolder;
 import com.arextest.storage.mock.MockResultProvider;
+import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.RepositoryReader;
 import com.arextest.storage.trace.MDCTracer;
 import com.arextest.storage.utils.JsonUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -26,8 +28,10 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -42,22 +46,17 @@ import org.apache.commons.lang3.StringUtils;
  * @since 2021/11/4
  */
 @Slf4j
+@AllArgsConstructor
 public class ScheduleReplayingService {
-
   private static final String MERGE_RECORD_OPERATION_NAME = "arex.mergeRecord";
-  private static final String EXCEED_MAX_SIZE = "isExceedMaxSize";
+  private static final List<String> MOCKER_PROVIDER_NAMES = Lists.newArrayList(
+      ProviderNames.DEFAULT, ProviderNames.PINNED, ProviderNames.AUTO_PINNED);
 
   private final MockResultProvider mockResultProvider;
   private final RepositoryProviderFactory repositoryProviderFactory;
   private final ConfigRepositoryProvider<ApplicationOperationConfiguration> serviceOperationRepository;
+  private final ScenePoolService scenePoolService;
 
-  public ScheduleReplayingService(MockResultProvider mockResultProvider,
-      RepositoryProviderFactory repositoryProviderFactory,
-      ConfigRepositoryProvider<ApplicationOperationConfiguration> serviceOperationRepository) {
-    this.mockResultProvider = mockResultProvider;
-    this.repositoryProviderFactory = repositoryProviderFactory;
-    this.serviceOperationRepository = serviceOperationRepository;
-  }
 
   public List<ListResultHolder> queryReplayResult(String recordId, String replayResultId) {
     Set<MockCategoryType> categoryTypes = repositoryProviderFactory.getCategoryTypes();
@@ -88,15 +87,6 @@ public class ScheduleReplayingService {
     return resultHolderList;
   }
 
-  public List<AREXMocker> queryByRange(PagedRequestType requestType) {
-    RepositoryReader<AREXMocker> repositoryReader =
-        repositoryProviderFactory.findProvider(requestType.getSourceProvider());
-    if (repositoryReader != null) {
-      return new IterableListWrapper<>(repositoryReader.queryByRange(requestType));
-    }
-    return Collections.emptyList();
-  }
-
   public List<AREXMocker> queryEntryPointByRange(PagedRequestType requestType) {
     RepositoryProvider<AREXMocker> repositoryProvider =
         repositoryProviderFactory.findProvider(requestType.getSourceProvider());
@@ -106,49 +96,118 @@ public class ScheduleReplayingService {
     return Collections.emptyList();
   }
 
-  public List<AREXMocker> queryRecordList(ViewRecordRequestType viewRecordRequestType) {
-    List<AREXMocker> result = queryRecordListInner(viewRecordRequestType);
-    if (Boolean.TRUE.equals(viewRecordRequestType.getSplitMergeRecord())) {
+  public List<AREXMocker> queryRecordList(ViewRecordRequestType request) {
+    // request category list
+    Set<MockCategoryType> mockCategoryTypes = calculateNormalCategories(request);
+    String recordId = request.getRecordId();
+
+    // try query for requested provider
+    List<AREXMocker> result = queryRecordsByProvider(request.getSourceProvider(), recordId,
+        mockCategoryTypes);
+
+    // if no result found, try query for all providers
+    if (CollectionUtils.isEmpty(result)) {
+      for (String providerName : MOCKER_PROVIDER_NAMES) {
+        if (StringUtils.equals(providerName, request.getSourceProvider())) {
+          continue;
+        }
+        result = queryRecordsByProvider(providerName, recordId, mockCategoryTypes);
+        if (CollectionUtils.isNotEmpty(result)) {
+          break;
+        }
+      }
+    }
+
+    // extra coverage mocker query, not related to provider types
+    appendCoverage(request, result);
+
+    if (Boolean.TRUE.equals(request.getSplitMergeRecord())) {
       return splitMergedMockers(result);
     }
     return result;
   }
 
-  private List<AREXMocker> queryRecordListInner(ViewRecordRequestType requestType) {
-    String sourceProvider = requestType.getSourceProvider();
-    String recordId = requestType.getRecordId();
-    RepositoryProvider<Mocker> repositoryReader = repositoryProviderFactory.findProvider(sourceProvider);
+  private void appendCoverage(ViewRecordRequestType request, List<AREXMocker> result) {
+    String recordId = request.getRecordId();
+    boolean includeCoverage = Optional.ofNullable(request.getCategoryTypes())
+        .map(categories -> categories.contains(MockCategoryType.COVERAGE.getName()))
+        .orElse(false);
+    if (includeCoverage) {
+      AREXMocker coverageMocker = scenePoolService.getCoverageMocker(recordId);
+      if (coverageMocker != null) {
+        result.add(coverageMocker);
+      }
+    }
+  }
+
+  private List<AREXMocker> queryRecordsByProvider(String providerName, String recordId,
+      Set<MockCategoryType> types) {
+    RepositoryProvider<Mocker> repositoryReader = repositoryProviderFactory.findProvider(providerName);
     if (repositoryReader == null) {
       return Collections.emptyList();
     }
-    // single request category
-    MockCategoryType categoryType = repositoryProviderFactory.findCategory(requestType.getCategoryType());
-    if (categoryType != null) {
-      return queryRecordList(repositoryReader, categoryType, recordId);
-    }
 
-    // request category list
-    Set<MockCategoryType> mockCategoryTypes;
-    if (requestType.getCategoryTypes() == null) {
-      mockCategoryTypes = repositoryProviderFactory.getCategoryTypes();
+    // true -> entry point, false -> dependency
+    Map<Boolean, List<MockCategoryType>> partition = types.stream()
+        .collect(Collectors.partitioningBy(MockCategoryType::isEntryPoint));
+
+    List<MockCategoryType> entryPointTypes = partition.get(true);
+
+    if (CollectionUtils.isNotEmpty(entryPointTypes)) {
+      // try get entrypoint first
+      List<AREXMocker> result = entryPointTypes.stream()
+          .flatMap(category -> queryRecordList(repositoryReader, category, recordId).stream())
+          .collect(Collectors.toList());
+      // if entry point mockers not found, early return
+      if (CollectionUtils.isEmpty(result)) {
+        return Collections.emptyList();
+      } else {
+        // if entry point mockers found, try getting all mockers back
+        result.addAll(Optional.ofNullable(partition.get(false))
+            .orElse(Collections.emptyList())
+            .stream()
+            .flatMap(category -> queryRecordList(repositoryReader, category, recordId).stream())
+            .collect(Collectors.toList()));
+        return result;
+      }
     } else {
-      mockCategoryTypes = new HashSet<>(requestType.getCategoryTypes().size());
-      for (String category : requestType.getCategoryTypes()) {
-        if (StringUtils.equals(category, MockCategoryType.COVERAGE.getName())) {
-          mockCategoryTypes.add(MockCategoryType.COVERAGE);
-          continue;
-        }
-        MockCategoryType findCategory = repositoryProviderFactory.findCategory(category);
-        if (findCategory == null) {
-          continue;
-        }
-        mockCategoryTypes.add(findCategory);
+      return types.stream()
+          .flatMap(category -> queryRecordList(repositoryReader, category, recordId).stream())
+          .collect(Collectors.toList());
+    }
+  }
+
+  /**
+   * Calculate the requested categories.
+   * @param request incoming request defining the requesting categories
+   * @return the set of categories to be queried
+   */
+  private Set<MockCategoryType> calculateNormalCategories(ViewRecordRequestType request) {
+    Set<MockCategoryType> mockCategoryTypes;
+    if (!StringUtils.isEmpty(request.getCategoryType())) {
+      MockCategoryType category = repositoryProviderFactory.findCategory(request.getCategoryType());
+      if (category == null) {
+        return Collections.emptySet();
+      } else {
+        return Collections.singleton(category);
       }
     }
 
-    return mockCategoryTypes.stream()
-        .flatMap(category -> queryRecordList(repositoryReader, category, recordId).stream())
-        .collect(Collectors.toList());
+    if (request.getCategoryTypes() == null) {
+      mockCategoryTypes = new HashSet<>(repositoryProviderFactory.getCategoryTypes());
+    } else {
+      mockCategoryTypes = new HashSet<>(request.getCategoryTypes().size());
+      for (String categoryName : request.getCategoryTypes()) {
+        MockCategoryType category = repositoryProviderFactory.findCategory(categoryName);
+        if (category == null) {
+          continue;
+        }
+        mockCategoryTypes.add(category);
+      }
+    }
+
+    mockCategoryTypes.remove(MockCategoryType.COVERAGE);
+    return mockCategoryTypes;
   }
 
   private List<AREXMocker> splitMergedMockers(List<AREXMocker> mockerList) {
