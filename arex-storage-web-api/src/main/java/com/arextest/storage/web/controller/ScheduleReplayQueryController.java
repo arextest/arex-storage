@@ -33,6 +33,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -215,12 +216,13 @@ public class ScheduleReplayQueryController {
   @GetMapping(value = "/viewRecord/")
   public Response viewRecord(String recordId,
       @RequestParam(required = false) String category,
-      @RequestParam(required = false, defaultValue = ProviderNames.DEFAULT) String srcProvider) {
+      @RequestParam(required = false, defaultValue = ProviderNames.DEFAULT) String srcProvider,
+      @RequestHeader("downgrade") String downgrade) {
     ViewRecordRequestType recordRequestType = new ViewRecordRequestType();
     recordRequestType.setRecordId(recordId);
     recordRequestType.setSourceProvider(srcProvider);
     recordRequestType.setCategoryType(category);
-    return viewRecord(recordRequestType);
+    return viewRecord(recordRequestType, downgrade);
   }
 
   /**
@@ -232,7 +234,8 @@ public class ScheduleReplayQueryController {
    */
   @PostMapping("/viewRecord")
   @ResponseBody
-  public Response viewRecord(@RequestBody ViewRecordRequestType requestType) {
+  public Response viewRecord(@RequestBody ViewRecordRequestType requestType,
+      @RequestHeader("downgrade") String downgrade) {
     if (requestType == null) {
       return ResponseUtils.requestBodyEmptyResponse();
     }
@@ -240,6 +243,7 @@ public class ScheduleReplayQueryController {
     if (StringUtils.isEmpty(recordId)) {
       return ResponseUtils.emptyRecordIdResponse();
     }
+
     MDCTracer.addRecordId(recordId);
     ViewRecordResponseType responseType = new ViewRecordResponseType();
     try {
@@ -248,10 +252,6 @@ public class ScheduleReplayQueryController {
         LOGGER.info("could not found any resources for request: {}", requestType);
       }
       responseType.setRecordResult(allReadableResult);
-
-      ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-      HttpServletRequest request = requestAttributes.getRequest();
-      String downgrade = request.getHeader("downgrade");
       if (Boolean.TRUE.toString().equals(downgrade)) {
         MockerPostProcessor.desensitize(allReadableResult);
         responseType.setDesensitized(true);
