@@ -140,11 +140,14 @@ public class ScheduleReplayingService {
     }
   }
 
+  /**
+   * @return note that the returned list MUST be modifiable, may need to append afterward
+   */
   private List<AREXMocker> queryRecordsByProvider(String providerName, String recordId,
       Set<MockCategoryType> types) {
     RepositoryProvider<Mocker> repositoryReader = repositoryProviderFactory.findProvider(providerName);
     if (repositoryReader == null) {
-      return Collections.emptyList();
+      return new ArrayList<>();
     }
 
     // true -> entry point, false -> dependency
@@ -160,7 +163,7 @@ public class ScheduleReplayingService {
           .collect(Collectors.toList());
       // if entry point mockers not found, early return
       if (CollectionUtils.isEmpty(result)) {
-        return Collections.emptyList();
+        return new ArrayList<>();
       } else {
         // if entry point mockers found, try getting all mockers back
         result.addAll(Optional.ofNullable(partition.get(false))
