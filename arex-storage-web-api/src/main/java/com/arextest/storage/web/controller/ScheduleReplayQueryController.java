@@ -217,7 +217,7 @@ public class ScheduleReplayQueryController {
   public Response viewRecord(String recordId,
       @RequestParam(required = false) String category,
       @RequestParam(required = false, defaultValue = ProviderNames.DEFAULT) String srcProvider,
-      @RequestHeader("downgrade") String downgrade) {
+      @RequestHeader(name = "downgrade", required = false) String downgrade) {
     ViewRecordRequestType recordRequestType = new ViewRecordRequestType();
     recordRequestType.setRecordId(recordId);
     recordRequestType.setSourceProvider(srcProvider);
@@ -235,7 +235,7 @@ public class ScheduleReplayQueryController {
   @PostMapping("/viewRecord")
   @ResponseBody
   public Response viewRecord(@RequestBody ViewRecordRequestType requestType,
-      @RequestHeader("downgrade") String downgrade) {
+      @RequestHeader(name = "downgrade", required = false) String downgrade) {
     if (requestType == null) {
       return ResponseUtils.requestBodyEmptyResponse();
     }
