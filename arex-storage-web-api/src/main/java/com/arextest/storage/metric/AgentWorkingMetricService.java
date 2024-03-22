@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.NotNull;
 
 import lombok.extern.slf4j.Slf4j;
@@ -47,13 +46,13 @@ public class AgentWorkingMetricService {
     return TimeUnit.NANOSECONDS.toMillis(duration);
   }
 
-  public <T extends Mocker> boolean saveRecord(@NotNull T item, String forceRecord) {
+  public <T extends Mocker> boolean saveRecord(@NotNull T item) {
     if (CollectionUtils.isEmpty(metricListeners)) {
-      return agentWorkingService.saveRecord(item, forceRecord);
+      return agentWorkingService.saveRecord(item);
     }
 
     long startTimeNanos = System.nanoTime();
-    boolean saveResult = agentWorkingService.saveRecord(item, forceRecord);
+    boolean saveResult = agentWorkingService.saveRecord(item);
     long totalTimeNanos = System.nanoTime() - startTimeNanos;
 
     recordEntryTime(SAVE_MOCK_METHOD_NAME, (AREXMocker) item, nanosToMillis(totalTimeNanos));

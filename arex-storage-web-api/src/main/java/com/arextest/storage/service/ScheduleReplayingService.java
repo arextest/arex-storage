@@ -18,7 +18,6 @@ import com.arextest.storage.repository.RepositoryReader;
 import com.arextest.storage.trace.MDCTracer;
 import com.arextest.storage.utils.JsonUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -28,7 +27,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -52,16 +50,13 @@ public class ScheduleReplayingService {
   private final MockResultProvider mockResultProvider;
   private final RepositoryProviderFactory repositoryProviderFactory;
   private final ConfigRepositoryProvider<ApplicationOperationConfiguration> serviceOperationRepository;
-  private final ScenePoolService scenePoolService;
 
   public ScheduleReplayingService(MockResultProvider mockResultProvider,
       RepositoryProviderFactory repositoryProviderFactory,
-      ConfigRepositoryProvider<ApplicationOperationConfiguration> serviceOperationRepository,
-      ScenePoolService scenePoolService) {
+      ConfigRepositoryProvider<ApplicationOperationConfiguration> serviceOperationRepository) {
     this.mockResultProvider = mockResultProvider;
     this.repositoryProviderFactory = repositoryProviderFactory;
     this.serviceOperationRepository = serviceOperationRepository;
-    this.scenePoolService = scenePoolService;
   }
 
   public List<ListResultHolder> queryReplayResult(String recordId, String replayResultId) {
@@ -134,14 +129,13 @@ public class ScheduleReplayingService {
 
     // request category list
     Set<MockCategoryType> mockCategoryTypes;
-    boolean includeCoverage = false;
     if (requestType.getCategoryTypes() == null) {
       mockCategoryTypes = repositoryProviderFactory.getCategoryTypes();
     } else {
       mockCategoryTypes = new HashSet<>(requestType.getCategoryTypes().size());
       for (String category : requestType.getCategoryTypes()) {
         if (StringUtils.equals(category, MockCategoryType.COVERAGE.getName())) {
-          includeCoverage = true;
+          mockCategoryTypes.add(MockCategoryType.COVERAGE);
           continue;
         }
         MockCategoryType findCategory = repositoryProviderFactory.findCategory(category);
@@ -152,17 +146,9 @@ public class ScheduleReplayingService {
       }
     }
 
-    List<AREXMocker> arexMockerList = mockCategoryTypes.stream()
+    return mockCategoryTypes.stream()
         .flatMap(category -> queryRecordList(repositoryReader, category, recordId).stream())
         .collect(Collectors.toList());
-
-    if (includeCoverage) {
-      AREXMocker coverageMocker = scenePoolService.getCoverageMocker(requestType.getRecordId());
-      if (coverageMocker != null) {
-        arexMockerList.add(coverageMocker);
-      }
-    }
-    return arexMockerList;
   }
 
   private List<AREXMocker> splitMergedMockers(List<AREXMocker> mockerList) {

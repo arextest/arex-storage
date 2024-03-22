@@ -1,6 +1,5 @@
 package com.arextest.storage.web.controller;
 
-import static com.arextest.model.constants.HeaderNames.AREX_FORCE_RECORD;
 import static com.arextest.model.constants.HeaderNames.AREX_MOCK_STRATEGY_CODE;
 
 import com.arextest.model.constants.MockAttributeNames;
@@ -100,8 +99,7 @@ public class AgentRecordingController {
    */
   @PostMapping(value = "/save")
   @ResponseBody
-  public Response save(@RequestBody AREXMocker requestType, @RequestHeader (name = AREX_FORCE_RECORD,
-      defaultValue = "false") String forceRecord) {
+  public Response save(@RequestBody AREXMocker requestType) {
     MockCategoryType category = requestType.getCategoryType();
     if (category == null || StringUtils.isEmpty(category.getName())) {
       LOGGER.warn("The name of category is empty from agent record save not allowed ,request:{}",
@@ -111,7 +109,7 @@ public class AgentRecordingController {
     try {
       MDCTracer.addTrace(category, requestType);
 
-      boolean saveResult = agentWorkingMetricService.saveRecord(requestType, forceRecord);
+      boolean saveResult = agentWorkingMetricService.saveRecord(requestType);
       LOGGER.info("agent record save result:{},category:{},recordId:{}", saveResult, category,
           requestType.getRecordId());
       return ResponseUtils.successResponse(saveResult);
@@ -127,10 +125,9 @@ public class AgentRecordingController {
 
   @PostMapping(value = "/saveTest", produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseBody
-  public Response saveTest(@RequestBody AREXMocker body, @RequestHeader (name = AREX_FORCE_RECORD,
-      defaultValue = "false") String forceRecord) {
+  public Response saveTest(@RequestBody AREXMocker body) {
     try {
-      return this.save(body, forceRecord);
+      return this.save(body);
     } catch (Throwable throwable) {
       LOGGER.error("save record error:{}", throwable.getMessage(), throwable);
     }
@@ -140,10 +137,8 @@ public class AgentRecordingController {
   @GetMapping(value = "/saveTest/", produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseBody
   public Response saveTest(
-      @RequestParam(required = false, defaultValue = "Servlet") String category,
-      @RequestHeader (name = AREX_FORCE_RECORD,
-          defaultValue = "false") String forceRecord) {
-    return saveTest(arexMocker(MockCategoryType.create(category)), forceRecord);
+      @RequestParam(required = false, defaultValue = "Servlet") String category) {
+    return saveTest(arexMocker(MockCategoryType.create(category)));
   }
 
   @PostMapping(value = {"/invalidCase", "/invalidIncompleteRecord"}, produces = {MediaType.APPLICATION_JSON_VALUE})

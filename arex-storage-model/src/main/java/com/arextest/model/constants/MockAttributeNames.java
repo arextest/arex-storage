@@ -24,6 +24,7 @@ public final class MockAttributeNames {
   public static final String CONSUMER_GROUP_NAME = "consumerGroupName";
   public static final String MESSAGE_ID = "messageId";
   public static final String SUBJECT = "subject";
+  public static final String FORCE_RECORD = "arex-force-record";
 
   private MockAttributeNames() {
   }

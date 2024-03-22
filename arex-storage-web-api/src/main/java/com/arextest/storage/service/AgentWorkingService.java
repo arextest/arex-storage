@@ -15,7 +15,6 @@ import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.mockerhandlers.MockerHandlerFactory;
 import com.arextest.storage.service.mockerhandlers.MockerSaveHandler;
 import java.util.List;
-import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.NotNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -64,7 +63,7 @@ public class AgentWorkingService {
    * @param <T>  class type
    * @return true means success,else save failure
    */
-  public <T extends Mocker> boolean saveRecord(@NotNull T item, String forceRecord) {
+  public <T extends Mocker> boolean saveRecord(@NotNull T item) {
     if (shouldMarkRecordEnv(item.getCategoryType())) {
       item.setRecordEnvironment(recordEnvType.getCodeValue());
     }
@@ -77,7 +76,7 @@ public class AgentWorkingService {
     if (!CollectionUtils.isEmpty(handlers)) {
       for (MockerSaveHandler handler : handlers) {
         try {
-          handler.handle(item, forceRecord);
+          handler.handle(item);
           LOGGER.info("Mocker handler success, recordId: {} , handler:{}", item.getRecordId(),
               handler.getClass().getSimpleName());
         } catch (Exception e) {
