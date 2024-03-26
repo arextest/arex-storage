@@ -48,6 +48,7 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 @AllArgsConstructor
 public class ScheduleReplayingService {
+
   private static final String MERGE_RECORD_OPERATION_NAME = "arex.mergeRecord";
   private static final List<String> MOCKER_PROVIDER_NAMES = Lists.newArrayList(
       ProviderNames.DEFAULT, ProviderNames.PINNED, ProviderNames.AUTO_PINNED);
@@ -55,8 +56,6 @@ public class ScheduleReplayingService {
   private final MockResultProvider mockResultProvider;
   private final RepositoryProviderFactory repositoryProviderFactory;
   private final ConfigRepositoryProvider<ApplicationOperationConfiguration> serviceOperationRepository;
-  private final ScenePoolService scenePoolService;
-
 
   public List<ListResultHolder> queryReplayResult(String recordId, String replayResultId) {
     Set<MockCategoryType> categoryTypes = repositoryProviderFactory.getCategoryTypes();
@@ -67,15 +66,13 @@ public class ScheduleReplayingService {
         continue;
       }
       MDCTracer.addCategory(categoryType);
-      List<String> recordList =
-          encodeToBase64String(mockResultProvider.getRecordResultList(categoryType, recordId));
-      List<String> replayResultList =
-          encodeToBase64String(
-              mockResultProvider.getReplayResultList(categoryType, replayResultId));
+      List<String> recordList = encodeToBase64String(
+          mockResultProvider.getRecordResultList(categoryType, recordId));
+      List<String> replayResultList = encodeToBase64String(
+          mockResultProvider.getReplayResultList(categoryType, replayResultId));
       if (CollectionUtils.isEmpty(recordList) && CollectionUtils.isEmpty(replayResultList)) {
         LOGGER.info("skipped empty replay result for category:{}, recordId:{} ,replayResultId:{}",
-            categoryType,
-            recordId, replayResultId);
+            categoryType, recordId, replayResultId);
         continue;
       }
       listResultHolder = new ListResultHolder();
@@ -88,8 +85,8 @@ public class ScheduleReplayingService {
   }
 
   public List<AREXMocker> queryEntryPointByRange(PagedRequestType requestType) {
-    RepositoryProvider<AREXMocker> repositoryProvider =
-        repositoryProviderFactory.findProvider(requestType.getSourceProvider());
+    RepositoryProvider<AREXMocker> repositoryProvider = repositoryProviderFactory.findProvider(
+        requestType.getSourceProvider());
     if (repositoryProvider != null) {
       return new IterableListWrapper<>(repositoryProvider.queryEntryPointByRange(requestType));
     }
@@ -118,26 +115,10 @@ public class ScheduleReplayingService {
       }
     }
 
-    // extra coverage mocker query, not related to provider types
-    appendCoverage(request, result);
-
     if (Boolean.TRUE.equals(request.getSplitMergeRecord())) {
       return splitMergedMockers(result);
     }
     return result;
-  }
-
-  private void appendCoverage(ViewRecordRequestType request, List<AREXMocker> result) {
-    String recordId = request.getRecordId();
-    boolean includeCoverage = Optional.ofNullable(request.getCategoryTypes())
-        .map(categories -> categories.contains(MockCategoryType.COVERAGE.getName()))
-        .orElse(false);
-    if (includeCoverage) {
-      AREXMocker coverageMocker = scenePoolService.getCoverageMocker(recordId);
-      if (coverageMocker != null) {
-        result.add(coverageMocker);
-      }
-    }
   }
 
   /**
@@ -145,7 +126,8 @@ public class ScheduleReplayingService {
    */
   private List<AREXMocker> queryRecordsByProvider(String providerName, String recordId,
       Set<MockCategoryType> types) {
-    RepositoryProvider<Mocker> repositoryReader = repositoryProviderFactory.findProvider(providerName);
+    RepositoryProvider<Mocker> repositoryReader = repositoryProviderFactory.findProvider(
+        providerName);
     if (repositoryReader == null) {
       return new ArrayList<>();
     }
@@ -166,11 +148,10 @@ public class ScheduleReplayingService {
         return new ArrayList<>();
       } else {
         // if entry point mockers found, try getting all mockers back
-        result.addAll(Optional.ofNullable(partition.get(false))
-            .orElse(Collections.emptyList())
-            .stream()
-            .flatMap(category -> queryRecordList(repositoryReader, category, recordId).stream())
-            .collect(Collectors.toList()));
+        result.addAll(
+            Optional.ofNullable(partition.get(false)).orElse(Collections.emptyList()).stream()
+                .flatMap(category -> queryRecordList(repositoryReader, category, recordId).stream())
+                .collect(Collectors.toList()));
         return result;
       }
     } else {
@@ -182,6 +163,7 @@ public class ScheduleReplayingService {
 
   /**
    * Calculate the requested categories.
+   *
    * @param request incoming request defining the requesting categories
    * @return the set of categories to be queried
    */
@@ -200,16 +182,20 @@ public class ScheduleReplayingService {
       mockCategoryTypes = new HashSet<>(repositoryProviderFactory.getCategoryTypes());
     } else {
       mockCategoryTypes = new HashSet<>(request.getCategoryTypes().size());
+
       for (String categoryName : request.getCategoryTypes()) {
-        MockCategoryType category = repositoryProviderFactory.findCategory(categoryName);
+        // special logic shim for coverage mocker, currently used internally
+        // repositoryProviderFactory.findCategory() will return null for type COVERAGE because it's needed for most case
+        MockCategoryType category =
+            MockCategoryType.COVERAGE.getName().equals(categoryName) ? MockCategoryType.COVERAGE
+                : repositoryProviderFactory.findCategory(categoryName);
+
         if (category == null) {
           continue;
         }
         mockCategoryTypes.add(category);
       }
     }
-
-    mockCategoryTypes.remove(MockCategoryType.COVERAGE);
     return mockCategoryTypes;
   }
 
@@ -301,8 +287,8 @@ public class ScheduleReplayingService {
   }
 
   private Map<String, Long> countSingleCategoryByOperationName(PagedRequestType pagedRequestType) {
-    RepositoryReader<?> repositoryReader =
-        repositoryProviderFactory.findProvider(pagedRequestType.getSourceProvider());
+    RepositoryReader<?> repositoryReader = repositoryProviderFactory.findProvider(
+        pagedRequestType.getSourceProvider());
     if (repositoryReader != null) {
       return repositoryReader.countByOperationName(pagedRequestType);
     }
@@ -345,8 +331,8 @@ public class ScheduleReplayingService {
   }
 
   private long countSingleCategory(PagedRequestType replayCaseRangeRequest) {
-    RepositoryReader<?> repositoryReader =
-        repositoryProviderFactory.findProvider(replayCaseRangeRequest.getSourceProvider());
+    RepositoryReader<?> repositoryReader = repositoryProviderFactory.findProvider(
+        replayCaseRangeRequest.getSourceProvider());
     if (repositoryReader != null) {
       return repositoryReader.countByRange(replayCaseRangeRequest);
     }
