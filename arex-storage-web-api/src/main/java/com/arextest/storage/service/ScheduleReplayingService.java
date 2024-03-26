@@ -129,7 +129,7 @@ public class ScheduleReplayingService {
     RepositoryProvider<Mocker> repositoryReader = repositoryProviderFactory.findProvider(
         providerName);
     if (repositoryReader == null) {
-      return new ArrayList<>();
+      return Collections.emptyList();
     }
 
     // true -> entry point, false -> dependency
@@ -145,7 +145,7 @@ public class ScheduleReplayingService {
           .collect(Collectors.toList());
       // if entry point mockers not found, early return
       if (CollectionUtils.isEmpty(result)) {
-        return new ArrayList<>();
+        return Collections.emptyList();
       } else {
         // if entry point mockers found, try getting all mockers back
         result.addAll(
