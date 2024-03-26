@@ -122,7 +122,9 @@ public class ScheduleReplayingService {
   }
 
   /**
-   * @return note that the returned list MUST be modifiable, may need to append afterward
+   * @param providerName provider name, e.g. default, pinned, auto_pinned
+   * @param recordId record id
+   * @param types mock category types, e.g. COVERAGE, SERVLET
    */
   private List<AREXMocker> queryRecordsByProvider(String providerName, String recordId,
       Set<MockCategoryType> types) {
