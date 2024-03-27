@@ -24,28 +24,4 @@ public class ScenePoolService {
     ScenePoolProvider provider = scenePoolFactory.getProvider(REPLAY_SCENE_POOL);
     return provider.clearSceneByAppid(appId);
   }
-
-  public AREXMocker getCoverageMocker(String recordId) {
-    ScenePoolProvider provider = scenePoolFactory.getProvider(RECORDING_SCENE_POOL);
-    if (provider == null) {
-      return null;
-    }
-    Scene scene = provider.findFirst(recordId);
-    if (scene == null) {
-      return null;
-    }
-    return buildCoverageMocker(scene);
-  }
-
-  private AREXMocker buildCoverageMocker(Scene scene) {
-    AREXMocker arexMocker = new AREXMocker();
-    arexMocker.setAppId(scene.getAppId());
-    arexMocker.setCategoryType(MockCategoryType.COVERAGE);
-    arexMocker.setRecordId(scene.getRecordId());
-    arexMocker.setCreationTime(scene.getCreationTime().getTime());
-    Target target = new Target();
-    target.setBody(scene.getExecutionPath());
-    arexMocker.setTargetResponse(target);
-    return arexMocker;
-  }
 }
