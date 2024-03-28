@@ -1,6 +1,8 @@
 package com.arextest.storage.service;
 
 import static com.arextest.storage.repository.scenepool.ScenePoolFactory.RECORDING_SCENE_POOL;
+import static com.arextest.storage.repository.scenepool.ScenePoolFactory.REPLAY_SCENE_POOL;
+
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker.Target;
@@ -18,27 +20,8 @@ public class ScenePoolService {
   @Resource
   private ScenePoolFactory scenePoolFactory;
 
-  public AREXMocker getCoverageMocker(String recordId) {
-    ScenePoolProvider provider = scenePoolFactory.getProvider(RECORDING_SCENE_POOL);
-    if (provider == null) {
-      return null;
-    }
-    Scene scene = provider.findFirst(recordId);
-    if (scene == null) {
-      return null;
-    }
-    return buildCoverageMocker(scene);
-  }
-
-  private AREXMocker buildCoverageMocker(Scene scene) {
-    AREXMocker arexMocker = new AREXMocker();
-    arexMocker.setAppId(scene.getAppId());
-    arexMocker.setCategoryType(MockCategoryType.COVERAGE);
-    arexMocker.setRecordId(scene.getRecordId());
-    arexMocker.setCreationTime(scene.getCreationTime().getTime());
-    Target target = new Target();
-    target.setBody(scene.getExecutionPath());
-    arexMocker.setTargetResponse(target);
-    return arexMocker;
+  public long clearReplayPoolByApp(String appId) {
+    ScenePoolProvider provider = scenePoolFactory.getProvider(REPLAY_SCENE_POOL);
+    return provider.clearSceneByAppid(appId);
   }
 }
