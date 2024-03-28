@@ -1,5 +1,6 @@
 package com.arextest.storage.service.mockerhandlers.coverage;
 
+import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.model.mock.Mocker.Target;
@@ -61,6 +62,17 @@ public class CoverageMockerHandler implements MockerSaveHandler {
           coverageMocker.getRecordId());
       return;
     }
+
+    // force record data insert to coverage mocker
+    Target targetRequest = coverageMocker.getTargetRequest();
+    if (targetRequest != null &&
+        Boolean.parseBoolean(targetRequest.attributeAsString(MockAttributeNames.FORCE_RECORD))) {
+      mockSourceEditionService.add(ProviderNames.DEFAULT, coverageMocker);
+      LOGGER.info("CoverageMockerHandler received force record case, recordId: {}, pathKey: {}",
+          coverageMocker.getRecordId(), coverageMocker.getOperationName());
+      return;
+    }
+
     // if replayId is empty, meaning this coverage mocker is received during record phase
     if (StringUtils.isEmpty(coverageMocker.getReplayId()) && handlerSwitch.allowRecordTask(appId)) {
       scenePoolProvider = scenePoolFactory.getProvider(ScenePoolFactory.RECORDING_SCENE_POOL);

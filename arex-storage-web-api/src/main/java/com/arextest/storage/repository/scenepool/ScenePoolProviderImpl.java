@@ -51,14 +51,15 @@ public class ScenePoolProviderImpl extends AbstractScenePoolProvider {
 
   private Bson getUpdate(Scene scene) {
     Date expire = Date.from(LocalDateTime.now().plusDays(EXPIRATION_DAYS).atZone(ZoneId.systemDefault()).toInstant());
+    Date now = new Date();
     return Updates.combine(
         Updates.set(Fields.appId, scene.getAppId()),
         Updates.set(Fields.sceneKey, scene.getSceneKey()),
         Updates.set(Fields.recordId, scene.getRecordId()),
         Updates.set(Fields.executionPath, scene.getExecutionPath()),
 
-        Updates.setOnInsert(Fields.creationTime, new Date()),
-        Updates.set(Fields.updateTime, new Date()),
+        Updates.setOnInsert(Fields.creationTime, now),
+        Updates.set(Fields.updateTime, now),
         Updates.set(Fields.expirationTime, expire)
     );
   }
