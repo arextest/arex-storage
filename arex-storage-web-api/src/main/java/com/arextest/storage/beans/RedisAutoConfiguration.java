@@ -2,6 +2,7 @@ package com.arextest.storage.beans;
 
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.common.cache.DefaultRedisCacheProvider;
+import com.arextest.common.cache.SentinelRedisCacheProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -28,6 +29,9 @@ public class RedisAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean(CacheProvider.class)
   public CacheProvider cacheProvider() {
+    if (StringUtils.isNotEmpty(properties.getCache().getSentinelUrl())) {
+      return new SentinelRedisCacheProvider(properties.getCache().getSentinelUrl());
+    }
     if (StringUtils.isEmpty(properties.getCache().getUri())) {
       return new DefaultRedisCacheProvider();
     }

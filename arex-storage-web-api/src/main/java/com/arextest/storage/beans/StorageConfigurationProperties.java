@@ -30,6 +30,7 @@ public class StorageConfigurationProperties {
   static class Cache {
 
     private String uri;
+    private String sentinelUrl;
     private long expiredSeconds = 7200;
   }
 
