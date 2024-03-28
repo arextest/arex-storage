@@ -145,6 +145,11 @@
         <version>${commons-lang3.version}</version>
       </dependency>
       <dependency>
+        <artifactId>jsr250-api</artifactId>
+        <groupId>javax.annotation</groupId>
+        <version>1.0</version>
+      </dependency>
+      <dependency>
         <artifactId>arex-common</artifactId>
         <exclusions>
           <exclusion>
@@ -153,7 +158,7 @@
           </exclusion>
         </exclusions>
         <groupId>com.arextest</groupId>
-        <version>0.1.18</version>
+        <version>${arex-common.version}</version>
       </dependency>
       <dependency>
         <artifactId>arex-extension</artifactId>
@@ -164,11 +169,6 @@
         <artifactId>compare-sdk</artifactId>
         <groupId>com.arextest</groupId>
         <version>0.2.3</version>
-      </dependency>
-      <dependency>
-        <artifactId>jsr250-api</artifactId>
-        <groupId>javax.annotation</groupId>
-        <version>1.0</version>
       </dependency>
       <dependency>
         <artifactId>arex-model</artifactId>
@@ -412,6 +412,7 @@
     </sonar.exclusions>
     <!-- Users could specify this property as true to skip the deploy process -->
     <spring.boot.version>2.7.18</spring.boot.version>
+    <arex-common.version>0.1.24</arex-common.version>
   </properties>
   <scm>
     <connection>scm:git:git://github.com/arextest/arex-storage.git</connection>

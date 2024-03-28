@@ -2,6 +2,7 @@ arex:
   storage:
     cache:
       uri: ${arex.redis.uri:redis://redis:6379/}
+      sentinelUrl: ${arex.redis.sentinelUrl:}
     enableDiscoveryEntryPoint: true
     mongodbUri: ${arex.mongo.uri:mongodb://arex:password@mongodb:27017/arex_storage_db}
     recordEnv: TEST
