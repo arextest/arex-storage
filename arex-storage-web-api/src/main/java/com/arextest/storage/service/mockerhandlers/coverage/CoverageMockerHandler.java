@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 @AllArgsConstructor
-public class CoverageMockerHandler implements MockerSaveHandler {
+public class CoverageMockerHandler implements MockerSaveHandler<Mocker> {
   private MockSourceEditionService mockSourceEditionService;
   private ScheduledExecutorService coverageHandleDelayedPool;
   private ScenePoolFactory scenePoolFactory;
