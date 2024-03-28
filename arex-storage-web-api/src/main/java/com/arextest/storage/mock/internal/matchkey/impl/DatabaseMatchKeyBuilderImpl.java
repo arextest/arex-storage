@@ -246,7 +246,7 @@ public class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
           }
         }
       });
-    } catch (JSQLParserException e) {
+    } catch (RuntimeException | JSQLParserException e) {
       LOGGER.warn("tryParseSqlTableName error:{},sqlText:{}", e.getMessage(), sqlText,
               e);
       findTableNameToMd5(sqlText, md5Digest);
