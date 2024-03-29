@@ -18,7 +18,6 @@ import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.impl.mongo.AREXMockerMongoRepositoryProvider;
-import com.arextest.storage.repository.impl.mongo.AdditionalCodecProviderFactory;
 import com.arextest.storage.repository.impl.mongo.ArexMongoFactory;
 import com.arextest.storage.repository.impl.mongo.AutoPinedMockerRepository;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
@@ -76,10 +75,9 @@ public class StorageAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  public MongoDatabaseFactory mongoDbFactory(
-      AdditionalCodecProviderFactory additionalCodecProviderFactory) {
+  public MongoDatabaseFactory mongoDbFactory() {
     try {
-      ArexMongoFactory factory = new ArexMongoFactory(properties.getMongodbUri(), additionalCodecProviderFactory);
+      ArexMongoFactory factory = new ArexMongoFactory(properties.getMongodbUri());
       MongoDatabase database = factory.getMongoDatabase();
       indexesSettingConfiguration.setIndexes(database);
       syncAuthSwitch(database);
@@ -95,13 +93,6 @@ public class StorageAutoConfiguration {
   public MongoTemplate mongoTemplate(MongoDatabaseFactory mongoTemplateFactory) {
     return new MongoTemplate(mongoTemplateFactory);
   }
-
-  @Bean
-  @ConditionalOnMissingBean(AdditionalCodecProviderFactory.class)
-  public AdditionalCodecProviderFactory additionalCodecProviderFactory() {
-    return new AdditionalCodecProviderFactory();
-  }
-
 
   @Bean
   public Set<MockCategoryType> categoryTypes() {

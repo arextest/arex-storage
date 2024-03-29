@@ -1,6 +1,5 @@
 package com.arextest.storage.repository.impl.mongo;
 
-import com.arextest.storage.beans.IndexesSettingConfiguration;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoDatabase;
 import java.util.ArrayList;
@@ -18,13 +17,10 @@ import org.springframework.data.mongodb.core.SimpleMongoClientDatabaseFactory;
  * @since 2022/2/17
  */
 public class ArexMongoFactory extends SimpleMongoClientDatabaseFactory {
-  private final AdditionalCodecProviderFactory additionalCodecProviderFactory;
   private final MongoDatabase singleton;
 
-  public ArexMongoFactory(String connectionString,
-      AdditionalCodecProviderFactory additionalCodecProviderFactory) {
+  public ArexMongoFactory(String connectionString) {
     super(connectionString);
-    this.additionalCodecProviderFactory = additionalCodecProviderFactory;
     this.singleton = createWithCustomRegistry();
 
   }
@@ -35,8 +31,8 @@ public class ArexMongoFactory extends SimpleMongoClientDatabaseFactory {
   }
 
   protected MongoDatabase createWithCustomRegistry() {
-    additionalCodecProviderFactory.setMongoDatabase(super.getMongoDatabase());
-    CodecRegistry registry = customCodecRegistry(additionalCodecProviderFactory.get());
+    List<CodecProvider> codecs = ArexCodecFactory.get(super.getMongoDatabase());
+    CodecRegistry registry = customCodecRegistry(codecs);
     return super.getMongoDatabase().withCodecRegistry(registry);
   }
 
