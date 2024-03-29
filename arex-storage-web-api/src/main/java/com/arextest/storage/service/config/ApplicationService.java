@@ -23,7 +23,6 @@ import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.service.config.impl.ServiceCollectConfigurableHandler;
 import com.arextest.storage.utils.RandomUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mongodb.client.MongoDatabase;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +34,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Component;
 
 /**
@@ -64,7 +64,6 @@ public class ApplicationService {
   private MockSourceEditionService mockSourceEditionService;
   @Resource
   private ApplicationOperationConfigurationRepositoryImpl serviceOperationRepository;
-
   @Resource
   private ServiceCollectConfigurableHandler serviceCollectConfigurableHandler;
   @Resource
@@ -73,7 +72,7 @@ public class ApplicationService {
   private ServiceCollectConfigurationRepositoryImpl serviceCollectConfigurationRepository;
 
   @Resource
-  private MongoDatabase mongoDatabase;
+  private MongoTemplate mongoTemplate;
 
   public AddApplicationResponse addApplication(AddApplicationRequest request) {
     AddApplicationResponse response = new AddApplicationResponse();
@@ -143,7 +142,7 @@ public class ApplicationService {
     serviceCollectConfigurationRepository.removeByAppId(appId);
 
     // remove ReplayScheduleConfig
-    mongoDatabase.getCollection(Constants.REPLAY_SCHEDULE_CONFIG_COLLECTION_NAME)
+    mongoTemplate.getCollection(Constants.REPLAY_SCHEDULE_CONFIG_COLLECTION_NAME)
         .deleteMany(new Document(Constants.APP_ID, appId));
 
     // remove the config about comparison
@@ -214,7 +213,7 @@ public class ApplicationService {
       Document document = new Document();
       document.put(Constants.APP_ID, appId);
       document.put("compareConfigType", 0);
-      mongoDatabase.getCollection(collection).deleteMany(document);
+      mongoTemplate.getCollection(collection).deleteMany(document);
     });
   }
 }

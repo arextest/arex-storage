@@ -14,16 +14,17 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 @Slf4j
 public class AutoPinedMockerRepository extends AREXMockerMongoRepositoryProvider {
 
   private static final long THIRTY_DAY_MILLIS = 30 * 24 * 60 * 60 * 1000L;
 
-  public AutoPinedMockerRepository(MongoDatabase mongoDatabase,
+  public AutoPinedMockerRepository(MongoTemplate mongoTemplate,
       StorageConfigurationProperties properties,
       Set<MockCategoryType> entryPointTypes) {
-    super(ProviderNames.AUTO_PINNED, mongoDatabase, properties, entryPointTypes);
+    super(ProviderNames.AUTO_PINNED, mongoTemplate, properties, entryPointTypes);
   }
 
   public AREXMocker countFailAndUpdateReq(MockCategoryType categoryType, String caseId) {

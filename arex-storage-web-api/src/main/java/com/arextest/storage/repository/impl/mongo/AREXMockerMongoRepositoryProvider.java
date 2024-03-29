@@ -13,7 +13,7 @@ import com.arextest.storage.utils.TimeUtils;
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Projections;
@@ -77,32 +77,32 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
   private static final int DEFAULT_MIN_LIMIT_SIZE = 1;
   private static final int DEFAULT_MAX_LIMIT_SIZE = 1000;
   private static final int DEFAULT_BSON_WHERE_SIZE = 8;
-  protected final MongoDatabase mongoDatabase;
+  protected final MongoTemplate mongoTemplate;
   private final Class<AREXMocker> targetClassType;
   private final String providerName;
   private final StorageConfigurationProperties properties;
   private final Set<MockCategoryType> entryPointTypes;
 
-  public AREXMockerMongoRepositoryProvider(MongoDatabase mongoDatabase,
+  public AREXMockerMongoRepositoryProvider(MongoTemplate mongoTemplate,
       StorageConfigurationProperties properties,
       Set<MockCategoryType> entryPointTypes) {
-    this(ProviderNames.DEFAULT, mongoDatabase, properties, entryPointTypes);
+    this(ProviderNames.DEFAULT, mongoTemplate, properties, entryPointTypes);
   }
 
   public AREXMockerMongoRepositoryProvider(String providerName,
-      MongoDatabase mongoDatabase,
+      MongoTemplate mongoTemplate,
       StorageConfigurationProperties properties,
       Set<MockCategoryType> entryPointTypes) {
     this.properties = properties;
     this.targetClassType = AREXMocker.class;
-    this.mongoDatabase = mongoDatabase;
+    this.mongoTemplate = mongoTemplate;
     this.providerName = providerName;
     this.entryPointTypes = entryPointTypes;
   }
 
   MongoCollection<AREXMocker> createOrGetCollection(MockCategoryType category) {
     String categoryName = this.getProviderName() + category.getName() + COLLECTION_PREFIX;
-    return mongoDatabase.getCollection(categoryName, this.targetClassType);
+    return mongoTemplate.getMongoDatabaseFactory().getMongoDatabase().getCollection(categoryName, targetClassType);
   }
 
   @Override

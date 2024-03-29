@@ -7,7 +7,6 @@ import com.arextest.config.repository.ConfigRepositoryProvider;
 import com.arextest.config.utils.MongoHelper;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
-import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.ReturnDocument;
@@ -19,27 +18,21 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.PostConstruct;
-import org.apache.commons.lang3.StringUtils;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 public class ApplicationOperationConfigurationRepositoryImpl
     implements ConfigRepositoryProvider<ApplicationOperationConfiguration> {
+  private final MongoTemplate mongoTemplate;
 
-  private MongoDatabase mongoDatabase;
-
-  private MongoCollection<ServiceOperationCollection> mongoCollection;
-
-  public ApplicationOperationConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
-    this.mongoDatabase = mongoDatabase;
+  public ApplicationOperationConfigurationRepositoryImpl(MongoTemplate mongoTemplate) {
+    this.mongoTemplate = mongoTemplate;
   }
 
-  @PostConstruct
-  private void init() {
-    this.mongoCollection =
-        mongoDatabase.getCollection(ServiceOperationCollection.DOCUMENT_NAME,
-            ServiceOperationCollection.class);
+  public MongoCollection<ServiceOperationCollection> getCollection() {
+    return mongoTemplate.getMongoDatabaseFactory().getMongoDatabase()
+        .getCollection(ServiceOperationCollection.DOCUMENT_NAME, ServiceOperationCollection.class);
   }
 
   @Override
@@ -51,7 +44,7 @@ public class ApplicationOperationConfigurationRepositoryImpl
   public List<ApplicationOperationConfiguration> listBy(String appId) {
     Bson filter = Filters.eq(ServiceOperationCollection.Fields.appId, appId);
     List<ApplicationOperationConfiguration> dtos = new ArrayList<>();
-    try (MongoCursor<ServiceOperationCollection> cursor = mongoCollection.find(filter).iterator()) {
+    try (MongoCursor<ServiceOperationCollection> cursor = getCollection().find(filter).iterator()) {
       while (cursor.hasNext()) {
         ServiceOperationCollection document = cursor.next();
         ApplicationOperationConfiguration dto = ServiceOperationMapper.INSTANCE.dtoFromDao(
@@ -70,13 +63,13 @@ public class ApplicationOperationConfigurationRepositoryImpl
             ServiceOperationCollection.Fields.status));
     Bson updateCombine = Updates.combine(updateList);
 
-    return mongoCollection.updateMany(filter, updateCombine).getModifiedCount() > 0;
+    return getCollection().updateMany(filter, updateCombine).getModifiedCount() > 0;
   }
 
   @Override
   public boolean remove(ApplicationOperationConfiguration configuration) {
     Bson filter = Filters.eq(DASH_ID, new ObjectId(configuration.getId()));
-    return mongoCollection.deleteMany(filter).getDeletedCount() > 0;
+    return getCollection().deleteMany(filter).getDeletedCount() > 0;
   }
 
   @Override
@@ -84,7 +77,7 @@ public class ApplicationOperationConfigurationRepositoryImpl
 
     ServiceOperationCollection serviceOperationCollection =
         ServiceOperationMapper.INSTANCE.daoFromDto(configuration);
-    InsertOneResult insertOneResult = mongoCollection.insertOne(serviceOperationCollection);
+    InsertOneResult insertOneResult = getCollection().insertOne(serviceOperationCollection);
     if (insertOneResult.getInsertedId() != null) {
       configuration.setId(serviceOperationCollection.getId());
     }
@@ -95,7 +88,7 @@ public class ApplicationOperationConfigurationRepositoryImpl
   public ApplicationOperationConfiguration listByOperationId(String operationId) {
 
     Bson filter = Filters.eq(DASH_ID, new ObjectId(operationId));
-    ServiceOperationCollection serviceOperationCollection = mongoCollection.find(filter).first();
+    ServiceOperationCollection serviceOperationCollection = (ServiceOperationCollection) getCollection().find(filter).first();
     return serviceOperationCollection == null ? null
         : ServiceOperationMapper.INSTANCE.dtoFromDao(serviceOperationCollection);
   }
@@ -105,7 +98,7 @@ public class ApplicationOperationConfigurationRepositoryImpl
 
     Bson filter = Filters.eq(ServiceOperationCollection.Fields.serviceId, serviceId);
     List<ApplicationOperationConfiguration> dtos = new ArrayList<>();
-    try (MongoCursor<ServiceOperationCollection> cursor = mongoCollection.find(filter).iterator()) {
+    try (MongoCursor<ServiceOperationCollection> cursor = getCollection().find(filter).iterator()) {
       while (cursor.hasNext()) {
         ServiceOperationCollection document = cursor.next();
         ApplicationOperationConfiguration dto = ServiceOperationMapper.INSTANCE.baseInfoFromDao(
@@ -120,7 +113,7 @@ public class ApplicationOperationConfigurationRepositoryImpl
   public boolean removeByAppId(String appId) {
 
     Bson filter = Filters.eq(ServiceOperationCollection.Fields.appId, appId);
-    DeleteResult deleteResult = mongoCollection.deleteMany(filter);
+    DeleteResult deleteResult = getCollection().deleteMany(filter);
     return deleteResult.getDeletedCount() > 0;
 
   }
@@ -141,10 +134,11 @@ public class ApplicationOperationConfigurationRepositoryImpl
             new ArrayList<>(configuration.getOperationTypes())));
     Bson updateCombine = Updates.combine(updateList);
 
-    ServiceOperationCollection dao = mongoCollection.findOneAndUpdate(query, updateCombine,
-        new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER));
+    getCollection()
+        .findOneAndUpdate(query, updateCombine,
+            new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER));
 
-    return dao != null && StringUtils.isNotEmpty(dao.getId());
+    return true;
   }
 
   public List<ApplicationOperationConfiguration> queryByMultiCondition(
@@ -165,7 +159,7 @@ public class ApplicationOperationConfigurationRepositoryImpl
       return Collections.emptyList();
     }
 
-    try (MongoCursor<ServiceOperationCollection> cursor = mongoCollection.find(Filters.and(filters))
+    try (MongoCursor<ServiceOperationCollection> cursor = getCollection().find(Filters.and(filters))
         .iterator()) {
       while (cursor.hasNext()) {
         ServiceOperationCollection document = cursor.next();

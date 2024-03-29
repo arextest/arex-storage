@@ -19,12 +19,8 @@
       <groupId>jakarta.validation</groupId>
     </dependency>
     <dependency>
-      <artifactId>mongodb-driver-core</artifactId>
-      <groupId>org.mongodb</groupId>
-    </dependency>
-    <dependency>
-      <artifactId>mongodb-driver-sync</artifactId>
-      <groupId>org.mongodb</groupId>
+      <artifactId>spring-boot-starter-data-mongodb</artifactId>
+      <groupId>org.springframework.boot</groupId>
     </dependency>
     <dependency>
       <artifactId>commons-lang3</artifactId>

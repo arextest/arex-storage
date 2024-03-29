@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Set;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 /**
  * @author jmo

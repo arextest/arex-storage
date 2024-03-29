@@ -6,6 +6,7 @@ import com.arextest.config.model.dto.system.DesensitizationJar;
 import java.util.Map;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 /**
  * @author wildeslam.
@@ -13,6 +14,7 @@ import lombok.experimental.FieldNameConstants;
  */
 @Data
 @FieldNameConstants
+@Document(SystemConfigurationCollection.DOCUMENT_NAME)
 public class SystemConfigurationCollection extends BaseEntity {
 
   public static final String DOCUMENT_NAME = "SystemConfiguration";
