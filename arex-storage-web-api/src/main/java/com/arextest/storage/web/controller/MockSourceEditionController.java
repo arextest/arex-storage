@@ -7,6 +7,7 @@ import com.arextest.model.response.ResponseStatusType;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.service.PrepareMockResultService;
+import javax.validation.Valid;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -204,6 +205,18 @@ public class MockSourceEditionController {
           throwable);
       return ResponseUtils.exceptionResponse(throwable.getMessage());
     }
+  }
+
+  /**
+   * remove special mocker's by mockerId & index
+   */
+  @PostMapping("/remove/mocker/")
+  @ResponseBody
+  public Response removeMocker(@RequestHeader String srcProviderName,
+      @RequestBody @Valid RemoveMockerRequest request) {
+    return ResponseUtils.successResponse(
+        editableService.removeByMockerId(srcProviderName, request.getMockerId(),
+            request.getCategory(), request.getIndex()));
   }
 
   private Response checkRequiredParameters(String srcProviderName, AREXMocker body) {

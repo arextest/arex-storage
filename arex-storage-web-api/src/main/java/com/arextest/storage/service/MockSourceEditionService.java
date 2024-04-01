@@ -226,9 +226,48 @@ public class MockSourceEditionService {
     return updateCount > 0;
   }
 
+  public boolean removeByMockerId(String providerName, String categoryName, String mockerId,
+      Integer index) {
+    RepositoryProvider<?> repositoryProvider = providerFactory.findProvider(providerName);
+    if (repositoryProvider == null) {
+      LOGGER.warn("Could not found provider for {}", providerName);
+      return false;
+    }
+    MockCategoryType categoryType = providerFactory.findCategory(categoryName);
+
+    // if index is null, remove whole mocker
+    boolean needRemove = index == null;
+    if (needRemove) {
+      return repositoryProvider.removeById(categoryType, mockerId);
+    }
+
+    // handle merged record
+    Mocker mergedMocker = repositoryProvider.queryById(categoryType, mockerId);
+    try {
+      List<MergeRecordDTO> mergeRecordDTOS = new ArrayList<>(
+          JsonUtil.OBJECT_MAPPER.readValue(mergedMocker.getTargetResponse().getBody(),
+              new TypeReference<List<MergeRecordDTO>>() {
+              }));
+      mergeRecordDTOS.remove(index.intValue());
+      if (CollectionUtils.isEmpty(mergeRecordDTOS)) {
+        needRemove = true;
+      }
+      mergedMocker.getTargetResponse()
+          .setBody(JsonUtil.OBJECT_MAPPER.writeValueAsString(mergeRecordDTOS));
+    } catch (Exception e) {
+      LOGGER.error("parse merge record error:{}", e.getMessage(), e);
+    }
+    // remove mocker if no merge record, otherwise update it
+    if (needRemove) {
+      return repositoryProvider.removeById(categoryType, mockerId);
+    } else {
+      return update(providerName, mergedMocker);
+    }
+  }
+
   private List<Mocker> createTargetList(List<AREXMocker> srcMockers, String targetRecordId) {
     List<Mocker> targetList = null;
-    for (Mocker mocker: srcMockers) {
+    for (Mocker mocker : srcMockers) {
       if (targetList == null) {
         targetList = new LinkedList<>();
       }
