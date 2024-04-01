@@ -7,9 +7,9 @@ import com.arextest.config.repository.impl.DynamicClassConfigurationRepositoryIm
 import com.arextest.config.repository.impl.InstancesConfigurationRepositoryImpl;
 import com.arextest.config.repository.impl.ServiceCollectConfigurationRepositoryImpl;
 import com.arextest.config.repository.impl.SystemConfigurationRepositoryImpl;
-import com.mongodb.client.MongoDatabase;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 @Configuration(proxyBeanMethods = false)
 public class ConfigServiceAutoConfiguration {
@@ -17,43 +17,43 @@ public class ConfigServiceAutoConfiguration {
   // the bean about config to register
   @Bean
   public ApplicationConfigurationRepositoryImpl applicationConfigurationRepositoryImpl(
-      MongoDatabase mongoDatabase) {
-    return new ApplicationConfigurationRepositoryImpl(mongoDatabase);
+      MongoTemplate mongoTemplate) {
+    return new ApplicationConfigurationRepositoryImpl(mongoTemplate);
   }
 
   @Bean
   public ApplicationServiceConfigurationRepositoryImpl
-  applicationServiceConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
-    return new ApplicationServiceConfigurationRepositoryImpl(mongoDatabase);
+  applicationServiceConfigurationRepositoryImpl(MongoTemplate mongoTemplate) {
+    return new ApplicationServiceConfigurationRepositoryImpl(mongoTemplate);
   }
 
   @Bean
   public ApplicationOperationConfigurationRepositoryImpl
-  applicationOperationConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
-    return new ApplicationOperationConfigurationRepositoryImpl(mongoDatabase);
+  applicationOperationConfigurationRepositoryImpl(MongoTemplate mongoTemplate) {
+    return new ApplicationOperationConfigurationRepositoryImpl(mongoTemplate);
   }
 
   @Bean
   public InstancesConfigurationRepositoryImpl instancesConfigurationRepositoryImpl(
-      MongoDatabase mongoDatabase) {
-    return new InstancesConfigurationRepositoryImpl(mongoDatabase);
+      MongoTemplate mongoTemplate) {
+    return new InstancesConfigurationRepositoryImpl(mongoTemplate);
   }
 
   @Bean
   public ServiceCollectConfigurationRepositoryImpl
-  serviceCollectConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
-    return new ServiceCollectConfigurationRepositoryImpl(mongoDatabase);
+  serviceCollectConfigurationRepositoryImpl(MongoTemplate mongoTemplate) {
+    return new ServiceCollectConfigurationRepositoryImpl(mongoTemplate);
   }
 
   @Bean
   public DynamicClassConfigurationRepositoryImpl
-  dynamicClassConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
-    return new DynamicClassConfigurationRepositoryImpl(mongoDatabase);
+  dynamicClassConfigurationRepositoryImpl(MongoTemplate mongoTemplate) {
+    return new DynamicClassConfigurationRepositoryImpl(mongoTemplate);
   }
 
   @Bean
   public SystemConfigurationRepositoryImpl systemConfigurationRepositoryImpl(
-      MongoDatabase mongoDatabase) {
-    return new SystemConfigurationRepositoryImpl(mongoDatabase);
+      MongoTemplate mongoTemplate) {
+    return new SystemConfigurationRepositoryImpl(mongoTemplate);
   }
 }

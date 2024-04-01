@@ -18,9 +18,8 @@ import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.impl.mongo.AREXMockerMongoRepositoryProvider;
-import com.arextest.storage.repository.impl.mongo.AdditionalCodecProviderFactory;
+import com.arextest.storage.repository.impl.mongo.ArexMongoFactory;
 import com.arextest.storage.repository.impl.mongo.AutoPinedMockerRepository;
-import com.arextest.storage.repository.impl.mongo.MongoDbUtils;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.AgentWorkingListener;
 import com.arextest.storage.service.AgentWorkingService;
@@ -28,7 +27,6 @@ import com.arextest.storage.service.AutoDiscoveryEntryPointListener;
 import com.arextest.storage.service.InvalidIncompleteRecordService;
 import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.service.PrepareMockResultService;
-import com.arextest.storage.service.ScenePoolService;
 import com.arextest.storage.service.ScheduleReplayingService;
 import com.arextest.storage.service.mockerhandlers.MockerHandlerFactory;
 import com.arextest.storage.web.controller.MockSourceEditionController;
@@ -54,6 +52,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.data.mongodb.MongoDatabaseFactory;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties({StorageConfigurationProperties.class})
@@ -74,22 +74,25 @@ public class StorageAutoConfiguration {
   }
 
   @Bean
-  @ConditionalOnMissingBean(MongoDatabase.class)
-  public MongoDatabase mongoDatabase(
-      AdditionalCodecProviderFactory additionalCodecProviderFactory) {
-    MongoDatabase database = MongoDbUtils.create(properties.getMongodbUri(),
-        additionalCodecProviderFactory);
-    indexesSettingConfiguration.setIndexes(database);
-    syncAuthSwitch(database);
-    return database;
+  @ConditionalOnMissingBean
+  public MongoDatabaseFactory mongoDbFactory() {
+    try {
+      ArexMongoFactory factory = new ArexMongoFactory(properties.getMongodbUri());
+      MongoDatabase database = factory.getMongoDatabase();
+      indexesSettingConfiguration.setIndexes(database);
+      syncAuthSwitch(database);
+      return factory;
+    } catch (Exception e) {
+      LOGGER.error("cannot connect mongodb {}", e.getMessage(), e);
+      throw e;
+    }
   }
 
   @Bean
-  @ConditionalOnMissingBean(AdditionalCodecProviderFactory.class)
-  public AdditionalCodecProviderFactory additionalCodecProviderFactory() {
-    return new AdditionalCodecProviderFactory();
+  @ConditionalOnMissingBean
+  public MongoTemplate mongoTemplate(MongoDatabaseFactory mongoTemplateFactory) {
+    return new MongoTemplate(mongoTemplateFactory);
   }
-
 
   @Bean
   public Set<MockCategoryType> categoryTypes() {
@@ -141,14 +144,13 @@ public class StorageAutoConfiguration {
   @ConditionalOnMissingBean(AgentWorkingService.class)
   public AgentWorkingService agentWorkingService(MockResultProvider mockResultProvider,
       RepositoryProviderFactory repositoryProviderFactory,
-      MockerHandlerFactory mockerHandlerFactory,
-      ZstdJacksonSerializer zstdJacksonSerializer,
+      MockerHandlerFactory mockerHandlerFactory, ZstdJacksonSerializer zstdJacksonSerializer,
       PrepareMockResultService prepareMockResultService,
       List<AgentWorkingListener> agentWorkingListeners,
       InvalidIncompleteRecordService invalidIncompleteRecordService) {
-    AgentWorkingService workingService =
-        new AgentWorkingService(mockResultProvider, repositoryProviderFactory, mockerHandlerFactory,
-            agentWorkingListeners, invalidIncompleteRecordService);
+    AgentWorkingService workingService = new AgentWorkingService(mockResultProvider,
+        repositoryProviderFactory, mockerHandlerFactory, agentWorkingListeners,
+        invalidIncompleteRecordService);
     workingService.setPrepareMockResultService(prepareMockResultService);
     workingService.setZstdJacksonSerializer(zstdJacksonSerializer);
     workingService.setRecordEnvType(properties.getRecordEnv());
@@ -158,8 +160,7 @@ public class StorageAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean(AgentWorkingMetricService.class)
   public AgentWorkingMetricService agentWorkingMetricService(
-      AgentWorkingService agentWorkingService,
-      List<MetricListener> metricListeners) {
+      AgentWorkingService agentWorkingService, List<MetricListener> metricListeners) {
     return new AgentWorkingMetricService(agentWorkingService, metricListeners);
   }
 
@@ -177,7 +178,7 @@ public class StorageAutoConfiguration {
       PrepareMockResultService prepareMockResultService,
       InvalidIncompleteRecordService invalidIncompleteRecordService) {
     return new ScheduleReplayQueryController(scheduleReplayingService, prepareMockResultService,
-            invalidIncompleteRecordService);
+        invalidIncompleteRecordService);
   }
 
   @Bean
@@ -192,31 +193,30 @@ public class StorageAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean(MockSourceEditionController.class)
   public MockSourceEditionController mockSourceEditionController(
-      MockSourceEditionService editableService,
-      PrepareMockResultService storageCache) {
+      MockSourceEditionService editableService, PrepareMockResultService storageCache) {
     return new MockSourceEditionController(editableService, storageCache);
   }
 
   @Bean
   @Order(3)
-  public RepositoryProvider<AREXMocker> autoPinnedMockerProvider(MongoDatabase mongoDatabase,
+  public RepositoryProvider<AREXMocker> autoPinnedMockerProvider(MongoTemplate mongoTemplate,
       Set<MockCategoryType> entryPointTypes) {
-    return new AutoPinedMockerRepository(mongoDatabase, properties, entryPointTypes);
+    return new AutoPinedMockerRepository(mongoTemplate, properties, entryPointTypes);
   }
 
   @Bean
   @Order(2)
-  public RepositoryProvider<AREXMocker> pinnedMockerProvider(MongoDatabase mongoDatabase,
+  public RepositoryProvider<AREXMocker> pinnedMockerProvider(MongoTemplate mongoTemplate,
       Set<MockCategoryType> entryPointTypes) {
-    return new AREXMockerMongoRepositoryProvider(ProviderNames.PINNED, mongoDatabase, properties,
+    return new AREXMockerMongoRepositoryProvider(ProviderNames.PINNED, mongoTemplate, properties,
         entryPointTypes);
   }
 
   @Bean
   @Order(1)
-  public RepositoryProvider<AREXMocker> defaultMockerProvider(MongoDatabase mongoDatabase,
+  public RepositoryProvider<AREXMocker> defaultMockerProvider(MongoTemplate mongoTemplate,
       Set<MockCategoryType> entryPointTypes) {
-    return new AREXMockerMongoRepositoryProvider(mongoDatabase, properties, entryPointTypes);
+    return new AREXMockerMongoRepositoryProvider(mongoTemplate, properties, entryPointTypes);
   }
 
   private void syncAuthSwitch(MongoDatabase database) {
@@ -236,6 +236,5 @@ public class StorageAutoConfiguration {
     } catch (Exception e) {
       LOGGER.error("sync auth switch failed", e);
     }
-
   }
 }

@@ -1,21 +1,21 @@
 package com.arextest.config.repository.impl;
 
 import com.arextest.config.mapper.SystemConfigurationMapper;
+import com.arextest.config.model.dao.config.RecordServiceConfigCollection;
 import com.arextest.config.model.dao.config.SystemConfigurationCollection;
 import com.arextest.config.model.dto.system.SystemConfiguration;
 import com.arextest.config.repository.SystemConfigurationRepository;
 import com.arextest.config.utils.MongoHelper;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
-import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import javax.annotation.PostConstruct;
 import org.bson.conversions.Bson;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 /**
  * @author wildeslam.
@@ -24,16 +24,15 @@ import org.bson.conversions.Bson;
 public class SystemConfigurationRepositoryImpl implements SystemConfigurationRepository {
 
   MongoCollection<SystemConfigurationCollection> mongoCollection;
-  private MongoDatabase mongoDatabase;
+  private final MongoTemplate mongoTemplate;
 
-  public SystemConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
-    this.mongoDatabase = mongoDatabase;
+  public SystemConfigurationRepositoryImpl(MongoTemplate mongoTemplate) {
+    this.mongoTemplate = mongoTemplate;
   }
 
-  @PostConstruct
-  public void init() {
-    this.mongoCollection = mongoDatabase.getCollection(SystemConfigurationCollection.DOCUMENT_NAME,
-        SystemConfigurationCollection.class);
+  public MongoCollection<SystemConfigurationCollection> getCollection() {
+    return this.mongoTemplate.getMongoDatabaseFactory().getMongoDatabase()
+        .getCollection(SystemConfigurationCollection.DOCUMENT_NAME, SystemConfigurationCollection.class);
   }
 
   @Override

@@ -9,7 +9,6 @@ import com.arextest.config.repository.MultiEnvConfigRepositoryProvider;
 import com.arextest.config.utils.MongoHelper;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
-import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
@@ -21,24 +20,21 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.annotation.PostConstruct;
 import org.bson.conversions.Bson;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 public class ServiceCollectConfigurationRepositoryImpl
     implements MultiEnvConfigRepositoryProvider<ServiceCollectConfiguration> {
 
-  private MongoDatabase mongoDatabase;
+  private final MongoTemplate mongoTemplate;
 
-  private MongoCollection<RecordServiceConfigCollection> mongoCollection;
-
-  public ServiceCollectConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
-    this.mongoDatabase = mongoDatabase;
+  public ServiceCollectConfigurationRepositoryImpl(MongoTemplate mongoTemplate) {
+    this.mongoTemplate = mongoTemplate;
   }
 
-  @PostConstruct
-  public void init() {
-    this.mongoCollection = mongoDatabase.getCollection(RecordServiceConfigCollection.DOCUMENT_NAME,
-        RecordServiceConfigCollection.class);
+  public MongoCollection<RecordServiceConfigCollection> getCollection() {
+    return mongoTemplate.getMongoDatabaseFactory().getMongoDatabase()
+        .getCollection(RecordServiceConfigCollection.DOCUMENT_NAME, RecordServiceConfigCollection.class);
   }
 
   @Override
@@ -51,7 +47,7 @@ public class ServiceCollectConfigurationRepositoryImpl
 
     Bson filter = Filters.eq(RecordServiceConfigCollection.Fields.appId, appId);
     List<ServiceCollectConfiguration> recordServiceConfigs = new ArrayList<>();
-    try (MongoCursor<RecordServiceConfigCollection> cursor = mongoCollection.find(filter)
+    try (MongoCursor<RecordServiceConfigCollection> cursor = getCollection().find(filter)
         .iterator()) {
       while (cursor.hasNext()) {
         RecordServiceConfigCollection document = cursor.next();
@@ -85,7 +81,7 @@ public class ServiceCollectConfigurationRepositoryImpl
     );
     Bson updateCombine = Updates.combine(updateList);
 
-    UpdateResult updateResult = mongoCollection.updateMany(filter, updateCombine);
+    UpdateResult updateResult = getCollection().updateMany(filter, updateCombine);
     return updateResult.getModifiedCount() > 0;
 
   }
@@ -93,7 +89,7 @@ public class ServiceCollectConfigurationRepositoryImpl
   @Override
   public boolean remove(ServiceCollectConfiguration configuration) {
     Bson filter = Filters.eq(RecordServiceConfigCollection.Fields.appId, configuration.getAppId());
-    DeleteResult deleteResult = mongoCollection.deleteMany(filter);
+    DeleteResult deleteResult = getCollection().deleteMany(filter);
     return deleteResult.getDeletedCount() > 0;
   }
 
@@ -101,14 +97,14 @@ public class ServiceCollectConfigurationRepositoryImpl
   public boolean insert(ServiceCollectConfiguration configuration) {
     RecordServiceConfigCollection recordServiceConfigCollection =
         RecordServiceConfigMapper.INSTANCE.daoFromDto(configuration);
-    InsertOneResult insertOneResult = mongoCollection.insertOne(recordServiceConfigCollection);
+    InsertOneResult insertOneResult = getCollection().insertOne(recordServiceConfigCollection);
     return insertOneResult.getInsertedId() != null;
   }
 
   @Override
   public boolean removeByAppId(String appId) {
     Bson filter = Filters.eq(RecordServiceConfigCollection.Fields.appId, appId);
-    DeleteResult deleteResult = mongoCollection.deleteMany(filter);
+    DeleteResult deleteResult = getCollection().deleteMany(filter);
     return deleteResult.getDeletedCount() > 0;
   }
 
@@ -125,6 +121,6 @@ public class ServiceCollectConfigurationRepositoryImpl
         Updates.set(MultiEnvBaseEntity.Fields.multiEnvConfigs, configs),
         Updates.set(BaseEntity.Fields.dataChangeUpdateTime, System.currentTimeMillis())
     );
-    return mongoCollection.updateOne(filter, update).getModifiedCount() > 0;
+    return getCollection().updateOne(filter, update).getModifiedCount() > 0;
   }
 }
