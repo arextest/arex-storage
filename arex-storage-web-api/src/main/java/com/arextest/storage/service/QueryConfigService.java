@@ -51,7 +51,7 @@ public class QueryConfigService {
     queryConfigOfCategoryRequest.setEntryPoint(mocker.getCategoryType().isEntryPoint());
     queryConfigOfCategoryRequest.setOperationName(operationName);
     QueryConfigOfCategoryResponse queryConfigOfCategoryResponse =
-        httpWebServiceApiClient.jsonPost(true, queryConfigOfCategoryUrl,
+        httpWebServiceApiClient.jsonPost(queryConfigOfCategoryUrl,
             queryConfigOfCategoryRequest, QueryConfigOfCategoryResponse.class);
     if (queryConfigOfCategoryResponse != null && queryConfigOfCategoryResponse.getBody() != null) {
       putConfigCache(appId, categoryName, operationName, queryConfigOfCategoryResponse.getBody());
