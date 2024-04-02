@@ -1,27 +1,26 @@
 package com.arextest.storage.service;
 
+import static com.arextest.diff.utils.JacksonHelperUtil.objectMapper;
+
 import com.arextest.common.cache.CacheProvider;
-import com.arextest.config.model.vo.QueryConfigOfCategoryResponse.QueryConfigOfCategory;
 import com.arextest.config.model.vo.QueryConfigOfCategoryRequest;
 import com.arextest.config.model.vo.QueryConfigOfCategoryResponse;
+import com.arextest.config.model.vo.QueryConfigOfCategoryResponse.QueryConfigOfCategory;
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.cache.CacheKeyUtils;
 import com.arextest.storage.client.HttpWebServiceApiClient;
+import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
-
-import static com.arextest.diff.utils.JacksonHelperUtil.objectMapper;
-
 /**
- * query config service
- * created by xinyuan_wang on 2023/11/5
+ * query config service created by xinyuan_wang on 2023/11/5
  */
 @Service
 @Slf4j
 public class QueryConfigService {
+
   private static final String CONFIG_PREFIX = "config_";
   @Value("${arex.query.config.url}")
   private String queryConfigOfCategoryUrl;
@@ -52,7 +51,8 @@ public class QueryConfigService {
     queryConfigOfCategoryRequest.setEntryPoint(mocker.getCategoryType().isEntryPoint());
     queryConfigOfCategoryRequest.setOperationName(operationName);
     QueryConfigOfCategoryResponse queryConfigOfCategoryResponse =
-            httpWebServiceApiClient.jsonPost(queryConfigOfCategoryUrl, queryConfigOfCategoryRequest, QueryConfigOfCategoryResponse.class);
+        httpWebServiceApiClient.jsonPost(true, queryConfigOfCategoryUrl,
+            queryConfigOfCategoryRequest, QueryConfigOfCategoryResponse.class);
     if (queryConfigOfCategoryResponse != null && queryConfigOfCategoryResponse.getBody() != null) {
       putConfigCache(appId, categoryName, operationName, queryConfigOfCategoryResponse.getBody());
       return queryConfigOfCategoryResponse.getBody();
@@ -73,7 +73,8 @@ public class QueryConfigService {
     }
   }
 
-  public QueryConfigOfCategory getConfigCache(String appId, String categoryName, String operationName) {
+  public QueryConfigOfCategory getConfigCache(String appId, String categoryName,
+      String operationName) {
     try {
       byte[] key = CacheKeyUtils.toUtf8Bytes(CONFIG_PREFIX + appId + categoryName + operationName);
       byte[] values = redisCacheProvider.get(key);

@@ -9,6 +9,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -16,6 +17,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -25,6 +27,7 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.http.converter.support.AllEncompassingFormHttpMessageConverter;
 import org.springframework.http.converter.xml.SourceHttpMessageConverter;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -39,8 +42,12 @@ public final class HttpWebServiceApiClient {
 
   private final static int TEN_SECONDS_TIMEOUT = 10_000;
   private RestTemplate restTemplate;
+  private RestTemplate outerRestTemplate;
   @Resource
   private ObjectMapper objectMapper;
+
+  @Autowired(required = false)
+  private List<ClientHttpRequestInterceptor> clientHttpRequestInterceptors;
 
   @PostConstruct
   private void initRestTemplate() {
@@ -60,8 +67,17 @@ public final class HttpWebServiceApiClient {
     httpMessageConverterList.add(converter);
     this.restTemplate = new RestTemplate(httpMessageConverterList);
     this.restTemplate.setRequestFactory(requestFactory);
+    if (!CollectionUtils.isEmpty(clientHttpRequestInterceptors)) {
+      this.restTemplate.setInterceptors(clientHttpRequestInterceptors);
+    }
+
+    // set outer restTemplate
+    this.outerRestTemplate = new RestTemplate(httpMessageConverterList);
+    this.outerRestTemplate.setRequestFactory(requestFactory);
   }
 
+  // region: old logic
+  @Deprecated
   public <TResponse> TResponse get(String url, Map<String, ?> urlVariables,
       Class<TResponse> responseType) {
     try {
@@ -74,6 +90,7 @@ public final class HttpWebServiceApiClient {
     return null;
   }
 
+  @Deprecated
   public <TResponse> ResponseEntity<TResponse> get(String url, Map<String, ?> urlVariables,
       ParameterizedTypeReference<TResponse> responseType) {
     try {
@@ -86,6 +103,7 @@ public final class HttpWebServiceApiClient {
     return null;
   }
 
+  @Deprecated
   public <TResponse> TResponse get(String url, Map<String, ?> urlVariables,
       MultiValueMap<String, String> headers, Class<TResponse> responseType) {
     try {
@@ -101,6 +119,7 @@ public final class HttpWebServiceApiClient {
     return null;
   }
 
+  @Deprecated
   public <TRequest, TResponse> TResponse jsonPost(String url, TRequest request,
       Class<TResponse> responseType) {
     try {
@@ -116,10 +135,107 @@ public final class HttpWebServiceApiClient {
     return null;
   }
 
-  public <TRequest, TResponse> ResponseEntity<TResponse> responsePost(String url, TRequest request,
+  @Deprecated
+  public <TRequest, TResponse> ResponseEntity<TResponse> responsePost(String url,
+      TRequest request,
       Class<TResponse> responseType, HttpHeaders headerValue) {
     try {
       return restTemplate.postForEntity(url, wrapJsonContentTypeWithHeader(request, headerValue),
+          responseType);
+    } catch (Throwable throwable) {
+      try {
+        LOGGER.error("http post url: {} ,error: {} ,request: {}", url, throwable.getMessage(),
+            objectMapper.writeValueAsString(request), throwable);
+      } catch (JsonProcessingException e) {
+        LOGGER.error(e.getMessage(), e);
+      }
+    }
+    return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+  }
+
+  @Deprecated
+  public <TResponse> ResponseEntity<TResponse> exchange(String url,
+      HttpMethod method,
+      HttpEntity<?> requestEntity,
+      Class<TResponse> responseType) throws RestClientException {
+    return restTemplate.exchange(url, method, requestEntity, responseType);
+  }
+
+  @Deprecated
+  public <TRequest, TResponse> ResponseEntity<TResponse> jsonPostWithThrow(
+      String url,
+      HttpEntity<TRequest> request,
+      Class<TResponse> responseType) throws RestClientException {
+    return restTemplate.postForEntity(url, wrapJsonContentType(request), responseType);
+  }
+  // endregion
+
+
+  public <TResponse> TResponse get(boolean inner, String url, Map<String, ?> urlVariables,
+      Class<TResponse> responseType) {
+    try {
+      RestTemplate template = inner ? this.restTemplate : this.outerRestTemplate;
+      return template.getForObject(url, responseType, urlVariables);
+    } catch (Throwable throwable) {
+      LOGGER.error("http get url: {} ,error: {} , urlVariables: {}", url, throwable.getMessage(),
+          urlVariables,
+          throwable);
+    }
+    return null;
+  }
+
+  public <TResponse> ResponseEntity<TResponse> get(boolean inner, String url,
+      Map<String, ?> urlVariables,
+      ParameterizedTypeReference<TResponse> responseType) {
+    try {
+      RestTemplate template = inner ? this.restTemplate : this.outerRestTemplate;
+      return template.exchange(url, HttpMethod.GET, null, responseType, urlVariables);
+    } catch (Throwable throwable) {
+      LOGGER.error("http get url: {} ,error: {} , urlVariables: {}", url, throwable.getMessage(),
+          urlVariables,
+          throwable);
+    }
+    return null;
+  }
+
+  public <TResponse> TResponse get(boolean inner, String url, Map<String, ?> urlVariables,
+      MultiValueMap<String, String> headers, Class<TResponse> responseType) {
+    try {
+      HttpEntity<?> request = new HttpEntity<>(headers);
+      RestTemplate template = inner ? this.restTemplate : this.outerRestTemplate;
+      return template.exchange(url, HttpMethod.GET, request, responseType, urlVariables)
+          .getBody();
+    } catch (Throwable throwable) {
+      LOGGER.error("http get url: {} ,error: {} , urlVariables: {} ,headers: {}", url,
+          throwable.getMessage(),
+          urlVariables, headers,
+          throwable);
+    }
+    return null;
+  }
+
+  public <TRequest, TResponse> TResponse jsonPost(boolean inner, String url, TRequest request,
+      Class<TResponse> responseType) {
+    try {
+      RestTemplate template = inner ? this.restTemplate : this.outerRestTemplate;
+      return template.postForObject(url, wrapJsonContentType(request), responseType);
+    } catch (Throwable throwable) {
+      try {
+        LOGGER.error("http post url: {} ,error: {} ,request: {}", url, throwable.getMessage(),
+            objectMapper.writeValueAsString(request), throwable);
+      } catch (JsonProcessingException e) {
+        LOGGER.error(e.getMessage(), e);
+      }
+    }
+    return null;
+  }
+
+  public <TRequest, TResponse> ResponseEntity<TResponse> responsePost(boolean inner, String url,
+      TRequest request,
+      Class<TResponse> responseType, HttpHeaders headerValue) {
+    try {
+      RestTemplate template = inner ? this.restTemplate : this.outerRestTemplate;
+      return template.postForEntity(url, wrapJsonContentTypeWithHeader(request, headerValue),
           responseType);
     } catch (Throwable throwable) {
       try {
@@ -156,16 +272,19 @@ public final class HttpWebServiceApiClient {
     return httpJsonEntity;
   }
 
-  public <TResponse> ResponseEntity<TResponse> exchange(String url, HttpMethod method,
+  public <TResponse> ResponseEntity<TResponse> exchange(boolean inner, String url,
+      HttpMethod method,
       HttpEntity<?> requestEntity,
       Class<TResponse> responseType) throws RestClientException {
-    return restTemplate.exchange(url, method, requestEntity, responseType);
+    RestTemplate template = inner ? this.restTemplate : this.outerRestTemplate;
+    return template.exchange(url, method, requestEntity, responseType);
   }
 
-  public <TRequest, TResponse> ResponseEntity<TResponse> jsonPostWithThrow(String url,
+  public <TRequest, TResponse> ResponseEntity<TResponse> jsonPostWithThrow(boolean inner,
+      String url,
       HttpEntity<TRequest> request,
       Class<TResponse> responseType) throws RestClientException {
-    return restTemplate.postForEntity(url, wrapJsonContentType(request), responseType);
-
+    RestTemplate template = inner ? this.restTemplate : this.outerRestTemplate;
+    return template.postForEntity(url, wrapJsonContentType(request), responseType);
   }
 }
