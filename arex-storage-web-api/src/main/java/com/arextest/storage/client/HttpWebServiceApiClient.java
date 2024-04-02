@@ -38,6 +38,7 @@ import org.springframework.web.client.RestTemplate;
  */
 @Component
 @Slf4j
+@SuppressWarnings({"java:S1192","java:S1123","java:S119","java:S1181"})
 public final class HttpWebServiceApiClient {
 
   private final static int TEN_SECONDS_TIMEOUT = 10_000;
