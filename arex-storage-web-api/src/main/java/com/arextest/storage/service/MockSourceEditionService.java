@@ -254,6 +254,7 @@ public class MockSourceEditionService {
       }
       mergedMocker.getTargetResponse()
           .setBody(JsonUtil.OBJECT_MAPPER.writeValueAsString(mergeRecordDTOS));
+      mergedMocker.setCategoryType(categoryType);
     } catch (Exception e) {
       LOGGER.error("parse merge record error:{}", e.getMessage(), e);
     }

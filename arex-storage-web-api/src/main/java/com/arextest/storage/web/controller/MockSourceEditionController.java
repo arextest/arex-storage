@@ -215,8 +215,8 @@ public class MockSourceEditionController {
   public Response removeMocker(@RequestHeader String srcProviderName,
       @RequestBody @Valid RemoveMockerRequest request) {
     return ResponseUtils.successResponse(
-        editableService.removeByMockerId(srcProviderName, request.getMockerId(),
-            request.getCategory(), request.getIndex()));
+        editableService.removeByMockerId(srcProviderName, request.getCategory(),
+            request.getMockerId(), request.getIndex()));
   }
 
   private Response checkRequiredParameters(String srcProviderName, AREXMocker body) {
