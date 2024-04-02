@@ -1,13 +1,14 @@
 package com.arextest.storage.beans;
 
+import com.alibaba.ttl.threadpool.TtlExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.ThreadPoolExecutor.AbortPolicy;
+import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy;
 import java.util.concurrent.ThreadPoolExecutor.DiscardPolicy;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
@@ -20,18 +21,31 @@ public class ExecutorsConfiguration implements Thread.UncaughtExceptionHandler {
 
   @Bean
   public ScheduledExecutorService coverageHandleDelayedPool() {
-    return new ScheduledThreadPoolExecutor(4,
+    ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(4,
         createThreadFac("coverage-handler-%d"),
         new DiscardPolicy());
+    return TtlExecutors.getTtlScheduledExecutorService(executor);
   }
 
   @Bean
-  public ThreadPoolExecutor envUpdateHandlerExecutor() {
-    return new ThreadPoolExecutor(1, 4,
+  public ExecutorService envUpdateHandlerExecutor() {
+    ExecutorService executor = new ThreadPoolExecutor(1, 4,
         1000, TimeUnit.MILLISECONDS,
         new LinkedBlockingQueue<>(200),
         createThreadFac("envUpdate-handler-%d"),
         new ThreadPoolExecutor.AbortPolicy());
+    return TtlExecutors.getTtlExecutorService(executor);
+  }
+
+  @Bean(name = "custom-fork-join-executor")
+  public ExecutorService customForkJoinExecutor() {
+    int parallelism = Runtime.getRuntime().availableProcessors();
+    ExecutorService executorService = new ThreadPoolExecutor(parallelism, parallelism,
+        60, TimeUnit.SECONDS,
+        new LinkedBlockingQueue<>(1000),
+        createThreadFac("forkJoin-handler-%d"),
+        new CallerRunsPolicy());
+    return TtlExecutors.getTtlExecutorService(executorService);
   }
 
   private ThreadFactory createThreadFac(String namePattern) {

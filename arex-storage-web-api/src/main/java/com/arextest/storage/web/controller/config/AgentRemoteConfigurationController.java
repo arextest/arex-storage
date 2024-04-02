@@ -28,8 +28,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -76,7 +76,7 @@ public final class AgentRemoteConfigurationController {
   @Resource
   private ApplicationConfigurableHandler applicationConfigurableHandler;
   @Resource
-  private ThreadPoolExecutor envUpdateHandlerExecutor;
+  private ExecutorService envUpdateHandlerExecutor;
   @Resource
   private ObjectMapper objectMapper;
 
