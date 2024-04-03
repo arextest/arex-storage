@@ -18,6 +18,7 @@ import com.arextest.storage.trace.MDCTracer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -49,6 +50,10 @@ public class AgentRecordingController {
   private AgentWorkingMetricService agentWorkingMetricService;
   @Resource
   private ZstdJacksonSerializer zstdJacksonSerializer;
+
+  @Resource(name = "custom-fork-join-executor")
+  private Executor customForkJoinExecutor;
+
   /**
    * from agent query,means to save the request and try to find a record item as mock result for
    * return.
@@ -141,12 +146,14 @@ public class AgentRecordingController {
     return saveTest(arexMocker(MockCategoryType.create(category)));
   }
 
-  @PostMapping(value = {"/invalidCase", "/invalidIncompleteRecord"}, produces = {MediaType.APPLICATION_JSON_VALUE})
+  @PostMapping(value = {"/invalidCase", "/invalidIncompleteRecord"}, produces = {
+      MediaType.APPLICATION_JSON_VALUE})
   @ResponseBody
   public Response invalidIncompleteRecord(@RequestBody InvalidIncompleteRecordRequest requestType) {
     try {
       if (StringUtils.isEmpty(requestType.getRecordId())) {
-        LOGGER.warn("[[title=invalidIncompleteRecord]]agent invalid case recordId empty, {}", requestType);
+        LOGGER.warn("[[title=invalidIncompleteRecord]]agent invalid case recordId empty, {}",
+            requestType);
         return ResponseUtils.emptyRecordIdResponse();
       }
 
@@ -154,15 +161,20 @@ public class AgentRecordingController {
       MDCTracer.addReplayId(requestType.getReplayId());
       LOGGER.info("[[title=invalidIncompleteRecord]]agent invalid case, request:{}", requestType);
 
-      CompletableFuture.runAsync(() -> agentWorkingMetricService.invalidIncompleteRecord(requestType));
+      CompletableFuture.runAsync(
+          () -> agentWorkingMetricService.invalidIncompleteRecord(requestType),
+          customForkJoinExecutor
+      );
       return ResponseUtils.successResponse(true);
     } catch (Throwable throwable) {
-      LOGGER.error("[[title=invalidIncompleteRecord]] invalidCase error:{}", throwable.getMessage());
+      LOGGER.error("[[title=invalidIncompleteRecord]] invalidCase error:{}",
+          throwable.getMessage());
       return ResponseUtils.exceptionResponse(throwable.getMessage());
     } finally {
-        MDCTracer.clear();
+      MDCTracer.clear();
     }
   }
+
   private AREXMocker arexMocker(MockCategoryType categoryType) {
     AREXMocker mocker = new AREXMocker(categoryType);
     mocker.setOperationName("hello");

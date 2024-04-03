@@ -18,6 +18,8 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +47,9 @@ public class IndexesSettingConfiguration {
 
   @Resource
   private CacheProvider cacheProvider;
+
+  @Resource(name = "custom-fork-join-executor")
+  private ExecutorService customForkJoinExecutor;
 
   public void setIndexes(MongoDatabase mongoDatabase) {
     Runnable runnable = () -> {
@@ -83,8 +88,7 @@ public class IndexesSettingConfiguration {
         LOGGER.error("set indexes failed", e);
       }
     };
-    Thread thread = new Thread(runnable);
-    thread.start();
+    CompletableFuture.runAsync(runnable, customForkJoinExecutor);
   }
 
   private void ensureMockerQueryIndex(MongoDatabase database) {
