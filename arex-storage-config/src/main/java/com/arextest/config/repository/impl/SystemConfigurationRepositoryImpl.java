@@ -14,60 +14,51 @@ import com.mongodb.client.model.Updates;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import org.bson.conversions.Bson;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 /**
  * @author wildeslam.
  * @create 2024/2/21 19:58
  */
+@RequiredArgsConstructor
 public class SystemConfigurationRepositoryImpl implements SystemConfigurationRepository {
-
-  MongoCollection<SystemConfigurationCollection> mongoCollection;
   private final MongoTemplate mongoTemplate;
-
-  public SystemConfigurationRepositoryImpl(MongoTemplate mongoTemplate) {
-    this.mongoTemplate = mongoTemplate;
-  }
-
-  public MongoCollection<SystemConfigurationCollection> getCollection() {
-    return this.mongoTemplate.getMongoDatabaseFactory().getMongoDatabase()
-        .getCollection(SystemConfigurationCollection.DOCUMENT_NAME, SystemConfigurationCollection.class);
-  }
 
   @Override
   public boolean saveConfig(SystemConfiguration systemConfig) {
-    Bson filter = Filters.eq(SystemConfigurationCollection.Fields.key, systemConfig.getKey());
-    List<Bson> updateList = Arrays.asList(MongoHelper.getUpdate(),
-        MongoHelper.getFullProperties(systemConfig));
-    Bson updateCombine = Updates.combine(updateList);
-    return mongoCollection.updateOne(filter, updateCombine, new UpdateOptions().upsert(true))
+    Query filter = new Query(Criteria.where(SystemConfigurationCollection.Fields.key)
+        .is(systemConfig.getKey()));
+    Update update = MongoHelper.getFullTemplateUpdates(systemConfig);
+    MongoHelper.withMongoTemplateBaseUpdate(update);
+    return mongoTemplate.upsert(filter, update, SystemConfigurationCollection.class)
         .getModifiedCount() > 0;
   }
 
   @Override
   public List<SystemConfiguration> getAllSystemConfigList() {
-    List<SystemConfiguration> systemConfigurations = new ArrayList<>();
-    try (MongoCursor<SystemConfigurationCollection> cursor = mongoCollection.find().iterator()) {
-      while (cursor.hasNext()) {
-        SystemConfigurationCollection document = cursor.next();
-        SystemConfiguration dto = SystemConfigurationMapper.INSTANCE.dtoFromDao(document);
-        systemConfigurations.add(dto);
-      }
-    }
-    return systemConfigurations;
+    return mongoTemplate.findAll(SystemConfigurationCollection.class).stream()
+        .map(SystemConfigurationMapper.INSTANCE::dtoFromDao)
+        .collect(Collectors.toList());
   }
 
   @Override
   public SystemConfiguration getSystemConfigByKey(String key) {
-    Bson filter = Filters.eq(SystemConfigurationCollection.Fields.key, key);
-    SystemConfigurationCollection collection =  mongoCollection.find(filter).first();
+    Query filter = new Query(Criteria.where(SystemConfigurationCollection.Fields.key).is(key));
+    SystemConfigurationCollection collection =  mongoTemplate.findOne(filter, SystemConfigurationCollection.class);
     return collection == null ? null : SystemConfigurationMapper.INSTANCE.dtoFromDao(collection);
   }
 
   @Override
   public boolean deleteConfig(String key) {
-    Bson filter = Filters.eq(SystemConfigurationCollection.Fields.key, key);
-    return mongoCollection.deleteOne(filter).getDeletedCount() > 0;
+    Query filter = new Query(Criteria.where(SystemConfigurationCollection.Fields.key).is(key));
+    return mongoTemplate.remove(filter, SystemConfigurationCollection.class).getDeletedCount() > 0;
   }
 }

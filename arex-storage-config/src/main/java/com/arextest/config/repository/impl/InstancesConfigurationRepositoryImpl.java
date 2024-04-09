@@ -3,6 +3,7 @@ package com.arextest.config.repository.impl;
 import com.arextest.config.mapper.InstancesMapper;
 import com.arextest.config.model.dao.config.DynamicClassCollection;
 import com.arextest.config.model.dao.config.InstancesCollection;
+import com.arextest.config.model.dao.config.ServiceCollection;
 import com.arextest.config.model.dto.application.InstancesConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
 import com.arextest.config.utils.MongoHelper;
@@ -19,23 +20,21 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
+@RequiredArgsConstructor
 public class InstancesConfigurationRepositoryImpl implements
     ConfigRepositoryProvider<InstancesConfiguration> {
 
   private final MongoTemplate mongoTemplate;
-
-  public InstancesConfigurationRepositoryImpl(MongoTemplate mongoTemplate) {
-    this.mongoTemplate = mongoTemplate;
-  }
-
-  public MongoCollection<InstancesCollection> getCollection() {
-    return mongoTemplate.getMongoDatabaseFactory().getMongoDatabase()
-        .getCollection(InstancesCollection.DOCUMENT_NAME, InstancesCollection.class);
-  }
 
   @Override
   public List<InstancesConfiguration> list() {
@@ -44,81 +43,57 @@ public class InstancesConfigurationRepositoryImpl implements
 
   @Override
   public List<InstancesConfiguration> listBy(String appId) {
-    Bson filter = Filters.eq(DynamicClassCollection.Fields.appId, appId);
-    List<InstancesConfiguration> dtos = new ArrayList<>();
-    try (MongoCursor<InstancesCollection> cursor = getCollection().find(filter).iterator()) {
-      while (cursor.hasNext()) {
-        InstancesCollection document = cursor.next();
-        InstancesConfiguration dto = InstancesMapper.INSTANCE.dtoFromDao(document);
-        dtos.add(dto);
-      }
-    }
-    return dtos;
+    Query filter = new Query(Criteria.where(InstancesCollection.Fields.appId).is(appId));
+    return mongoTemplate.find(filter, InstancesCollection.class)
+        .stream().map(InstancesMapper.INSTANCE::dtoFromDao)
+        .collect(Collectors.toList());
   }
 
   public List<InstancesConfiguration> listByAppOrdered(String appId) {
-    Bson filter = Filters.eq(InstancesCollection.Fields.appId, appId);
-    Bson sort = Sorts.ascending(DASH_ID);
-    List<InstancesConfiguration> instancesDTOList = new ArrayList<>();
-    try (MongoCursor<InstancesCollection> cursor = getCollection().find(filter).sort(sort).iterator()) {
-      while (cursor.hasNext()) {
-        InstancesCollection document = cursor.next();
-        InstancesConfiguration dto = InstancesMapper.INSTANCE.dtoFromDao(document);
-        instancesDTOList.add(dto);
-      }
-    }
-    return instancesDTOList;
+    Query filter = new Query(Criteria.where(InstancesCollection.Fields.appId).is(appId));
+    filter.with(Sort.by(Sort.Direction.DESC, DASH_ID));
+    return mongoTemplate.find(filter, InstancesCollection.class)
+        .stream().map(InstancesMapper.INSTANCE::dtoFromDao)
+        .collect(Collectors.toList());
   }
 
   @Override
   public boolean update(InstancesConfiguration configuration) {
-    Bson filter = Filters.and(
-        Filters.eq(InstancesCollection.Fields.appId, configuration.getAppId()),
-        Filters.eq(InstancesCollection.Fields.host, configuration.getHost()));
-
-    List<Bson> updateList = Arrays.asList(MongoHelper.getUpdate(),
-        MongoHelper.getFullProperties(configuration),
-        Updates.set(InstancesCollection.Fields.dataUpdateTime, new Date()));
-    Bson updateCombine = Updates.combine(updateList);
-
-    FindOneAndUpdateOptions options =
-        new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER).upsert(true);
-    InstancesCollection result = (InstancesCollection) getCollection().findOneAndUpdate(filter, updateCombine, options);
-    return result != null;
+    Query filter = new Query(Criteria
+        .where(InstancesCollection.Fields.appId).is(configuration.getAppId())
+        .and(InstancesCollection.Fields.host).is(configuration.getHost()));
+    Update update = MongoHelper.getMongoTemplateUpdates(configuration);
+    MongoHelper.withMongoTemplateBaseUpdate(update);
+    update.set(InstancesCollection.Fields.dataUpdateTime, new Date());
+    return mongoTemplate.updateFirst(filter, update, InstancesCollection.class)
+        .getModifiedCount() > 0;
   }
 
   @Override
   public boolean remove(InstancesConfiguration configuration) {
-    Bson filter = Filters.eq(DASH_ID, new ObjectId(configuration.getId()));
-    DeleteResult deleteResult = getCollection().deleteMany(filter);
-    return deleteResult.getDeletedCount() > 0;
+    return mongoTemplate.remove(configuration).getDeletedCount() > 0;
   }
 
   @Override
   public boolean insert(InstancesConfiguration configuration) {
     configuration.setDataUpdateTime(new Date());
     InstancesCollection instancesCollection = InstancesMapper.INSTANCE.daoFromDto(configuration);
-    InsertOneResult insertOneResult = getCollection().insertOne(instancesCollection);
-    if (insertOneResult.getInsertedId() != null) {
+    mongoTemplate.insert(instancesCollection);
+    if (configuration.getId() != null) {
       configuration.setId(instancesCollection.getId());
     }
-    return insertOneResult.getInsertedId() != null;
-
+    return configuration.getId() != null;
   }
 
   @Override
   public boolean removeByAppId(String appId) {
-
-    Bson filter = Filters.eq(InstancesCollection.Fields.appId, appId);
-    DeleteResult deleteResult = getCollection().deleteMany(filter);
-    return deleteResult.getDeletedCount() > 0;
+    Query filter = new Query(Criteria.where(InstancesCollection.Fields.appId).is(appId));
+    return mongoTemplate.remove(filter, InstancesCollection.class).getDeletedCount() > 0;
   }
 
   public boolean removeByAppIdAndHost(String appId, String host) {
-    Bson filterCombine = Filters.and(Filters.eq(InstancesCollection.Fields.appId, appId),
-        Filters.eq(InstancesCollection.Fields.host, host));
-    DeleteResult remove = getCollection().deleteMany(filterCombine);
-    return remove.getDeletedCount() > 0;
+    Query filter = new Query(Criteria.where(InstancesCollection.Fields.appId).is(appId)
+        .and(InstancesCollection.Fields.host).is(host));
+    return mongoTemplate.remove(filter, InstancesCollection.class).getDeletedCount() > 0;
   }
-
 }

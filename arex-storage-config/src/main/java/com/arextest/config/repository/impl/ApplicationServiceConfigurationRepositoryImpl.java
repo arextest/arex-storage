@@ -5,35 +5,20 @@ import com.arextest.config.model.dao.config.ServiceCollection;
 import com.arextest.config.model.dto.application.ApplicationServiceConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
 import com.arextest.config.utils.MongoHelper;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoCursor;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Updates;
-import com.mongodb.client.result.DeleteResult;
-import com.mongodb.client.result.InsertOneResult;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import javax.annotation.Resource;
-import org.bson.conversions.Bson;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
+@RequiredArgsConstructor
 public class ApplicationServiceConfigurationRepositoryImpl
     implements ConfigRepositoryProvider<ApplicationServiceConfiguration> {
+
   private final MongoTemplate mongoTemplate;
-
-  @Resource
-  private ApplicationOperationConfigurationRepositoryImpl applicationOperationConfigurationRepository;
-
-  public ApplicationServiceConfigurationRepositoryImpl(MongoTemplate mongoTemplate) {
-    this.mongoTemplate = mongoTemplate;
-  }
-
-  public MongoCollection<ServiceCollection> getCollection() {
-    return mongoTemplate.getMongoDatabaseFactory().getMongoDatabase()
-        .getCollection(ServiceCollection.DOCUMENT_NAME, ServiceCollection.class);
-  }
 
   @Override
   public List<ApplicationServiceConfiguration> list() {
@@ -42,60 +27,47 @@ public class ApplicationServiceConfigurationRepositoryImpl
 
   @Override
   public List<ApplicationServiceConfiguration> listBy(String appId) {
-
-    Bson filter = Filters.eq(ServiceCollection.Fields.appId, appId);
-    List<ApplicationServiceConfiguration> dtos = new ArrayList<>();
-    try (MongoCursor<ServiceCollection> cursor = getCollection().find(filter).iterator()) {
-      while (cursor.hasNext()) {
-        ServiceCollection document = cursor.next();
-        ApplicationServiceConfiguration dto = ServiceMapper.INSTANCE.dtoFromDao(document);
-        dto.setOperationList(
-            applicationOperationConfigurationRepository.operationBaseInfoList(dto.getId()));
-        dtos.add(dto);
-      }
-    }
-    return dtos;
+    Query filter = new Query(Criteria.where(ServiceCollection.Fields.appId).is(appId));
+    return mongoTemplate.find(filter, ServiceCollection.class)
+        .stream().map(ServiceMapper.INSTANCE::dtoFromDao)
+        .collect(Collectors.toList());
   }
 
   @Override
   public boolean update(ApplicationServiceConfiguration configuration) {
-    Bson filter = Filters.eq(DASH_ID, new ObjectId(configuration.getId()));
+    Query filter = new Query(Criteria.where(DASH_ID).is(new ObjectId(configuration.getId())));
 
-    List<Bson> updateList = Arrays.asList(MongoHelper.getUpdate(),
-        Updates.set(ServiceCollection.Fields.status, configuration.getStatus()));
-    Bson updateCombine = Updates.combine(updateList);
-
-    return getCollection().updateMany(filter, updateCombine).getModifiedCount() > 0;
+    Update update = new Update();
+    update.set(ServiceCollection.Fields.status, configuration.getStatus());
+    MongoHelper.withMongoTemplateBaseUpdate(update);
+    return mongoTemplate.updateMulti(filter, update, ServiceCollection.class).getModifiedCount() > 0;
   }
 
   @Override
   public boolean remove(ApplicationServiceConfiguration configuration) {
-    Bson filter = Filters.eq(DASH_ID, new ObjectId(configuration.getId()));
-    DeleteResult deleteResult = getCollection().deleteMany(filter);
-    return deleteResult.getDeletedCount() > 0;
+    Query filter = new Query(Criteria.where(DASH_ID).is(new ObjectId(configuration.getId())));
+    return mongoTemplate.remove(filter, ServiceCollection.class).getDeletedCount() > 0;
   }
 
   @Override
   public boolean insert(ApplicationServiceConfiguration configuration) {
     ServiceCollection serviceCollection = ServiceMapper.INSTANCE.daoFromDto(configuration);
-    InsertOneResult insertOneResult = getCollection().insertOne(serviceCollection);
-    if (insertOneResult.getInsertedId() != null) {
+    mongoTemplate.insert(serviceCollection);
+    if (serviceCollection.getId() != null) {
       configuration.setId(serviceCollection.getId());
     }
-    return insertOneResult.getInsertedId() != null;
+    return serviceCollection.getId() != null;
   }
 
   @Override
   public long count(String appId) {
-    Bson filter = Filters.eq(ServiceCollection.Fields.appId, appId);
-    return getCollection().countDocuments(filter);
+    Query filter = new Query(Criteria.where(ServiceCollection.Fields.appId).is(appId));
+    return mongoTemplate.count(filter, ServiceCollection.class);
   }
 
   @Override
   public boolean removeByAppId(String appId) {
-
-    Bson filter = Filters.eq(ServiceCollection.Fields.appId, appId);
-    DeleteResult deleteResult = getCollection().deleteMany(filter);
-    return deleteResult.getDeletedCount() > 0;
+    Query filter = new Query(Criteria.where(ServiceCollection.Fields.appId).is(appId));
+    return mongoTemplate.remove(filter, ServiceCollection.class).getDeletedCount() > 0;
   }
 }
