@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @RequestMapping("/vi/")
 @CrossOrigin(origins = "*", maxAge = 3600)
 public class CheckHealthController {
-  @Value("${pom.version}")
+//  @Value("${pom.version}")
   private String VERSION;
 
   @GetMapping(value = "/health", produces = "application/json")

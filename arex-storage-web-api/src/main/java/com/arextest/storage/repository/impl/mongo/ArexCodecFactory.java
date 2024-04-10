@@ -28,17 +28,18 @@ public class ArexCodecFactory {
     if (mongoDatabase == null) {
       return Collections.emptyList();
     }
-    return Collections.singletonList(buildAREXMockerCodecProvider(mongoDatabase));
+    return Collections.emptyList();
+//    return Collections.singletonList(buildAREXMockerCodecProvider(mongoDatabase));
   }
 
-  private static AREXMockerCodecProvider buildAREXMockerCodecProvider(MongoDatabase mongoDatabase) {
-    String jarUrl = getJarUrl(mongoDatabase);
-    DataDesensitization dataDesensitization = loadDesensitization(jarUrl);
-
-    CompressionCodecImpl<Mocker.Target> targetCompressionCodec =
-        new CompressionCodecImpl<>(Mocker.Target.class, dataDesensitization);
-    return AREXMockerCodecProvider.builder().targetCodec(targetCompressionCodec).build();
-  }
+//  private static AREXMockerCodecProvider buildAREXMockerCodecProvider(MongoDatabase mongoDatabase) {
+//    String jarUrl = getJarUrl(mongoDatabase);
+//    DataDesensitization dataDesensitization = loadDesensitization(jarUrl);
+//
+//    ArexMockerCompressionConverter<Mocker.Target> targetCompressionCodec =
+//        new ArexMockerCompressionConverter<>(Mocker.Target.class, dataDesensitization);
+//    return AREXMockerCodecProvider.builder().targetCodec(targetCompressionCodec).build();
+//  }
 
   private static String getJarUrl(MongoDatabase mongoDatabase) {
     MongoCollection<Document> collection = mongoDatabase.getCollection(SYSTEM_CONFIGURATION);

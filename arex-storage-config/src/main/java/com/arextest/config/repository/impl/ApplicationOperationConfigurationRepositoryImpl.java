@@ -94,8 +94,8 @@ public class ApplicationOperationConfigurationRepositoryImpl
     Update update = MongoHelper.getMongoTemplateUpdates(configuration,
         ServiceOperationCollection.Fields.operationType,
         ServiceOperationCollection.Fields.status);
-    update.addToSet(ServiceOperationCollection.Fields.operationTypes,
-        new ArrayList<>(configuration.getOperationTypes()));
+    configuration.getOperationTypes().forEach(type ->
+        update.addToSet(ServiceOperationCollection.Fields.operationTypes, type));
 
     MongoHelper.withMongoTemplateBaseUpdate(update);
 

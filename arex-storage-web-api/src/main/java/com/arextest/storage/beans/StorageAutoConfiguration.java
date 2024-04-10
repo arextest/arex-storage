@@ -3,7 +3,6 @@ package com.arextest.storage.beans;
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.config.model.dao.config.SystemConfigurationCollection;
 import com.arextest.config.model.dao.config.SystemConfigurationCollection.KeySummary;
-import com.arextest.config.model.dto.system.SystemConfiguration;
 import com.arextest.config.repository.impl.ApplicationOperationConfigurationRepositoryImpl;
 import com.arextest.config.repository.impl.ApplicationServiceConfigurationRepositoryImpl;
 import com.arextest.config.utils.MongoHelper;
@@ -18,8 +17,7 @@ import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.impl.mongo.AREXMockerMongoRepositoryProvider;
-import com.arextest.storage.repository.impl.mongo.ArexMongoFactory;
-import com.arextest.storage.repository.impl.mongo.AutoPinedMockerRepository;
+import com.arextest.storage.repository.impl.mongo.converters.ArexMockerCompressionConverter;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.AgentWorkingListener;
 import com.arextest.storage.service.AgentWorkingService;
@@ -53,7 +51,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.data.mongodb.MongoDatabaseFactory;
+import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.SimpleMongoClientDatabaseFactory;
+import org.springframework.data.mongodb.core.convert.DbRefResolver;
+import org.springframework.data.mongodb.core.convert.DefaultDbRefResolver;
+import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
+import org.springframework.data.mongodb.core.convert.MongoConverter;
+import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
+import org.springframework.data.mongodb.core.mapping.MongoMappingContext;
 
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties({StorageConfigurationProperties.class})
@@ -68,7 +74,6 @@ public class StorageAutoConfiguration {
   @Value("${arex.app.auth.switch}")
   private boolean authSwitch;
 
-
   public StorageAutoConfiguration(StorageConfigurationProperties configurationProperties) {
     properties = configurationProperties;
   }
@@ -77,7 +82,8 @@ public class StorageAutoConfiguration {
   @ConditionalOnMissingBean
   public MongoDatabaseFactory mongoDbFactory() {
     try {
-      ArexMongoFactory factory = new ArexMongoFactory(properties.getMongodbUri());
+      SimpleMongoClientDatabaseFactory factory = new SimpleMongoClientDatabaseFactory(
+          properties.getMongodbUri());
       MongoDatabase database = factory.getMongoDatabase();
       indexesSettingConfiguration.setIndexes(database);
       syncAuthSwitch(database);
@@ -89,9 +95,28 @@ public class StorageAutoConfiguration {
   }
 
   @Bean
-  @ConditionalOnMissingBean
-  public MongoTemplate mongoTemplate(MongoDatabaseFactory mongoTemplateFactory) {
-    return new MongoTemplate(mongoTemplateFactory);
+  @ConditionalOnMissingBean(MongoOperations.class)
+  MongoTemplate mongoTemplate(MongoDatabaseFactory factory, MongoConverter converter) {
+    return new MongoTemplate(factory, converter);
+  }
+
+  @Bean
+  public MongoCustomConversions customConversions() {
+    return MongoCustomConversions.create((adapter) -> {
+      adapter.registerConverter(new ArexMockerCompressionConverter.Read());
+      adapter.registerConverter(new ArexMockerCompressionConverter.Write());
+    });
+  }
+
+
+  @Bean
+  @ConditionalOnMissingBean(MongoConverter.class)
+  MappingMongoConverter mappingMongoConverter(MongoDatabaseFactory factory, MongoMappingContext context,
+      MongoCustomConversions conversions) {
+    DbRefResolver dbRefResolver = new DefaultDbRefResolver(factory);
+    MappingMongoConverter mappingConverter = new MappingMongoConverter(dbRefResolver, context);
+    mappingConverter.setCustomConversions(conversions);
+    return mappingConverter;
   }
 
   @Bean
@@ -197,12 +222,12 @@ public class StorageAutoConfiguration {
     return new MockSourceEditionController(editableService, storageCache);
   }
 
-  @Bean
-  @Order(3)
-  public RepositoryProvider<AREXMocker> autoPinnedMockerProvider(MongoTemplate mongoTemplate,
-      Set<MockCategoryType> entryPointTypes) {
-    return new AutoPinedMockerRepository(mongoTemplate, properties, entryPointTypes);
-  }
+  //  @Bean
+  //  @Order(3)
+  //  public RepositoryProvider<AREXMocker> autoPinnedMockerProvider(MongoTemplate mongoTemplate,
+  //      Set<MockCategoryType> entryPointTypes) {
+  //    return new AutoPinedMockerRepository(mongoTemplate, properties, entryPointTypes);
+  //  }
 
   @Bean
   @Order(2)
@@ -224,12 +249,12 @@ public class StorageAutoConfiguration {
       MongoCollection<SystemConfigurationCollection> mongoCollection = database.getCollection(
           SystemConfigurationCollection.DOCUMENT_NAME, SystemConfigurationCollection.class);
       Bson filter = Filters.eq(SystemConfigurationCollection.Fields.key, KeySummary.AUTH_SWITCH);
-      SystemConfiguration systemConfig = new SystemConfiguration();
-      systemConfig.setAuthSwitch(authSwitch);
-      systemConfig.setKey(KeySummary.AUTH_SWITCH);
 
-      List<Bson> updateList = Arrays.asList(MongoHelper.getUpdate(),
-          MongoHelper.getFullProperties(systemConfig));
+      List<Bson> updateList = Arrays.asList(
+          Updates.set(SystemConfigurationCollection.Fields.authSwitch, authSwitch),
+          MongoHelper.getUpdate()
+      );
+
       Bson updateCombine = Updates.combine(updateList);
       mongoCollection.updateOne(filter, updateCombine, new UpdateOptions().upsert(true))
           .getModifiedCount();

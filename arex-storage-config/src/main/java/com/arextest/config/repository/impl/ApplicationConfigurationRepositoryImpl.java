@@ -6,23 +6,13 @@ import com.arextest.config.model.dao.config.AppCollection.Fields;
 import com.arextest.config.model.dto.application.ApplicationConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
 import com.arextest.config.utils.MongoHelper;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoCursor;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.UpdateManyModel;
-import com.mongodb.client.model.Updates;
-import com.mongodb.client.model.WriteModel;
 import com.mongodb.client.result.DeleteResult;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
-import org.bson.conversions.Bson;
-import org.bson.types.ObjectId;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -44,11 +34,6 @@ public class ApplicationConfigurationRepositoryImpl implements
     this.mongoTemplate = mongoTemplate;
   }
 
-  public MongoCollection<AppCollection> getCollection() {
-    return mongoTemplate.getMongoDatabaseFactory().getMongoDatabase()
-        .getCollection(AppCollection.DOCUMENT_NAME, AppCollection.class);
-  }
-
   @PostConstruct
   private void init() {
     // flush appName
@@ -56,22 +41,12 @@ public class ApplicationConfigurationRepositoryImpl implements
   }
 
   private void flushAppName() {
-    Bson filter = Filters.in(AppCollection.Fields.appName, UNKNOWN_APP_NAME, "", null);
-    List<WriteModel<AppCollection>> bulkUpdateOps = new ArrayList<>();
-    try (MongoCursor<AppCollection> cursor = getCollection().find(filter).iterator()) {
-      while (cursor.hasNext()) {
-        AppCollection document = cursor.next();
-        document.setAppName(document.getAppId());
-
-        Bson filter2 = Filters.eq(DASH_ID, new ObjectId(document.getId()));
-        Bson update = Updates.combine(Arrays.asList(MongoHelper.getUpdate(),
-            MongoHelper.getSpecifiedProperties(document, AppCollection.Fields.appName)));
-        bulkUpdateOps.add(new UpdateManyModel<>(filter2, update));
-      }
-    }
-    if (!bulkUpdateOps.isEmpty()) {
-      getCollection().bulkWrite(bulkUpdateOps);
-    }
+    Query filter = new Query(Criteria.where(AppCollection.Fields.appName).in(UNKNOWN_APP_NAME, "", null));
+    mongoTemplate.find(filter, AppCollection.class)
+        .forEach(appCollection -> {
+          appCollection.setAppName(appCollection.getAppId());
+          mongoTemplate.save(appCollection);
+        });
   }
 
   @Override
