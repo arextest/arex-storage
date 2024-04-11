@@ -4,6 +4,7 @@ import com.arextest.common.utils.SerializationUtils;
 import com.arextest.extension.desensitization.DataDesensitization;
 import com.arextest.extension.desensitization.DefaultDataDesensitization;
 import com.arextest.model.mock.Mocker.Target;
+import com.arextest.storage.repository.impl.mongo.DesensitizationLoader;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.ReadingConverter;
@@ -11,12 +12,10 @@ import org.springframework.data.convert.WritingConverter;
 
 @Slf4j
 public class ArexMockerCompressionConverter {
-  private static final DataDesensitization desensitization = new DefaultDataDesensitization();
-
   private static Target read(String source)  {
     String encodeWithDecryptString = null;
     try {
-      encodeWithDecryptString = desensitization.decrypt(source);
+      encodeWithDecryptString = DesensitizationLoader.DESENSITIZATION_SERVICE.get().decrypt(source);
     } catch (Exception e) {
       LOGGER.error("Data decrypt failed", e);
     }
@@ -26,7 +25,7 @@ public class ArexMockerCompressionConverter {
   private static String write(Target source) {
     String base64Result = SerializationUtils.useZstdSerializeToBase64(source);
     try {
-      base64Result = desensitization.encrypt(base64Result);
+      base64Result = DesensitizationLoader.DESENSITIZATION_SERVICE.get().encrypt(base64Result);
       return base64Result;
     } catch (Exception e) {
       LOGGER.error("Data encrypt failed", e);

@@ -1,45 +1,39 @@
 package com.arextest.storage.repository.impl.mongo;
 
+import com.alibaba.ttl.TransmittableThreadLocal;
 import com.arextest.common.model.classloader.RemoteJarClassLoader;
 import com.arextest.common.utils.RemoteJarLoaderUtils;
 import com.arextest.config.model.dao.config.SystemConfigurationCollection;
 import com.arextest.config.model.dao.config.SystemConfigurationCollection.KeySummary;
 import com.arextest.extension.desensitization.DataDesensitization;
 import com.arextest.extension.desensitization.DefaultDataDesensitization;
-import com.arextest.model.mock.Mocker;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
-import java.util.Collections;
-import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
-import org.bson.codecs.configuration.CodecProvider;
 import org.bson.conversions.Bson;
 
 @Slf4j
-public class ArexCodecFactory {
+public class DesensitizationLoader {
   private static final String SYSTEM_CONFIGURATION = "SystemConfiguration";
   private static final String DESENSITIZATION_JAR = "desensitizationJar";
   private static final String JAR_URL = "jarUrl";
+  public static TransmittableThreadLocal<DataDesensitization> DESENSITIZATION_SERVICE = null;
+  private static final DataDesensitization DEFAULT_DESENSITIZATION_SERVICE = new DefaultDataDesensitization();
 
-  public static List<CodecProvider> get(MongoDatabase mongoDatabase) {
-    if (mongoDatabase == null) {
-      return Collections.emptyList();
-    }
-    return Collections.emptyList();
-//    return Collections.singletonList(buildAREXMockerCodecProvider(mongoDatabase));
+  public static DataDesensitization load(MongoDatabase mongoDatabase) {
+    String jarUrl = getJarUrl(mongoDatabase);
+    return loadDesensitization(jarUrl);
   }
 
-//  private static AREXMockerCodecProvider buildAREXMockerCodecProvider(MongoDatabase mongoDatabase) {
-//    String jarUrl = getJarUrl(mongoDatabase);
-//    DataDesensitization dataDesensitization = loadDesensitization(jarUrl);
-//
-//    ArexMockerCompressionConverter<Mocker.Target> targetCompressionCodec =
-//        new ArexMockerCompressionConverter<>(Mocker.Target.class, dataDesensitization);
-//    return AREXMockerCodecProvider.builder().targetCodec(targetCompressionCodec).build();
-//  }
+  public static DataDesensitization get() {
+    return Optional.ofNullable(DESENSITIZATION_SERVICE)
+        .map(ThreadLocal::get)
+        .orElse(DEFAULT_DESENSITIZATION_SERVICE);
+  }
 
   private static String getJarUrl(MongoDatabase mongoDatabase) {
     MongoCollection<Document> collection = mongoDatabase.getCollection(SYSTEM_CONFIGURATION);
@@ -71,5 +65,4 @@ public class ArexCodecFactory {
     }
     return dataDesensitization;
   }
-
 }

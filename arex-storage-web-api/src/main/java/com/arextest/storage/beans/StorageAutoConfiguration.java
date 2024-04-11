@@ -1,11 +1,13 @@
 package com.arextest.storage.beans;
 
+import com.alibaba.ttl.TransmittableThreadLocal;
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.config.model.dao.config.SystemConfigurationCollection;
 import com.arextest.config.model.dao.config.SystemConfigurationCollection.KeySummary;
 import com.arextest.config.repository.impl.ApplicationOperationConfigurationRepositoryImpl;
 import com.arextest.config.repository.impl.ApplicationServiceConfigurationRepositoryImpl;
 import com.arextest.config.utils.MongoHelper;
+import com.arextest.extension.desensitization.DefaultDataDesensitization;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.storage.converter.ZstdJacksonMessageConverter;
@@ -17,6 +19,8 @@ import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.impl.mongo.AREXMockerMongoRepositoryProvider;
+import com.arextest.storage.repository.impl.mongo.DesensitizationLoader;
+import com.arextest.storage.repository.impl.mongo.converters.ArexEigenCompressionConverter;
 import com.arextest.storage.repository.impl.mongo.converters.ArexMockerCompressionConverter;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.AgentWorkingListener;
@@ -86,7 +90,14 @@ public class StorageAutoConfiguration {
       SimpleMongoClientDatabaseFactory factory = new SimpleMongoClientDatabaseFactory(
           properties.getMongodbUri());
       MongoDatabase database = factory.getMongoDatabase();
+
+      // todo make this optional
       indexesSettingConfiguration.setIndexes(database);
+
+      // load singleton desensitization service for every thread
+      DesensitizationLoader.DESENSITIZATION_SERVICE = TransmittableThreadLocal.withInitial(
+          () -> DesensitizationLoader.load(database));
+
       syncAuthSwitch(database);
       return factory;
     } catch (Exception e) {
@@ -104,8 +115,12 @@ public class StorageAutoConfiguration {
   @Bean
   public MongoCustomConversions customConversions() {
     return MongoCustomConversions.create((adapter) -> {
+      // mocker response request
       adapter.registerConverter(new ArexMockerCompressionConverter.Read());
       adapter.registerConverter(new ArexMockerCompressionConverter.Write());
+      // eigen map
+      adapter.registerConverter(new ArexEigenCompressionConverter.Read());
+      adapter.registerConverter(new ArexEigenCompressionConverter.Write());
     });
   }
 
