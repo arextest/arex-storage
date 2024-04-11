@@ -6,6 +6,8 @@ import com.arextest.model.mock.Mocker;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.SortingOption;
 import com.arextest.model.replay.SortingTypeEnum;
+import com.arextest.model.util.MongoCounter;
+import com.arextest.model.util.MongoCounter.Fields;
 import com.arextest.storage.beans.StorageConfigurationProperties;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
@@ -55,8 +57,6 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
   private static final String ENV_COLUMN_NAME = "recordEnvironment";
   private static final String OPERATION_COLUMN_NAME = "operationName";
   private static final String COLLECTION_PREFIX = "Mocker";
-
-  private static final String VALUE_COLUMN = "value";
 
   private static final String AGENT_RECORD_VERSION_COLUMN_NAME = "recordVersion";
   private static final String TARGET_RESPONSE_COLUMN_NAME = "targetResponse";
@@ -213,14 +213,14 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     Criteria filters = withRecordVersionFilters(rangeRequestType, recordVersion);
     Aggregation agg = Aggregation.newAggregation(
         Aggregation.match(filters),
-        Aggregation.group(OPERATION_COLUMN_NAME).count().as(VALUE_COLUMN)
+        Aggregation.group(OPERATION_COLUMN_NAME).count().as(MongoCounter.Fields.count)
     );
 
     Map<String, Long> resultMap = new HashMap<>();
-    mongoTemplate.aggregate(agg, collectionName, Document.class).forEach(doc -> {
-      String operationName = doc.getString(PRIMARY_KEY_COLUMN_NAME);
+    mongoTemplate.aggregate(agg, collectionName, MongoCounter.class).forEach(doc -> {
+      String operationName = doc.getId();
       if (operationName != null) {
-        resultMap.put(operationName, doc.getLong(VALUE_COLUMN));
+        resultMap.put(operationName, doc.getCount());
       }
     });
 
