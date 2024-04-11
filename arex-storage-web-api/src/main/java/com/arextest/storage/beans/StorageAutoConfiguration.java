@@ -56,6 +56,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.SimpleMongoClientDatabaseFactory;
 import org.springframework.data.mongodb.core.convert.DbRefResolver;
 import org.springframework.data.mongodb.core.convert.DefaultDbRefResolver;
+import org.springframework.data.mongodb.core.convert.DefaultMongoTypeMapper;
 import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
 import org.springframework.data.mongodb.core.convert.MongoConverter;
 import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
@@ -116,6 +117,8 @@ public class StorageAutoConfiguration {
     DbRefResolver dbRefResolver = new DefaultDbRefResolver(factory);
     MappingMongoConverter mappingConverter = new MappingMongoConverter(dbRefResolver, context);
     mappingConverter.setCustomConversions(conversions);
+    // Don't save _class to mongo， may cause issues when using polymorphic types
+    mappingConverter.setTypeMapper(new DefaultMongoTypeMapper(null));
     return mappingConverter;
   }
 
