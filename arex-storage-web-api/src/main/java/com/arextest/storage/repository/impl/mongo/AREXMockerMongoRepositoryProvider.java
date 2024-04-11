@@ -25,6 +25,8 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
+import org.bson.codecs.IdGenerator;
+import org.bson.codecs.pojo.IdGenerators;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
@@ -240,12 +242,15 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     }
     try {
       MockCategoryType category = valueList.get(0).getCategoryType();
+      Long expiration = properties.getExpirationDurationMap()
+          .getOrDefault(category.getName(), properties.getDefaultExpirationDuration());
       String collection = getCollectionName(category);
 
       long currentTimeMillis = System.currentTimeMillis();
-      valueList.forEach(item -> item.setExpirationTime(currentTimeMillis
-          + properties.getExpirationDurationMap()
-          .getOrDefault(category.getName(), properties.getDefaultExpirationDuration())));
+      valueList.forEach(item -> {
+        item.setId(category.isEntryPoint() ? item.getRecordId() : IdGenerators.STRING_ID_GENERATOR.generate());
+        item.setExpirationTime(currentTimeMillis + expiration);
+      });
       mongoTemplate.insert(valueList, collection);
     } catch (Throwable ex) {
       // rolling mocker save failed remove all entry point data

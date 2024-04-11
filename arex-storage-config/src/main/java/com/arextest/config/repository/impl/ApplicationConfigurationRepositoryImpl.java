@@ -2,7 +2,6 @@ package com.arextest.config.repository.impl;
 
 import com.arextest.config.mapper.AppMapper;
 import com.arextest.config.model.dao.config.AppCollection;
-import com.arextest.config.model.dao.config.AppCollection.Fields;
 import com.arextest.config.model.dto.application.ApplicationConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
 import com.arextest.config.utils.MongoHelper;
@@ -74,14 +73,14 @@ public class ApplicationConfigurationRepositoryImpl implements
         .is(configuration.getAppId()));
 
     Update update = MongoHelper.getMongoTemplateUpdates(configuration,
-        Fields.agentVersion,
-        Fields.agentExtVersion,
-        Fields.status,
-        Fields.features,
-        Fields.appName,
-        Fields.owners,
-        Fields.visibilityLevel,
-        Fields.tags);
+        AppCollection.Fields.agentVersion,
+        AppCollection.Fields.agentExtVersion,
+        AppCollection.Fields.status,
+        AppCollection.Fields.features,
+        AppCollection.Fields.appName,
+        AppCollection.Fields.owners,
+        AppCollection.Fields.visibilityLevel,
+        AppCollection.Fields.tags);
     MongoHelper.withMongoTemplateBaseUpdate(update);
     return mongoTemplate.updateMulti(filter, update, AppCollection.class).getModifiedCount() > 0;
   }
