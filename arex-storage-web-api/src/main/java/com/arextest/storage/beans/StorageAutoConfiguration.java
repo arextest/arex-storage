@@ -9,6 +9,7 @@ import com.arextest.config.repository.impl.ApplicationServiceConfigurationReposi
 import com.arextest.config.utils.MongoHelper;
 import com.arextest.extension.desensitization.DefaultDataDesensitization;
 import com.arextest.model.mock.AREXMocker;
+import com.arextest.model.mock.AREXMocker.Fields;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.storage.converter.ZstdJacksonMessageConverter;
 import com.arextest.storage.metric.AgentWorkingMetricService;
@@ -54,6 +55,9 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.data.convert.PropertyValueConverterRegistrar;
+import org.springframework.data.convert.SimplePropertyValueConversions;
+import org.springframework.data.convert.ValueConverterRegistry;
 import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -118,9 +122,10 @@ public class StorageAutoConfiguration {
       // mocker response request
       adapter.registerConverter(new ArexMockerCompressionConverter.Read());
       adapter.registerConverter(new ArexMockerCompressionConverter.Write());
-      // eigen map
-      adapter.registerConverter(new ArexEigenCompressionConverter.Read());
-      adapter.registerConverter(new ArexEigenCompressionConverter.Write());
+
+      adapter.configurePropertyConversions((a) -> {
+        a.registerConverter(AREXMocker.class, AREXMocker.Fields.eigenMap, new ArexEigenCompressionConverter());
+      });
     });
   }
 
@@ -239,13 +244,6 @@ public class StorageAutoConfiguration {
       MockSourceEditionService editableService, PrepareMockResultService storageCache) {
     return new MockSourceEditionController(editableService, storageCache);
   }
-
-  //  @Bean
-  //  @Order(3)
-  //  public RepositoryProvider<AREXMocker> autoPinnedMockerProvider(MongoTemplate mongoTemplate,
-  //      Set<MockCategoryType> entryPointTypes) {
-  //    return new AutoPinedMockerRepository(mongoTemplate, properties, entryPointTypes);
-  //  }
 
   @Bean
   @Order(2)

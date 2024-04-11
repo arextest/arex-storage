@@ -6,10 +6,14 @@ import com.arextest.common.utils.SerializationUtils;
 import com.arextest.model.mock.Mocker.Target;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.mongodb.lang.NonNull;
+import java.util.Collections;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.convert.PropertyValueConverter;
 import org.springframework.data.convert.ReadingConverter;
+import org.springframework.data.convert.ValueConversionContext;
 import org.springframework.data.convert.WritingConverter;
 
 /**
@@ -20,7 +24,8 @@ import org.springframework.data.convert.WritingConverter;
  * @since 2023/11/28
  */
 @Slf4j
-public class ArexEigenCompressionConverter {
+public class ArexEigenCompressionConverter implements
+    PropertyValueConverter<Map<Integer, Long>, String, ValueConversionContext<?>> {
 
   private static Map<Integer, Long> read(String source)  {
     String eigenMapStr = SerializationUtils.useZstdDeserialize(source, String.class);
@@ -43,20 +48,13 @@ public class ArexEigenCompressionConverter {
     return SerializationUtils.useZstdSerializeToBase64(jsonString);
   }
 
-  @ReadingConverter
-  public static class Read implements Converter<String, Map<Integer, Long>> {
-
-    @Override
-    public Map<Integer, Long> convert(String source) {
-      return read(source);
-    }
+  @Override
+  public Map<Integer, Long> read(@NonNull String value, @NonNull ValueConversionContext context) {
+    return read(value);
   }
-  @WritingConverter
-  public static class Write implements Converter<Map<Integer, Long>, String> {
 
-    @Override
-    public String convert(Map<Integer, Long> source) {
-      return write(source);
-    }
+  @Override
+  public String write(@NonNull Map<Integer, Long> value, @NonNull ValueConversionContext<?> context) {
+    return write(value);
   }
 }
