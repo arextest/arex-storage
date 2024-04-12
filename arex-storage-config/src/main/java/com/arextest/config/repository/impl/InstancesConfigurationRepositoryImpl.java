@@ -47,10 +47,10 @@ public class InstancesConfigurationRepositoryImpl implements
     Query filter = new Query(Criteria
         .where(InstancesCollection.Fields.appId).is(configuration.getAppId())
         .and(InstancesCollection.Fields.host).is(configuration.getHost()));
-    Update update = MongoHelper.getMongoTemplateUpdates(configuration);
+    Update update = MongoHelper.getFullTemplateUpdates(configuration);
     MongoHelper.withMongoTemplateBaseUpdate(update);
     update.set(InstancesCollection.Fields.dataUpdateTime, new Date());
-    return mongoTemplate.updateFirst(filter, update, InstancesCollection.class)
+    return mongoTemplate.upsert(filter, update, InstancesCollection.class)
         .getModifiedCount() > 0;
   }
 
