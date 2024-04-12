@@ -13,13 +13,9 @@ public interface RepositoryReader<T extends Mocker> {
 
   Iterable<T> queryRecordList(MockCategoryType categoryType, String recordId);
 
-  T findEntryFromAllType(String recordId);
-
   T queryRecord(Mocker requestType);
 
   T queryById(MockCategoryType categoryType, String id);
-
-  Iterable<T> queryByRange(PagedRequestType rangeRequestType);
 
   Iterable<T> queryEntryPointByRange(PagedRequestType rangeRequestType);
 

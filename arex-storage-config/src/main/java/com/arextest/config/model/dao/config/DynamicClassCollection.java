@@ -13,7 +13,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @FieldNameConstants
 @Document(DynamicClassCollection.DOCUMENT_NAME)
 public class DynamicClassCollection extends BaseEntity {
-
   public static final String DOCUMENT_NAME = "DynamicClass";
 
   @NonNull

@@ -6,22 +6,13 @@ import com.arextest.model.mock.Mocker;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.SortingOption;
 import com.arextest.model.replay.SortingTypeEnum;
+import com.arextest.model.util.MongoCounter;
+import com.arextest.model.util.MongoCounter.Fields;
 import com.arextest.storage.beans.StorageConfigurationProperties;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.utils.TimeUtils;
-import com.mongodb.BasicDBObject;
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoCollection;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import com.mongodb.client.model.Aggregates;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Projections;
-import com.mongodb.client.model.Sorts;
-import com.mongodb.client.model.Updates;
-import com.mongodb.client.result.DeleteResult;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -36,8 +27,18 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
-import org.bson.conversions.Bson;
+import org.bson.codecs.IdGenerator;
+import org.bson.codecs.pojo.IdGenerators;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.domain.Sort.Order;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 /**
  * The rolling provider used by default, which means auto deleted the records after TTL index
@@ -57,28 +58,20 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
   private static final String OPERATION_COLUMN_NAME = "operationName";
   private static final String COLLECTION_PREFIX = "Mocker";
 
-  private static final String VALUE_COLUMN = "value";
-
   private static final String AGENT_RECORD_VERSION_COLUMN_NAME = "recordVersion";
   private static final String TARGET_RESPONSE_COLUMN_NAME = "targetResponse";
   private static final String TAGS_COLUMN_NAME = "tags";
 
   // region: the options of mongodb
-  private static final String PLACE_HOLDER = "$";
-  private static final String GROUP_OP = "$group";
-  private static final String SUM_OP = "$sum";
-  private static final String PROJECT_OP = "$project";
   private static final String DOT_OP = ".";
   // endregion
 
   private static final String EIGEN_MAP_COLUMN_NAME = "eigenMap";
-  private final static Bson CREATE_TIME_ASCENDING_SORT = Sorts.ascending(CREATE_TIME_COLUMN_NAME);
-  private final static Bson CREATE_TIME_DESCENDING_SORT = Sorts.descending(CREATE_TIME_COLUMN_NAME);
+  private final static Sort CREATE_TIME_ASCENDING_SORT = Sort.by(Direction.ASC, CREATE_TIME_COLUMN_NAME);
+  private final static Sort CREATE_TIME_DESCENDING_SORT = Sort.by(Direction.DESC, CREATE_TIME_COLUMN_NAME);
   private static final int DEFAULT_MIN_LIMIT_SIZE = 1;
   private static final int DEFAULT_MAX_LIMIT_SIZE = 1000;
-  private static final int DEFAULT_BSON_WHERE_SIZE = 8;
   protected final MongoTemplate mongoTemplate;
-  private final Class<AREXMocker> targetClassType;
   private final String providerName;
   private final StorageConfigurationProperties properties;
   private final Set<MockCategoryType> entryPointTypes;
@@ -94,182 +87,144 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
       StorageConfigurationProperties properties,
       Set<MockCategoryType> entryPointTypes) {
     this.properties = properties;
-    this.targetClassType = AREXMocker.class;
     this.mongoTemplate = mongoTemplate;
     this.providerName = providerName;
     this.entryPointTypes = entryPointTypes;
   }
 
-  MongoCollection<AREXMocker> createOrGetCollection(MockCategoryType category) {
-    String categoryName = this.getProviderName() + category.getName() + COLLECTION_PREFIX;
-    return mongoTemplate.getMongoDatabaseFactory().getMongoDatabase().getCollection(categoryName, targetClassType);
+  private String getCollectionName(MockCategoryType category) {
+    return this.getProviderName() + category.getName() + COLLECTION_PREFIX;
   }
 
   @Override
   public Iterable<AREXMocker> queryRecordList(MockCategoryType category, String recordId) {
-    MongoCollection<AREXMocker> collectionSource = createOrGetCollection(category);
-    Bson recordIdFilter = buildRecordIdFilter(category, recordId);
+    Criteria criteria = buildRecordIdFilter(category, recordId);
+
     if (Objects.equals(this.providerName, ProviderNames.DEFAULT)) {
-      updateExpirationTime(Collections.singletonList(recordIdFilter), collectionSource);
+      updateExpirationTime(criteria, getCollectionName(category));
     }
-    Iterable<AREXMocker> iterable = collectionSource
-        .find(recordIdFilter);
+    Iterable<AREXMocker> iterable = mongoTemplate.find(new Query(criteria),
+        AREXMocker.class, getCollectionName(category));
     return new AttachmentCategoryIterable(category, iterable);
   }
 
   @Override
   public AREXMocker queryRecord(Mocker requestType) {
     MockCategoryType categoryType = requestType.getCategoryType();
-    MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
-    AREXMocker item = collectionSource
-        .find(Filters.and(buildRecordFilters(categoryType, requestType)))
-        .sort(CREATE_TIME_DESCENDING_SORT)
-        .limit(DEFAULT_MIN_LIMIT_SIZE)
-        .first();
+    Query query = new Query(buildRecordFilters(categoryType, requestType))
+        .with(CREATE_TIME_DESCENDING_SORT)
+        .limit(DEFAULT_MIN_LIMIT_SIZE);
+
+    AREXMocker item = mongoTemplate.findOne(query, AREXMocker.class, getCollectionName(categoryType));
     return AttachmentCategoryIterable.attach(categoryType, item);
   }
 
   @Override
   public AREXMocker queryById(MockCategoryType categoryType, String id) {
-    MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
-    return collectionSource.find(Filters.eq(PRIMARY_KEY_COLUMN_NAME, id)).first();
-  }
-
-  @Override
-  public Iterable<AREXMocker> queryByRange(PagedRequestType pagedRequestType) {
-    MockCategoryType categoryType = pagedRequestType.getCategory();
-    Integer pageIndex = pagedRequestType.getPageIndex();
-    MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
-
-    AREXMocker item = getLastRecordVersionMocker(pagedRequestType, collectionSource);
-    String recordVersion = item == null ? null : item.getRecordVersion();
-
-    Iterable<AREXMocker> iterable = collectionSource
-        .find(Filters.and(withRecordVersionFilters(pagedRequestType, recordVersion)))
-        .sort(toSupportSortingOptions(pagedRequestType.getSortingOptions()))
-        .skip(pageIndex == null ? 0 : pagedRequestType.getPageSize() * (pageIndex - 1))
-        .limit(Math.min(pagedRequestType.getPageSize(), DEFAULT_MAX_LIMIT_SIZE));
-    return new AttachmentCategoryIterable(categoryType, iterable);
+    String collection = getCollectionName(categoryType);
+    Query query = new Query(Criteria.where(PRIMARY_KEY_COLUMN_NAME).is(id));
+    return mongoTemplate.findOne(query, AREXMocker.class, collection);
   }
 
   @Override
   public Iterable<AREXMocker> queryEntryPointByRange(PagedRequestType pagedRequestType) {
     MockCategoryType categoryType = pagedRequestType.getCategory();
-    Integer pageIndex = pagedRequestType.getPageIndex();
-    MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
+    String collection = getCollectionName(categoryType);
 
-    AREXMocker item = getLastRecordVersionMocker(pagedRequestType, collectionSource);
+    Integer pageIndex = pagedRequestType.getPageIndex();
+
+    AREXMocker item = getLastRecordVersionMocker(pagedRequestType, collection);
     String recordVersion = item == null ? null : item.getRecordVersion();
 
-    List<Bson> bsons = withRecordVersionFilters(pagedRequestType, recordVersion);
+    Criteria criteria = withRecordVersionFilters(pagedRequestType, recordVersion);
     if (Objects.equals(this.providerName, ProviderNames.DEFAULT)) {
-      updateExpirationTime(bsons, collectionSource);
+      updateExpirationTime(criteria, collection);
     }
 
-    Iterable<AREXMocker> iterable = collectionSource
-        .find(Filters.and(bsons))
-        .projection(Projections.exclude(TARGET_RESPONSE_COLUMN_NAME, EIGEN_MAP_COLUMN_NAME))
-        .sort(toSupportSortingOptions(pagedRequestType.getSortingOptions()))
+    Query query = new Query(criteria)
+        .with(toSupportSortingOptions(pagedRequestType.getSortingOptions()))
         .skip(pageIndex == null ? 0 : pagedRequestType.getPageSize() * (pageIndex - 1))
         .limit(Math.min(pagedRequestType.getPageSize(), DEFAULT_MAX_LIMIT_SIZE));
+    query.fields().exclude(TARGET_RESPONSE_COLUMN_NAME, EIGEN_MAP_COLUMN_NAME);
+    Iterable<AREXMocker> iterable = mongoTemplate.find(query, AREXMocker.class, collection);
     return new AttachmentCategoryIterable(categoryType, iterable);
   }
 
-  private Bson toSupportSortingOptions(List<SortingOption> sortingOptions) {
+  private Sort toSupportSortingOptions(List<SortingOption> sortingOptions) {
     if (CollectionUtils.isEmpty(sortingOptions)) {
       return CREATE_TIME_ASCENDING_SORT;
     }
-    List<Bson> sorts = new ArrayList<>(sortingOptions.size());
+    List<Order> orders = new ArrayList<>(sortingOptions.size());
     for (SortingOption sortingOption : sortingOptions) {
       if (SortingTypeEnum.ASCENDING.getCode() == sortingOption.getSortingType()) {
-        sorts.add(Sorts.ascending(sortingOption.getLabel()));
+        orders.add(Order.asc(sortingOption.getLabel()));
       } else {
-        sorts.add(Sorts.descending(sortingOption.getLabel()));
+        orders.add(Order.desc(sortingOption.getLabel()));
       }
     }
-    return Sorts.orderBy(sorts);
+    return Sort.by(orders);
   }
 
-  private void updateExpirationTime(List<Bson> bsons,
-      MongoCollection<AREXMocker> collectionSource) {
+  private void updateExpirationTime(Criteria criteria, String collectionName) {
     long currentTimeMillis = System.currentTimeMillis();
-    long allowedLastMills =
-        TimeUtils.getTodayFirstMills() + properties.getAllowReRunDays() * TimeUtils.ONE_DAY;
-    Bson filters = Filters.and(Filters.and(bsons),
-        Filters.or(Filters.lt(EXPIRATION_TIME_COLUMN_NAME, new Date(allowedLastMills)),
-            Filters.exists(EXPIRATION_TIME_COLUMN_NAME, false)));
+    long allowedLastMills = TimeUtils.getTodayFirstMills() +
+        properties.getAllowReRunDays() * TimeUtils.ONE_DAY;
+
+    Criteria finalCriteria = new Criteria().andOperator(
+        criteria,
+        new Criteria().orOperator(
+            Criteria.where(EXPIRATION_TIME_COLUMN_NAME).lt(new Date(allowedLastMills)),
+            Criteria.where(EXPIRATION_TIME_COLUMN_NAME).exists(false)
+        )
+    );
+
     // Add different minutes to avoid the same expiration time
-    Bson update = Updates.combine(
-        Updates.set(EXPIRATION_TIME_COLUMN_NAME,
-            new Date(allowedLastMills + currentTimeMillis % TimeUtils.ONE_HOUR)),
-        Updates.set(UPDATE_TIME_COLUMN_NAME, new Date(currentTimeMillis)));
-    collectionSource.updateMany(filters, update);
+    Update update = new Update();
+    update.set(EXPIRATION_TIME_COLUMN_NAME,
+        new Date(allowedLastMills + currentTimeMillis % TimeUtils.ONE_HOUR));
+    update.set(UPDATE_TIME_COLUMN_NAME, new Date(currentTimeMillis));
+    mongoTemplate.updateMulti(new Query(finalCriteria), update, collectionName);
   }
 
 
   private AREXMocker getLastRecordVersionMocker(PagedRequestType pagedRequestType,
-      MongoCollection<AREXMocker> collectionSource) {
-    return collectionSource
-        .find(Filters.and(buildReadRangeFilters(pagedRequestType)))
-        .sort(CREATE_TIME_DESCENDING_SORT)
-        .limit(DEFAULT_MIN_LIMIT_SIZE)
-        .first();
+      String collectionName) {
+    Query query = new Query(buildReadRangeFilters(pagedRequestType))
+        .with(CREATE_TIME_DESCENDING_SORT)
+        .limit(DEFAULT_MIN_LIMIT_SIZE);
+    return mongoTemplate.findOne(query, AREXMocker.class, collectionName);
   }
 
   @Override
-  public long countByRange(PagedRequestType rangeRequestType) {
-    MongoCollection<AREXMocker> collectionSource = createOrGetCollection(
-        rangeRequestType.getCategory());
-    AREXMocker item = getLastRecordVersionMocker(rangeRequestType, collectionSource);
+  public long countByRange(PagedRequestType request) {
+    String collectionName = getCollectionName(request.getCategory());
+    AREXMocker item = getLastRecordVersionMocker(request, collectionName);
     String recordVersion = item == null ? null : item.getRecordVersion();
-    return collectionSource.countDocuments(
-        Filters.and(withRecordVersionFilters(rangeRequestType, recordVersion)));
+    return mongoTemplate.count(new Query(withRecordVersionFilters(request, recordVersion)),
+        AREXMocker.class, collectionName);
   }
 
   @Override
   public Map<String, Long> countByOperationName(PagedRequestType rangeRequestType) {
-    MongoCollection<AREXMocker> collectionSource = createOrGetCollection(
-        rangeRequestType.getCategory());
-    AREXMocker item = getLastRecordVersionMocker(rangeRequestType, collectionSource);
+    String collectionName = getCollectionName(rangeRequestType.getCategory());
+    AREXMocker item = getLastRecordVersionMocker(rangeRequestType, collectionName);
     String recordVersion = item == null ? null : item.getRecordVersion();
 
-    Bson filters = Filters.and(withRecordVersionFilters(rangeRequestType, recordVersion));
-    BasicDBObject basicDBObject = new BasicDBObject(PRIMARY_KEY_COLUMN_NAME,
-        PLACE_HOLDER + OPERATION_COLUMN_NAME);
-    basicDBObject.append(VALUE_COLUMN, new BasicDBObject(SUM_OP, 1L));
-    BasicDBObject group = new BasicDBObject(GROUP_OP, basicDBObject);
+    Criteria filters = withRecordVersionFilters(rangeRequestType, recordVersion);
+    Aggregation agg = Aggregation.newAggregation(
+        Aggregation.match(filters),
+        Aggregation.group(OPERATION_COLUMN_NAME).count().as(MongoCounter.Fields.count)
+    );
 
-    BasicDBObject result = new BasicDBObject();
-    result.append(VALUE_COLUMN, PLACE_HOLDER + VALUE_COLUMN);
-    BasicDBObject project = new BasicDBObject(PROJECT_OP, result);
-
-    List<Bson> pipeline = Arrays.asList(Aggregates.match(filters), group, project);
     Map<String, Long> resultMap = new HashMap<>();
-    for (Document doc : collectionSource.aggregate(pipeline, Document.class)) {
-      String operationName = doc.getString(PRIMARY_KEY_COLUMN_NAME);
+    mongoTemplate.aggregate(agg, collectionName, MongoCounter.class).forEach(doc -> {
+      String operationName = doc.getId();
       if (operationName != null) {
-        resultMap.put(operationName, doc.getLong(VALUE_COLUMN));
+        resultMap.put(operationName, doc.getCount());
       }
-    }
-    return resultMap;
-  }
+    });
 
-  @Override
-  public AREXMocker findEntryFromAllType(String recordId) {
-    // todo detect mocker type from header
-    // MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
-    for (MockCategoryType category : entryPointTypes) {
-      MongoCollection<AREXMocker> collectionSource = createOrGetCollection(category);
-      FindIterable<AREXMocker> res = collectionSource.find(
-          Filters.eq(PRIMARY_KEY_COLUMN_NAME, recordId), AREXMocker.class);
-      Iterator<AREXMocker> iterator = res.iterator();
-      if (iterator.hasNext()) {
-        AREXMocker resItem = iterator.next();
-        resItem.setCategoryType(category);
-        return resItem;
-      }
-    }
-    return null;
+    return resultMap;
   }
 
   @Override
@@ -287,12 +242,16 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     }
     try {
       MockCategoryType category = valueList.get(0).getCategoryType();
-      MongoCollection<AREXMocker> collectionSource = createOrGetCollection(category);
+      Long expiration = properties.getExpirationDurationMap()
+          .getOrDefault(category.getName(), properties.getDefaultExpirationDuration());
+      String collection = getCollectionName(category);
+
       long currentTimeMillis = System.currentTimeMillis();
-      valueList.forEach(item -> item.setExpirationTime(currentTimeMillis
-          + properties.getExpirationDurationMap()
-          .getOrDefault(category.getName(), properties.getDefaultExpirationDuration())));
-      collectionSource.insertMany(valueList);
+      valueList.forEach(item -> {
+        item.setId(category.isEntryPoint() ? item.getRecordId() : IdGenerators.STRING_ID_GENERATOR.generate());
+        item.setExpirationTime(currentTimeMillis + expiration);
+      });
+      mongoTemplate.insert(valueList, collection);
     } catch (Throwable ex) {
       // rolling mocker save failed remove all entry point data
       if (Objects.equals(this.providerName, ProviderNames.DEFAULT)) {
@@ -309,42 +268,43 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
 
   @Override
   public long removeBy(MockCategoryType categoryType, String recordId) {
-    MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
-    DeleteResult deleteResult = collectionSource.deleteMany(
-        buildRecordIdFilter(categoryType, recordId));
-    return deleteResult.getDeletedCount();
+    String collectionName = getCollectionName(categoryType);
+    return mongoTemplate.remove(new Query(buildRecordIdFilter(categoryType, recordId)),
+            AREXMocker.class, collectionName).getDeletedCount();
   }
 
   @Override
   public long extendExpirationTo(MockCategoryType categoryType, String recordId, Date expireTime) {
-    MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
-    return collectionSource.updateMany(buildRecordIdFilter(categoryType, recordId),
-        Updates.set(EXPIRATION_TIME_COLUMN_NAME, expireTime)).getModifiedCount();
+    String collectionName = getCollectionName(categoryType);
+    Query query = new Query(buildRecordIdFilter(categoryType, recordId));
+    Update update = Update.update(EXPIRATION_TIME_COLUMN_NAME, expireTime);
+    return mongoTemplate.updateMulti(query, update, AREXMocker.class, collectionName).getModifiedCount();
   }
+
   @Override
   public long removeByAppId(MockCategoryType categoryType, String appId) {
-    MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
-    DeleteResult deleteResult = collectionSource.deleteMany(Filters.eq(APP_ID_COLUMN_NAME, appId));
-    return deleteResult.getDeletedCount();
+    String collectionName = getCollectionName(categoryType);
+    Query query = new Query(Criteria.where(APP_ID_COLUMN_NAME).is(appId));
+    return mongoTemplate.remove(query, AREXMocker.class, collectionName).getDeletedCount();
   }
 
   @Override
   public long removeByOperationNameAndAppId(MockCategoryType categoryType, String operationName,
       String appId) {
-    MongoCollection<AREXMocker> collectionSource = createOrGetCollection(categoryType);
-    DeleteResult deleteResult =
-        collectionSource.deleteMany(Filters.and(Filters.eq(OPERATION_COLUMN_NAME,
-                operationName == null ? "" : operationName),
-            Filters.eq(APP_ID_COLUMN_NAME, appId)));
-    return deleteResult.getDeletedCount();
+    String collectionName = getCollectionName(categoryType);
+    Query query = new Query(Criteria
+        .where(OPERATION_COLUMN_NAME).is(operationName == null ? "" : operationName)
+        .and(APP_ID_COLUMN_NAME).is(appId));
+
+    return mongoTemplate.remove(query, AREXMocker.class, collectionName).getDeletedCount();
   }
 
   @Override
   public boolean update(AREXMocker value) {
-    Bson primaryKeyFilter = buildPrimaryKeyFilter(value);
     try {
-      MongoCollection<AREXMocker> collectionSource = createOrGetCollection(value.getCategoryType());
-      return collectionSource.replaceOne(primaryKeyFilter, value).getModifiedCount() > 0;
+      String collection = getCollectionName(value.getCategoryType());
+      mongoTemplate.findAndReplace(new Query(Criteria.where(PRIMARY_KEY_COLUMN_NAME).is(value.getId())), value, collection);
+      return true;
     } catch (Exception e) {
       LOGGER.error("update record error:{} ", e.getMessage(), e);
       return false;
@@ -356,74 +316,59 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     return this.providerName;
   }
 
-  private Bson buildPrimaryKeyFilter(Mocker value) {
-    return Filters.eq(PRIMARY_KEY_COLUMN_NAME, value.getId());
-  }
-
-  private List<Bson> buildAppIdWithOperationFilters(String appId, String operationName) {
-    Bson app = Filters.eq(APP_ID_COLUMN_NAME, appId);
-    final List<Bson> bsonList = new ArrayList<>(DEFAULT_BSON_WHERE_SIZE);
-    bsonList.add(app);
+  private Criteria buildAppIdWithOperationFilters(String appId, String operationName) {
+    Criteria criteria = Criteria.where(APP_ID_COLUMN_NAME).is(appId);
     if (operationName != null) {
-      bsonList.add(Filters.eq(OPERATION_COLUMN_NAME, operationName));
+      criteria.and(OPERATION_COLUMN_NAME).is(operationName);
     }
-    return bsonList;
+    return criteria;
   }
 
-  private Bson buildRecordIdFilter(MockCategoryType categoryType, String value) {
+  private Criteria buildRecordIdFilter(MockCategoryType categoryType, String value) {
     if (categoryType.isEntryPoint()) {
-      return Filters.eq(PRIMARY_KEY_COLUMN_NAME, value);
+      return Criteria.where(PRIMARY_KEY_COLUMN_NAME).is(value);
     }
-    return Filters.eq(RECORD_ID_COLUMN_NAME, value);
+    return Criteria.where(RECORD_ID_COLUMN_NAME).is(value);
   }
 
-  private List<Bson> buildRecordFilters(MockCategoryType categoryType, @NotNull Mocker mocker) {
-    List<Bson> filters = this.buildAppIdWithOperationFilters(mocker.getAppId(),
-        mocker.getOperationName());
-    Bson recordIdFilter = buildRecordIdFilter(categoryType, mocker.getRecordId());
-    filters.add(recordIdFilter);
-    Bson env = Filters.eq(ENV_COLUMN_NAME, mocker.getRecordEnvironment());
-    filters.add(env);
-    return filters;
+  private Criteria buildRecordFilters(MockCategoryType categoryType, @NotNull Mocker mocker) {
+    Criteria criteria = this.buildAppIdWithOperationFilters(mocker.getAppId(), mocker.getOperationName());
+    criteria.andOperator(buildRecordIdFilter(categoryType, mocker.getRecordId()));
+    criteria.and(ENV_COLUMN_NAME).is(mocker.getRecordEnvironment());
+    return criteria;
   }
 
-  private List<Bson> buildReadRangeFilters(@NotNull PagedRequestType rangeRequestType) {
-    List<Bson> filters = this.buildAppIdWithOperationFilters(rangeRequestType.getAppId(),
+  private Criteria buildReadRangeFilters(@NotNull PagedRequestType rangeRequestType) {
+    Criteria criteria = this.buildAppIdWithOperationFilters(rangeRequestType.getAppId(),
         rangeRequestType.getOperation());
-    Bson item;
     if (rangeRequestType.getEnv() != null) {
-      item = Filters.eq(ENV_COLUMN_NAME, rangeRequestType.getEnv());
-      filters.add(item);
+      criteria.and(ENV_COLUMN_NAME).is(rangeRequestType.getEnv());
     }
-    item = buildTimeRangeFilter(rangeRequestType.getBeginTime(), rangeRequestType.getEndTime());
-    filters.add(item);
-    // add the filter by tag
+    criteria.andOperator(buildTimeRangeFilter(rangeRequestType.getBeginTime(), rangeRequestType.getEndTime()));
+
     if (MapUtils.isNotEmpty(rangeRequestType.getTags())) {
       for (Map.Entry<String, String> entry : rangeRequestType.getTags().entrySet()) {
         String tagName = entry.getKey();
         if (StringUtils.isEmpty(tagName)){
           continue;
         }
-        item = Filters.eq(TAGS_COLUMN_NAME + DOT_OP + tagName, entry.getValue());
-        filters.add(item);
+        criteria.and(TAGS_COLUMN_NAME + DOT_OP + tagName).is(entry.getValue());
       }
     }
-    return filters;
+    return criteria;
   }
 
-  private List<Bson> withRecordVersionFilters(@NotNull PagedRequestType rangeRequestType,
+  private Criteria withRecordVersionFilters(@NotNull PagedRequestType rangeRequestType,
       String recordVersion) {
-    List<Bson> bsons = buildReadRangeFilters(rangeRequestType);
+    Criteria criteria = buildReadRangeFilters(rangeRequestType);
     if (StringUtils.isNotEmpty(recordVersion)) {
-      bsons.add(Filters.eq(AGENT_RECORD_VERSION_COLUMN_NAME, recordVersion));
+      criteria.and(AGENT_RECORD_VERSION_COLUMN_NAME).is(recordVersion);
     }
-    return bsons;
+    return criteria;
   }
 
-  private Bson buildTimeRangeFilter(long beginTime, long endTime) {
-    Bson newItemFrom = Filters.gt(CREATE_TIME_COLUMN_NAME, new Date(beginTime));
-    Bson newItemTo = Filters.lt(CREATE_TIME_COLUMN_NAME, new Date(endTime));
-    return Filters.and(newItemFrom, newItemTo);
+  private Criteria buildTimeRangeFilter(long beginTime, long endTime) {
+    return Criteria.where(CREATE_TIME_COLUMN_NAME).gte(new Date(beginTime)).lt(new Date(endTime));
   }
 
   private static final class AttachmentCategoryIterable implements Iterable<AREXMocker>,

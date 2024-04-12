@@ -5,35 +5,24 @@ import com.arextest.config.model.dao.config.ServiceOperationCollection;
 import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
 import com.arextest.config.utils.MongoHelper;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoCursor;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.FindOneAndUpdateOptions;
-import com.mongodb.client.model.ReturnDocument;
-import com.mongodb.client.model.Updates;
-import com.mongodb.client.result.DeleteResult;
-import com.mongodb.client.result.InsertOneResult;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import org.bson.conversions.Bson;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
+@RequiredArgsConstructor
 public class ApplicationOperationConfigurationRepositoryImpl
     implements ConfigRepositoryProvider<ApplicationOperationConfiguration> {
   private final MongoTemplate mongoTemplate;
-
-  public ApplicationOperationConfigurationRepositoryImpl(MongoTemplate mongoTemplate) {
-    this.mongoTemplate = mongoTemplate;
-  }
-
-  public MongoCollection<ServiceOperationCollection> getCollection() {
-    return mongoTemplate.getMongoDatabaseFactory().getMongoDatabase()
-        .getCollection(ServiceOperationCollection.DOCUMENT_NAME, ServiceOperationCollection.class);
-  }
 
   @Override
   public List<ApplicationOperationConfiguration> list() {
@@ -42,101 +31,77 @@ public class ApplicationOperationConfigurationRepositoryImpl
 
   @Override
   public List<ApplicationOperationConfiguration> listBy(String appId) {
-    Bson filter = Filters.eq(ServiceOperationCollection.Fields.appId, appId);
-    List<ApplicationOperationConfiguration> dtos = new ArrayList<>();
-    try (MongoCursor<ServiceOperationCollection> cursor = getCollection().find(filter).iterator()) {
-      while (cursor.hasNext()) {
-        ServiceOperationCollection document = cursor.next();
-        ApplicationOperationConfiguration dto = ServiceOperationMapper.INSTANCE.dtoFromDao(
-            document);
-        dtos.add(dto);
-      }
-    }
-    return dtos;
+    Query query = new Query();
+    query.addCriteria(Criteria.where(ServiceOperationCollection.Fields.appId).is(appId));
+    return mongoTemplate.find(query, ServiceOperationCollection.class)
+        .stream().map(ServiceOperationMapper.INSTANCE::dtoFromDao)
+        .collect(Collectors.toList());
   }
 
   @Override
   public boolean update(ApplicationOperationConfiguration configuration) {
-    Bson filter = Filters.eq(DASH_ID, new ObjectId(configuration.getId()));
-    List<Bson> updateList = Arrays.asList(MongoHelper.getUpdate(),
-        MongoHelper.getSpecifiedProperties(configuration,
-            ServiceOperationCollection.Fields.status));
-    Bson updateCombine = Updates.combine(updateList);
-
-    return getCollection().updateMany(filter, updateCombine).getModifiedCount() > 0;
+    Query query = new Query();
+    query.addCriteria(Criteria.where(DASH_ID).is(new ObjectId(configuration.getId())));
+    Update update = MongoHelper.getMongoTemplateUpdates(configuration,
+        ServiceOperationCollection.Fields.status);
+    MongoHelper.withMongoTemplateBaseUpdate(update);
+    return mongoTemplate.updateMulti(query, update, ServiceOperationCollection.class).getModifiedCount() > 0;
   }
 
   @Override
   public boolean remove(ApplicationOperationConfiguration configuration) {
-    Bson filter = Filters.eq(DASH_ID, new ObjectId(configuration.getId()));
-    return getCollection().deleteMany(filter).getDeletedCount() > 0;
+    Query filter = new Query(Criteria.where(DASH_ID).is(new ObjectId(configuration.getId())));
+    return mongoTemplate.remove(filter, ServiceOperationCollection.class).getDeletedCount() > 0;
   }
 
   @Override
   public boolean insert(ApplicationOperationConfiguration configuration) {
-
-    ServiceOperationCollection serviceOperationCollection =
-        ServiceOperationMapper.INSTANCE.daoFromDto(configuration);
-    InsertOneResult insertOneResult = getCollection().insertOne(serviceOperationCollection);
-    if (insertOneResult.getInsertedId() != null) {
-      configuration.setId(serviceOperationCollection.getId());
+    ServiceOperationCollection inserted =
+        mongoTemplate.insert(ServiceOperationMapper.INSTANCE.daoFromDto(configuration));
+    if (inserted.getId() != null) {
+      configuration.setId(inserted.getId());
     }
-    return insertOneResult.getInsertedId() != null;
-
+    return inserted.getId() != null;
   }
 
   public ApplicationOperationConfiguration listByOperationId(String operationId) {
-
-    Bson filter = Filters.eq(DASH_ID, new ObjectId(operationId));
-    ServiceOperationCollection serviceOperationCollection = (ServiceOperationCollection) getCollection().find(filter).first();
-    return serviceOperationCollection == null ? null
-        : ServiceOperationMapper.INSTANCE.dtoFromDao(serviceOperationCollection);
+    Query query = new Query(Criteria.where(DASH_ID).is(new ObjectId(operationId)));
+    return Optional.ofNullable(mongoTemplate.findOne(query, ServiceOperationCollection.class))
+        .map(ServiceOperationMapper.INSTANCE::dtoFromDao)
+        .orElse(null);
   }
 
   // the search of operation's based—info by serviceId
   public List<ApplicationOperationConfiguration> operationBaseInfoList(String serviceId) {
-
-    Bson filter = Filters.eq(ServiceOperationCollection.Fields.serviceId, serviceId);
-    List<ApplicationOperationConfiguration> dtos = new ArrayList<>();
-    try (MongoCursor<ServiceOperationCollection> cursor = getCollection().find(filter).iterator()) {
-      while (cursor.hasNext()) {
-        ServiceOperationCollection document = cursor.next();
-        ApplicationOperationConfiguration dto = ServiceOperationMapper.INSTANCE.baseInfoFromDao(
-            document);
-        dtos.add(dto);
-      }
-    }
-    return dtos;
+    Query filter = new Query(Criteria.where(ServiceOperationCollection.Fields.serviceId).is(serviceId));
+    return mongoTemplate.find(filter, ServiceOperationCollection.class)
+        .stream().map(ServiceOperationMapper.INSTANCE::baseInfoFromDao)
+        .collect(Collectors.toList());
   }
 
   @Override
   public boolean removeByAppId(String appId) {
-
-    Bson filter = Filters.eq(ServiceOperationCollection.Fields.appId, appId);
-    DeleteResult deleteResult = getCollection().deleteMany(filter);
-    return deleteResult.getDeletedCount() > 0;
-
+    Query filter = new Query(Criteria.where(ServiceOperationCollection.Fields.appId).is(appId));
+    return mongoTemplate.remove(filter, ServiceOperationCollection.class).getDeletedCount() > 0;
   }
 
   public boolean findAndUpdate(ApplicationOperationConfiguration configuration) {
+    Query query = new Query(
+        Criteria.where(ServiceOperationCollection.Fields.serviceId).is(configuration.getServiceId())
+            .and(ServiceOperationCollection.Fields.operationName).is(configuration.getOperationName())
+            .and(ServiceOperationCollection.Fields.appId).is(configuration.getAppId())
+    );
+    Update update = MongoHelper.getMongoTemplateUpdates(configuration,
+        ServiceOperationCollection.Fields.operationType,
+        ServiceOperationCollection.Fields.status);
+    configuration.getOperationTypes().forEach(type ->
+        update.addToSet(ServiceOperationCollection.Fields.operationTypes, type));
 
-    Bson query = Filters.and(
-        Filters.eq(ServiceOperationCollection.Fields.serviceId, configuration.getServiceId()),
-        Filters.eq(ServiceOperationCollection.Fields.operationName,
-            configuration.getOperationName()),
-        Filters.eq(ServiceOperationCollection.Fields.appId, configuration.getAppId()));
+    MongoHelper.withMongoTemplateBaseUpdate(update);
 
-    List<Bson> updateList = Arrays.asList(MongoHelper.getUpdate(),
-        MongoHelper.getSpecifiedProperties(configuration,
-            ServiceOperationCollection.Fields.operationType,
-            ServiceOperationCollection.Fields.status),
-        Updates.addEachToSet(ServiceOperationCollection.Fields.operationTypes,
-            new ArrayList<>(configuration.getOperationTypes())));
-    Bson updateCombine = Updates.combine(updateList);
-
-    getCollection()
-        .findOneAndUpdate(query, updateCombine,
-            new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER));
+    mongoTemplate.findAndModify(query, update,
+        new FindAndModifyOptions().upsert(true).returnNew(true),
+        ServiceOperationCollection.class);
 
     return true;
   }
@@ -147,27 +112,19 @@ public class ApplicationOperationConfigurationRepositoryImpl
       return Collections.emptyList();
     }
 
-    List<ApplicationOperationConfiguration> dtos = new ArrayList<>();
-    List<Bson> filters = new ArrayList<>();
+    Query filters = new Query();
+    int filterCount = 0;
     for (Map.Entry<String, Object> condition : conditions.entrySet()) {
       if (condition != null && condition.getKey() != null) {
-        filters.add(Filters.eq(condition.getKey(), condition.getValue()));
+        filters.addCriteria(Criteria.where(condition.getKey()).is(condition.getValue()));
+        filterCount++;
       }
     }
 
-    if (filters.isEmpty()) {
+    if (filterCount == 0) {
       return Collections.emptyList();
     }
-
-    try (MongoCursor<ServiceOperationCollection> cursor = getCollection().find(Filters.and(filters))
-        .iterator()) {
-      while (cursor.hasNext()) {
-        ServiceOperationCollection document = cursor.next();
-        ApplicationOperationConfiguration dto = ServiceOperationMapper.INSTANCE.baseInfoFromDao(
-            document);
-        dtos.add(dto);
-      }
-    }
-    return dtos;
+    return mongoTemplate.find(filters, ServiceOperationCollection.class).stream()
+        .map(ServiceOperationMapper.INSTANCE::dtoFromDao).collect(Collectors.toList());
   }
 }

@@ -5,26 +5,19 @@ import com.arextest.config.model.dao.config.AppCollection;
 import com.arextest.config.model.dto.application.ApplicationConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
 import com.arextest.config.utils.MongoHelper;
-import com.mongodb.bulk.BulkWriteResult;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoCursor;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Sorts;
-import com.mongodb.client.model.UpdateManyModel;
-import com.mongodb.client.model.Updates;
-import com.mongodb.client.model.WriteModel;
 import com.mongodb.client.result.DeleteResult;
-import com.mongodb.client.result.InsertOneResult;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
-import org.bson.conversions.Bson;
-import org.bson.types.ObjectId;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 public class ApplicationConfigurationRepositoryImpl implements
     ConfigRepositoryProvider<ApplicationConfiguration> {
@@ -34,15 +27,10 @@ public class ApplicationConfigurationRepositoryImpl implements
   private final MongoTemplate mongoTemplate;
 
   @Resource
-  private List<ConfigRepositoryProvider> configRepositoryProviders;
+  private List<ConfigRepositoryProvider<?>> configRepositoryProviders;
 
   public ApplicationConfigurationRepositoryImpl(MongoTemplate mongoTemplate) {
     this.mongoTemplate = mongoTemplate;
-  }
-
-  public MongoCollection<AppCollection> getCollection() {
-    return mongoTemplate.getMongoDatabaseFactory().getMongoDatabase()
-        .getCollection(AppCollection.DOCUMENT_NAME, AppCollection.class);
   }
 
   @PostConstruct
@@ -52,72 +40,49 @@ public class ApplicationConfigurationRepositoryImpl implements
   }
 
   private void flushAppName() {
-    Bson filter = Filters.in(AppCollection.Fields.appName, UNKNOWN_APP_NAME, "", null);
-    List<WriteModel<AppCollection>> bulkUpdateOps = new ArrayList<>();
-    try (MongoCursor<AppCollection> cursor = getCollection().find(filter).iterator()) {
-      while (cursor.hasNext()) {
-        AppCollection document = cursor.next();
-        document.setAppName(document.getAppId());
-
-        Bson filter2 = Filters.eq(DASH_ID, new ObjectId(document.getId()));
-        Bson update = Updates.combine(Arrays.asList(MongoHelper.getUpdate(),
-            MongoHelper.getSpecifiedProperties(document, AppCollection.Fields.appName)));
-        bulkUpdateOps.add(new UpdateManyModel<>(filter2, update));
-      }
-    }
-    if (bulkUpdateOps.size() > 0) {
-      BulkWriteResult result = getCollection().bulkWrite(bulkUpdateOps);
-    }
+    Query filter = new Query(Criteria.where(AppCollection.Fields.appName).in(UNKNOWN_APP_NAME, "", null));
+    mongoTemplate.find(filter, AppCollection.class)
+        .forEach(appCollection -> {
+          appCollection.setAppName(appCollection.getAppId());
+          mongoTemplate.save(appCollection);
+        });
   }
 
   @Override
   public List<ApplicationConfiguration> list() {
-
-    Bson sort = Sorts.descending(DASH_ID);
-    List<ApplicationConfiguration> applicationConfigurations = new ArrayList<>();
-    try (MongoCursor<AppCollection> cursor = getCollection().find().sort(sort).iterator()) {
-      while (cursor.hasNext()) {
-        AppCollection document = cursor.next();
-        ApplicationConfiguration dto = AppMapper.INSTANCE.dtoFromDao(document);
-        applicationConfigurations.add(dto);
-      }
-    }
-    return applicationConfigurations;
+    Query query = new Query().with(Sort.by(Direction.DESC, DASH_ID));
+    return mongoTemplate.find(query, AppCollection.class)
+        .stream()
+        .map(AppMapper.INSTANCE::dtoFromDao)
+        .collect(Collectors.toList());
   }
 
   @Override
   public List<ApplicationConfiguration> listBy(String appId) {
-
-    Bson filter = Filters.eq(AppCollection.Fields.appId, appId);
-    List<ApplicationConfiguration> applicationConfigurations = new ArrayList<>();
-    try (MongoCursor<AppCollection> cursor = getCollection().find(filter).iterator()) {
-      while (cursor.hasNext()) {
-        AppCollection document = cursor.next();
-        ApplicationConfiguration dto = AppMapper.INSTANCE.dtoFromDao(document);
-        applicationConfigurations.add(dto);
-      }
-    }
-    return applicationConfigurations;
+    Query query = new Query();
+    query.addCriteria(Criteria.where(AppCollection.Fields.appId).is(appId));
+    List<AppCollection> appCollections = mongoTemplate.find(query, AppCollection.class);
+    return appCollections.stream()
+        .map(AppMapper.INSTANCE::dtoFromDao)
+        .collect(Collectors.toList());
   }
 
   @Override
   public boolean update(ApplicationConfiguration configuration) {
+    Query filter = new Query(Criteria.where(AppCollection.Fields.appId)
+        .is(configuration.getAppId()));
 
-    Bson filter = Filters.eq(AppCollection.Fields.appId, configuration.getAppId());
-
-    List<Bson> updateList = Arrays.asList(MongoHelper.getUpdate(),
-        MongoHelper.getSpecifiedProperties(configuration,
-            AppCollection.Fields.agentVersion,
-            AppCollection.Fields.agentExtVersion,
-            AppCollection.Fields.status,
-            AppCollection.Fields.features,
-            AppCollection.Fields.appName,
-            AppCollection.Fields.owners,
-            AppCollection.Fields.visibilityLevel,
-            AppCollection.Fields.tags));
-    Bson updateCombine = Updates.combine(updateList);
-
-    return getCollection().updateMany(filter, updateCombine).getModifiedCount() > 0;
+    Update update = MongoHelper.getMongoTemplateUpdates(configuration,
+        AppCollection.Fields.agentVersion,
+        AppCollection.Fields.agentExtVersion,
+        AppCollection.Fields.status,
+        AppCollection.Fields.features,
+        AppCollection.Fields.appName,
+        AppCollection.Fields.owners,
+        AppCollection.Fields.visibilityLevel,
+        AppCollection.Fields.tags);
+    MongoHelper.withMongoTemplateBaseUpdate(update);
+    return mongoTemplate.updateMulti(filter, update, AppCollection.class).getModifiedCount() > 0;
   }
 
   @Override
@@ -130,40 +95,39 @@ public class ApplicationConfigurationRepositoryImpl implements
 
   @Override
   public boolean removeByAppId(String appId) {
-    for (ConfigRepositoryProvider configRepositoryProvider : configRepositoryProviders) {
+    for (ConfigRepositoryProvider<?> configRepositoryProvider : configRepositoryProviders) {
       configRepositoryProvider.removeByAppId(appId);
     }
-    Bson filter = Filters.eq(AppCollection.Fields.appId, appId);
-    DeleteResult deleteResult = getCollection().deleteMany(filter);
+    Query filter = new Query(Criteria.where(AppCollection.Fields.appId).is(appId));
+    DeleteResult deleteResult = mongoTemplate.remove(filter, AppCollection.class);
     return deleteResult.getDeletedCount() > 0;
   }
 
   @Override
   public boolean insert(ApplicationConfiguration configuration) {
-    AppCollection appCollection = AppMapper.INSTANCE.daoFromDto(configuration);
-    InsertOneResult insertOneResult = getCollection().insertOne(appCollection);
-    return insertOneResult.getInsertedId() != null;
+    mongoTemplate.insert(AppMapper.INSTANCE.daoFromDto(configuration));
+    return true;
   }
 
   public boolean addEnvToApp(String appId, Map<String, String> tags) {
     if (StringUtils.isBlank(appId) || tags == null || tags.isEmpty()) {
       return false;
     }
-    List<Bson> updateList = new ArrayList<>();
-    Bson filter = Filters.eq(AppCollection.Fields.appId, appId);
+    Query query = new Query();
+    query.addCriteria(Criteria.where(AppCollection.Fields.appId).is(appId));
+    Update update = new Update();
     for (Map.Entry<String, String> entry : tags.entrySet()) {
       String key = entry.getKey();
       String value = entry.getValue();
       if (StringUtils.isBlank(value)) {
         continue;
       }
-      Bson update = Updates.addToSet(AppCollection.Fields.tags + DOT_OP + key, value);
-      updateList.add(update);
+      update.addToSet(AppCollection.Fields.tags + DOT_OP + key, value);
     }
-    if (updateList.isEmpty()) {
+    if (update.getUpdateObject().isEmpty()) {
       return false;
     }
-    return getCollection().updateOne(filter, Updates.combine(updateList)).getModifiedCount() > 0;
+    return mongoTemplate.updateFirst(query, update, AppCollection.class).getModifiedCount() > 0;
   }
 
 }

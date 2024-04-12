@@ -9,6 +9,7 @@ import lombok.experimental.FieldNameConstants;
 
 import java.util.Set;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 @Data
 @NoArgsConstructor
@@ -49,7 +50,5 @@ public class AppCollection extends BaseEntity {
   private Integer status;
 
   private int visibilityLevel;
-
   private Map<String, Set<String>> tags;
-
 }
