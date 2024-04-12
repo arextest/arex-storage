@@ -1,6 +1,5 @@
 package com.arextest.storage.repository.impl.mongo;
 
-import com.alibaba.ttl.TransmittableThreadLocal;
 import com.arextest.common.model.classloader.RemoteJarClassLoader;
 import com.arextest.common.utils.RemoteJarLoaderUtils;
 import com.arextest.config.model.dao.config.SystemConfigurationCollection;
@@ -10,7 +9,6 @@ import com.arextest.extension.desensitization.DefaultDataDesensitization;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
@@ -21,8 +19,9 @@ public class DesensitizationLoader {
   private static final String SYSTEM_CONFIGURATION = "SystemConfiguration";
   private static final String DESENSITIZATION_JAR = "desensitizationJar";
   private static final String JAR_URL = "jarUrl";
-  public static TransmittableThreadLocal<DataDesensitization> DESENSITIZATION_SERVICE = null;
-  private static final DataDesensitization DEFAULT_DESENSITIZATION_SERVICE = new DefaultDataDesensitization();
+
+  public static final DataDesensitization DEFAULT_DESENSITIZATION_SERVICE = new DefaultDataDesensitization();
+  public static DataDesensitization DESENSITIZATION_SERVICE = DEFAULT_DESENSITIZATION_SERVICE;
 
   public static DataDesensitization load(MongoDatabase mongoDatabase) {
     String jarUrl = getJarUrl(mongoDatabase);
@@ -30,9 +29,7 @@ public class DesensitizationLoader {
   }
 
   public static DataDesensitization get() {
-    return Optional.ofNullable(DESENSITIZATION_SERVICE)
-        .map(ThreadLocal::get)
-        .orElse(DEFAULT_DESENSITIZATION_SERVICE);
+    return DESENSITIZATION_SERVICE;
   }
 
   private static String getJarUrl(MongoDatabase mongoDatabase) {

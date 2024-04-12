@@ -55,7 +55,6 @@ public class AREXMocker implements Mocker {
    * record the version of recorded data
    */
   private String recordVersion;
-  private Integer continuousFailCount;
   private Map<Integer, Long> eigenMap;
 
   /**

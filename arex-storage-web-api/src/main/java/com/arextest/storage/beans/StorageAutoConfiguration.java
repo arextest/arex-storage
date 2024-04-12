@@ -1,6 +1,5 @@
 package com.arextest.storage.beans;
 
-import com.alibaba.ttl.TransmittableThreadLocal;
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.config.model.dao.config.SystemConfigurationCollection;
 import com.arextest.config.model.dao.config.SystemConfigurationCollection.KeySummary;
@@ -94,13 +93,11 @@ public class StorageAutoConfiguration {
       indexesSettingConfiguration.setIndexes(database);
 
       // load singleton desensitization service for every thread
-      DesensitizationLoader.DESENSITIZATION_SERVICE = TransmittableThreadLocal.withInitial(
-          () -> DesensitizationLoader.load(database));
-
+      DesensitizationLoader.DESENSITIZATION_SERVICE = DesensitizationLoader.load(database);
       syncAuthSwitch(database);
       return factory;
     } catch (Exception e) {
-      LOGGER.error("cannot connect mongodb {}", e.getMessage(), e);
+      LOGGER.error("Mongo initialization failed: {}", e.getMessage(), e);
       throw e;
     }
   }
@@ -112,14 +109,17 @@ public class StorageAutoConfiguration {
   }
 
   @Bean
+  @ConditionalOnMissingBean(MongoCustomConversions.class)
   public MongoCustomConversions customConversions() {
     return MongoCustomConversions.create((adapter) -> {
-      // mocker response request
+      // Type based converter
       adapter.registerConverter(new ArexMockerCompressionConverter.Read());
       adapter.registerConverter(new ArexMockerCompressionConverter.Write());
 
-      adapter.configurePropertyConversions((a) -> {
-        a.registerConverter(AREXMocker.class, AREXMocker.Fields.eigenMap, new ArexEigenCompressionConverter());
+      // Property based converter
+      adapter.configurePropertyConversions((register) -> {
+        register.registerConverter(AREXMocker.class, AREXMocker.Fields.eigenMap,
+            new ArexEigenCompressionConverter());
       });
     });
   }
