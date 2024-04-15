@@ -303,20 +303,20 @@
             <groupId>org.apache.maven.plugins</groupId>
             <version>3.4.0</version>
           </plugin>
-          <plugin>
-            <artifactId>maven-gpg-plugin</artifactId>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>sign</goal>
-                </goals>
-                <id>sign-artifacts</id>
-                <phase>verify</phase>
-              </execution>
-            </executions>
-            <groupId>org.apache.maven.plugins</groupId>
-            <version>3.0.1</version>
-          </plugin>
+<!--          <plugin>-->
+<!--            <artifactId>maven-gpg-plugin</artifactId>-->
+<!--            <executions>-->
+<!--              <execution>-->
+<!--                <goals>-->
+<!--                  <goal>sign</goal>-->
+<!--                </goals>-->
+<!--                <id>sign-artifacts</id>-->
+<!--                <phase>verify</phase>-->
+<!--              </execution>-->
+<!--            </executions>-->
+<!--            <groupId>org.apache.maven.plugins</groupId>-->
+<!--            <version>3.0.1</version>-->
+<!--          </plugin>-->
           <plugin>
             <artifactId>nexus-staging-maven-plugin</artifactId>
             <configuration>
@@ -420,5 +420,5 @@
     <url>https://github.com/arextest/arex-storage</url>
   </scm>
   <url>https://github.com/arextest/arex-storage</url>
-  <version>1.1.25</version>
+  <version>1.1.26</version>
 </project>
