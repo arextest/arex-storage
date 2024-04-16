@@ -19,6 +19,7 @@ public class ApplicationServiceConfigurationRepositoryImpl
     implements ConfigRepositoryProvider<ApplicationServiceConfiguration> {
 
   private final MongoTemplate mongoTemplate;
+  private final ApplicationOperationConfigurationRepositoryImpl applicationOperationConfigurationRepository;
 
   @Override
   public List<ApplicationServiceConfiguration> list() {
@@ -29,7 +30,12 @@ public class ApplicationServiceConfigurationRepositoryImpl
   public List<ApplicationServiceConfiguration> listBy(String appId) {
     Query filter = new Query(Criteria.where(ServiceCollection.Fields.appId).is(appId));
     return mongoTemplate.find(filter, ServiceCollection.class)
-        .stream().map(ServiceMapper.INSTANCE::dtoFromDao)
+        .stream()
+        .map(source -> {
+          ApplicationServiceConfiguration dto = ServiceMapper.INSTANCE.dtoFromDao(source);
+          dto.setOperationList(applicationOperationConfigurationRepository.operationBaseInfoList(dto.getId()));
+          return dto;
+        })
         .collect(Collectors.toList());
   }
 
