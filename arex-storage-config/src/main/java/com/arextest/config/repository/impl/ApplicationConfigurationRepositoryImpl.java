@@ -9,7 +9,6 @@ import com.mongodb.client.result.DeleteResult;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Sort;
@@ -22,7 +21,6 @@ import org.springframework.data.mongodb.core.query.Update;
 public class ApplicationConfigurationRepositoryImpl implements
     ConfigRepositoryProvider<ApplicationConfiguration> {
 
-  private static final String UNKNOWN_APP_NAME = "unknown app name";
   private static final String DOT_OP = ".";
   private final MongoTemplate mongoTemplate;
 
@@ -31,21 +29,6 @@ public class ApplicationConfigurationRepositoryImpl implements
 
   public ApplicationConfigurationRepositoryImpl(MongoTemplate mongoTemplate) {
     this.mongoTemplate = mongoTemplate;
-  }
-
-  @PostConstruct
-  private void init() {
-    // flush appName
-    flushAppName();
-  }
-
-  private void flushAppName() {
-    Query filter = new Query(Criteria.where(AppCollection.Fields.appName).in(UNKNOWN_APP_NAME, "", null));
-    mongoTemplate.find(filter, AppCollection.class)
-        .forEach(appCollection -> {
-          appCollection.setAppName(appCollection.getAppId());
-          mongoTemplate.save(appCollection);
-        });
   }
 
   @Override
