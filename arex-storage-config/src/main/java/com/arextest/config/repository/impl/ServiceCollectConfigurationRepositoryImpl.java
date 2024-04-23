@@ -7,39 +7,21 @@ import com.arextest.config.model.dao.config.RecordServiceConfigCollection;
 import com.arextest.config.model.dto.record.ServiceCollectConfiguration;
 import com.arextest.config.repository.MultiEnvConfigRepositoryProvider;
 import com.arextest.config.utils.MongoHelper;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoCursor;
-import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Updates;
-import com.mongodb.client.result.DeleteResult;
-import com.mongodb.client.result.InsertOneResult;
-import com.mongodb.client.result.UpdateResult;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.annotation.PostConstruct;
-import org.bson.conversions.Bson;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
+@RequiredArgsConstructor
 public class ServiceCollectConfigurationRepositoryImpl
     implements MultiEnvConfigRepositoryProvider<ServiceCollectConfiguration> {
 
-  private MongoDatabase mongoDatabase;
-
-  private MongoCollection<RecordServiceConfigCollection> mongoCollection;
-
-  public ServiceCollectConfigurationRepositoryImpl(MongoDatabase mongoDatabase) {
-    this.mongoDatabase = mongoDatabase;
-  }
-
-  @PostConstruct
-  public void init() {
-    this.mongoCollection = mongoDatabase.getCollection(RecordServiceConfigCollection.DOCUMENT_NAME,
-        RecordServiceConfigCollection.class);
-  }
+  private final MongoTemplate mongoTemplate;
 
   @Override
   public List<ServiceCollectConfiguration> list() {
@@ -48,83 +30,70 @@ public class ServiceCollectConfigurationRepositoryImpl
 
   @Override
   public List<ServiceCollectConfiguration> listBy(String appId) {
+    Query filter = new Query(Criteria.where(RecordServiceConfigCollection.Fields.appId).is(appId));
 
-    Bson filter = Filters.eq(RecordServiceConfigCollection.Fields.appId, appId);
-    List<ServiceCollectConfiguration> recordServiceConfigs = new ArrayList<>();
-    try (MongoCursor<RecordServiceConfigCollection> cursor = mongoCollection.find(filter)
-        .iterator()) {
-      while (cursor.hasNext()) {
-        RecordServiceConfigCollection document = cursor.next();
-        ServiceCollectConfiguration dto = RecordServiceConfigMapper.INSTANCE.dtoFromDao(document);
-        recordServiceConfigs.add(dto);
-      }
-    }
-    return recordServiceConfigs;
+    return mongoTemplate.find(filter, RecordServiceConfigCollection.class)
+        .stream()
+        .map(RecordServiceConfigMapper.INSTANCE::dtoFromDao)
+        .collect(Collectors.toList());
   }
 
   @Override
   public boolean update(ServiceCollectConfiguration configuration) {
+    Query filter = new Query(Criteria.where(RecordServiceConfigCollection.Fields.appId)
+        .is(configuration.getAppId()));
 
-    Bson filter = Filters.eq(RecordServiceConfigCollection.Fields.appId, configuration.getAppId());
-
-    List<Bson> updateList = Arrays.asList(MongoHelper.getUpdate(),
-        MongoHelper.getSpecifiedProperties(configuration,
-            RecordServiceConfigCollection.Fields.sampleRate,
-            RecordServiceConfigCollection.Fields.allowDayOfWeeks,
-            RecordServiceConfigCollection.Fields.allowTimeOfDayFrom,
-            RecordServiceConfigCollection.Fields.allowTimeOfDayTo,
-            RecordServiceConfigCollection.Fields.excludeServiceOperationSet,
-            RecordServiceConfigCollection.Fields.timeMock,
-            RecordServiceConfigCollection.Fields.extendField,
-            RecordServiceConfigCollection.Fields.serializeSkipInfoList
-        ),
-        Updates.set(RecordServiceConfigCollection.Fields.recordMachineCountLimit,
+    Update update = MongoHelper.getMongoTemplateUpdates(configuration,
+        RecordServiceConfigCollection.Fields.sampleRate,
+        RecordServiceConfigCollection.Fields.allowDayOfWeeks,
+        RecordServiceConfigCollection.Fields.allowTimeOfDayFrom,
+        RecordServiceConfigCollection.Fields.allowTimeOfDayTo,
+        RecordServiceConfigCollection.Fields.excludeServiceOperationSet,
+        RecordServiceConfigCollection.Fields.timeMock,
+        RecordServiceConfigCollection.Fields.extendField,
+        RecordServiceConfigCollection.Fields.serializeSkipInfoList);
+    MongoHelper.withMongoTemplateBaseUpdate(update);
+    update.set(RecordServiceConfigCollection.Fields.recordMachineCountLimit,
             configuration.getRecordMachineCountLimit() == null ? 1
-                : configuration.getRecordMachineCountLimit())
-
-    );
-    Bson updateCombine = Updates.combine(updateList);
-
-    UpdateResult updateResult = mongoCollection.updateMany(filter, updateCombine);
-    return updateResult.getModifiedCount() > 0;
-
+                : configuration.getRecordMachineCountLimit());
+    return mongoTemplate.updateMulti(filter, update, RecordServiceConfigCollection.class)
+        .getModifiedCount() > 0;
   }
 
   @Override
   public boolean remove(ServiceCollectConfiguration configuration) {
-    Bson filter = Filters.eq(RecordServiceConfigCollection.Fields.appId, configuration.getAppId());
-    DeleteResult deleteResult = mongoCollection.deleteMany(filter);
-    return deleteResult.getDeletedCount() > 0;
+    Query filter = new Query(Criteria.where(RecordServiceConfigCollection.Fields.appId)
+        .is(configuration.getAppId()));
+    return mongoTemplate.remove(filter, RecordServiceConfigCollection.class).getDeletedCount() > 0;
   }
 
   @Override
   public boolean insert(ServiceCollectConfiguration configuration) {
     RecordServiceConfigCollection recordServiceConfigCollection =
         RecordServiceConfigMapper.INSTANCE.daoFromDto(configuration);
-    InsertOneResult insertOneResult = mongoCollection.insertOne(recordServiceConfigCollection);
-    return insertOneResult.getInsertedId() != null;
+    return mongoTemplate.insert(recordServiceConfigCollection).getId() != null;
   }
 
   @Override
   public boolean removeByAppId(String appId) {
-    Bson filter = Filters.eq(RecordServiceConfigCollection.Fields.appId, appId);
-    DeleteResult deleteResult = mongoCollection.deleteMany(filter);
-    return deleteResult.getDeletedCount() > 0;
+    Query filter = new Query(Criteria.where(RecordServiceConfigCollection.Fields.appId).is(appId));
+    return mongoTemplate.remove(filter, RecordServiceConfigCollection.class).getDeletedCount() > 0;
   }
 
   @Override
   public boolean updateMultiEnvConfig(ServiceCollectConfiguration configuration) {
-    Bson filter = Filters.eq(RecordServiceConfigCollection.Fields.appId, configuration.getAppId());
+    Query filter = new Query(Criteria.where(RecordServiceConfigCollection.Fields.appId)
+        .is(configuration.getAppId()));
 
     List<RecordServiceConfigCollection> configs = Optional.ofNullable(configuration.getMultiEnvConfigs())
         .orElse(Collections.emptyList())
         .stream().map(RecordServiceConfigMapper.INSTANCE::daoFromDto)
         .collect(Collectors.toList());
 
-    Bson update = Updates.combine(
-        Updates.set(MultiEnvBaseEntity.Fields.multiEnvConfigs, configs),
-        Updates.set(BaseEntity.Fields.dataChangeUpdateTime, System.currentTimeMillis())
-    );
-    return mongoCollection.updateOne(filter, update).getModifiedCount() > 0;
+    Update update = new Update();
+    update.set(MultiEnvBaseEntity.Fields.multiEnvConfigs, configs);
+    update.set(BaseEntity.Fields.dataChangeUpdateTime, System.currentTimeMillis());
+    return mongoTemplate.updateMulti(filter, update, RecordServiceConfigCollection.class)
+        .getModifiedCount() > 0;
   }
 }

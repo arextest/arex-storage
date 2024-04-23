@@ -8,10 +8,13 @@ import lombok.NonNull;
 import lombok.experimental.FieldNameConstants;
 
 import java.util.Set;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 @Data
 @NoArgsConstructor
 @FieldNameConstants
+@Document(AppCollection.DOCUMENT_NAME)
 public class AppCollection extends BaseEntity {
 
   public static final String DOCUMENT_NAME = "App";
@@ -47,7 +50,5 @@ public class AppCollection extends BaseEntity {
   private Integer status;
 
   private int visibilityLevel;
-
   private Map<String, Set<String>> tags;
-
 }

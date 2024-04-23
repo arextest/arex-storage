@@ -10,6 +10,8 @@ import com.arextest.config.model.vo.UpdateApplicationRequest;
 import com.arextest.model.replay.AppVisibilityLevelEnum;
 import com.arextest.storage.service.config.ApplicationService;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import javax.annotation.Resource;
 import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +34,9 @@ public class ApplicationController {
   @Autowired
   private ApplicationService applicationService;
 
+  @Resource(name = "custom-fork-join-executor")
+  private ExecutorService customForkJoinExecutor;
+
   @PostMapping("/add")
   @ResponseBody
   public Response load(@RequestBody @Valid AddApplicationRequest request) {
@@ -46,7 +51,8 @@ public class ApplicationController {
   @ResponseBody
   @AppAuth
   public Response modify(@RequestBody @Valid UpdateApplicationRequest request) {
-    if (request.getVisibilityLevel() != null && !AppVisibilityLevelEnum.valid(request.getVisibilityLevel())) {
+    if (request.getVisibilityLevel() != null && !AppVisibilityLevelEnum.valid(
+        request.getVisibilityLevel())) {
       return ResponseUtils.parameterInvalidResponse("visibilityLevel invalid");
     }
     return ResponseUtils.successResponse(applicationService.modifyApplication(request));
@@ -55,7 +61,8 @@ public class ApplicationController {
   @PostMapping("/delete")
   @ResponseBody
   public Response delete(@RequestBody @Valid DeleteApplicationRequest request) {
-    CompletableFuture.runAsync(() -> applicationService.deleteApplication(request));
+    CompletableFuture.runAsync(() -> applicationService.deleteApplication(request),
+        customForkJoinExecutor);
     return ResponseUtils.successResponse(true);
   }
 }

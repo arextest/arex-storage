@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.conversions.Bson;
+import org.springframework.data.mongodb.core.query.Update;
 
 @Slf4j
 public class MongoHelper {
@@ -19,27 +20,18 @@ public class MongoHelper {
         Updates.setOnInsert(BaseEntity.Fields.dataChangeCreateTime, System.currentTimeMillis()));
   }
 
-  public static Bson getFullProperties(Object obj) {
-    List<Bson> updates = new ArrayList<>();
-    Map<String, Field> allFields = getAllField(obj);
-    for (Field field : allFields.values()) {
-      try {
-        field.setAccessible(true);
-        if (field.get(obj) != null) {
-          updates.add(Updates.set(field.getName(), field.get(obj)));
-        }
-      } catch (IllegalAccessException e) {
-        LOGGER.error(
-            String.format("Class:[%s]. failed to get field %s", obj.getClass().getName(),
-                field.getName()), e);
-      }
-    }
-    return Updates.combine(updates);
+  public static void withMongoTemplateBaseUpdate(Update update) {
+    update.set(BaseEntity.Fields.dataChangeUpdateTime, System.currentTimeMillis());
+    update.setOnInsert(BaseEntity.Fields.dataChangeCreateTime, System.currentTimeMillis());
   }
 
-  // This method is disabled for fields with the same name in parent and child classes
-  public static Bson getSpecifiedProperties(Object obj, String... fieldNames) {
-    List<Bson> updates = new ArrayList<>();
+  public static Update getFullTemplateUpdates(Object obj) {
+    Map<String, Field> allFields = getAllField(obj);
+    return getMongoTemplateUpdates(obj, allFields.keySet().toArray(new String[0]));
+  }
+
+  public static Update getMongoTemplateUpdates(Object obj, String... fieldNames) {
+    Update update = new Update();
     Map<String, Field> allField = getAllField(obj);
     for (String fieldName : fieldNames) {
       try {
@@ -48,7 +40,7 @@ public class MongoHelper {
           declaredField.setAccessible(true);
           Object targetObj = declaredField.get(obj);
           if (targetObj != null) {
-            updates.add(Updates.set(fieldName, targetObj));
+            update.set(fieldName, targetObj);
           }
         }
       } catch (IllegalAccessException e) {
@@ -57,7 +49,7 @@ public class MongoHelper {
             e);
       }
     }
-    return Updates.combine(updates);
+    return update;
   }
 
   private static Map<String, Field> getAllField(Object bean) {
@@ -76,13 +68,5 @@ public class MongoHelper {
       clazz = clazz.getSuperclass();
     }
     return fieldMap;
-  }
-
-  public static void assertNull(String msg, Object... obj) {
-    for (Object o : obj) {
-      if (o == null) {
-        throw new RuntimeException(msg);
-      }
-    }
   }
 }

@@ -9,6 +9,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -16,6 +17,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -25,6 +27,7 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.http.converter.support.AllEncompassingFormHttpMessageConverter;
 import org.springframework.http.converter.xml.SourceHttpMessageConverter;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -35,12 +38,16 @@ import org.springframework.web.client.RestTemplate;
  */
 @Component
 @Slf4j
+@SuppressWarnings({"java:S1192", "java:S1123", "java:S119", "java:S1181"})
 public final class HttpWebServiceApiClient {
 
   private final static int TEN_SECONDS_TIMEOUT = 10_000;
   private RestTemplate restTemplate;
   @Resource
   private ObjectMapper objectMapper;
+
+  @Autowired(required = false)
+  private List<ClientHttpRequestInterceptor> clientHttpRequestInterceptors;
 
   @PostConstruct
   private void initRestTemplate() {
@@ -60,6 +67,9 @@ public final class HttpWebServiceApiClient {
     httpMessageConverterList.add(converter);
     this.restTemplate = new RestTemplate(httpMessageConverterList);
     this.restTemplate.setRequestFactory(requestFactory);
+    if (!CollectionUtils.isEmpty(clientHttpRequestInterceptors)) {
+      this.restTemplate.setInterceptors(clientHttpRequestInterceptors);
+    }
   }
 
   public <TResponse> TResponse get(String url, Map<String, ?> urlVariables,
@@ -74,7 +84,8 @@ public final class HttpWebServiceApiClient {
     return null;
   }
 
-  public <TResponse> ResponseEntity<TResponse> get(String url, Map<String, ?> urlVariables,
+  public <TResponse> ResponseEntity<TResponse> get(boolean inner, String url,
+      Map<String, ?> urlVariables,
       ParameterizedTypeReference<TResponse> responseType) {
     try {
       return restTemplate.exchange(url, HttpMethod.GET, null, responseType, urlVariables);
@@ -116,7 +127,8 @@ public final class HttpWebServiceApiClient {
     return null;
   }
 
-  public <TRequest, TResponse> ResponseEntity<TResponse> responsePost(String url, TRequest request,
+  public <TRequest, TResponse> ResponseEntity<TResponse> responsePost(String url,
+      TRequest request,
       Class<TResponse> responseType, HttpHeaders headerValue) {
     try {
       return restTemplate.postForEntity(url, wrapJsonContentTypeWithHeader(request, headerValue),
@@ -156,7 +168,8 @@ public final class HttpWebServiceApiClient {
     return httpJsonEntity;
   }
 
-  public <TResponse> ResponseEntity<TResponse> exchange(String url, HttpMethod method,
+  public <TResponse> ResponseEntity<TResponse> exchange(String url,
+      HttpMethod method,
       HttpEntity<?> requestEntity,
       Class<TResponse> responseType) throws RestClientException {
     return restTemplate.exchange(url, method, requestEntity, responseType);
@@ -166,6 +179,5 @@ public final class HttpWebServiceApiClient {
       HttpEntity<TRequest> request,
       Class<TResponse> responseType) throws RestClientException {
     return restTemplate.postForEntity(url, wrapJsonContentType(request), responseType);
-
   }
 }

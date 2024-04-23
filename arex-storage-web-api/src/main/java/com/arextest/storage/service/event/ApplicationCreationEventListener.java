@@ -2,7 +2,6 @@ package com.arextest.storage.service.event;
 
 import com.arextest.storage.model.Constants;
 import com.arextest.storage.model.event.ApplicationCreationEvent;
-import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
@@ -19,6 +18,7 @@ import org.bson.conversions.Bson;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -26,7 +26,7 @@ public class ApplicationCreationEventListener implements
     ApplicationListener<ApplicationCreationEvent> {
 
   @Resource
-  private MongoDatabase mongoDatabase;
+  private MongoTemplate mongoTemplate;
 
   @Resource
   private CompareConfiguration compareConfiguration;
@@ -97,7 +97,7 @@ public class ApplicationCreationEventListener implements
             Updates.set(Constants.EXPIRATION_TIME, document.get(Constants.EXPIRATION_TIME))
         );
 
-        mongoDatabase.getCollection(Constants.CONFIG_COMPARISON_IGNORE_CATEGORY_COLLECTION_NAME)
+        mongoTemplate.getCollection(Constants.CONFIG_COMPARISON_IGNORE_CATEGORY_COLLECTION_NAME)
             .updateOne(filter, update, new UpdateOptions().upsert(true));
       }
     }

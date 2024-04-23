@@ -62,10 +62,6 @@ public class ServiceCollectConfiguration extends AbstractMultiEnvConfiguration<S
       throw new RuntimeException("appid is empty");
     }
 
-    if (this.getMultiEnvConfigs() == null || this.getMultiEnvConfigs().isEmpty()) {
-      throw new RuntimeException("multiEnvConfigs is empty");
-    }
-
     for (int i = 0; i < this.getMultiEnvConfigs().size(); i++) {
       ServiceCollectConfiguration current = this.getMultiEnvConfigs().get(i);
       if (current.getEnvTags() == null || current.getEnvTags().isEmpty()) {

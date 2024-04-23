@@ -2,22 +2,23 @@ package com.arextest.storage.repository.scenepool;
 
 import com.arextest.model.scenepool.Scene;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
 import javax.annotation.Resource;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 public abstract class AbstractScenePoolProvider implements ScenePoolProvider {
   @Resource
-  private MongoDatabase mongoDatabase;
-  MongoDatabase getDataBase() {
-    return mongoDatabase;
+  private MongoTemplate mongoTemplate;
+
+  MongoTemplate getTemplate() {
+    return mongoTemplate;
   }
 
-  void setMongoDataBase(MongoDatabase mongoDatabase) {
-    this.mongoDatabase = mongoDatabase;
+  void setMongoDataBase(MongoTemplate mongoDatabase) {
+    this.mongoTemplate = mongoDatabase;
   }
 
   MongoCollection<Scene> getCollection() {
     String scenePoolName = this.getProviderName() + "ScenePool";
-    return getDataBase().getCollection(scenePoolName, Scene.class);
+    return getTemplate().getMongoDatabaseFactory().getMongoDatabase().getCollection(scenePoolName, Scene.class);
   }
 }
