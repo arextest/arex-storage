@@ -12,14 +12,17 @@ import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.RepositoryReader;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
+import com.arextest.storage.service.mockerhandlers.DatabaseMockerHandler;
 import com.arextest.storage.service.mockerhandlers.MockerHandlerFactory;
 import com.arextest.storage.service.mockerhandlers.MockerSaveHandler;
-import java.util.List;
-import javax.validation.constraints.NotNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+
+import javax.validation.constraints.NotNull;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * The agent working should be complete two things: save the origin record and fetch the record
@@ -42,6 +45,8 @@ public class AgentWorkingService {
   private PrepareMockResultService prepareMockResultService;
   @Setter
   private RecordEnvType recordEnvType;
+  @Setter
+  private DatabaseMockerHandler databaseMockerHandel;
 
   public AgentWorkingService(MockResultProvider mockResultProvider,
       RepositoryProviderFactory repositoryProviderFactory,
@@ -144,6 +149,15 @@ public class AgentWorkingService {
       LOGGER.info("skip main entry mock response,record id:{},replay id:{}", recordId, replayId);
       return zstdJacksonSerializer.serialize(recordItem);
     }
+
+    // sqlParse
+    if (Objects.equals(MockCategoryType.DATABASE, category)) {
+      T mocker = databaseMockerHandel.parseMocker(recordItem);
+      if (mocker != null) {
+        recordItem = mocker;
+      }
+    }
+
     byte[] result = mockResultProvider.getRecordResult(recordItem, context);
     if (result == null) {
       LOGGER.info("fetch replay mock record empty from cache,record id:{},replay id:{}", recordId,
