@@ -1,13 +1,18 @@
 package com.arextest.storage.beans;
 
 import com.arextest.common.cache.CacheProvider;
+import com.arextest.common.jwt.JWTService;
+import com.arextest.common.jwt.JWTServiceImpl;
 import com.arextest.config.model.dao.config.SystemConfigurationCollection;
 import com.arextest.config.model.dao.config.SystemConfigurationCollection.KeySummary;
+import com.arextest.config.repository.impl.ApplicationConfigurationRepositoryImpl;
 import com.arextest.config.repository.impl.ApplicationOperationConfigurationRepositoryImpl;
 import com.arextest.config.repository.impl.ApplicationServiceConfigurationRepositoryImpl;
+import com.arextest.config.repository.impl.SystemConfigurationRepositoryImpl;
 import com.arextest.config.utils.MongoHelper;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
+import com.arextest.storage.aspect.AppAuthAspectExecutor;
 import com.arextest.storage.converter.ZstdJacksonMessageConverter;
 import com.arextest.storage.metric.AgentWorkingMetricService;
 import com.arextest.storage.metric.MatchStrategyMetricService;
@@ -28,6 +33,7 @@ import com.arextest.storage.service.InvalidIncompleteRecordService;
 import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.service.PrepareMockResultService;
 import com.arextest.storage.service.ScheduleReplayingService;
+import com.arextest.storage.service.config.ApplicationService;
 import com.arextest.storage.service.mockerhandlers.MockerHandlerFactory;
 import com.arextest.storage.web.controller.MockSourceEditionController;
 import com.arextest.storage.web.controller.ScheduleReplayQueryController;
@@ -76,6 +82,12 @@ public class StorageAutoConfiguration {
 
   @Value("${arex.app.auth.switch}")
   private boolean authSwitch;
+
+  private static final long ACCESS_EXPIRE_TIME = 7 * 24 * 60 * 60 * 1000L;
+  private static final long REFRESH_EXPIRE_TIME = 30 * 24 * 60 * 60 * 1000L;
+
+  @Value("${arex.jwt.secret:arex}")
+  private String tokenSecret;
 
   public StorageAutoConfiguration(StorageConfigurationProperties configurationProperties) {
     properties = configurationProperties;
@@ -127,7 +139,8 @@ public class StorageAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean(MongoConverter.class)
-  MappingMongoConverter mappingMongoConverter(MongoDatabaseFactory factory, MongoMappingContext context,
+  MappingMongoConverter mappingMongoConverter(MongoDatabaseFactory factory,
+      MongoMappingContext context,
       MongoCustomConversions conversions) {
     DbRefResolver dbRefResolver = new DefaultDbRefResolver(factory);
     MappingMongoConverter mappingConverter = new MappingMongoConverter(dbRefResolver, context);
@@ -241,10 +254,27 @@ public class StorageAutoConfiguration {
   }
 
   @Bean
+  @ConditionalOnMissingBean(AppAuthAspectExecutor.class)
+  public AppAuthAspectExecutor appAuthAspectExecutor(
+      ApplicationConfigurationRepositoryImpl applicationConfigurationRepository,
+      ApplicationService applicationService,
+      SystemConfigurationRepositoryImpl systemConfigurationRepository, JWTService jwtService) {
+    return new AppAuthAspectExecutor(applicationConfigurationRepository, applicationService,
+        systemConfigurationRepository, jwtService);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean(JWTService.class)
+  public JWTService jwtService() {
+    return new JWTServiceImpl(ACCESS_EXPIRE_TIME, REFRESH_EXPIRE_TIME, tokenSecret);
+  }
+
+  @Bean
   @Order(3)
   public RepositoryProvider<AREXMocker> autoPinnedMockerProvider(MongoTemplate mongoTemplate,
       Set<MockCategoryType> entryPointTypes) {
-    return new AREXMockerMongoRepositoryProvider(ProviderNames.AUTO_PINNED, mongoTemplate, properties,
+    return new AREXMockerMongoRepositoryProvider(ProviderNames.AUTO_PINNED, mongoTemplate,
+        properties,
         entryPointTypes);
   }
 
