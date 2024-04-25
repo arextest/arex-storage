@@ -145,7 +145,7 @@ public class CoverageMockerHandler implements MockerSaveHandler {
         String appId = coverageMocker.getAppId();
         String sceneKey = coverageMocker.getOperationName();
         String recordId = coverageMocker.getRecordId();
-        String op = NEW_SCENE_OP;
+        String op = EXISTING_SCENE_OP;
         MDCTracer.addAppId(appId);
         MDCTracer.addRecordId(recordId);
 
@@ -155,7 +155,7 @@ public class CoverageMockerHandler implements MockerSaveHandler {
           LOGGER.info("CoverageMockerHandler received existing case, recordId: {}, pathKey: {}",
               coverageMocker.getRecordId(), coverageMocker.getOperationName());
         } else {
-          op = EXISTING_SCENE_OP;
+          op = NEW_SCENE_OP;
           // new scene: extend mocker expiration and insert scene
           Scene scene = convert(coverageMocker);
 
