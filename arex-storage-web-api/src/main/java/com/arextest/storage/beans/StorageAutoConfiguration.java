@@ -57,6 +57,7 @@ import org.springframework.boot.autoconfigure.http.HttpMessageConverters;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
 import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.core.MongoOperations;
@@ -77,6 +78,7 @@ public class StorageAutoConfiguration {
 
   private final StorageConfigurationProperties properties;
 
+  @Lazy
   @Resource
   IndexesSettingConfiguration indexesSettingConfiguration;
 
