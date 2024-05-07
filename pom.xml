@@ -412,7 +412,7 @@
     </sonar.exclusions>
     <!-- Users could specify this property as true to skip the deploy process -->
     <spring.boot.version>2.7.18</spring.boot.version>
-    <arex-common.version>0.1.24</arex-common.version>
+    <arex-common.version>0.1.26</arex-common.version>
   </properties>
   <scm>
     <connection>scm:git:git://github.com/arextest/arex-storage.git</connection>
@@ -420,5 +420,5 @@
     <url>https://github.com/arextest/arex-storage</url>
   </scm>
   <url>https://github.com/arextest/arex-storage</url>
-  <version>1.1.30</version>
+  <version>1.1.31</version>
 </project>
