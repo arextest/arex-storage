@@ -35,12 +35,13 @@
       <groupId>jakarta.annotation</groupId>
     </dependency>
   </dependencies>
+
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <artifactId>arex-storage-service</artifactId>
     <groupId>com.arextest</groupId>
-    <version>1.1.22</version>
+    <version>1.1.32</version>
   </parent>
 
   <properties>

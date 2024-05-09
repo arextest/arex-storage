@@ -3,6 +3,7 @@ package com.arextest.storage.mock.impl;
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.common.utils.CompressionUtils;
 import com.arextest.config.model.vo.QueryConfigOfCategoryResponse.QueryConfigOfCategory;
+import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
@@ -20,17 +21,6 @@ import com.arextest.storage.service.QueryConfigService;
 import com.arextest.storage.utils.DatabaseUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
-import javax.annotation.Resource;
-import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -40,6 +30,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import javax.annotation.Resource;
+import javax.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 
 @Component
@@ -94,11 +94,6 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     // Obtain the number of the same interfaces in recorded data
     while (valueIterator.hasNext()) {
       T value = valueIterator.next();
-      // New and old data are compatible and will be deleted after a period of time online.
-      if (Objects.equals(MockCategoryType.DATABASE, value.getCategoryType())) {
-        String operationName = DatabaseUtils.parseOperationName(value.getOperationName());
-        value.setOperationName(operationName);
-      }
       mockList.add(value);
       if (shouldRecordCallReplayMax) {
         // Dubbo type mock needs to calculate the number of body and methods combined
@@ -415,6 +410,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
    * @return
    */
   private byte[] getOperationNameWithCategory(Mocker mockItem) {
+    DatabaseUtils.regenerateOperationName(mockItem);
     String operationName = mockItem.getOperationName();
     byte[] operationKey = CacheKeyUtils.toUtf8Bytes(operationName);
     if (!mockItem.getCategoryType().isEntryPoint() &&

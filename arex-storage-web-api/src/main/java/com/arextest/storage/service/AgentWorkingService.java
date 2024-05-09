@@ -12,17 +12,13 @@ import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.RepositoryReader;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
-import com.arextest.storage.service.mockerhandlers.DatabaseMockerHandler;
-import com.arextest.storage.service.mockerhandlers.MockerHandlerFactory;
-import com.arextest.storage.service.mockerhandlers.MockerSaveHandler;
+import com.arextest.storage.service.listener.AgentWorkingListener;
+import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-
-import javax.validation.constraints.NotNull;
-import java.util.List;
-import java.util.Objects;
 
 /**
  * The agent working should be complete two things: save the origin record and fetch the record
@@ -36,7 +32,6 @@ public class AgentWorkingService {
 
   private final MockResultProvider mockResultProvider;
   private final RepositoryProviderFactory repositoryProviderFactory;
-  private final MockerHandlerFactory mockerHandlerFactory;
   private final List<AgentWorkingListener> agentWorkingListeners;
   private final InvalidIncompleteRecordService invalidIncompleteRecordService;
   @Setter
@@ -45,18 +40,14 @@ public class AgentWorkingService {
   private PrepareMockResultService prepareMockResultService;
   @Setter
   private RecordEnvType recordEnvType;
-  @Setter
-  private DatabaseMockerHandler databaseMockerHandel;
 
   public AgentWorkingService(MockResultProvider mockResultProvider,
       RepositoryProviderFactory repositoryProviderFactory,
-      MockerHandlerFactory mockerHandlerFactory,
       List<AgentWorkingListener> agentWorkingListeners,
       InvalidIncompleteRecordService invalidIncompleteRecordService) {
     this.mockResultProvider = mockResultProvider;
     this.repositoryProviderFactory = repositoryProviderFactory;
     this.agentWorkingListeners = agentWorkingListeners;
-    this.mockerHandlerFactory = mockerHandlerFactory;
     this.invalidIncompleteRecordService = invalidIncompleteRecordService;
   }
 
@@ -73,22 +64,8 @@ public class AgentWorkingService {
       item.setRecordEnvironment(recordEnvType.getCodeValue());
     }
     if (!this.dispatchRecordSavingEvent(item)) {
-      LOGGER.warn("switch not open, skip save record data");
+      LOGGER.warn("dispatch record saving event failed, skip save record data");
       return false;
-    }
-
-    List<MockerSaveHandler> handlers = mockerHandlerFactory.getHandlers(item.getCategoryType());
-    if (!CollectionUtils.isEmpty(handlers)) {
-      for (MockerSaveHandler handler : handlers) {
-        try {
-          handler.handle(item);
-          LOGGER.info("Mocker handler success, recordId: {} , handler:{}", item.getRecordId(),
-              handler.getClass().getSimpleName());
-        } catch (Exception e) {
-          LOGGER.error("Mocker handler error", e);
-        }
-      }
-      return true;
     }
 
     mockResultProvider.calculateEigen(item, true);
@@ -138,7 +115,7 @@ public class AgentWorkingService {
   public <T extends Mocker> byte[] queryMockResult(@NotNull T recordItem,
       MockResultContext context) {
     if (!this.dispatchMockResultEnterEvent(recordItem, context)) {
-      LOGGER.warn("switch not open, skip query record data");
+      LOGGER.warn("dispatch record mock event failed, skip query record data");
       return ZstdJacksonSerializer.EMPTY_INSTANCE;
     }
     String recordId = recordItem.getRecordId();
@@ -149,15 +126,6 @@ public class AgentWorkingService {
       LOGGER.info("skip main entry mock response,record id:{},replay id:{}", recordId, replayId);
       return zstdJacksonSerializer.serialize(recordItem);
     }
-
-    // sqlParse
-    if (Objects.equals(MockCategoryType.DATABASE, category)) {
-      T mocker = databaseMockerHandel.parseMocker(recordItem);
-      if (mocker != null) {
-        recordItem = mocker;
-      }
-    }
-
     byte[] result = mockResultProvider.getRecordResult(recordItem, context);
     if (result == null) {
       LOGGER.info("fetch replay mock record empty from cache,record id:{},replay id:{}", recordId,

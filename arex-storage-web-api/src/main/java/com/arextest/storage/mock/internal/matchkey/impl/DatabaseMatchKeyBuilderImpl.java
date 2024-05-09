@@ -10,13 +10,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
-
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,6 +17,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
 
 /**
  * Why the db mock key has more items building? 1,The user add some comments to sql or 2,add or
@@ -44,8 +43,6 @@ public class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
   private static final String COMMA_STRING = ",";
   private static final int INDEX_NOT_FOUND = -1;
   private static final int UPPER_LOWER_CASE_DELTA_VALUE = 32;
-
-
   /**
    * table name for ms-sql-server and mysql, which valid format as follow: ms-sql-server example:
    * 1,dbo.[tableName] 2,[orderDb].dbo.[tableName] 3,tableName mysql example:
@@ -169,10 +166,7 @@ public class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
     byte[] dbNameBytes = CacheKeyUtils.toUtf8Bytes(dbName);
     byte[] sqlTextBytes = CacheKeyUtils.toUtf8Bytes(sqlText);
     byte[] sqlParameterBytes = CacheKeyUtils.toUtf8Bytes(sqlParameter);
-
-    // New and old data are compatible and will be deleted after a period of time online.
-    String operationName = DatabaseUtils.parseOperationName(databaseMocker.getOperationName());
-    byte[] operationBytes = CacheKeyUtils.toUtf8Bytes(operationName);
+    byte[] operationBytes = CacheKeyUtils.toUtf8Bytes(databaseMocker.getOperationName());
     MessageDigest md5Digest = MessageDigestWriter.getMD5Digest();
     md5Digest.update(dbNameBytes);
     md5Digest.update(operationBytes);
@@ -239,7 +233,7 @@ public class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
   }
 
   private void findTableNameToMd5WithParser(String sqlText, MessageDigest md5Digest, String operationName) {
-    Set<String> tableNames = DatabaseUtils.parseTableNames(operationName);
+    List<String> tableNames = DatabaseUtils.parseTableNames(operationName);
     if (CollectionUtils.isEmpty(tableNames)) {
       findTableNameToMd5(sqlText, md5Digest);
     } else {
