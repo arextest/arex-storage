@@ -5,12 +5,16 @@ import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.model.TableSchema;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import com.google.common.annotations.VisibleForTesting;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.util.TablesNamesFinder;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collections;
@@ -59,7 +63,8 @@ public class DatabaseUtils {
     /**
      * The operation name is generated in the format of dbName-tableNames-action-originalOperationName, eg: db1-table1,table2-select-operation1
      */
-    private static String regenerateOperationName(TableSchema tableSchema, String originOperationName) {
+    @VisibleForTesting
+    static String regenerateOperationName(TableSchema tableSchema, String originOperationName) {
         return new StringBuilder(100).append(StringUtils.defaultString(tableSchema.getDbName())).append('-')
             .append(StringUtils.defaultString(StringUtils.join(tableSchema.getTableNames(), ","))).append('-')
             .append(StringUtils.defaultString(tableSchema.getAction())).append("-")
@@ -113,9 +118,10 @@ public class DatabaseUtils {
     /**
      * parse table and action from sql
      * @param sql sql
-     * @return Map<String, String> table and action
+     * @return table schema info
      */
-    private static TableSchema parse(String sql) {
+    @VisibleForTesting
+    static TableSchema parse(String sql) {
         if (StringUtils.isEmpty(sql)) {
             return null;
         }
@@ -126,7 +132,12 @@ public class DatabaseUtils {
             Statement statement = CCJSqlParserUtil.parse(sql);
             tableSchema.setAction(statement.getClass().getSimpleName());
 
-            tableSchema.setTableNames(new TablesNamesFinder().getTableList(statement));
+            List<String> tableNameList = new TablesNamesFinder().getTableList(statement);
+            // sort table name
+            if (CollectionUtils.isNotEmpty(tableNameList)) {
+                Collections.sort(tableNameList);
+            }
+            tableSchema.setTableNames(tableNameList);
         } catch (Exception e) {
             LOGGER.warn("parse sql error, sql: {}", sql, e);
         }

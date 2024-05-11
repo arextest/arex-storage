@@ -94,6 +94,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     // Obtain the number of the same interfaces in recorded data
     while (valueIterator.hasNext()) {
       T value = valueIterator.next();
+      DatabaseUtils.regenerateOperationName(value);
       mockList.add(value);
       if (shouldRecordCallReplayMax) {
         // Dubbo type mock needs to calculate the number of body and methods combined
@@ -410,7 +411,6 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
    * @return
    */
   private byte[] getOperationNameWithCategory(Mocker mockItem) {
-    DatabaseUtils.regenerateOperationName(mockItem);
     String operationName = mockItem.getOperationName();
     byte[] operationKey = CacheKeyUtils.toUtf8Bytes(operationName);
     if (!mockItem.getCategoryType().isEntryPoint() &&
