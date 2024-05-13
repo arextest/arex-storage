@@ -26,15 +26,15 @@ import com.arextest.storage.repository.impl.mongo.DesensitizationLoader;
 import com.arextest.storage.repository.impl.mongo.converters.ArexEigenCompressionConverter;
 import com.arextest.storage.repository.impl.mongo.converters.ArexMockerCompressionConverter;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
-import com.arextest.storage.service.AgentWorkingListener;
+import com.arextest.storage.service.listener.AgentWorkingListener;
 import com.arextest.storage.service.AgentWorkingService;
-import com.arextest.storage.service.AutoDiscoveryEntryPointListener;
+import com.arextest.storage.service.listener.AutoDiscoveryEntryPointListener;
 import com.arextest.storage.service.InvalidIncompleteRecordService;
 import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.service.PrepareMockResultService;
 import com.arextest.storage.service.ScheduleReplayingService;
 import com.arextest.storage.service.config.ApplicationService;
-import com.arextest.storage.service.mockerhandlers.MockerHandlerFactory;
+import com.arextest.storage.service.handler.mocker.MockerHandlerFactory;
 import com.arextest.storage.web.controller.MockSourceEditionController;
 import com.arextest.storage.web.controller.ScheduleReplayQueryController;
 import com.mongodb.client.MongoCollection;
@@ -202,12 +202,12 @@ public class StorageAutoConfiguration {
   @ConditionalOnMissingBean(AgentWorkingService.class)
   public AgentWorkingService agentWorkingService(MockResultProvider mockResultProvider,
       RepositoryProviderFactory repositoryProviderFactory,
-      MockerHandlerFactory mockerHandlerFactory, ZstdJacksonSerializer zstdJacksonSerializer,
+      ZstdJacksonSerializer zstdJacksonSerializer,
       PrepareMockResultService prepareMockResultService,
       List<AgentWorkingListener> agentWorkingListeners,
       InvalidIncompleteRecordService invalidIncompleteRecordService) {
     AgentWorkingService workingService = new AgentWorkingService(mockResultProvider,
-        repositoryProviderFactory, mockerHandlerFactory, agentWorkingListeners,
+        repositoryProviderFactory, agentWorkingListeners,
         invalidIncompleteRecordService);
     workingService.setPrepareMockResultService(prepareMockResultService);
     workingService.setZstdJacksonSerializer(zstdJacksonSerializer);
