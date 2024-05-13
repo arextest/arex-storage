@@ -39,7 +39,7 @@ public class DatabaseUtilsTest {
         TableSchema tableSchema = DatabaseUtils.parse(sql);
         assertNotNull(tableSchema);
         assertEquals(DbParseConstants.SELECT.toLowerCase(), tableSchema.getAction().toLowerCase());
-        assertEquals("colle_subject,department,Employee", StringUtils.join(tableSchema.getTableNames(), ","));
+        assertEquals("Employee,colle_subject,department", StringUtils.join(tableSchema.getTableNames(), ","));
     }
 
     @Test
@@ -55,8 +55,8 @@ public class DatabaseUtilsTest {
             operationNames.add(DatabaseUtils.regenerateOperationName(tableSchema, "operationName"));
         }
         assertNotEquals(0, operationNames.size());
-        assertEquals("-students-Select-operationName", operationNames.get(0));
-        assertEquals("-student-Select-operationName", operationNames.get(1));
+        assertEquals("@students@Select@operationName", operationNames.get(0));
+        assertEquals("@student@Select@operationName", operationNames.get(1));
     }
 
     @Test

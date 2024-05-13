@@ -5,7 +5,6 @@ import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.model.TableSchema;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -39,8 +38,8 @@ public class DatabaseUtils {
         if (mocker.getTargetRequest() ==  null || StringUtils.isEmpty(mocker.getTargetRequest().getBody())) {
             return;
         }
-        // If the operation name already contains -, it means that it has already been generated and does not need to be generated again
-        if (StringUtils.contains(mocker.getOperationName(), '-')) {
+        // If the operation name already contains @, it means that it has already been generated and does not need to be generated again
+        if (StringUtils.contains(mocker.getOperationName(), '@')) {
             return;
         }
 
@@ -61,13 +60,13 @@ public class DatabaseUtils {
     }
 
     /**
-     * The operation name is generated in the format of dbName-tableNames-action-originalOperationName, eg: db1-table1,table2-select-operation1
+     * The operation name is generated in the format of dbName-tableNames-action-originalOperationName, eg: db1@table1,table2@select@operation1
      */
     @VisibleForTesting
     static String regenerateOperationName(TableSchema tableSchema, String originOperationName) {
-        return new StringBuilder(100).append(StringUtils.defaultString(tableSchema.getDbName())).append('-')
-            .append(StringUtils.defaultString(StringUtils.join(tableSchema.getTableNames(), ","))).append('-')
-            .append(StringUtils.defaultString(tableSchema.getAction())).append("-")
+        return new StringBuilder(100).append(StringUtils.defaultString(tableSchema.getDbName())).append('@')
+            .append(StringUtils.defaultString(StringUtils.join(tableSchema.getTableNames(), ","))).append('@')
+            .append(StringUtils.defaultString(tableSchema.getAction())).append("@")
             .append(originOperationName)
             .toString();
     }
@@ -82,7 +81,7 @@ public class DatabaseUtils {
         if (StringUtils.isEmpty(operationName)) {
             return operationName;
         }
-        int index = operationName.indexOf('-');
+        int index = operationName.indexOf('@');
         if (index == -1) {
             return operationName;
         }
@@ -90,14 +89,14 @@ public class DatabaseUtils {
     }
 
     /**
-     * @param operationName example: dbName-tableName, tableName, tableName-action-operationName;
+     * @param operationName example: dbName@tableName, tableName, tableName@action@operationName;
      * @return tableNames
      */
     public static List<String> parseTableNames(String operationName) {
         if (StringUtils.isEmpty(operationName)) {
             return Collections.emptyList();
         }
-        int countMatches = StringUtils.countMatches(operationName, "-");
+        int countMatches = StringUtils.countMatches(operationName, "@");
         if (countMatches < 2) {
             return Collections.emptyList();
         }
@@ -105,7 +104,7 @@ public class DatabaseUtils {
         String[] operations = StringUtils.split(operationName, ';');
         List<String> tableList = new ArrayList<>(operations.length);
         for (String operation : operations) {
-            String[] subOperation = StringUtils.split(operation, '-');
+            String[] subOperation = StringUtils.split(operation, '@');
             if (subOperation.length < 1) {
                 continue;
             }
