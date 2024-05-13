@@ -2,6 +2,7 @@ package com.arextest.storage.service.event;
 
 import com.arextest.storage.model.Constants;
 import com.arextest.storage.model.event.ApplicationCreationEvent;
+import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
@@ -12,6 +13,8 @@ import javax.annotation.Resource;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
+import lombok.experimental.FieldNameConstants;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -22,6 +25,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 public class ApplicationCreationEventListener implements
     ApplicationListener<ApplicationCreationEvent> {
 
@@ -36,8 +40,12 @@ public class ApplicationCreationEventListener implements
   @Override
   public void onApplicationEvent(@NonNull ApplicationCreationEvent event) {
     String appId = (String) event.getSource();
-    // create default mock compare ignore config
-    createDefaultMockCompareIgnoreConfig(appId);
+    try {
+      // create default mock compare ignore config
+      createDefaultMockCompareIgnoreConfig(appId);
+    } catch (Exception e) {
+      LOGGER.error("create config failed", e);
+    }
   }
 
 
@@ -67,7 +75,10 @@ public class ApplicationCreationEventListener implements
       // it represents the config pinned forever use it
       document.put(Constants.EXPIRATION_TYPE, 0);
       document.put(Constants.EXPIRATION_TIME, new Date());
-      document.put(IGNORE_CATEGORY_DETAIL, category);
+      Document categoryDocument = new Document();
+      categoryDocument.put(CategoryDetail.Fields.operationType, category.getOperationType());
+      categoryDocument.put(CategoryDetail.Fields.operationName, category.getOperationName());
+      document.put(IGNORE_CATEGORY_DETAIL, categoryDocument);
       mockCompareIgnoreConfig.add(document);
     }
 
@@ -97,8 +108,8 @@ public class ApplicationCreationEventListener implements
             Updates.set(Constants.EXPIRATION_TIME, document.get(Constants.EXPIRATION_TIME))
         );
 
-        mongoTemplate.getCollection(Constants.CONFIG_COMPARISON_IGNORE_CATEGORY_COLLECTION_NAME)
-            .updateOne(filter, update, new UpdateOptions().upsert(true));
+        MongoCollection<Document> collection = mongoTemplate.getCollection(Constants.CONFIG_COMPARISON_IGNORE_CATEGORY_COLLECTION_NAME);
+        collection.updateOne(filter, update, new UpdateOptions().upsert(true));
       }
     }
   }
@@ -115,11 +126,9 @@ public class ApplicationCreationEventListener implements
 
   @Getter
   @Setter
+  @FieldNameConstants
   public static class CategoryDetail {
-
     private String operationType;
     private String operationName;
   }
-
-
 }

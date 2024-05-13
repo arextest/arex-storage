@@ -24,4 +24,9 @@ public class PagedRequestType {
   private String sourceProvider;
   private List<SortingOption> sortingOptions;
   private Map<String, String> tags;
+  /**
+   * Control whether special fields are output
+   * eg: ["targetResponse", "eigenMap"]
+   */
+  private String[] includeExtendFields;
 }

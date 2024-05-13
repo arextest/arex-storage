@@ -171,7 +171,7 @@ public class ScheduleReplayingService {
    */
   private Set<MockCategoryType> calculateNormalCategories(ViewRecordRequestType request) {
     Set<MockCategoryType> mockCategoryTypes;
-    if (!StringUtils.isEmpty(request.getCategoryType())) {
+    if (StringUtils.isNotEmpty(request.getCategoryType())) {
       MockCategoryType category = repositoryProviderFactory.findCategory(request.getCategoryType());
       if (category == null) {
         return Collections.emptySet();
@@ -186,12 +186,7 @@ public class ScheduleReplayingService {
       mockCategoryTypes = new HashSet<>(request.getCategoryTypes().size());
 
       for (String categoryName : request.getCategoryTypes()) {
-        // special logic shim for coverage mocker, currently used internally
-        // repositoryProviderFactory.findCategory() will return null for type COVERAGE because it's needed for most case
-        MockCategoryType category =
-            MockCategoryType.COVERAGE.getName().equals(categoryName) ? MockCategoryType.COVERAGE
-                : repositoryProviderFactory.findCategory(categoryName);
-
+        MockCategoryType category = repositoryProviderFactory.findCategory(categoryName);
         if (category == null) {
           continue;
         }

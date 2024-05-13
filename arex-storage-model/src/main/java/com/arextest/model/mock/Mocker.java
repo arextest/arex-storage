@@ -50,6 +50,8 @@ public interface Mocker {
 
   String getOperationName();
 
+  void setOperationName(String operationName);
+
   Target getTargetRequest();
 
   Target getTargetResponse();

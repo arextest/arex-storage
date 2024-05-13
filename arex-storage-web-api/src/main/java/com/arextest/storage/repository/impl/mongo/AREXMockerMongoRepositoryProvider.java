@@ -7,7 +7,6 @@ import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.SortingOption;
 import com.arextest.model.replay.SortingTypeEnum;
 import com.arextest.model.util.MongoCounter;
-import com.arextest.model.util.MongoCounter.Fields;
 import com.arextest.storage.beans.StorageConfigurationProperties;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
@@ -25,9 +24,8 @@ import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.bson.Document;
-import org.bson.codecs.IdGenerator;
 import org.bson.codecs.pojo.IdGenerators;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.data.domain.Sort;
@@ -35,7 +33,6 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -75,6 +72,11 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
   private final String providerName;
   private final StorageConfigurationProperties properties;
   private final Set<MockCategoryType> entryPointTypes;
+  private static final String[] DEFAULT_INCLUDE_FIELDS =
+      new String[]{AREXMocker.Fields.id, AREXMocker.Fields.categoryType, AREXMocker.Fields.recordId,
+          AREXMocker.Fields.appId, AREXMocker.Fields.recordEnvironment, AREXMocker.Fields.creationTime,
+          AREXMocker.Fields.expirationTime, AREXMocker.Fields.targetRequest, AREXMocker.Fields.operationName,
+          AREXMocker.Fields.tags, AREXMocker.Fields.recordVersion};
 
   public AREXMockerMongoRepositoryProvider(MongoTemplate mongoTemplate,
       StorageConfigurationProperties properties,
@@ -145,7 +147,13 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         .with(toSupportSortingOptions(pagedRequestType.getSortingOptions()))
         .skip(pageIndex == null ? 0 : pagedRequestType.getPageSize() * (pageIndex - 1))
         .limit(Math.min(pagedRequestType.getPageSize(), DEFAULT_MAX_LIMIT_SIZE));
-    query.fields().exclude(TARGET_RESPONSE_COLUMN_NAME, EIGEN_MAP_COLUMN_NAME);
+
+    // By default, targetResponse is not output. When includeExtendFields is included, it is output.
+    query.fields().include(DEFAULT_INCLUDE_FIELDS);
+    if (ArrayUtils.isNotEmpty(pagedRequestType.getIncludeExtendFields())) {
+        query.fields().include(pagedRequestType.getIncludeExtendFields());
+    }
+
     Iterable<AREXMocker> iterable = mongoTemplate.find(query, AREXMocker.class, collection);
     return new AttachmentCategoryIterable(categoryType, iterable);
   }

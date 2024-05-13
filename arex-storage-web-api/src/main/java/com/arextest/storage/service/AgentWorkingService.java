@@ -12,8 +12,7 @@ import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.RepositoryReader;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
-import com.arextest.storage.service.mockerhandlers.MockerHandlerFactory;
-import com.arextest.storage.service.mockerhandlers.MockerSaveHandler;
+import com.arextest.storage.service.listener.AgentWorkingListener;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Setter;
@@ -33,7 +32,6 @@ public class AgentWorkingService {
 
   private final MockResultProvider mockResultProvider;
   private final RepositoryProviderFactory repositoryProviderFactory;
-  private final MockerHandlerFactory mockerHandlerFactory;
   private final List<AgentWorkingListener> agentWorkingListeners;
   private final InvalidIncompleteRecordService invalidIncompleteRecordService;
   @Setter
@@ -45,13 +43,11 @@ public class AgentWorkingService {
 
   public AgentWorkingService(MockResultProvider mockResultProvider,
       RepositoryProviderFactory repositoryProviderFactory,
-      MockerHandlerFactory mockerHandlerFactory,
       List<AgentWorkingListener> agentWorkingListeners,
       InvalidIncompleteRecordService invalidIncompleteRecordService) {
     this.mockResultProvider = mockResultProvider;
     this.repositoryProviderFactory = repositoryProviderFactory;
     this.agentWorkingListeners = agentWorkingListeners;
-    this.mockerHandlerFactory = mockerHandlerFactory;
     this.invalidIncompleteRecordService = invalidIncompleteRecordService;
   }
 
@@ -68,22 +64,8 @@ public class AgentWorkingService {
       item.setRecordEnvironment(recordEnvType.getCodeValue());
     }
     if (!this.dispatchRecordSavingEvent(item)) {
-      LOGGER.warn("switch not open, skip save record data");
+      LOGGER.warn("dispatch record saving event failed, skip save record data");
       return false;
-    }
-
-    List<MockerSaveHandler> handlers = mockerHandlerFactory.getHandlers(item.getCategoryType());
-    if (!CollectionUtils.isEmpty(handlers)) {
-      for (MockerSaveHandler handler : handlers) {
-        try {
-          handler.handle(item);
-          LOGGER.info("Mocker handler success, recordId: {} , handler:{}", item.getRecordId(),
-              handler.getClass().getSimpleName());
-        } catch (Exception e) {
-          LOGGER.error("Mocker handler error", e);
-        }
-      }
-      return true;
     }
 
     mockResultProvider.calculateEigen(item, true);
@@ -133,7 +115,7 @@ public class AgentWorkingService {
   public <T extends Mocker> byte[] queryMockResult(@NotNull T recordItem,
       MockResultContext context) {
     if (!this.dispatchMockResultEnterEvent(recordItem, context)) {
-      LOGGER.warn("switch not open, skip query record data");
+      LOGGER.warn("dispatch record mock event failed, skip query record data");
       return ZstdJacksonSerializer.EMPTY_INSTANCE;
     }
     String recordId = recordItem.getRecordId();

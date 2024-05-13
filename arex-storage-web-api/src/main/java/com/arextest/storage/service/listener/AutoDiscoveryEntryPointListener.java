@@ -1,4 +1,4 @@
-package com.arextest.storage.service;
+package com.arextest.storage.service.listener;
 
 import static com.arextest.storage.cache.CacheKeyUtils.DASH;
 import static com.arextest.storage.cache.CacheKeyUtils.SERVICE_MAPPINGS_PREFIX;

@@ -5,6 +5,7 @@ import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.cache.CacheKeyUtils;
 import com.arextest.storage.mock.MatchKeyBuilder;
+import com.arextest.storage.utils.DatabaseUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,11 +16,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import net.sf.jsqlparser.JSQLParserException;
-import net.sf.jsqlparser.parser.CCJSqlParserUtil;
-import net.sf.jsqlparser.statement.Statements;
-import net.sf.jsqlparser.util.TablesNamesFinder;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -164,7 +162,7 @@ public class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
     Mocker.Target targetRequest = databaseMocker.getTargetRequest();
     String sqlParameter = targetRequest.attributeAsString(MockAttributeNames.DB_PARAMETERS);
     String sqlText = targetRequest.getBody();
-    String dbName = targetRequest.attributeAsString(MockAttributeNames.DB_NAME);
+    String dbName = DatabaseUtils.parseDbName(databaseMocker.getOperationName(), targetRequest);
     byte[] dbNameBytes = CacheKeyUtils.toUtf8Bytes(dbName);
     byte[] sqlTextBytes = CacheKeyUtils.toUtf8Bytes(sqlText);
     byte[] sqlParameterBytes = CacheKeyUtils.toUtf8Bytes(sqlParameter);
@@ -194,7 +192,7 @@ public class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
     byte[] fullMatchKey = md5Digest.digest();
     keys.add(fullMatchKey);
 
-    findTableNameToMd5WithParser(sqlText, md5Digest);
+    findTableNameToMd5WithParser(sqlText, md5Digest, databaseMocker.getOperationName());
     md5Digest.update(dbNameMatchKey);
     // 3,db+table+operationName
     byte[] tableMatchKey = md5Digest.digest();
@@ -234,22 +232,12 @@ public class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
 
   }
 
-  private void findTableNameToMd5WithParser(String sqlText, MessageDigest md5Digest) {
-    try {
-      Statements statements = CCJSqlParserUtil.parseStatements(sqlText);
-      TablesNamesFinder tablesNamesFinder = new TablesNamesFinder();
-      statements.getStatements().forEach(statement -> {
-        List<String> tableList = tablesNamesFinder.getTableList(statement);
-        if (CollectionUtils.isNotEmpty(tableList)) {
-          for (String tableName : tableList) {
-            md5Digest.update(CacheKeyUtils.toUtf8Bytes(tableName));
-          }
-        }
-      });
-    } catch (RuntimeException | JSQLParserException e) {
-      LOGGER.warn("tryParseSqlTableName error:{},sqlText:{}", e.getMessage(), sqlText,
-              e);
+  private void findTableNameToMd5WithParser(String sqlText, MessageDigest md5Digest, String operationName) {
+    List<String> tableNames = DatabaseUtils.parseTableNames(operationName);
+    if (CollectionUtils.isEmpty(tableNames)) {
       findTableNameToMd5(sqlText, md5Digest);
+    } else {
+      tableNames.forEach(tableName -> md5Digest.update(CacheKeyUtils.toUtf8Bytes(tableName)));
     }
   }
 
