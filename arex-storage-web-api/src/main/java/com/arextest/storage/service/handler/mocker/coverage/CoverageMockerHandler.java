@@ -1,4 +1,4 @@
-package com.arextest.storage.service.mockerhandlers.coverage;
+package com.arextest.storage.service.handler.mocker.coverage;
 
 import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.MockCategoryType;
@@ -10,7 +10,7 @@ import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.scenepool.ScenePoolFactory;
 import com.arextest.storage.repository.scenepool.ScenePoolProvider;
 import com.arextest.storage.service.MockSourceEditionService;
-import com.arextest.storage.service.mockerhandlers.MockerSaveHandler;
+import com.arextest.storage.service.handler.mocker.MockerHandler;
 import com.arextest.storage.trace.MDCTracer;
 import java.util.HashMap;
 import java.util.List;
@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 @AllArgsConstructor
-public class CoverageMockerHandler implements MockerSaveHandler {
+public class CoverageMockerHandler implements MockerHandler {
   private MockSourceEditionService mockSourceEditionService;
   private ScheduledExecutorService coverageHandleDelayedPool;
   private ScenePoolFactory scenePoolFactory;
@@ -50,7 +50,7 @@ public class CoverageMockerHandler implements MockerSaveHandler {
    * if is new case: if it has same path key: replace old case else: store
    */
   @Override
-  public void handle(Mocker coverageMocker) {
+  public void handleOnRecordSaving(Mocker coverageMocker) {
     ScenePoolProvider scenePoolProvider;
     Runnable task;
     String appId = coverageMocker.getAppId();
@@ -83,6 +83,11 @@ public class CoverageMockerHandler implements MockerSaveHandler {
       task = new ReplayTask(scenePoolProvider, coverageMocker);
       coverageHandleDelayedPool.schedule(task, 1, TimeUnit.SECONDS);
     }
+  }
+
+  @Override
+  public boolean isContinue() {
+    return false;
   }
 
   /**

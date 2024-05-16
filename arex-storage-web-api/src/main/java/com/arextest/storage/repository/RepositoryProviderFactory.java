@@ -42,6 +42,9 @@ public final class RepositoryProviderFactory {
     if (StringUtils.isEmpty(categoryName)) {
       return null;
     }
+    if (MockCategoryType.COVERAGE.getName().equals(categoryName)) {
+      return MockCategoryType.COVERAGE;
+    }
     for (MockCategoryType categoryType : categoryTypes) {
       if (StringUtils.equals(categoryName, categoryType.getName())) {
         return categoryType;
