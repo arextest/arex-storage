@@ -22,6 +22,7 @@ public class AREXMocker implements Mocker {
    * 1、Only for editing dependencies,the entry point ignored 2、During query, record the id of the
    * mock, and use the id to associate data during comparison
    */
+  @Field(targetType = FieldType.STRING)
   private String id;
 
   /**
