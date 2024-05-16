@@ -2,8 +2,8 @@ package com.arextest.storage.beans;
 
 import com.arextest.storage.repository.scenepool.ScenePoolFactory;
 import com.arextest.storage.repository.scenepool.ScenePoolProviderImpl;
-import com.arextest.storage.service.mockerhandlers.coverage.CoverageHandlerSwitch;
-import com.arextest.storage.service.mockerhandlers.coverage.DefaultCoverageSwitch;
+import com.arextest.storage.service.handler.mocker.coverage.CoverageHandlerSwitch;
+import com.arextest.storage.service.handler.mocker.coverage.DefaultCoverageSwitch;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

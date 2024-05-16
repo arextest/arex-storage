@@ -186,6 +186,12 @@
         <groupId>org.springframework.boot</groupId>
         <version>${spring.boot.version}</version>
       </dependency>
+
+      <dependency>
+        <groupId>com.github.jsqlparser</groupId>
+        <artifactId>jsqlparser</artifactId>
+        <version>${jsqlparser.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
   <description>Arex-storage is used for data storage.</description>
@@ -404,6 +410,7 @@
     <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
     <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
     <maven-war-plugin.version>3.0.0</maven-war-plugin.version>
+    <jsqlparser.version>4.5</jsqlparser.version>
     <maven.deploy.skip>false</maven.deploy.skip>
     <maven.source.skip>false</maven.source.skip>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -420,5 +427,5 @@
     <url>https://github.com/arextest/arex-storage</url>
   </scm>
   <url>https://github.com/arextest/arex-storage</url>
-  <version>1.1.32</version>
+  <version>1.1.33</version>
 </project>

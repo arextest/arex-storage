@@ -18,6 +18,7 @@ import com.arextest.storage.mock.internal.matchkey.impl.DubboConsumerMatchKeyBui
 import com.arextest.storage.model.MockResultType;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.QueryConfigService;
+import com.arextest.storage.utils.DatabaseUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import java.util.ArrayList;
@@ -93,6 +94,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     // Obtain the number of the same interfaces in recorded data
     while (valueIterator.hasNext()) {
       T value = valueIterator.next();
+      DatabaseUtils.regenerateOperationName(value);
       mockList.add(value);
       if (shouldRecordCallReplayMax) {
         // Dubbo type mock needs to calculate the number of body and methods combined
