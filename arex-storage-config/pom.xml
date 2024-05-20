@@ -41,7 +41,7 @@
   <parent>
     <artifactId>arex-storage-service</artifactId>
     <groupId>com.arextest</groupId>
-    <version>1.1.34</version>
+    <version>1.1.35</version>
   </parent>
 
   <properties>
