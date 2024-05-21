@@ -2,6 +2,7 @@ package com.arextest.storage.utils;
 
 import com.arextest.diff.handler.parse.sqlparse.constants.DbParseConstants;
 import com.arextest.storage.model.TableSchema;
+import net.sf.jsqlparser.statement.upsert.Upsert;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 
@@ -116,7 +117,7 @@ public class DatabaseUtilsTest {
         TableSchema tableSchema = DatabaseUtils.parse(sql);
         assertNotNull(tableSchema);
         assertEquals("tb1,tb2", StringUtils.join(tableSchema.getTableNames(), ","));
-        assertEquals(DbParseConstants.REPLACE.toLowerCase(), tableSchema.getAction().toLowerCase());
+        assertEquals(Upsert.class.getSimpleName().toLowerCase(), tableSchema.getAction().toLowerCase());
     }
 
     @Test
@@ -161,5 +162,12 @@ public class DatabaseUtilsTest {
             + "order by qi.id desc ) tmp_count";
         TableSchema tableSchema = DatabaseUtils.parse(sql);
         assertEquals("qc_issue", StringUtils.join(tableSchema.getTableNames(), ","));
+    }
+
+    @Test
+    public void parseSQLWithKeyWord() {
+        String sql = "SELECT address,extended,union_user_id FROM access_token WHERE ( user_id = ? ) LIMIT ?";
+        TableSchema tableSchema = DatabaseUtils.parse(sql);
+        assertEquals("access_token", StringUtils.join(tableSchema.getTableNames(), ","));
     }
 }

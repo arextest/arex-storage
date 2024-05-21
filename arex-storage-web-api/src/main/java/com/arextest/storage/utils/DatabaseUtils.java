@@ -12,6 +12,7 @@ import com.google.common.annotations.VisibleForTesting;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.util.TablesNamesFinder;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -129,7 +130,7 @@ public class DatabaseUtils {
             sql = PATTERN.matcher(sql).replaceAll(" ");
 
             Statement statement = CCJSqlParserUtil.parse(sql);
-            tableSchema.setAction(statement.getClass().getSimpleName());
+            tableSchema.setAction(getAction(statement));
 
             List<String> tableNameList = new TablesNamesFinder().getTableList(statement);
             // sort table name
@@ -141,5 +142,12 @@ public class DatabaseUtils {
             LOGGER.warn("parse sql error, sql: {}", sql, e);
         }
         return tableSchema;
+    }
+
+    static String getAction(Statement statement) {
+        if (statement instanceof Select) {
+            return "Select";
+        }
+        return statement.getClass().getSimpleName();
     }
 }
