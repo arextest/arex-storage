@@ -1,5 +1,6 @@
 package com.arextest.storage.service.handler.mocker.coverage;
 
+import com.arextest.config.model.dto.CaseSendScene;
 import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
@@ -54,6 +55,15 @@ public class CoverageMockerHandler implements MockerHandler {
     ScenePoolProvider scenePoolProvider;
     Runnable task;
     String appId = coverageMocker.getAppId();
+    Target targetRequest = coverageMocker.getTargetRequest();
+
+    // passed by schedule
+    String scheduleSendScene = Optional.ofNullable(targetRequest)
+        .map(i -> targetRequest.attributeAsString(MockAttributeNames.SCHEDULE_PARAM))
+        .orElse(null);
+    boolean forceRecord = Optional.ofNullable(targetRequest)
+        .map(i -> Boolean.parseBoolean(targetRequest.attributeAsString(MockAttributeNames.FORCE_RECORD)))
+        .orElse(false);
 
     if (StringUtils.isEmpty(coverageMocker.getOperationName())
         || coverageMocker.getOperationName().equals(INVALID_SCENE_KEY)
@@ -63,10 +73,8 @@ public class CoverageMockerHandler implements MockerHandler {
       return;
     }
 
-    // force record data insert to coverage mocker
-    Target targetRequest = coverageMocker.getTargetRequest();
-    if (targetRequest != null &&
-        Boolean.parseBoolean(targetRequest.attributeAsString(MockAttributeNames.FORCE_RECORD))) {
+    // force record data insert to RollingCoverageMocker, skip the scene pool
+    if (forceRecord) {
       mockSourceEditionService.add(ProviderNames.DEFAULT, coverageMocker);
       LOGGER.info("CoverageMockerHandler received force record case, recordId: {}, pathKey: {}",
           coverageMocker.getRecordId(), coverageMocker.getOperationName());
@@ -78,7 +86,9 @@ public class CoverageMockerHandler implements MockerHandler {
       scenePoolProvider = scenePoolFactory.getProvider(ScenePoolFactory.RECORDING_SCENE_POOL);
       task = new RecordTask(scenePoolProvider, coverageMocker);
       coverageHandleDelayedPool.schedule(task, 5, TimeUnit.SECONDS);
-    } else if (handlerSwitch.allowReplayTask(appId)) {
+
+    } else if (CaseSendScene.MIXED_NORMAL.name().equals(scheduleSendScene) &&
+        handlerSwitch.allowReplayTask(appId)) {
       scenePoolProvider = scenePoolFactory.getProvider(ScenePoolFactory.REPLAY_SCENE_POOL);
       task = new ReplayTask(scenePoolProvider, coverageMocker);
       coverageHandleDelayedPool.schedule(task, 1, TimeUnit.SECONDS);
