@@ -4,6 +4,7 @@ package com.arextest.storage.serialization;
 import com.arextest.common.serialization.SerializationProvider;
 import com.arextest.common.serialization.SerializationProviders;
 import com.arextest.common.utils.SerializationUtils;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -62,5 +63,19 @@ public final class ZstdJacksonSerializer {
       return null;
     }
     return SerializationUtils.useZstdDeserialize(this.serializationProvider, zstdValues, clazz);
+  }
+
+  public <T> T deserialize(byte[] zstdValues, TypeReference<T> typeReference) {
+    if (zstdValues == null) {
+      return null;
+    }
+    return SerializationUtils.useZstdDeserialize(this.serializationProvider, zstdValues, typeReference);
+  }
+
+  public <T> T deserialize(InputStream inputStream, TypeReference<T> typeReference) {
+    if (inputStream == null) {
+      return null;
+    }
+    return SerializationUtils.useZstdDeserialize(this.serializationProvider, inputStream, typeReference);
   }
 }

@@ -98,13 +98,23 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     return this.getProviderName() + category.getName() + COLLECTION_PREFIX;
   }
 
-  @Override
   public Iterable<AREXMocker> queryRecordList(MockCategoryType category, String recordId) {
+    return queryRecordList(category, recordId, null);
+  }
+
+  @Override
+  public Iterable<AREXMocker> queryRecordList(MockCategoryType category, String recordId, String[] fieldNames) {
     Criteria criteria = buildRecordIdFilter(category, recordId);
 
     if (Objects.equals(this.providerName, ProviderNames.DEFAULT)) {
       updateExpirationTime(criteria, getCollectionName(category));
     }
+
+    Query query = new Query(criteria);
+    if (ArrayUtils.isNotEmpty(fieldNames)) {
+      query.fields().include(fieldNames);
+    }
+
     Iterable<AREXMocker> iterable = mongoTemplate.find(new Query(criteria),
         AREXMocker.class, getCollectionName(category));
     return new AttachmentCategoryIterable(category, iterable);
