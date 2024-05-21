@@ -2,7 +2,7 @@ package com.arextest.config.model.dto;
 
 /**
  * Sent from schedule -> Target Service Agent -> Storage
- * Used to identified the use case of test case sent by schedule
+ * Used to identify the use case of test case sent by schedule
  */
 public enum CaseSendScene {
   /**
