@@ -1,6 +1,6 @@
 package com.arextest.storage.service.handler.mocker.coverage;
 
-import com.arextest.config.model.dto.CaseSendScene;
+import com.arextest.model.replay.CaseSendScene;
 import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;

@@ -1,4 +1,4 @@
-package com.arextest.config.model.dto;
+package com.arextest.model.replay;
 
 /**
  * Sent from schedule -> Target Service Agent -> Storage
