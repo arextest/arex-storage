@@ -2,16 +2,14 @@ package com.arextest.storage.repository.scenepool;
 
 import com.arextest.model.scenepool.Scene;
 import com.arextest.model.scenepool.Scene.Fields;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.FindOneAndUpdateOptions;
-import com.mongodb.client.model.ReturnDocument;
-import com.mongodb.client.model.UpdateOptions;
-import com.mongodb.client.model.Updates;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import lombok.AllArgsConstructor;
-import org.bson.conversions.Bson;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 @AllArgsConstructor
 public class ScenePoolProviderImpl extends AbstractScenePoolProvider {
@@ -25,54 +23,48 @@ public class ScenePoolProviderImpl extends AbstractScenePoolProvider {
 
   @Override
   public boolean checkSceneExist(String appId, String sceneKey) {
-    Bson filter = Filters.and(Filters.eq(Fields.appId, appId),
-        Filters.eq(Fields.sceneKey, sceneKey));
-    return getCollection().countDocuments(filter) > 0;
+    Query filter = new Query();
+    filter.addCriteria(Criteria.where(Scene.Fields.appId).is(appId)
+        .and(Scene.Fields.sceneKey).is(sceneKey));
+    return getTemplate().count(filter, Scene.class, getCollectionName()) > 0;
   }
 
   @Override
   public Scene findAndUpdate(Scene newScene) {
-    Bson filter = Filters.and(Filters.eq(Fields.appId, newScene.getAppId()),
-        Filters.eq(Fields.sceneKey, newScene.getSceneKey()));
+    Query filter = new Query();
+    filter.addCriteria(Criteria.where(Scene.Fields.appId).is(newScene.getAppId())
+        .and(Scene.Fields.sceneKey).is(newScene.getSceneKey()));
 
-    Bson update = getUpdate(newScene);
-    FindOneAndUpdateOptions opt = new FindOneAndUpdateOptions().upsert(true);
-    opt.returnDocument(ReturnDocument.BEFORE);
-    return getCollection().findOneAndUpdate(filter, update, opt);
+    Update update = getUpdate(newScene);
+    FindAndModifyOptions opt = new FindAndModifyOptions().upsert(true);
+    opt.returnNew(false);
+    return getTemplate().findAndModify(filter, update, opt, Scene.class, getCollectionName());
   }
 
   public void upsertOne(Scene scene) {
-    Bson filter = Filters.and(Filters.eq(Fields.appId, scene.getAppId()),
-        Filters.eq(Fields.sceneKey, scene.getSceneKey()));
+    Query filter = new Query();
+    filter.addCriteria(Criteria.where(Scene.Fields.appId).is(scene.getAppId())
+        .and(Scene.Fields.sceneKey).is(scene.getSceneKey()));
 
-    Bson update = getUpdate(scene);
-    getCollection().updateOne(filter, update, new UpdateOptions().upsert(true));
+    Update update = getUpdate(scene);
+    getTemplate().findAndModify(filter, update, new FindAndModifyOptions().upsert(true), Scene.class, getCollectionName());
   }
 
-  private Bson getUpdate(Scene scene) {
+  private Update getUpdate(Scene scene) {
     Date expire = Date.from(LocalDateTime.now().plusDays(EXPIRATION_DAYS).atZone(ZoneId.systemDefault()).toInstant());
     Date now = new Date();
-    return Updates.combine(
-        Updates.set(Fields.appId, scene.getAppId()),
-        Updates.set(Fields.sceneKey, scene.getSceneKey()),
-        Updates.set(Fields.recordId, scene.getRecordId()),
-        Updates.set(Fields.executionPath, scene.getExecutionPath()),
-
-        Updates.setOnInsert(Fields.creationTime, now),
-        Updates.set(Fields.updateTime, now),
-        Updates.set(Fields.expirationTime, expire)
-    );
-  }
-
-  @Override
-  public Scene findFirst(String recordId) {
-    Bson filter = Filters.eq(Fields.recordId, recordId);
-    return getCollection().find(filter).first();
+    return Update.update(Scene.Fields.appId, scene.getAppId())
+        .set(Scene.Fields.sceneKey, scene.getSceneKey())
+        .set(Scene.Fields.recordId, scene.getRecordId())
+        .set(Scene.Fields.executionPath, scene.getExecutionPath())
+        .setOnInsert(Scene.Fields.creationTime, now)
+        .set(Scene.Fields.updateTime, now)
+        .set(Scene.Fields.expirationTime, expire);
   }
 
   @Override
   public long clearSceneByAppid(String appid) {
-    Bson filter = Filters.eq(Fields.appId, appid);
-    return getCollection().deleteMany(filter).getDeletedCount();
+    Query filter = Query.query(Criteria.where(Fields.appId).is(appid));
+    return getTemplate().remove(filter, Scene.class, getCollectionName()).getDeletedCount();
   }
 }

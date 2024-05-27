@@ -17,8 +17,7 @@ public abstract class AbstractScenePoolProvider implements ScenePoolProvider {
     this.mongoTemplate = mongoDatabase;
   }
 
-  MongoCollection<Scene> getCollection() {
-    String scenePoolName = this.getProviderName() + "ScenePool";
-    return getTemplate().getMongoDatabaseFactory().getMongoDatabase().getCollection(scenePoolName, Scene.class);
+  String getCollectionName() {
+    return this.getProviderName() + "ScenePool";
   }
 }
