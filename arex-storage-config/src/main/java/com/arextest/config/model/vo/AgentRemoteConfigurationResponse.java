@@ -34,8 +34,5 @@ public class AgentRemoteConfigurationResponse {
 
   private Map<String, String> extendField;
 
-  /**
-   * key: operationId, value: comparison exclusion configuration.
-   */
-  private Map<String, ConfigComparisonExclusionsVO> comparisonExclusionsMap;
+  private List<ConfigComparisonExclusionsVO> comparisonExclusions;
 }

@@ -151,11 +151,9 @@ public final class AgentRemoteConfigurationController {
       List<ComparisonExclusionsConfiguration> configs = comparisonExclusionsConfigurationRepository.listBy(
           appId, COMPARE_CONFIG_TYPE);
       if (CollectionUtils.isNotEmpty(configs)) {
-        body.setComparisonExclusionsMap(configs.stream()
-            .collect(Collectors.toMap(ComparisonExclusionsConfiguration::getOperationId,
-                ConfigComparisonExclusionsMapper.INSTANCE::voFromDto)));
+        body.setComparisonExclusions(configs.stream().map(
+                ConfigComparisonExclusionsMapper.INSTANCE::voFromDto).collect(Collectors.toList()));
       }
-
       return ResponseUtils.successResponse(body);
     } catch (Exception e) {
       LOGGER.error("load config error", e);
