@@ -73,7 +73,13 @@ public final class ZstdJacksonMessageConverter extends AbstractHttpMessageConver
         return readInternalWithType(getTypeReference(type), inputMessage);
       }
     }
-    return super.read(contextClass, inputMessage);
+
+    if (type instanceof Class<?>) {
+      return super.read((Class<?>) type, inputMessage);
+    }
+
+    LOGGER.error("failed to read value of type: {}", type);
+    return null;
   }
 
   @Override
