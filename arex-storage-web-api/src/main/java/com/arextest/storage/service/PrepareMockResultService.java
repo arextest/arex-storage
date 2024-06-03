@@ -26,6 +26,12 @@ public final class PrepareMockResultService {
     this.mockResultProvider = mockResultProvider;
   }
 
+  /**
+   * preload the record data of the all category type to redis by record id
+   * @param sourceProvider
+   * @param recordId
+   * @return
+   */
   public boolean preloadAll(String sourceProvider, String recordId) {
     RepositoryProvider<? extends Mocker> repositoryProvider = providerFactory.findProvider(
         sourceProvider);
@@ -42,9 +48,22 @@ public final class PrepareMockResultService {
     return result;
   }
 
-  boolean preload(MockCategoryType category, String recordId) {
+  /**
+   * preload the record data of single category type to redis by record id
+   *
+   * @param category
+   * @param recordId
+   * @return
+   */
+  public boolean preload(MockCategoryType category, String recordId) {
     // try again load by defaultProvider and pinnedProvider
-    return this.preload(providerFactory.getRepositoryProviderList(), category, recordId);
+    List<RepositoryProvider<? extends Mocker>> repositoryReaderList = providerFactory.getRepositoryProviderList();
+    for (RepositoryProvider<? extends Mocker> repositoryReader : repositoryReaderList) {
+      if (this.preload(repositoryReader, category, recordId)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private boolean preload(RepositoryProvider<? extends Mocker> repositoryReader,
@@ -62,16 +81,6 @@ public final class PrepareMockResultService {
       return false;
     }
     return mockResultProvider.putRecordResult(categoryType, recordId, iterable);
-  }
-
-  private boolean preload(List<RepositoryProvider<? extends Mocker>> repositoryReaderList,
-      MockCategoryType categoryType, String recordId) {
-    for (RepositoryProvider<? extends Mocker> repositoryReader : repositoryReaderList) {
-      if (this.preload(repositoryReader, categoryType, recordId)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   public boolean removeAllRecordCache(String recordId, String sourceProvider) {

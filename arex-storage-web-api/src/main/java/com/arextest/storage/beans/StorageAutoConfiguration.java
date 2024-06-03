@@ -18,6 +18,7 @@ import com.arextest.storage.metric.AgentWorkingMetricService;
 import com.arextest.storage.metric.MatchStrategyMetricService;
 import com.arextest.storage.metric.MetricListener;
 import com.arextest.storage.mock.MockResultProvider;
+import com.arextest.storage.mock.MockerResultConverter;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
@@ -26,17 +27,18 @@ import com.arextest.storage.repository.impl.mongo.DesensitizationLoader;
 import com.arextest.storage.repository.impl.mongo.converters.ArexEigenCompressionConverter;
 import com.arextest.storage.repository.impl.mongo.converters.ArexMockerCompressionConverter;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
-import com.arextest.storage.service.listener.AgentWorkingListener;
 import com.arextest.storage.service.AgentWorkingService;
-import com.arextest.storage.service.listener.AutoDiscoveryEntryPointListener;
 import com.arextest.storage.service.InvalidIncompleteRecordService;
 import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.service.PrepareMockResultService;
+import com.arextest.storage.service.QueryConfigService;
 import com.arextest.storage.service.ScheduleReplayingService;
 import com.arextest.storage.service.config.ApplicationService;
-import com.arextest.storage.service.handler.mocker.MockerHandlerFactory;
+import com.arextest.storage.service.listener.AgentWorkingListener;
+import com.arextest.storage.service.listener.AutoDiscoveryEntryPointListener;
 import com.arextest.storage.web.controller.MockSourceEditionController;
 import com.arextest.storage.web.controller.ScheduleReplayQueryController;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
@@ -70,6 +72,7 @@ import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
 import org.springframework.data.mongodb.core.convert.MongoConverter;
 import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
 import org.springframework.data.mongodb.core.mapping.MongoMappingContext;
+import com.arextest.storage.mock.impl.DefaultMockerResultConverterImpl;
 
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties({StorageConfigurationProperties.class})
@@ -270,6 +273,12 @@ public class StorageAutoConfiguration {
   @ConditionalOnMissingBean(JWTService.class)
   public JWTService jwtService() {
     return new JWTServiceImpl(ACCESS_EXPIRE_TIME, REFRESH_EXPIRE_TIME, tokenSecret);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean(MockerResultConverter.class)
+  public MockerResultConverter mockerResultConverter(QueryConfigService queryConfigService, ObjectMapper objectMapper) {
+    return new DefaultMockerResultConverterImpl(queryConfigService, objectMapper);
   }
 
   @Bean

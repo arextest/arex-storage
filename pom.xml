@@ -188,7 +188,7 @@
       <dependency>
         <artifactId>arex-extension</artifactId>
         <groupId>com.arextest</groupId>
-        <version>0.0.1</version>
+        <version>0.0.3-SNAPSHOT</version>
       </dependency>
       <dependency>
         <artifactId>compare-sdk</artifactId>
@@ -422,7 +422,7 @@
   </profiles>
 
   <properties>
-    <revision>1.2.1</revision>
+    <revision>1.1.37-corydev-SNAPSHOT</revision>
     <commons-lang3.version>3.3.2</commons-lang3.version>
     <java.version>1.8</java.version>
 

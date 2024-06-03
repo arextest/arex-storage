@@ -16,6 +16,7 @@ public final class MDCTracer {
   private static final String RECORD_ID = "recordId";
   private static final String APP_TYPE = "app-type";
   private static final String AREX_STORAGE = "arex-storage";
+  private static final String CONVERT_CACHE_KEY = "convertCacheKey";
 
   private MDCTracer() {
 
@@ -60,6 +61,11 @@ public final class MDCTracer {
     }
   }
 
+  public static void addConvertCacheKey(String cacheKey) {
+    addAppType();
+    put(CONVERT_CACHE_KEY, cacheKey);
+  }
+
   public static void addAppId(String appId) {
     addAppType();
     put("appId", appId);
@@ -67,6 +73,10 @@ public final class MDCTracer {
 
   public static void removeCategory() {
     MDC.remove(CATEGORY);
+  }
+
+  public static void removeConvertCacheKey(){
+    MDC.remove(CONVERT_CACHE_KEY);
   }
 
   public static void clear() {
