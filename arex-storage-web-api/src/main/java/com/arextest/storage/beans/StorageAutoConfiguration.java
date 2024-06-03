@@ -205,10 +205,11 @@ public class StorageAutoConfiguration {
       ZstdJacksonSerializer zstdJacksonSerializer,
       PrepareMockResultService prepareMockResultService,
       List<AgentWorkingListener> agentWorkingListeners,
-      InvalidIncompleteRecordService invalidIncompleteRecordService) {
+      InvalidIncompleteRecordService invalidIncompleteRecordService,
+      ScheduleReplayingService scheduleReplayingService) {
     AgentWorkingService workingService = new AgentWorkingService(mockResultProvider,
         repositoryProviderFactory, agentWorkingListeners,
-        invalidIncompleteRecordService);
+        invalidIncompleteRecordService, scheduleReplayingService);
     workingService.setPrepareMockResultService(prepareMockResultService);
     workingService.setZstdJacksonSerializer(zstdJacksonSerializer);
     workingService.setRecordEnvType(properties.getRecordEnv());

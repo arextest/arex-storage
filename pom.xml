@@ -71,6 +71,31 @@
         <groupId>org.apache.maven.plugins</groupId>
       </plugin>
       <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>flatten-maven-plugin</artifactId>
+        <version>1.5.0</version>
+        <configuration>
+          <updatePomFile>true</updatePomFile>
+          <flattenMode>resolveCiFriendliesOnly</flattenMode>
+        </configuration>
+        <executions>
+          <execution>
+            <id>flatten</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>flatten</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>flatten.clean</id>
+            <phase>clean</phase>
+            <goals>
+              <goal>clean</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
         <version>0.8.11</version>
@@ -397,7 +422,7 @@
   </profiles>
 
   <properties>
-    <arex.storage.model.version>1.0.4</arex.storage.model.version>
+    <revision>1.2.1</revision>
     <commons-lang3.version>3.3.2</commons-lang3.version>
     <java.version>1.8</java.version>
 
@@ -419,7 +444,7 @@
     </sonar.exclusions>
     <!-- Users could specify this property as true to skip the deploy process -->
     <spring.boot.version>2.7.18</spring.boot.version>
-    <arex-common.version>0.1.26</arex-common.version>
+    <arex-common.version>0.1.27</arex-common.version>
   </properties>
   <scm>
     <connection>scm:git:git://github.com/arextest/arex-storage.git</connection>
@@ -427,5 +452,5 @@
     <url>https://github.com/arextest/arex-storage</url>
   </scm>
   <url>https://github.com/arextest/arex-storage</url>
-  <version>1.1.36</version>
+  <version>${revision}</version>
 </project>

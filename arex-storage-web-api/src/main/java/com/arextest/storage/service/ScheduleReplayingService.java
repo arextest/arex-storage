@@ -134,6 +134,16 @@ public class ScheduleReplayingService {
       return Collections.emptyList();
     }
 
+    return queryRecordsByRepositoryReader(recordId, types, repositoryReader);
+  }
+
+  public List<AREXMocker> queryRecordsByRepositoryReader(String recordId, Set<MockCategoryType> types,
+      RepositoryProvider<? extends Mocker> repositoryReader) {
+    return this.queryRecordsByRepositoryReader(recordId, types, repositoryReader, null);
+  }
+
+  public List<AREXMocker> queryRecordsByRepositoryReader(String recordId, Set<MockCategoryType> types,
+      RepositoryProvider<? extends Mocker> repositoryReader, String[] fieldNames) {
     // true -> entry point, false -> dependency
     Map<Boolean, List<MockCategoryType>> partition = types.stream()
         .collect(Collectors.partitioningBy(MockCategoryType::isEntryPoint));
@@ -143,7 +153,7 @@ public class ScheduleReplayingService {
     if (CollectionUtils.isNotEmpty(entryPointTypes)) {
       // try get entrypoint first
       List<AREXMocker> result = entryPointTypes.stream()
-          .flatMap(category -> queryRecordList(repositoryReader, category, recordId).stream())
+          .flatMap(category -> queryRecordList(repositoryReader, category, recordId, fieldNames).stream())
           .collect(Collectors.toList());
       // if entry point mockers not found, early return
       if (CollectionUtils.isEmpty(result)) {
@@ -152,13 +162,13 @@ public class ScheduleReplayingService {
         // if entry point mockers found, try getting all mockers back
         result.addAll(
             Optional.ofNullable(partition.get(false)).orElse(Collections.emptyList()).stream()
-                .flatMap(category -> queryRecordList(repositoryReader, category, recordId).stream())
+                .flatMap(category -> queryRecordList(repositoryReader, category, recordId, fieldNames).stream())
                 .collect(Collectors.toList()));
         return result;
       }
     } else {
       return types.stream()
-          .flatMap(category -> queryRecordList(repositoryReader, category, recordId).stream())
+          .flatMap(category -> queryRecordList(repositoryReader, category, recordId, fieldNames).stream())
           .collect(Collectors.toList());
     }
   }
@@ -253,9 +263,14 @@ public class ScheduleReplayingService {
     return result;
   }
 
-  public List<AREXMocker> queryRecordList(RepositoryProvider<Mocker> repositoryReader,
+  public List<AREXMocker> queryRecordList(RepositoryProvider<? extends Mocker> repositoryReader,
       MockCategoryType categoryType, String recordId) {
-    Iterable<? extends Mocker> iterable = repositoryReader.queryRecordList(categoryType, recordId);
+    return queryRecordList(repositoryReader, categoryType, recordId, null);
+  }
+
+  public List<AREXMocker> queryRecordList(RepositoryProvider<? extends Mocker> repositoryReader,
+      MockCategoryType categoryType, String recordId, String[] fieldNames) {
+    Iterable<? extends Mocker> iterable = repositoryReader.queryRecordList(categoryType, recordId, fieldNames);
     if (iterable == null) {
       return null;
     }

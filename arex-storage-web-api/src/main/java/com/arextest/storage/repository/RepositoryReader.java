@@ -13,6 +13,8 @@ public interface RepositoryReader<T extends Mocker> {
 
   Iterable<T> queryRecordList(MockCategoryType categoryType, String recordId);
 
+  Iterable<T> queryRecordList(MockCategoryType categoryType, String recordId, String[] fieldNames);
+
   T queryRecord(Mocker requestType);
 
   T queryById(MockCategoryType categoryType, String id);

@@ -1,13 +1,15 @@
 package com.arextest.storage.web.controller;
 
 import static com.arextest.model.constants.HeaderNames.AREX_MOCK_STRATEGY_CODE;
-
+import com.arextest.common.cache.CacheProvider;
 import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.model.mock.Mocker.Target;
+import com.arextest.model.replay.QueryMockRequestType;
 import com.arextest.model.response.Response;
+import com.arextest.storage.enums.InvalidReasonEnum;
 import com.arextest.storage.metric.AgentWorkingMetricService;
 import com.arextest.storage.mock.MockResultContext;
 import com.arextest.storage.mock.MockResultMatchStrategy;
@@ -15,12 +17,15 @@ import com.arextest.storage.model.InvalidIncompleteRecordRequest;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.AgentWorkingService;
 import com.arextest.storage.trace.MDCTracer;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
@@ -45,14 +50,19 @@ public class AgentRecordingController {
 
   @Resource
   private AgentWorkingService agentWorkingService;
-
   @Resource
   private AgentWorkingMetricService agentWorkingMetricService;
   @Resource
   private ZstdJacksonSerializer zstdJacksonSerializer;
-
+  @Resource
+  private CacheProvider redisCacheProvider;
   @Resource(name = "custom-fork-join-executor")
   private Executor customForkJoinExecutor;
+  @Resource
+  private Executor batchSaveExecutor;
+  private static final String INVALID_RECORD_REDIS_KEY = "invalidRecord_";
+  private static final long FIVE_MINUTES_EXPIRE = 5 * 60L;
+  private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
   /**
    * from agent query,means to save the request and try to find a record item as mock result for
@@ -96,6 +106,25 @@ public class AgentRecordingController {
     return ZstdJacksonSerializer.EMPTY_INSTANCE;
   }
 
+  @PostMapping(value = "/queryMockers")
+  @ResponseBody
+  public byte[] queryMockers(@RequestBody QueryMockRequestType requestType) {
+    try {
+      if (StringUtils.isEmpty(requestType.getRecordId())) {
+        LOGGER.warn("agent query recordId empty");
+        return ZstdJacksonSerializer.EMPTY_INSTANCE;
+      }
+
+      MDCTracer.addRecordId(requestType.getRecordId());
+      return agentWorkingService.queryMockers(requestType.getRecordId(), requestType.getFieldNames(), requestType.getCategoryTypes());
+    } catch (Exception e) {
+      LOGGER.error("query error:{} from category:{}", e.getMessage(), requestType, e);
+    } finally {
+      MDCTracer.clear();
+    }
+    return ZstdJacksonSerializer.EMPTY_INSTANCE;
+  }
+
   /**
    * from agent recording, save the content for replay
    *
@@ -113,37 +142,56 @@ public class AgentRecordingController {
     }
     try {
       MDCTracer.addTrace(category, requestType);
+      if (isInvalidRecord(requestType.getRecordId())) {
+          LOGGER.warn("recordId: {} is invalid", requestType.getRecordId());
+          return ResponseUtils.parameterInvalidResponse("invalid mocker");
+      }
 
       boolean saveResult = agentWorkingMetricService.saveRecord(requestType);
       LOGGER.info("agent record save result:{},category:{},recordId:{}", saveResult, category,
           requestType.getRecordId());
       return ResponseUtils.successResponse(saveResult);
-    } catch (Throwable throwable) {
-      LOGGER.error("save record error:{} from category:{},recordId:{}", throwable.getMessage(),
-          category,
-          requestType.getRecordId(), throwable);
-      return ResponseUtils.exceptionResponse(throwable.getMessage());
+    } catch (Exception e) {
+      LOGGER.error("save record error: {} from category: {}, recordId: {}",
+          e.getMessage(), requestType.getCategoryType(), requestType.getRecordId(), e);
+      handleSaveMockerError(requestType);
+      return ResponseUtils.exceptionResponse(e.getMessage());
     } finally {
       MDCTracer.clear();
     }
   }
 
-  @PostMapping(value = "/saveTest", produces = {MediaType.APPLICATION_JSON_VALUE})
+  @PostMapping(value = "/batchSave")
   @ResponseBody
-  public Response saveTest(@RequestBody AREXMocker body) {
-    try {
-      return this.save(body);
-    } catch (Throwable throwable) {
-      LOGGER.error("save record error:{}", throwable.getMessage(), throwable);
+  public Response batchSave(@RequestBody List<AREXMocker> mockers) {
+    if (CollectionUtils.isEmpty(mockers)) {
+        return ResponseUtils.parameterInvalidResponse("request body is empty");
     }
-    return null;
+
+    try {
+      if (isInvalidRecord(mockers.get(0).getRecordId())) {
+        LOGGER.warn("recordId: {} is invalid", mockers.get(0).getRecordId());
+        return ResponseUtils.parameterInvalidResponse("invalid mocker");
+      }
+
+      // Return the results directly to the agent, asynchronous processing process
+      CompletableFuture.runAsync(() -> {
+        for (AREXMocker mocker : mockers) {
+          this.save(mocker);
+        }
+      }, batchSaveExecutor);
+    } catch (Exception e) {
+      LOGGER.error("batch save record error: {}", e.getMessage(), e);
+      return ResponseUtils.exceptionResponse(e.getMessage());
+    }
+    return ResponseUtils.successResponse(true);
   }
 
   @GetMapping(value = "/saveTest/", produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseBody
   public Response saveTest(
       @RequestParam(required = false, defaultValue = "Servlet") String category) {
-    return saveTest(arexMocker(MockCategoryType.create(category)));
+    return save(arexMocker(MockCategoryType.create(category)));
   }
 
   @PostMapping(value = {"/invalidCase", "/invalidIncompleteRecord"}, produces = {
@@ -202,6 +250,27 @@ public class AgentRecordingController {
       LOGGER.error("queryTest error:{} ", throwable.getMessage(), throwable);
     }
     return null;
+  }
+
+  private boolean isInvalidRecord(String recordId) {
+    return redisCacheProvider.get(buildInvalidRecordKey(recordId)) != null;
+  }
+
+  private void putInvalidRecordInRedis(String recordId) {
+    redisCacheProvider.put(buildInvalidRecordKey(recordId), FIVE_MINUTES_EXPIRE, EMPTY_BYTE_ARRAY);
+  }
+
+  private byte[] buildInvalidRecordKey(String recordId) {
+    return (INVALID_RECORD_REDIS_KEY + recordId).getBytes(StandardCharsets.UTF_8);
+  }
+
+  private void handleSaveMockerError(AREXMocker requestType) {
+    InvalidIncompleteRecordRequest request = new InvalidIncompleteRecordRequest();
+    request.setRecordId(request.getRecordId());
+    request.setAppId(request.getAppId());
+    request.setReason(InvalidReasonEnum.STORAGE_SAVE_ERROR.getValue());
+    this.invalidIncompleteRecord(request);
+    putInvalidRecordInRedis(requestType.getRecordId());
   }
 
 }
