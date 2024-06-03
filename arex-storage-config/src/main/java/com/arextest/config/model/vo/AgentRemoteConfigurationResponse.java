@@ -33,4 +33,6 @@ public class AgentRemoteConfigurationResponse {
   private Boolean agentEnabled;
 
   private Map<String, String> extendField;
+
+  private List<ConfigComparisonExclusionsVO> comparisonExclusions;
 }
