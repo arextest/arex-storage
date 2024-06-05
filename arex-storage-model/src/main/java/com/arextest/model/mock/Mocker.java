@@ -54,7 +54,11 @@ public interface Mocker {
 
   Target getTargetRequest();
 
+  void setTargetRequest(Target targetRequest);
+
   Target getTargetResponse();
+
+  void setTargetResponse(Target targetResponse);
 
   String getRecordVersion();
 
