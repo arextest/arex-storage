@@ -27,4 +27,7 @@ public interface Constants{
   String EXPIRATION_TIME = "expirationTime";
   // endregion
 
+  // applicationConfig
+  String MAX_SQL_LENGTH = "maxSqlLength";
+
 }
