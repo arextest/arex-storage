@@ -1,5 +1,6 @@
 package com.arextest.storage.service.handler.mocker.coverage;
 
+import com.arextest.model.replay.CaseSendScene;
 import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
@@ -46,7 +47,6 @@ public class CoverageMockerHandler implements MockerHandler {
 
   /**
    * if is auto pined Case: update path
-   * <p>
    * if is new case: if it has same path key: replace old case else: store
    */
   @Override
@@ -54,35 +54,55 @@ public class CoverageMockerHandler implements MockerHandler {
     ScenePoolProvider scenePoolProvider;
     Runnable task;
     String appId = coverageMocker.getAppId();
+    Optional<Target> targetRequest = Optional.ofNullable(coverageMocker.getTargetRequest());
 
-    if (StringUtils.isEmpty(coverageMocker.getOperationName())
-        || coverageMocker.getOperationName().equals(INVALID_SCENE_KEY)
-        || StringUtils.isEmpty(appId)) {
-      LOGGER.warn("CoverageMockerHandler got invalid case, operationName is empty, recordId:{}",
-          coverageMocker.getRecordId());
+    if (!validate(coverageMocker) || skipTask(coverageMocker)) {
       return;
     }
 
-    // force record data insert to coverage mocker
-    Target targetRequest = coverageMocker.getTargetRequest();
-    if (targetRequest != null &&
-        Boolean.parseBoolean(targetRequest.attributeAsString(MockAttributeNames.FORCE_RECORD))) {
-      mockSourceEditionService.add(ProviderNames.DEFAULT, coverageMocker);
-      LOGGER.info("CoverageMockerHandler received force record case, recordId: {}, pathKey: {}",
-          coverageMocker.getRecordId(), coverageMocker.getOperationName());
-      return;
-    }
+    // passed by schedule
+    String scheduleSendScene = targetRequest
+        .map(i -> i.attributeAsString(MockAttributeNames.SCHEDULE_PARAM))
+        .orElse(null);
 
     // if replayId is empty, meaning this coverage mocker is received during record phase
     if (StringUtils.isEmpty(coverageMocker.getReplayId()) && handlerSwitch.allowRecordTask(appId)) {
       scenePoolProvider = scenePoolFactory.getProvider(ScenePoolFactory.RECORDING_SCENE_POOL);
       task = new RecordTask(scenePoolProvider, coverageMocker);
       coverageHandleDelayedPool.schedule(task, 5, TimeUnit.SECONDS);
-    } else if (handlerSwitch.allowReplayTask(appId)) {
+
+    } else if (CaseSendScene.MIXED_NORMAL.name().equals(scheduleSendScene) &&
+        handlerSwitch.allowReplayTask(appId)) {
       scenePoolProvider = scenePoolFactory.getProvider(ScenePoolFactory.REPLAY_SCENE_POOL);
       task = new ReplayTask(scenePoolProvider, coverageMocker);
       coverageHandleDelayedPool.schedule(task, 1, TimeUnit.SECONDS);
     }
+  }
+
+  private boolean skipTask(Mocker coverageMocker) {
+    boolean forceRecord = Optional.ofNullable(coverageMocker.getTargetRequest())
+        .map(i -> Boolean.parseBoolean(i.attributeAsString(MockAttributeNames.FORCE_RECORD)))
+        .orElse(false);
+
+    // force record data insert to RollingCoverageMocker, skip the scene pool
+    if (forceRecord) {
+      mockSourceEditionService.add(ProviderNames.DEFAULT, coverageMocker);
+      LOGGER.info("CoverageMockerHandler received force record case, recordId: {}, pathKey: {}",
+          coverageMocker.getRecordId(), coverageMocker.getOperationName());
+      return true;
+    }
+    return false;
+  }
+
+  private static boolean validate(Mocker coverageMocker) {
+    boolean checkResult = StringUtils.isNotEmpty(coverageMocker.getOperationName())
+        && StringUtils.isNotEmpty(coverageMocker.getAppId())
+        && !coverageMocker.getOperationName().equals(INVALID_SCENE_KEY);
+    if (!checkResult) {
+      LOGGER.warn("CoverageMockerHandler got invalid case, sceneKey is empty, recordId:{}",
+          coverageMocker.getRecordId());
+    }
+    return checkResult;
   }
 
   @Override
@@ -150,7 +170,7 @@ public class CoverageMockerHandler implements MockerHandler {
         String appId = coverageMocker.getAppId();
         String sceneKey = coverageMocker.getOperationName();
         String recordId = coverageMocker.getRecordId();
-        String op = NEW_SCENE_OP;
+        String op = EXISTING_SCENE_OP;
         MDCTracer.addAppId(appId);
         MDCTracer.addRecordId(recordId);
 
@@ -160,7 +180,7 @@ public class CoverageMockerHandler implements MockerHandler {
           LOGGER.info("CoverageMockerHandler received existing case, recordId: {}, pathKey: {}",
               coverageMocker.getRecordId(), coverageMocker.getOperationName());
         } else {
-          op = EXISTING_SCENE_OP;
+          op = NEW_SCENE_OP;
           // new scene: extend mocker expiration and insert scene
           Scene scene = convert(coverageMocker);
 

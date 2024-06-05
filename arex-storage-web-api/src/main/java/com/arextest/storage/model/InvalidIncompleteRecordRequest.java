@@ -12,7 +12,7 @@ public class InvalidIncompleteRecordRequest {
     private String appId;
     private String recordId;
     /**
-     * FastReject or QueueOverFlow
+     * @see com.arextest.storage.enums.InvalidReasonEnum
      */
     private String reason;
     /**

@@ -3,7 +3,9 @@ package com.arextest.storage.web.controller.config;
 import com.arextest.common.model.response.Response;
 import com.arextest.common.model.response.ResponseCode;
 import com.arextest.common.utils.ResponseUtils;
+import com.arextest.config.mapper.ConfigComparisonExclusionsMapper;
 import com.arextest.config.mapper.InstancesMapper;
+import com.arextest.config.model.dto.ComparisonExclusionsConfiguration;
 import com.arextest.config.model.dto.application.ApplicationConfiguration;
 import com.arextest.config.model.dto.application.InstancesConfiguration;
 import com.arextest.config.model.dto.record.DynamicClassConfiguration;
@@ -12,6 +14,7 @@ import com.arextest.config.model.vo.AgentRemoteConfigurationRequest;
 import com.arextest.config.model.vo.AgentRemoteConfigurationResponse;
 import com.arextest.config.model.vo.AgentStatusRequest;
 import com.arextest.config.model.vo.AgentStatusType;
+import com.arextest.config.repository.impl.ComparisonExclusionsConfigurationRepositoryImpl;
 import com.arextest.storage.service.config.ConfigurableHandler;
 import com.arextest.storage.service.config.impl.ApplicationConfigurableHandler;
 import com.arextest.storage.service.config.impl.ApplicationInstancesConfigurableHandler;
@@ -62,6 +65,7 @@ public final class AgentRemoteConfigurationController {
   private static final String EMPTY_TIME = "0";
   private static final String LAST_MODIFY_TIME = "If-Modified-Since";
   private static final String INCLUDE_SERVICE_OPERATIONS = "includeServiceOperations";
+  private static final int COMPARE_CONFIG_TYPE = 0;
 
   @Resource
   private ConfigurableHandler<DynamicClassConfiguration> dynamicClassHandler;
@@ -79,6 +83,8 @@ public final class AgentRemoteConfigurationController {
   private ExecutorService envUpdateHandlerExecutor;
   @Resource
   private ObjectMapper objectMapper;
+  @Resource
+  private ComparisonExclusionsConfigurationRepositoryImpl comparisonExclusionsConfigurationRepository;
 
   @PostMapping("/load")
   @ResponseBody
@@ -142,6 +148,12 @@ public final class AgentRemoteConfigurationController {
       // asynchronously update application env
       asyncUpdateAppEnv(requestInstance);
 
+      List<ComparisonExclusionsConfiguration> configs = comparisonExclusionsConfigurationRepository.listBy(
+          appId, COMPARE_CONFIG_TYPE);
+      if (CollectionUtils.isNotEmpty(configs)) {
+        body.setComparisonExclusions(configs.stream().map(
+                ConfigComparisonExclusionsMapper.INSTANCE::voFromDto).collect(Collectors.toList()));
+      }
       return ResponseUtils.successResponse(body);
     } catch (Exception e) {
       LOGGER.error("load config error", e);

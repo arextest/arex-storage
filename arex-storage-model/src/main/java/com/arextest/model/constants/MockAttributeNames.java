@@ -25,6 +25,7 @@ public final class MockAttributeNames {
   public static final String MESSAGE_ID = "messageId";
   public static final String SUBJECT = "subject";
   public static final String FORCE_RECORD = "arex-force-record";
+  public static final String SCHEDULE_PARAM = "arex-schedule-replay";
 
   private MockAttributeNames() {
   }

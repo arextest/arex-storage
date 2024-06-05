@@ -13,11 +13,16 @@ import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.RepositoryReader;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.listener.AgentWorkingListener;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -34,6 +39,7 @@ public class AgentWorkingService {
   private final RepositoryProviderFactory repositoryProviderFactory;
   private final List<AgentWorkingListener> agentWorkingListeners;
   private final InvalidIncompleteRecordService invalidIncompleteRecordService;
+  private final ScheduleReplayingService scheduleReplayingService;
   @Setter
   private ZstdJacksonSerializer zstdJacksonSerializer;
   @Setter
@@ -44,11 +50,13 @@ public class AgentWorkingService {
   public AgentWorkingService(MockResultProvider mockResultProvider,
       RepositoryProviderFactory repositoryProviderFactory,
       List<AgentWorkingListener> agentWorkingListeners,
-      InvalidIncompleteRecordService invalidIncompleteRecordService) {
+      InvalidIncompleteRecordService invalidIncompleteRecordService,
+      ScheduleReplayingService scheduleReplayingService) {
     this.mockResultProvider = mockResultProvider;
     this.repositoryProviderFactory = repositoryProviderFactory;
     this.agentWorkingListeners = agentWorkingListeners;
     this.invalidIncompleteRecordService = invalidIncompleteRecordService;
+    this.scheduleReplayingService = scheduleReplayingService;
   }
 
   /**
@@ -151,6 +159,22 @@ public class AgentWorkingService {
     LOGGER.info("agent query found result for category:{},record id: {},replay id: {}", category,
         recordId, replayId);
     return result;
+  }
+
+  public byte[] queryMockers(String recordId, String[] fieldNames, String[] categoryList) {
+    List<RepositoryProvider<? extends Mocker>> repositoryProviderList = repositoryProviderFactory.getRepositoryProviderList();
+    Set<MockCategoryType> categoryTypes = repositoryProviderFactory.getCategoryTypesByName(categoryList);
+
+    // find data in the order of rolling -> pinned -> auto pinned
+    for (RepositoryProvider<? extends Mocker> repositoryReader : repositoryProviderList) {
+      List<AREXMocker> mockers = scheduleReplayingService.queryRecordsByRepositoryReader(recordId,
+          categoryTypes, repositoryReader, fieldNames);
+      if (CollectionUtils.isNotEmpty(mockers)) {
+        return zstdJacksonSerializer.serialize(mockers);
+      }
+    }
+
+    return ZstdJacksonSerializer.EMPTY_INSTANCE;
   }
 
   public byte[] queryConfigFile(AREXMocker requestType) {

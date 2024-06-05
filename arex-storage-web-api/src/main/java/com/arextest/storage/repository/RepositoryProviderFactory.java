@@ -2,9 +2,15 @@ package com.arextest.storage.repository;
 
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.Getter;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -16,12 +22,15 @@ public final class RepositoryProviderFactory {
   private final List<RepositoryProvider<? extends Mocker>> repositoryProviderList;
   @Getter
   private final Set<MockCategoryType> categoryTypes;
+  private final Map<String, MockCategoryType> categoryTypeMap;
 
   public RepositoryProviderFactory(
       List<RepositoryProvider<? extends Mocker>> repositoryProviderList,
       Set<MockCategoryType> categoryTypes) {
     this.repositoryProviderList = repositoryProviderList;
     this.categoryTypes = categoryTypes;
+    this.categoryTypeMap = categoryTypes.stream()
+        .collect(Collectors.toMap(MockCategoryType::getName, Function.identity()));
   }
 
   public <T extends Mocker> RepositoryProvider<T> findProvider(String providerName) {
@@ -42,15 +51,23 @@ public final class RepositoryProviderFactory {
     if (StringUtils.isEmpty(categoryName)) {
       return null;
     }
+
     if (MockCategoryType.COVERAGE.getName().equals(categoryName)) {
       return MockCategoryType.COVERAGE;
     }
-    for (MockCategoryType categoryType : categoryTypes) {
-      if (StringUtils.equals(categoryName, categoryType.getName())) {
-        return categoryType;
-      }
+
+    return categoryTypeMap.get(categoryName);
+  }
+
+  public Set<MockCategoryType> getCategoryTypesByName(String[] categoryList) {
+    if (ArrayUtils.isEmpty(categoryList)) {
+      return categoryTypes;
     }
-    return null;
+
+    return Arrays.stream(categoryList)
+        .map(this::findCategory)
+        .filter(Objects::nonNull)
+        .collect(Collectors.toSet());
   }
 
   public <T extends Mocker> RepositoryProvider<T> defaultProvider() {

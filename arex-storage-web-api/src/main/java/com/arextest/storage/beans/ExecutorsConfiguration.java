@@ -19,6 +19,9 @@ import org.springframework.context.annotation.Configuration;
 @Slf4j
 public class ExecutorsConfiguration implements Thread.UncaughtExceptionHandler {
 
+  private static final int CORE_POOL_SIZE = 200;
+  private static final long KEEP_ALIVE_TIME = 60L;
+
   @Bean
   public ScheduledExecutorService coverageHandleDelayedPool() {
     ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(4,
@@ -45,6 +48,21 @@ public class ExecutorsConfiguration implements Thread.UncaughtExceptionHandler {
         new LinkedBlockingQueue<>(1000),
         createThreadFac("forkJoin-handler-%d"),
         new CallerRunsPolicy());
+    return TtlExecutors.getTtlExecutorService(executorService);
+  }
+
+  /**
+   * In the current scenario, the time consumption of a single save interface is 2ms,
+   * the qps is around 400, and this interface is an IO-intensive interface,
+   * so the number of core threads is set to 200
+   * @return
+   */
+  @Bean
+  public ExecutorService batchSaveExecutor() {
+    ExecutorService executorService = new ThreadPoolExecutor(CORE_POOL_SIZE, CORE_POOL_SIZE * 2,
+        KEEP_ALIVE_TIME, TimeUnit.SECONDS,
+        new LinkedBlockingQueue<>(100),
+        createThreadFac("batchSave-executor-%d"));
     return TtlExecutors.getTtlExecutorService(executorService);
   }
 

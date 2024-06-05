@@ -2,6 +2,7 @@ package com.arextest.storage.utils;
 
 import com.arextest.diff.handler.parse.sqlparse.constants.DbParseConstants;
 import com.arextest.storage.model.TableSchema;
+import net.sf.jsqlparser.statement.upsert.Upsert;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 
@@ -116,7 +117,7 @@ public class DatabaseUtilsTest {
         TableSchema tableSchema = DatabaseUtils.parse(sql);
         assertNotNull(tableSchema);
         assertEquals("tb1,tb2", StringUtils.join(tableSchema.getTableNames(), ","));
-        assertEquals(DbParseConstants.REPLACE.toLowerCase(), tableSchema.getAction().toLowerCase());
+        assertEquals(Upsert.class.getSimpleName().toLowerCase(), tableSchema.getAction().toLowerCase());
     }
 
     @Test
@@ -131,5 +132,42 @@ public class DatabaseUtilsTest {
         assertNotNull(tableSchema);
         assertEquals("tk_project,tk_user_received_task_21", StringUtils.join(tableSchema.getTableNames(), ","));
         assertEquals(DbParseConstants.SELECT.toLowerCase(), tableSchema.getAction().toLowerCase());
+    }
+
+    @Test
+    public void parseTableNames() {
+        // test operationName is Empty
+        List<String> tableNames = DatabaseUtils.parseTableNames("");
+        assertEquals(0, tableNames.size());
+
+        // test operationName contains one @
+        tableNames = DatabaseUtils.parseTableNames("db1@table1");
+        assertEquals(0, tableNames.size());
+
+        // test table name contain empty
+        tableNames = DatabaseUtils.parseTableNames("@@select@query");
+        assertEquals(0, tableNames.size());
+
+        tableNames = DatabaseUtils.parseTableNames("db1@table1,table2@select@operation1;db2@table3,table4@select@operation2");
+        assertEquals("table1,table2", tableNames.get(0));
+        assertEquals("table3,table4", tableNames.get(1));
+    }
+
+    @Test
+    public void parseSQLWithSubSelect() {
+        String sql = "select count(0) from ( select qi.code from qc_issue qi                 "
+            + "where qi.enable = 1                                       "
+            + "and (qi.title like \"%'?'%\" or qi.code like \"%\"?\"%\") "
+            + "and qi.product_code in             (                  ?             )      "
+            + "order by qi.id desc ) tmp_count";
+        TableSchema tableSchema = DatabaseUtils.parse(sql);
+        assertEquals("qc_issue", StringUtils.join(tableSchema.getTableNames(), ","));
+    }
+
+    @Test
+    public void parseSQLWithKeyWord() {
+        String sql = "SELECT address,extended,union_user_id FROM access_token WHERE ( user_id = ? ) LIMIT ?";
+        TableSchema tableSchema = DatabaseUtils.parse(sql);
+        assertEquals("access_token", StringUtils.join(tableSchema.getTableNames(), ","));
     }
 }

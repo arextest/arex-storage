@@ -12,6 +12,7 @@ import com.google.common.annotations.VisibleForTesting;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.util.TablesNamesFinder;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -29,7 +30,7 @@ public class DatabaseUtils {
     private DatabaseUtils() {
     }
 
-    private static final Pattern PATTERN = Pattern.compile("\\s+");
+    private static final Pattern PATTERN = Pattern.compile("(\\s+|\"\\?\")");
 
     public static void regenerateOperationName(Mocker mocker) {
         if (!MockCategoryType.DATABASE.getName().equals(mocker.getCategoryType().getName())) {
@@ -89,8 +90,8 @@ public class DatabaseUtils {
     }
 
     /**
-     * @param operationName example: dbName@tableName, tableName, tableName@action@operationName;
-     * @return tableNames
+     * @param operationName eg: db1@table1,table2@select@operation1;db2@table3,table4@select@operation2;
+     * @return tableNames eg: ["table1,table2", "table3,table4"]
      */
     public static List<String> parseTableNames(String operationName) {
         if (StringUtils.isEmpty(operationName)) {
@@ -104,8 +105,8 @@ public class DatabaseUtils {
         String[] operations = StringUtils.split(operationName, ';');
         List<String> tableList = new ArrayList<>(operations.length);
         for (String operation : operations) {
-            String[] subOperation = StringUtils.split(operation, '@');
-            if (subOperation.length < 1) {
+            String[] subOperation = StringUtils.splitPreserveAllTokens(operation, '@');
+            if (subOperation.length < 2 || StringUtils.isEmpty(subOperation[1])) {
                 continue;
             }
             tableList.add(subOperation[1]);
@@ -129,7 +130,7 @@ public class DatabaseUtils {
             sql = PATTERN.matcher(sql).replaceAll(" ");
 
             Statement statement = CCJSqlParserUtil.parse(sql);
-            tableSchema.setAction(statement.getClass().getSimpleName());
+            tableSchema.setAction(getAction(statement));
 
             List<String> tableNameList = new TablesNamesFinder().getTableList(statement);
             // sort table name
@@ -141,5 +142,12 @@ public class DatabaseUtils {
             LOGGER.warn("parse sql error, sql: {}", sql, e);
         }
         return tableSchema;
+    }
+
+    static String getAction(Statement statement) {
+        if (statement instanceof Select) {
+            return "Select";
+        }
+        return statement.getClass().getSimpleName();
     }
 }
