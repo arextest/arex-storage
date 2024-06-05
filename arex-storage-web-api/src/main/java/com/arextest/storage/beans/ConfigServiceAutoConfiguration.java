@@ -3,6 +3,7 @@ package com.arextest.storage.beans;
 import com.arextest.config.repository.impl.ApplicationConfigurationRepositoryImpl;
 import com.arextest.config.repository.impl.ApplicationOperationConfigurationRepositoryImpl;
 import com.arextest.config.repository.impl.ApplicationServiceConfigurationRepositoryImpl;
+import com.arextest.config.repository.impl.ComparisonExclusionsConfigurationRepositoryImpl;
 import com.arextest.config.repository.impl.DynamicClassConfigurationRepositoryImpl;
 import com.arextest.config.repository.impl.InstancesConfigurationRepositoryImpl;
 import com.arextest.config.repository.impl.ServiceCollectConfigurationRepositoryImpl;
@@ -57,5 +58,11 @@ public class ConfigServiceAutoConfiguration {
   public SystemConfigurationRepositoryImpl systemConfigurationRepositoryImpl(
       MongoTemplate mongoTemplate) {
     return new SystemConfigurationRepositoryImpl(mongoTemplate);
+  }
+
+  @Bean
+  public ComparisonExclusionsConfigurationRepositoryImpl
+  comparisonExclusionsConfigurationRepositoryImpl(MongoTemplate mongoTemplate) {
+    return new ComparisonExclusionsConfigurationRepositoryImpl(mongoTemplate);
   }
 }

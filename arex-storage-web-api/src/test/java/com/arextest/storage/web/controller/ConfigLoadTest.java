@@ -6,6 +6,7 @@ import com.arextest.config.model.dto.application.InstancesConfiguration;
 import com.arextest.config.model.dto.record.DynamicClassConfiguration;
 import com.arextest.config.model.dto.record.ServiceCollectConfiguration;
 import com.arextest.config.model.vo.AgentRemoteConfigurationRequest;
+import com.arextest.config.repository.impl.ComparisonExclusionsConfigurationRepositoryImpl;
 import com.arextest.storage.service.config.ConfigurableHandler;
 import com.arextest.storage.service.config.impl.ApplicationConfigurableHandler;
 import com.arextest.storage.service.config.impl.ApplicationInstancesConfigurableHandler;
@@ -16,11 +17,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ThreadPoolExecutor;
-import javax.annotation.Resource;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -51,6 +49,8 @@ public class ConfigLoadTest {
   private ApplicationConfigurableHandler applicationConfigurableHandler;
   @Mock
   private ThreadPoolExecutor envUpdateHandlerExecutor;
+  @Mock
+  private ComparisonExclusionsConfigurationRepositoryImpl comparisonExclusionsConfigurationRepository;
 
   @Test
   public void testInvalidReq() {
@@ -74,6 +74,7 @@ public class ConfigLoadTest {
     AgentRemoteConfigurationRequest req = baseReq();
     mockAppQuery();
     mockInstanceQuery();
+    mockExclusionConfig();
     ServiceCollectConfiguration collectConfig = new ServiceCollectConfiguration();
     collectConfig.setRecordMachineCountLimit(1);
 
@@ -93,7 +94,8 @@ public class ConfigLoadTest {
     Mockito.when(serviceCollectHandler.allocateServiceCollectConfig(Mockito.any(), Mockito.any(), Mockito.any()))
         .thenReturn(Pair.of(collectConfig, noSelfInstances()));
     Assertions.assertEquals(ResponseCode.SUCCESS.getCodeValue(),
-        (int) controller.load(req).getResponseStatusType().getResponseCode());  }
+        (int) controller.load(req).getResponseStatusType().getResponseCode());
+  }
 
   private void mockAppQuery() {
     Mockito.when(applicationHandler.useResult(Mockito.any()))
@@ -103,6 +105,11 @@ public class ConfigLoadTest {
   private void mockInstanceQuery() {
     Mockito.when(instanceHandler.listByAppOrdered(Mockito.any()))
         .thenReturn(selfInstance());
+  }
+
+  private void mockExclusionConfig() {
+    Mockito.when(comparisonExclusionsConfigurationRepository.listBy(Mockito.anyString(), Mockito.anyInt()))
+        .thenReturn(Collections.emptyList());
   }
 
   private static List<InstancesConfiguration> selfInstance() {
