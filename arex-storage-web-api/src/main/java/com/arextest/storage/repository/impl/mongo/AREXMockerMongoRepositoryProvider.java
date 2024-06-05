@@ -117,6 +117,12 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
 
     Iterable<AREXMocker> iterable = mongoTemplate.find(new Query(criteria),
         AREXMocker.class, getCollectionName(category));
+    iterable.forEach(item -> {
+      if (item != null && item.getUseMock() == null && item.getCategoryType() != null
+          && !item.getCategoryType().isEntryPoint()) {
+        item.setUseMock(true);
+      }
+    });
     return new AttachmentCategoryIterable(category, iterable);
   }
 

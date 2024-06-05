@@ -172,7 +172,7 @@ public class MockSourceEditionController {
    */
   @PostMapping("/update/")
   @ResponseBody
-  public  Response update(@RequestHeader String srcProviderName, @RequestBody AREXMocker body) {
+  public Response update(@RequestHeader String srcProviderName, @RequestBody AREXMocker body) {
     Response response = checkRequiredParameters(srcProviderName, body);
     if (response != null) {
       return response;
