@@ -34,5 +34,7 @@ public interface Constants{
   boolean AREX_CONFIG_MOCKERCONVERT_ENABLED_DEFAULT = true;
   String SQL_PARSE_DURATION_THRESHOLD = "sql.parse.duration.threshold";
   int SQL_PARSE_DURATION_THRESHOLD_DEFAULT = 200;
+  String AGENT_VERSION = "agentVersion";
+  long TEN_MINUTES = 10 * 60L;
 
 }
