@@ -8,7 +8,7 @@ import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.model.mock.Mocker.Target;
-import com.arextest.model.replay.CompareReplayResult;
+import com.arextest.model.replay.CompareRelationResult;
 import com.arextest.model.replay.QueryMockRequestType;
 import com.arextest.model.response.Response;
 import com.arextest.storage.cache.CacheKeyUtils;
@@ -18,7 +18,6 @@ import com.arextest.storage.mock.MockResultMatchStrategy;
 import com.arextest.storage.model.InvalidIncompleteRecordRequest;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.AgentWorkingService;
-import com.arextest.storage.service.InvalidRecordService;
 import com.arextest.storage.service.handler.AgentWorkingHandler;
 import com.arextest.storage.trace.MDCTracer;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -60,8 +59,6 @@ public class AgentRecordingController {
   @Resource
   private ZstdJacksonSerializer zstdJacksonSerializer;
   @Resource
-  private InvalidRecordService invalidRecordService;
-  @Resource
   private CacheProvider redisCacheProvider;
   @Resource(name = "custom-fork-join-executor")
   private Executor customForkJoinExecutor;
@@ -72,7 +69,7 @@ public class AgentRecordingController {
   @Resource
   private AgentWorkingHandler<AREXMocker> handleMockerService;
   @Resource
-  private AgentWorkingHandler<CompareReplayResult> handleReplayResultService;
+  private AgentWorkingHandler<CompareRelationResult> handleReplayResultService;
 
   /**
    * from agent query,means to save the request and try to find a record item as mock result for
@@ -163,44 +160,40 @@ public class AgentRecordingController {
 
   @PostMapping(value = "/batchSaveMockers")
   @ResponseBody
-  public CompletableFuture<Response> batchSaveMockers(@RequestBody List<AREXMocker> mockers) {
+  public Response batchSaveMockers(@RequestBody List<AREXMocker> mockers) {
     if (CollectionUtils.isEmpty(mockers)) {
-      return CompletableFuture.completedFuture(
-          ResponseUtils.parameterInvalidResponse("request body is empty"));
+      return ResponseUtils.parameterInvalidResponse("request body is empty");
     }
 
-
+    try {
       // Return the results directly to the agent, asynchronous processing process
-      CompletableFuture.runAsync(() -> {
-        try {
-          handleMockerService.batchSave(mockers);
-        } catch (Exception e) {
-          LOGGER.error("batch save mockers error: {}", e.getMessage(), e);
-        }
-      }, batchSaveMockersExecutor);
-
-    return CompletableFuture.completedFuture(ResponseUtils.successResponse(true));
+      CompletableFuture.runAsync(() -> handleMockerService.batchSave(mockers), batchSaveMockersExecutor);
+    } catch (Exception e) {
+      LOGGER.error("batch save record error: {}", e.getMessage(), e);
+      return ResponseUtils.exceptionResponse(e.getMessage());
+    }
+    return ResponseUtils.successResponse(true);
   }
 
   @PostMapping(value = "/batchSaveReplayResult")
   @ResponseBody
-  public CompletableFuture<Response> batchSaveReplayResult(@RequestBody List<CompareReplayResult> replayResults,
+  public Response batchSaveReplayResult(@RequestBody List<CompareRelationResult> replayResults,
       @RequestHeader(name = HeaderNames.AREX_AGENT_VERSION) String agentVersion) {
     if (CollectionUtils.isEmpty(replayResults)) {
-        return CompletableFuture.completedFuture(
-            ResponseUtils.parameterInvalidResponse("request body is empty"));
+      ResponseUtils.parameterInvalidResponse("request body is empty");
     }
 
-    CompletableFuture.runAsync(() -> {
-      try {
+    try {
+      CompletableFuture.runAsync(() -> {
         handleReplayResultService.batchSave(replayResults);
         putAgentVersionInRedis(replayResults.get(0).getReplayId(), agentVersion);
-      } catch (Exception e) {
-        LOGGER.error("batch save replay result error: {}", e.getMessage(), e);
-      }
-    }, batchSaveReplayResultsExecutor);
+      }, batchSaveReplayResultsExecutor);
+    } catch (Exception e) {
+      LOGGER.error("batch save replay result error: {}", e.getMessage(), e);
+      return ResponseUtils.exceptionResponse(e.getMessage());
+    }
 
-    return CompletableFuture.completedFuture(ResponseUtils.successResponse(true));
+    return ResponseUtils.successResponse(true);
   }
 
   @GetMapping(value = "/saveTest/", produces = {MediaType.APPLICATION_JSON_VALUE})

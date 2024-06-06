@@ -4,7 +4,7 @@ import static com.arextest.storage.model.Constants.AGENT_VERSION;
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.common.config.DefaultApplicationConfig;
 import com.arextest.model.mock.AREXMocker;
-import com.arextest.model.replay.CompareReplayResult;
+import com.arextest.model.replay.CompareRelationResult;
 import com.arextest.model.replay.CountOperationCaseRequestType;
 import com.arextest.model.replay.CountOperationCaseResponseType;
 import com.arextest.model.replay.PagedRequestType;
@@ -60,7 +60,7 @@ public class ScheduleReplayQueryController {
   private final PrepareMockResultService prepareMockResultService;
 
   private final InvalidRecordService invalidRecordService;
-  private final AgentWorkingHandler<CompareReplayResult> handleReplayResultService;
+  private final AgentWorkingHandler<CompareRelationResult> handleReplayResultService;
   private final CacheProvider redisCacheProvider;
   private final DefaultApplicationConfig applicationDefaultConfig;
 

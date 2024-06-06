@@ -7,7 +7,7 @@ import lombok.Data;
  * created by xinyuan_wang on 2023/06/04
  */
 @Data
-public class CompareReplayResult {
+public class CompareRelationResult {
 
   private MockCategoryType categoryType;
   private String operationName;
@@ -16,11 +16,11 @@ public class CompareReplayResult {
   /**
    * record request message
    */
-  private String baseMsg;
+  private String recordMessage;
   /**
    * replay request message
    */
-  private String testMsg;
+  private String replayMessage;
   private long recordTime;
   private long replayTime;
   private String appId;
@@ -28,5 +28,5 @@ public class CompareReplayResult {
    * Check whether the recording and playback request messages are consistent.
    * If they are consistent, only baseMsg needs to be passed.
    */
-  private boolean sameMsg;
+  private boolean sameMessage;
 }

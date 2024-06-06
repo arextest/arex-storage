@@ -14,7 +14,7 @@ public class QueryReplayResultResponseType implements Response {
 
   private ResponseStatusType responseStatusType;
   private List<ListResultHolder> resultHolderList;
-  private List<CompareReplayResult> replayResults;
+  private List<CompareRelationResult> replayResults;
   private Boolean invalidResult;
   private Boolean needMatch;
 }

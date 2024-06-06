@@ -60,14 +60,14 @@ public class HandleMockerService extends AbstractAgentWorkingService
     Map<String, List<AREXMocker>> groupedItems = items.stream()
         .collect(Collectors.groupingBy(item -> item.getCategoryType().getName()));
 
-    boolean batchSaveResult = false;
+    boolean batchSaveResult = true;
     for (Entry<String, List<AREXMocker>> entry : groupedItems.entrySet()) {
       String categoryName = entry.getKey();
-      if (agentWorkingMetricService.batchSaveRecord(entry.getValue())) {
-        batchSaveResult = true;
-        LOGGER.info("{}batch save record success, category: {}, recordId: {}, count: {}",
-            TITLE, categoryName, items.get(0).getRecordId(), entry.getValue().size());
+      if (!agentWorkingMetricService.batchSaveRecord(entry.getValue())) {
+        batchSaveResult = false;
       }
+      LOGGER.info("{}batch save record success, category: {}, recordId: {}, count: {}",
+          TITLE, categoryName, items.get(0).getRecordId(), entry.getValue().size());
     }
 
     return batchSaveResult;
@@ -84,7 +84,7 @@ public class HandleMockerService extends AbstractAgentWorkingService
 
       if (mocker.getCategoryType() == null || StringUtils.isEmpty(mocker.getCategoryType().getName())) {
         LOGGER.warn("{}The name of category is empty from agent record save not allowed, "
-                + "recordId: {}", TITLE, mocker.getRecordId());
+            + "recordId: {}", TITLE, mocker.getRecordId());
         return false;
       }
 

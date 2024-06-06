@@ -433,7 +433,7 @@
   </profiles>
 
   <properties>
-    <revision>1.2.21</revision>
+    <revision>1.2.22-SNAPSHOT</revision>
     <commons-lang3.version>3.3.2</commons-lang3.version>
     <java.version>1.8</java.version>
 
@@ -456,7 +456,7 @@
     </sonar.exclusions>
     <!-- Users could specify this property as true to skip the deploy process -->
     <spring.boot.version>2.7.18</spring.boot.version>
-    <arex-common.version>0.2.4</arex-common.version>
+    <arex-common.version>0.2.5-SNAPSHOT</arex-common.version>
     <reddison.version>3.20.1</reddison.version>
   </properties>
   <scm>

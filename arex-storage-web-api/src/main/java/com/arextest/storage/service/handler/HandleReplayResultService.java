@@ -2,13 +2,14 @@ package com.arextest.storage.service.handler;
 
 import static com.arextest.storage.model.Constants.TEN_MINUTES;
 import com.arextest.common.cache.CacheProvider;
-import com.arextest.model.replay.CompareReplayResult;
+import com.arextest.model.replay.CompareRelationResult;
 import com.arextest.storage.cache.CacheKeyUtils;
 import com.arextest.storage.metric.AgentWorkingMetricService;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.InvalidRecordService;
 import com.arextest.storage.trace.MDCTracer;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.common.collect.Lists;
 import java.util.Collections;
 import java.util.List;
 import javax.annotation.Resource;
@@ -23,7 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 @Service
 @Slf4j
 public class HandleReplayResultService extends AbstractAgentWorkingService
-    implements AgentWorkingHandler<CompareReplayResult> {
+    implements AgentWorkingHandler<CompareRelationResult> {
 
   @Resource
   private ZstdJacksonSerializer serializer;
@@ -35,12 +36,12 @@ public class HandleReplayResultService extends AbstractAgentWorkingService
   }
 
   @Override
-  public boolean batchSave(List<CompareReplayResult> items) {
+  public boolean batchSave(List<CompareRelationResult> items) {
     if (CollectionUtils.isEmpty(items)) {
       return false;
     }
 
-    CompareReplayResult replayCompareResult = items.get(0);
+    CompareRelationResult replayCompareResult = items.get(0);
     boolean batchSaveResult = true;
     try {
       MDCTracer.addRecordId(replayCompareResult.getRecordId());
@@ -62,18 +63,28 @@ public class HandleReplayResultService extends AbstractAgentWorkingService
   }
 
   @Override
-  public List<CompareReplayResult> findBy(String recordId, String replayId) {
+  public List<CompareRelationResult> findBy(String recordId, String replayId) {
     if (StringUtils.isEmpty(recordId) && StringUtils.isEmpty(replayId)) {
       return Collections.emptyList();
     }
 
-    byte[] results = redisCacheProvider.get(buildReplayResultKey(recordId, replayId));
-    return results == null ? Collections.emptyList() : serializer.deserialize(results,
-        new TypeReference<List<CompareReplayResult>>() {});
+    List<byte[]> results =
+        redisCacheProvider.lrange(buildReplayResultKey(recordId, replayId), 0, -1);
+    if (CollectionUtils.isEmpty(results)) {
+      return Collections.emptyList();
+    }
+
+    List<CompareRelationResult> replayResults = Lists.newArrayListWithCapacity(results.size());
+
+    for (byte[] result: results) {
+      replayResults.addAll(serializer.deserialize(result,
+          new TypeReference<List<CompareRelationResult>>() {}));
+    }
+    return replayResults;
   }
 
-  private boolean doBatchSave(List<CompareReplayResult> items) {
-    CompareReplayResult replayCompareResult = items.get(0);
+  private boolean doBatchSave(List<CompareRelationResult> items) {
+    CompareRelationResult replayCompareResult = items.get(0);
     if (isInvalidCase(replayCompareResult.getReplayId())) {
       LOGGER.warn("{}replayId: {} is invalid", TITLE, replayCompareResult.getReplayId());
       return false;
