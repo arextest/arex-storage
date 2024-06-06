@@ -10,9 +10,11 @@ import lombok.Setter;
 
 @Setter
 @Getter
-public class QueryReplayResultResponseType implements Response {
+public class QueryReplayResultResponseType<T> implements Response {
 
   private ResponseStatusType responseStatusType;
   private List<ListResultHolder> resultHolderList;
+  private List<CompareReplayResult> replayResults;
   private Boolean invalidResult;
+  private Boolean needMatch;
 }

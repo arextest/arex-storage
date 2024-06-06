@@ -26,8 +26,10 @@ import com.arextest.storage.repository.impl.mongo.DesensitizationLoader;
 import com.arextest.storage.repository.impl.mongo.converters.ArexEigenCompressionConverter;
 import com.arextest.storage.repository.impl.mongo.converters.ArexMockerCompressionConverter;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
+import com.arextest.storage.service.config.ApplicationDefaultConfig;
 import com.arextest.storage.service.config.impl.ApplicationPropertiesConfigProvider;
 import com.arextest.storage.service.config.provider.ConfigProvider;
+import com.arextest.storage.service.handler.HandleReplayResultService;
 import com.arextest.storage.service.listener.AgentWorkingListener;
 import com.arextest.storage.service.AgentWorkingService;
 import com.arextest.storage.service.listener.AutoDiscoveryEntryPointListener;
@@ -237,9 +239,14 @@ public class StorageAutoConfiguration {
   public ScheduleReplayQueryController scheduleReplayQueryController(
       ScheduleReplayingService scheduleReplayingService,
       PrepareMockResultService prepareMockResultService,
-      InvalidIncompleteRecordService invalidIncompleteRecordService) {
+      InvalidIncompleteRecordService invalidIncompleteRecordService,
+      HandleReplayResultService handleReplayResultService,
+      CacheProvider redisCacheProvider,
+      ApplicationDefaultConfig applicationDefaultConfig,
+      ZstdJacksonSerializer zstdJacksonSerializer) {
     return new ScheduleReplayQueryController(scheduleReplayingService, prepareMockResultService,
-        invalidIncompleteRecordService);
+        invalidIncompleteRecordService, handleReplayResultService, redisCacheProvider, applicationDefaultConfig,
+        zstdJacksonSerializer);
   }
 
   @Bean

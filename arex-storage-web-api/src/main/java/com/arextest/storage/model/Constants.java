@@ -29,6 +29,8 @@ public interface Constants{
 
   // applicationConfig
   String MAX_SQL_LENGTH = "maxSqlLength";
+  String AGENT_VERSION = "agentVersion";
+  long TEN_MINUTES = 10 * 60L;
   int MAX_SQL_LENGTH_DEFAULT = 50000;
 
 }

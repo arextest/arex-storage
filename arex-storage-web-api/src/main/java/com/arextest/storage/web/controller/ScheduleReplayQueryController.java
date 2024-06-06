@@ -1,6 +1,9 @@
 package com.arextest.storage.web.controller;
 
+import static com.arextest.storage.model.Constants.AGENT_VERSION;
+import com.arextest.common.cache.CacheProvider;
 import com.arextest.model.mock.AREXMocker;
+import com.arextest.model.replay.CompareReplayResult;
 import com.arextest.model.replay.CountOperationCaseRequestType;
 import com.arextest.model.replay.CountOperationCaseResponseType;
 import com.arextest.model.replay.PagedRequestType;
@@ -13,18 +16,20 @@ import com.arextest.model.replay.QueryReplayResultRequestType;
 import com.arextest.model.replay.QueryReplayResultResponseType;
 import com.arextest.model.replay.ViewRecordRequestType;
 import com.arextest.model.replay.ViewRecordResponseType;
-import com.arextest.model.replay.holder.ListResultHolder;
 import com.arextest.model.response.Response;
+import com.arextest.storage.cache.CacheKeyUtils;
 import com.arextest.storage.mock.MockerPostProcessor;
 import com.arextest.storage.repository.ProviderNames;
+import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.InvalidIncompleteRecordService;
 import com.arextest.storage.service.PrepareMockResultService;
 import com.arextest.storage.service.ScheduleReplayingService;
+import com.arextest.storage.service.config.ApplicationDefaultConfig;
+import com.arextest.storage.service.handler.AgentWorkingHandler;
 import com.arextest.storage.trace.MDCTracer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -37,8 +42,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
+import org.apache.maven.artifact.versioning.ComparableVersion;
+
 
 /**
  * this class defined all api list for scheduler replaying
@@ -56,6 +61,10 @@ public class ScheduleReplayQueryController {
   private final PrepareMockResultService prepareMockResultService;
 
   private final InvalidIncompleteRecordService invalidIncompleteRecordService;
+  private final AgentWorkingHandler<CompareReplayResult> handleReplayResultService;
+  private final CacheProvider redisCacheProvider;
+  private final ApplicationDefaultConfig applicationDefaultConfig;
+  private final ZstdJacksonSerializer zstdJacksonSerializer;
 
   /**
    * fetch the replay result for compare
@@ -66,36 +75,68 @@ public class ScheduleReplayQueryController {
    */
   @PostMapping(value = "/replayResult")
   @ResponseBody
-  public Response replayResult(@RequestBody QueryReplayResultRequestType requestType) {
+  public byte[] replayResult(@RequestBody QueryReplayResultRequestType requestType) {
     if (requestType == null) {
-      return ResponseUtils.requestBodyEmptyResponse();
+      return ZstdJacksonSerializer.EMPTY_INSTANCE;
     }
     final String recordId = requestType.getRecordId();
     if (StringUtils.isEmpty(recordId)) {
-      return ResponseUtils.emptyRecordIdResponse();
+      return ZstdJacksonSerializer.EMPTY_INSTANCE;
     }
     String replayResultId = requestType.getReplayResultId();
     if (StringUtils.isEmpty(replayResultId)) {
-      return ResponseUtils.emptyReplayResultIdResponse();
+      return ZstdJacksonSerializer.EMPTY_INSTANCE;
     }
     try {
       MDCTracer.addRecordId(recordId);
       MDCTracer.addReplayId(replayResultId);
-      List<ListResultHolder> resultHolderList =
-          scheduleReplayingService.queryReplayResult(recordId, replayResultId);
+
       QueryReplayResultResponseType responseType = new QueryReplayResultResponseType();
-      responseType.setResultHolderList(resultHolderList);
       responseType.setInvalidResult(invalidIncompleteRecordService.isInvalidReplayIncompleteCase(replayResultId));
-      return ResponseUtils.successResponse(responseType);
+
+      if (getFromCompareResult(replayResultId)) {
+        responseType.setReplayResults(handleReplayResultService.findBy(
+            recordId, replayResultId));
+        responseType.setNeedMatch(false);
+      } else {
+        responseType.setResultHolderList(scheduleReplayingService.queryReplayResult(recordId, replayResultId));
+        responseType.setNeedMatch(true);
+      }
+      return zstdJacksonSerializer.serialize(responseType);
     } catch (Throwable throwable) {
       LOGGER.error("replayResult error:{} ,recordId:{} ,replayResultId:{}",
           throwable.getMessage(),
           recordId,
           replayResultId);
-      return ResponseUtils.exceptionResponse(throwable.getMessage());
+      return ZstdJacksonSerializer.EMPTY_INSTANCE;
     } finally {
       MDCTracer.clear();
     }
+  }
+
+  /**
+   * Determine whether to adopt new logic based on the agent version number
+   * @param replayId
+   * @return
+   */
+  private boolean getFromCompareResult(String replayId) {
+    String agentVersion = applicationDefaultConfig.getConfigAsString(AGENT_VERSION, null);
+    if (StringUtils.isEmpty(agentVersion)) {
+      return false;
+    }
+
+    byte[] agentVersionBytes = getAgentVersion(replayId);
+    if (agentVersionBytes == null) {
+      return false;
+    }
+
+    ComparableVersion agentComparableVersion = new ComparableVersion(agentVersion);
+    ComparableVersion replayComparableVersion = new ComparableVersion(CacheKeyUtils.fromUtf8Bytes(agentVersionBytes));
+    return replayComparableVersion.compareTo(agentComparableVersion) >= 0;
+  }
+
+  private byte[] getAgentVersion(String replayId) {
+    return redisCacheProvider.get(CacheKeyUtils.buildAgentVersionKey(replayId));
   }
 
   /**

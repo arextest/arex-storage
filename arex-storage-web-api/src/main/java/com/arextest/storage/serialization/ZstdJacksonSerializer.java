@@ -35,7 +35,14 @@ public final class ZstdJacksonSerializer {
     if (value == null) {
       return;
     }
-    SerializationUtils.useZstdSerializeTo(this.serializationProvider, outputStream, value);
+    serializeTo(this.serializationProvider, value, outputStream);
+  }
+
+  public <T> void serializeTo(SerializationProvider provider, T value, OutputStream outputStream) {
+    if (value == null) {
+      return;
+    }
+    SerializationUtils.useZstdSerializeTo(provider, outputStream, value);
   }
 
   public <T> byte[] serialize(T value) {
