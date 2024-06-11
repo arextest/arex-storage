@@ -240,6 +240,7 @@ public class ScheduleReplayingService {
         splitMocker.setRecordVersion(mocker.getRecordVersion());
         splitMocker.setRecordEnvironment(mocker.getRecordEnvironment());
         splitMocker.setId(mocker.getId());
+        splitMocker.setUseMock(mergeRecord.getUseMock() == null || mergeRecord.getUseMock());
         splitMocker.setIndex(i);
 
         splitMocker.setOperationName(mergeRecord.getOperationName());

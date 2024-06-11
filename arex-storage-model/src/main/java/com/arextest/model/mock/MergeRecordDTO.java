@@ -22,6 +22,7 @@ public class MergeRecordDTO {
     private String request;
     private String serializeType;
     private String recordId;
+    private Boolean useMock;
     private Map<String, Object> requestAttributes;
     private Map<String, Object> responseAttributes;
 }
