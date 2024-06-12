@@ -188,7 +188,7 @@
       <dependency>
         <artifactId>arex-extension</artifactId>
         <groupId>com.arextest</groupId>
-        <version>0.0.1</version>
+        <version>0.0.3</version>
       </dependency>
       <dependency>
         <artifactId>compare-sdk</artifactId>
@@ -216,6 +216,11 @@
         <groupId>com.github.jsqlparser</groupId>
         <artifactId>jsqlparser</artifactId>
         <version>${jsqlparser.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.redisson</groupId>
+        <artifactId>redisson</artifactId>
+        <version>${reddison.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -444,7 +449,8 @@
     </sonar.exclusions>
     <!-- Users could specify this property as true to skip the deploy process -->
     <spring.boot.version>2.7.18</spring.boot.version>
-    <arex-common.version>0.1.27</arex-common.version>
+    <arex-common.version>0.1.28</arex-common.version>
+    <reddison.version>3.20.1</reddison.version>
   </properties>
   <scm>
     <connection>scm:git:git://github.com/arextest/arex-storage.git</connection>
