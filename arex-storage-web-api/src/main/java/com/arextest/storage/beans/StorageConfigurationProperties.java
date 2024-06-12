@@ -1,3 +1,5 @@
+
+
 package com.arextest.storage.beans;
 
 import com.arextest.model.mock.MockCategoryType;
@@ -15,7 +17,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class StorageConfigurationProperties {
 
   private String mongodbUri;
-  private Cache cache;
   private Set<MockCategoryType> categoryTypes;
   // @Value("${arex.storage.enable-auto-discovery-entry-point:true}")
   private boolean enableAutoDiscoveryEntryPoint = true;
@@ -24,14 +25,5 @@ public class StorageConfigurationProperties {
   private Map<String, Long> expirationDurationMap;
   private Long defaultExpirationDuration;
   private int allowReRunDays;
-
-  @Getter
-  @Setter
-  static class Cache {
-
-    private String uri;
-    private String sentinelUrl;
-    private long expiredSeconds = 7200;
-  }
 
 }
