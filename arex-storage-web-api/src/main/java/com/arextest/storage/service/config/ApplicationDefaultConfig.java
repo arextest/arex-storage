@@ -16,7 +16,7 @@ import javax.annotation.Resource;
 @Slf4j
 public class ApplicationDefaultConfig {
 
-    @Resource(name = "applicationPropertiesConfigProvider")
+    @Resource
     private ConfigProvider configProvider;
 
 
