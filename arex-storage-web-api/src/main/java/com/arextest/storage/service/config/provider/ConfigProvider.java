@@ -11,10 +11,20 @@ public interface ConfigProvider {
     /**
      * load all configs
      */
-    Map<String, String> loadConfigs(String configName);
+    void loadConfigs(String configName);
 
     /**
      * replace all configs
      */
     void onChange(Map<String, String> configs);
+
+    /**
+     * get config as string
+     */
+    String getConfigAsString(String key);
+
+    /**
+     * get config as int
+     */
+    int getConfigAsInt(String key, int defaultValue);
 }

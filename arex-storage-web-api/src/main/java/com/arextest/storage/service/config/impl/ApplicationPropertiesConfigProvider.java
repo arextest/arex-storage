@@ -2,8 +2,10 @@ package com.arextest.storage.service.config.impl;
 
 import com.arextest.storage.service.config.provider.ConfigProvider;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.core.env.Environment;
 
-import java.util.Collections;
+import javax.annotation.Resource;
 import java.util.Map;
 
 /**
@@ -14,10 +16,12 @@ import java.util.Map;
 @Slf4j
 public class ApplicationPropertiesConfigProvider implements ConfigProvider {
 
+    @Resource
+    private Environment environment;
+
     @Override
-    public Map<String, String> loadConfigs(String configName) {
+    public void loadConfigs(String configName) {
         // nothing to do
-        return Collections.emptyMap();
     }
 
     @Override
@@ -25,4 +29,18 @@ public class ApplicationPropertiesConfigProvider implements ConfigProvider {
         // nothing to do
     }
 
+
+    @Override
+    public String getConfigAsString(String key) {
+        return environment.getProperty(key, String.class, StringUtils.EMPTY);
+    }
+
+    @Override
+    public int getConfigAsInt(String key, int defaultValue) {
+        try {
+            return environment.getProperty(key, Integer.class, defaultValue);
+        } catch (Exception e) {
+            return defaultValue;
+        }
+    }
 }

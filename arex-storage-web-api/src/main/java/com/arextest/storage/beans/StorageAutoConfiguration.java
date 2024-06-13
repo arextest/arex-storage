@@ -301,7 +301,7 @@ public class StorageAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean(ConfigProvider.class)
-  public ConfigProvider propertiesConfigProvider() {
+  public ConfigProvider applicationPropertiesConfigProvider() {
     return new ApplicationPropertiesConfigProvider();
   }
 
