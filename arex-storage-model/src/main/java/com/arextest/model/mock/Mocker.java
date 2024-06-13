@@ -66,6 +66,10 @@ public interface Mocker {
 
   Map<Integer, Long> getEigenMap();
 
+  void setUseMock(Boolean useMock);
+
+  Boolean getUseMock();
+
   /**
    * Eigenvalues of mock data
    * key: Hashcode for the key value of the JSON node

@@ -68,6 +68,11 @@ public class AREXMocker implements Mocker {
    */
   private Integer index;
 
+  /**
+   * Whether debugging pinned case use mock data.
+   */
+  private Boolean useMock;
+
   public AREXMocker(MockCategoryType categoryType) {
     this.categoryType = categoryType;
   }

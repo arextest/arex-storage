@@ -117,6 +117,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
 
     Iterable<AREXMocker> iterable = mongoTemplate.find(new Query(criteria),
         AREXMocker.class, getCollectionName(category));
+    iterable.forEach(this::addUseMocker);
     return new AttachmentCategoryIterable(category, iterable);
   }
 
@@ -128,6 +129,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         .limit(DEFAULT_MIN_LIMIT_SIZE);
 
     AREXMocker item = mongoTemplate.findOne(query, AREXMocker.class, getCollectionName(categoryType));
+    addUseMocker(item);
     return AttachmentCategoryIterable.attach(categoryType, item);
   }
 
@@ -387,6 +389,13 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
 
   private Criteria buildTimeRangeFilter(long beginTime, long endTime) {
     return Criteria.where(CREATE_TIME_COLUMN_NAME).gte(new Date(beginTime)).lt(new Date(endTime));
+  }
+
+  private void addUseMocker(AREXMocker item) {
+    if (item != null && item.getUseMock() == null && item.getCategoryType() != null
+        && !item.getCategoryType().isEntryPoint()) {
+      item.setUseMock(true);
+    }
   }
 
   private static final class AttachmentCategoryIterable implements Iterable<AREXMocker>,
