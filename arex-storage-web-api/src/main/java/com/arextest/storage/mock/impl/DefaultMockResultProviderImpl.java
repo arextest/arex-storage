@@ -699,7 +699,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
       byte[] replayIdBytes, byte[] mockResultId) {
     byte[] usedRecordInstanceIdsKey = buildMatchedRecordInstanceIdsKey(category, recordIdBytes, replayIdBytes,
         mockResultId);
-    return redisCacheProvider.incrValue(usedRecordInstanceIdsKey);
+    return nextSequence(usedRecordInstanceIdsKey);
   }
 
   private byte[] buildMatchedRecordInstanceIdsKey(MockCategoryType category, byte[] recordIdBytes, byte[] replayIdBytes,
