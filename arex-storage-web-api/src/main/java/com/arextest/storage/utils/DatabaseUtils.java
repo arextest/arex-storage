@@ -8,7 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import com.arextest.storage.service.config.ApplicationDefaultConfig;
 import com.google.common.annotations.VisibleForTesting;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
@@ -16,8 +18,12 @@ import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.util.TablesNamesFinder;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.Collections;
+
+import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH_DEFAULT;
 
 /**
  * @author niyan
@@ -30,9 +36,9 @@ public class DatabaseUtils {
     private DatabaseUtils() {
     }
 
-    private static final Pattern PATTERN = Pattern.compile("(\\s+|\"\\?\")");
+    private static final Pattern PATTERN = Pattern.compile("(\\s+|\"\\?\"|\\[|\\])");
 
-    public static void regenerateOperationName(Mocker mocker) {
+    public static void regenerateOperationName(Mocker mocker, int maxSqlLengthInt) {
         if (!MockCategoryType.DATABASE.getName().equals(mocker.getCategoryType().getName())) {
             return;
         }
@@ -44,13 +50,18 @@ public class DatabaseUtils {
             return;
         }
 
+        if (maxSqlLengthInt <= 0) {
+            maxSqlLengthInt = MAX_SQL_LENGTH_DEFAULT;
+        }
+
         String[] sqls = StringUtils.split(mocker.getTargetRequest().getBody(), ";");
         List<String> operationNames = new ArrayList<>(sqls.length);
         for (String sql : sqls) {
-            TableSchema tableSchema = parse(sql);
-            if (tableSchema == null) {
+            if (StringUtils.isEmpty(sql) || sql.length() > maxSqlLengthInt) {
+                LOGGER.warn("sql length is too long or empty, sql: {}", sql);
                 continue;
             }
+            TableSchema tableSchema = parse(sql);
             tableSchema.setDbName(mocker.getTargetRequest().attributeAsString(MockAttributeNames.DB_NAME));
             operationNames.add(regenerateOperationName(tableSchema, mocker.getOperationName()));
         }
@@ -64,7 +75,7 @@ public class DatabaseUtils {
      * The operation name is generated in the format of dbName-tableNames-action-originalOperationName, eg: db1@table1,table2@select@operation1
      */
     @VisibleForTesting
-    static String regenerateOperationName(TableSchema tableSchema, String originOperationName) {
+    public static String regenerateOperationName(TableSchema tableSchema, String originOperationName) {
         return new StringBuilder(100).append(StringUtils.defaultString(tableSchema.getDbName())).append('@')
             .append(StringUtils.defaultString(StringUtils.join(tableSchema.getTableNames(), ","))).append('@')
             .append(StringUtils.defaultString(tableSchema.getAction())).append("@")
@@ -114,17 +125,13 @@ public class DatabaseUtils {
         return tableList;
     }
 
-
     /**
      * parse table and action from sql
      * @param sql sql
      * @return table schema info
      */
     @VisibleForTesting
-    static TableSchema parse(String sql) {
-        if (StringUtils.isEmpty(sql)) {
-            return null;
-        }
+    public static TableSchema parse(String sql) {
         TableSchema tableSchema = new TableSchema();
         try {
             sql = PATTERN.matcher(sql).replaceAll(" ");
@@ -138,7 +145,7 @@ public class DatabaseUtils {
                 Collections.sort(tableNameList);
             }
             tableSchema.setTableNames(tableNameList);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             LOGGER.warn("parse sql error, sql: {}", sql, e);
         }
         return tableSchema;

@@ -47,3 +47,4 @@ arex:
           metric: false
 pom:
   version: ${project.version}
+maxSqlLength: 50000
