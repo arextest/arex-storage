@@ -7,9 +7,9 @@ package com.arextest.storage.service.config;
  */
 public abstract class AbstractConfig {
 
-    abstract protected String getConfigAsString(String key);
+    protected abstract String getConfigAsString(String key);
 
-    abstract public String getConfigAsString(String key, String defaultValue);
+    public abstract String getConfigAsString(String key, String defaultValue);
 
-    abstract public int getConfigAsInt(String key, int defaultValue);
+    public abstract int getConfigAsInt(String key, int defaultValue);
 }

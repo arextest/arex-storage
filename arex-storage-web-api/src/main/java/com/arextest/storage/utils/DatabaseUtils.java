@@ -57,11 +57,8 @@ public class DatabaseUtils {
         String[] sqls = StringUtils.split(mocker.getTargetRequest().getBody(), ";");
         List<String> operationNames = new ArrayList<>(sqls.length);
         for (String sql : sqls) {
-            if (StringUtils.isEmpty(sql)) {
-                continue;
-            }
-            if (sql.length() > maxSqlLengthInt) {
-                LOGGER.warn("sql length is too long, sql: {}", sql);
+            if (StringUtils.isEmpty(sql) || sql.length() > maxSqlLengthInt) {
+                LOGGER.warn("sql length is too long or empty, sql: {}", sql);
                 continue;
             }
             TableSchema tableSchema = parse(sql);
