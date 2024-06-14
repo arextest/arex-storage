@@ -34,13 +34,4 @@ public class ApplicationPropertiesConfigProvider implements ConfigProvider {
     public String getConfigAsString(String key) {
         return environment.getProperty(key, String.class, StringUtils.EMPTY);
     }
-
-    @Override
-    public int getConfigAsInt(String key, int defaultValue) {
-        try {
-            return environment.getProperty(key, Integer.class, defaultValue);
-        } catch (Exception e) {
-            return defaultValue;
-        }
-    }
 }

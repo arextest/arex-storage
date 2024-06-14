@@ -43,6 +43,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH;
+import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH_DEFAULT;
 
 
 @Component
@@ -99,7 +100,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     // Obtain the number of the same interfaces in recorded data
     while (valueIterator.hasNext()) {
       T value = valueIterator.next();
-      DatabaseUtils.regenerateOperationName(value, applicationDefaultConfig.getConfigAsInt(MAX_SQL_LENGTH, 50000));
+      DatabaseUtils.regenerateOperationName(value, applicationDefaultConfig.getConfigAsInt(MAX_SQL_LENGTH, MAX_SQL_LENGTH_DEFAULT));
       mockList.add(value);
       if (shouldRecordCallReplayMax) {
         // Dubbo type mock needs to calculate the number of body and methods combined

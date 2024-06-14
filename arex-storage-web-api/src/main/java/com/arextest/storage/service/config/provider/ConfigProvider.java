@@ -22,9 +22,4 @@ public interface ConfigProvider {
      * get config as string
      */
     String getConfigAsString(String key);
-
-    /**
-     * get config as int
-     */
-    int getConfigAsInt(String key, int defaultValue);
 }

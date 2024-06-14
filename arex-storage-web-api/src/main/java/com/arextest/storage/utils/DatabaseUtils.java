@@ -23,6 +23,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 
+import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH_DEFAULT;
+
 /**
  * @author niyan
  * @date 2024/4/24
@@ -35,11 +37,6 @@ public class DatabaseUtils {
     }
 
     private static final Pattern PATTERN = Pattern.compile("(\\s+|\"\\?\"|\\[|\\])");
-    private static final int MAX_SQL_LENGTH = 50000;
-
-    public static void regenerateOperationName(Mocker mocker) {
-        regenerateOperationName(mocker, MAX_SQL_LENGTH);
-    }
 
     public static void regenerateOperationName(Mocker mocker, int maxSqlLengthInt) {
         if (!MockCategoryType.DATABASE.getName().equals(mocker.getCategoryType().getName())) {
@@ -54,16 +51,20 @@ public class DatabaseUtils {
         }
 
         if (maxSqlLengthInt <= 0) {
-            maxSqlLengthInt = MAX_SQL_LENGTH;
+            maxSqlLengthInt = MAX_SQL_LENGTH_DEFAULT;
         }
 
         String[] sqls = StringUtils.split(mocker.getTargetRequest().getBody(), ";");
         List<String> operationNames = new ArrayList<>(sqls.length);
         for (String sql : sqls) {
-            TableSchema tableSchema = parse(sql, maxSqlLengthInt);
-            if (tableSchema == null) {
+            if (StringUtils.isEmpty(sql)) {
                 continue;
             }
+            if (sql.length() > maxSqlLengthInt) {
+                LOGGER.warn("sql length is too long, sql: {}", sql);
+                continue;
+            }
+            TableSchema tableSchema = parse(sql);
             tableSchema.setDbName(mocker.getTargetRequest().attributeAsString(MockAttributeNames.DB_NAME));
             operationNames.add(regenerateOperationName(tableSchema, mocker.getOperationName()));
         }
@@ -127,27 +128,13 @@ public class DatabaseUtils {
         return tableList;
     }
 
-    public static TableSchema parse(String sql) {
-        return parse(sql, MAX_SQL_LENGTH);
-    }
-
     /**
      * parse table and action from sql
      * @param sql sql
      * @return table schema info
      */
     @VisibleForTesting
-    public static TableSchema parse(String sql, int maxSqlLengthInt) {
-        if (StringUtils.isEmpty(sql)) {
-            LOGGER.warn("sql is empty");
-            return null;
-        }
-
-        if (sql.length() > maxSqlLengthInt) {
-            LOGGER.warn("sql length is too long, sql: {}", sql);
-            return null;
-        }
-
+    public static TableSchema parse(String sql) {
         TableSchema tableSchema = new TableSchema();
         try {
             sql = PATTERN.matcher(sql).replaceAll(" ");

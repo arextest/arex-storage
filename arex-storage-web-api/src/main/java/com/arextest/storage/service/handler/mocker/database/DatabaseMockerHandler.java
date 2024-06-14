@@ -9,9 +9,8 @@ import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
-
 import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH;
+import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH_DEFAULT;
 
 /**
  * @author niyan
@@ -32,11 +31,11 @@ public class DatabaseMockerHandler implements MockerHandler {
 
     @Override
     public void handleOnRecordSaving(Mocker mocker) {
-        DatabaseUtils.regenerateOperationName(mocker, applicationDefaultConfig.getConfigAsInt(MAX_SQL_LENGTH, 50000));
+        DatabaseUtils.regenerateOperationName(mocker, applicationDefaultConfig.getConfigAsInt(MAX_SQL_LENGTH, MAX_SQL_LENGTH_DEFAULT));
     }
 
     @Override
     public void handleOnRecordMocking(Mocker mocker) {
-        DatabaseUtils.regenerateOperationName(mocker, applicationDefaultConfig.getConfigAsInt(MAX_SQL_LENGTH, 50000));
+        DatabaseUtils.regenerateOperationName(mocker, applicationDefaultConfig.getConfigAsInt(MAX_SQL_LENGTH, MAX_SQL_LENGTH_DEFAULT));
     }
 }
