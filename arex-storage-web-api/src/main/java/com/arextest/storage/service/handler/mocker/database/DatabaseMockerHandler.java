@@ -5,9 +5,9 @@ import com.arextest.model.mock.Mocker;
 import com.arextest.storage.service.config.ApplicationDefaultConfig;
 import com.arextest.storage.service.handler.mocker.MockerHandler;
 import com.arextest.storage.utils.DatabaseUtils;
-import lombok.Setter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.Resource;
 
 import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH;
 import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH_DEFAULT;
@@ -20,7 +20,7 @@ import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH_DEFAULT;
 @Component
 public class DatabaseMockerHandler implements MockerHandler {
 
-    @Setter(onMethod_={@Autowired})
+    @Resource
     private ApplicationDefaultConfig applicationDefaultConfig;
 
 
