@@ -2,12 +2,15 @@ package com.arextest.storage.utils;
 
 import com.arextest.diff.handler.parse.sqlparse.constants.DbParseConstants;
 import com.arextest.storage.model.TableSchema;
+import com.arextest.storage.service.config.ApplicationDefaultConfig;
 import net.sf.jsqlparser.statement.upsert.Upsert;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 
+import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;

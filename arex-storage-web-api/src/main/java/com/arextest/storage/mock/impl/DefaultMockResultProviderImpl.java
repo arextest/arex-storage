@@ -18,6 +18,7 @@ import com.arextest.storage.mock.internal.matchkey.impl.DubboConsumerMatchKeyBui
 import com.arextest.storage.model.MockResultType;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.QueryConfigService;
+import com.arextest.storage.service.config.ApplicationDefaultConfig;
 import com.arextest.storage.utils.DatabaseUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -40,6 +41,9 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH;
+import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH_DEFAULT;
 
 
 @Component
@@ -73,6 +77,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   private DubboConsumerMatchKeyBuilderImpl dubboConsumerMatchKeyBuilder;
   @Resource
   private QueryConfigService queryConfigService;
+  @Resource
+  private ApplicationDefaultConfig applicationDefaultConfig;
 
   /**
    * 1. Store recorded data and matching keys in redis 2. The mock type associated with dubbo, which
@@ -94,7 +100,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     // Obtain the number of the same interfaces in recorded data
     while (valueIterator.hasNext()) {
       T value = valueIterator.next();
-      DatabaseUtils.regenerateOperationName(value);
+      DatabaseUtils.regenerateOperationName(value, applicationDefaultConfig.getConfigAsInt(MAX_SQL_LENGTH, MAX_SQL_LENGTH_DEFAULT));
       mockList.add(value);
       if (shouldRecordCallReplayMax) {
         // Dubbo type mock needs to calculate the number of body and methods combined
@@ -694,7 +700,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
       byte[] replayIdBytes, byte[] mockResultId) {
     byte[] usedRecordInstanceIdsKey = buildMatchedRecordInstanceIdsKey(category, recordIdBytes, replayIdBytes,
         mockResultId);
-    return redisCacheProvider.incrValue(usedRecordInstanceIdsKey);
+    return nextSequence(usedRecordInstanceIdsKey);
   }
 
   private byte[] buildMatchedRecordInstanceIdsKey(MockCategoryType category, byte[] recordIdBytes, byte[] replayIdBytes,

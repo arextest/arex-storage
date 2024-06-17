@@ -61,6 +61,7 @@ public class MockSourceEditionService {
       MergeRecordDTO mergeRecordDTO = mergeRecordDTOS.get(item.getIndex());
       mergeRecordDTO.setRequest(item.getTargetRequest().getBody());
       mergeRecordDTO.setResponse(item.getTargetResponse().getBody());
+      mergeRecordDTO.setUseMock(item.getUseMock());
       mergedMocker.getTargetResponse()
           .setBody(JsonUtil.OBJECT_MAPPER.writeValueAsString(mergeRecordDTOS));
     } catch (Exception e) {

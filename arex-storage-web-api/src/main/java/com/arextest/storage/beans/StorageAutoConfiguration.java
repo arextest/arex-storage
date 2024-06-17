@@ -26,6 +26,8 @@ import com.arextest.storage.repository.impl.mongo.DesensitizationLoader;
 import com.arextest.storage.repository.impl.mongo.converters.ArexEigenCompressionConverter;
 import com.arextest.storage.repository.impl.mongo.converters.ArexMockerCompressionConverter;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
+import com.arextest.storage.service.config.impl.ApplicationPropertiesConfigProvider;
+import com.arextest.storage.service.config.provider.ConfigProvider;
 import com.arextest.storage.service.listener.AgentWorkingListener;
 import com.arextest.storage.service.AgentWorkingService;
 import com.arextest.storage.service.listener.AutoDiscoveryEntryPointListener;
@@ -294,6 +296,13 @@ public class StorageAutoConfiguration {
   public RepositoryProvider<AREXMocker> defaultMockerProvider(MongoTemplate mongoTemplate,
       Set<MockCategoryType> entryPointTypes) {
     return new AREXMockerMongoRepositoryProvider(mongoTemplate, properties, entryPointTypes);
+  }
+
+
+  @Bean
+  @ConditionalOnMissingBean(ConfigProvider.class)
+  public ConfigProvider applicationPropertiesConfigProvider() {
+    return new ApplicationPropertiesConfigProvider();
   }
 
   private void syncAuthSwitch(MongoDatabase database) {
