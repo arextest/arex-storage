@@ -25,6 +25,12 @@ public final class ZstdJacksonSerializer {
    * The bytes of zstd  equal json string "{}",useful deserialize
    */
   public static final byte[] EMPTY_INSTANCE = SerializationUtils.EMPTY_INSTANCE;
+
+  /**
+   * The bytes of zstd  equal json string "[]",useful deserialize
+   */
+  public static final byte[] EMPTY_INSTANCE_LIST = SerializationUtils.EMPTY_INSTANCE_LIST;
+
   private final SerializationProvider serializationProvider;
 
   public ZstdJacksonSerializer(ObjectMapper objectMapper) {
@@ -69,13 +75,15 @@ public final class ZstdJacksonSerializer {
     if (zstdValues == null) {
       return null;
     }
-    return SerializationUtils.useZstdDeserialize(this.serializationProvider, zstdValues, typeReference);
+    return SerializationUtils.useZstdDeserialize(this.serializationProvider, zstdValues,
+        typeReference);
   }
 
   public <T> T deserialize(InputStream inputStream, TypeReference<T> typeReference) {
     if (inputStream == null) {
       return null;
     }
-    return SerializationUtils.useZstdDeserialize(this.serializationProvider, inputStream, typeReference);
+    return SerializationUtils.useZstdDeserialize(this.serializationProvider, inputStream,
+        typeReference);
   }
 }

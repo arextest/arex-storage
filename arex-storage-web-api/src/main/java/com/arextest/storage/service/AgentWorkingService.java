@@ -174,7 +174,7 @@ public class AgentWorkingService {
       }
     }
 
-    return ZstdJacksonSerializer.EMPTY_INSTANCE;
+    return ZstdJacksonSerializer.EMPTY_INSTANCE_LIST;
   }
 
   public byte[] queryConfigFile(AREXMocker requestType) {
