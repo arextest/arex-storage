@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
  * @author jmo
  * @since 2021/11/8
  */
+@SuppressWarnings("java:S2386")
 @Component
 @Slf4j
 public final class ZstdJacksonSerializer {
