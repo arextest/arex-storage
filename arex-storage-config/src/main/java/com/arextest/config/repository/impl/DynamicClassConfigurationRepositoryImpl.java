@@ -8,15 +8,19 @@ import com.arextest.config.utils.MongoHelper;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+@Slf4j
 @RequiredArgsConstructor
 public class DynamicClassConfigurationRepositoryImpl implements
     ConfigRepositoryProvider<DynamicClassConfiguration> {
+
   private final MongoTemplate mongoTemplate;
 
   @Override
@@ -27,23 +31,20 @@ public class DynamicClassConfigurationRepositoryImpl implements
   @Override
   public List<DynamicClassConfiguration> listBy(String appId) {
     Query filter = new Query(Criteria.where(DynamicClassCollection.Fields.appId).is(appId));
-    return mongoTemplate.find(filter, DynamicClassCollection.class)
-        .stream().map(DynamicClassMapper.INSTANCE::dtoFromDao)
-        .collect(Collectors.toList());
+    return mongoTemplate.find(filter, DynamicClassCollection.class).stream()
+        .map(DynamicClassMapper.INSTANCE::dtoFromDao).collect(Collectors.toList());
   }
 
   @Override
   public boolean update(DynamicClassConfiguration configuration) {
     Query filter = new Query(Criteria.where(DASH_ID).is(new ObjectId(configuration.getId())));
 
-    Update update = MongoHelper.getMongoTemplateUpdates(
-        configuration,
-        DynamicClassCollection.Fields.fullClassName,
-        DynamicClassCollection.Fields.methodName,
-        DynamicClassCollection.Fields.parameterTypes,
-        DynamicClassCollection.Fields.keyFormula);
+    Update update = MongoHelper.getMongoTemplateUpdates(configuration,
+        DynamicClassCollection.Fields.fullClassName, DynamicClassCollection.Fields.methodName,
+        DynamicClassCollection.Fields.parameterTypes, DynamicClassCollection.Fields.keyFormula);
     MongoHelper.withMongoTemplateBaseUpdate(update);
-    return mongoTemplate.updateMulti(filter, update, DynamicClassCollection.class).getModifiedCount() > 0;
+    return mongoTemplate.findAndModify(filter, update, new FindAndModifyOptions().upsert(true),
+        DynamicClassCollection.class) != null;
   }
 
   @Override
@@ -68,4 +69,20 @@ public class DynamicClassConfigurationRepositoryImpl implements
     Query filter = new Query(Criteria.where(DynamicClassCollection.Fields.appId).is(appId));
     return mongoTemplate.remove(filter, DynamicClassCollection.class).getDeletedCount() > 0;
   }
+
+  public boolean cover(String appId, List<DynamicClassConfiguration> configuration) {
+    Query filter = new Query(Criteria.where(DynamicClassCollection.Fields.appId).is(appId));
+    List<DynamicClassCollection> allAndRemove = mongoTemplate.findAllAndRemove(filter,
+        DynamicClassCollection.class);
+    try {
+      List<DynamicClassCollection> daos = configuration.stream()
+          .map(DynamicClassMapper.INSTANCE::daoFromDto).collect(Collectors.toList());
+      mongoTemplate.insertAll(daos);
+    } catch (RuntimeException e) {
+      LOGGER.error("cover error, before cover: {}, after cover: {}", allAndRemove, configuration);
+      return false;
+    }
+    return true;
+  }
+
 }

@@ -3,6 +3,7 @@ package com.arextest.config.model.dto.record;
 import com.arextest.config.model.dto.AbstractConfiguration;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 /**
  * @author jmo
@@ -10,6 +11,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@ToString
 public class DynamicClassConfiguration extends AbstractConfiguration {
 
   private String id;
