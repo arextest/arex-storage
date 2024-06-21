@@ -255,7 +255,7 @@ public class AgentRecordingController {
     return null;
   }
 
-  @SuppressWarnings("java:S1452,java:S1168")
+  @SuppressWarnings("java:S1452, java:S1168")
   @PostMapping(value = "/queryMockersTest", produces = {MediaType.APPLICATION_JSON_VALUE})
   public @ResponseBody
   List<? extends Mocker> queryMockersTest(@RequestBody QueryMockRequestType requestType) {
