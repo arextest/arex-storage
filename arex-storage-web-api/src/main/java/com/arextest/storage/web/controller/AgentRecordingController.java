@@ -263,8 +263,8 @@ public class AgentRecordingController {
       return zstdJacksonSerializer.deserialize(bytes,
           new TypeReference<List<AREXMocker>>() {
           });
-    } catch (Throwable throwable) {
-      LOGGER.error("queryMockersTest error:{} ", throwable.getMessage(), throwable);
+    } catch (RuntimeException runtimeException) {
+      LOGGER.error("queryMockersTest error:{} ", runtimeException.getMessage(), runtimeException);
     }
     return null;
   }
