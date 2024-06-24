@@ -57,7 +57,7 @@ public class DatabaseUtils {
         String[] sqls = StringUtils.split(mocker.getTargetRequest().getBody(), ";");
         List<String> operationNames = new ArrayList<>(sqls.length);
         for (String sql : sqls) {
-            if (StringUtils.isEmpty(sql) || StringUtils.startsWith(sql, "exec sp")) {
+            if (StringUtils.isEmpty(sql) || StringUtils.startsWithIgnoreCase(sql, "exec sp")) {
                 continue;
             }
             if (sql.length() > maxSqlLengthInt) {
