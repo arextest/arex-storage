@@ -1,6 +1,7 @@
 package com.arextest.storage.web.controller;
 
 import static com.arextest.model.constants.HeaderNames.AREX_MOCK_STRATEGY_CODE;
+
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.AREXMocker;
@@ -17,6 +18,7 @@ import com.arextest.storage.model.InvalidIncompleteRecordRequest;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.AgentWorkingService;
 import com.arextest.storage.trace.MDCTracer;
+import com.fasterxml.jackson.core.type.TypeReference;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
@@ -116,7 +118,8 @@ public class AgentRecordingController {
       }
 
       MDCTracer.addRecordId(requestType.getRecordId());
-      return agentWorkingService.queryMockers(requestType.getRecordId(), requestType.getFieldNames(), requestType.getCategoryTypes());
+      return agentWorkingService.queryMockers(requestType.getRecordId(),
+          requestType.getFieldNames(), requestType.getCategoryTypes());
     } catch (Exception e) {
       LOGGER.error("query error:{} from category:{}", e.getMessage(), requestType, e);
     } finally {
@@ -143,8 +146,8 @@ public class AgentRecordingController {
     try {
       MDCTracer.addTrace(category, requestType);
       if (isInvalidRecord(requestType.getRecordId())) {
-          LOGGER.warn("recordId: {} is invalid", requestType.getRecordId());
-          return ResponseUtils.parameterInvalidResponse("invalid mocker");
+        LOGGER.warn("recordId: {} is invalid", requestType.getRecordId());
+        return ResponseUtils.parameterInvalidResponse("invalid mocker");
       }
 
       boolean saveResult = agentWorkingMetricService.saveRecord(requestType);
@@ -165,7 +168,7 @@ public class AgentRecordingController {
   @ResponseBody
   public Response batchSave(@RequestBody List<AREXMocker> mockers) {
     if (CollectionUtils.isEmpty(mockers)) {
-        return ResponseUtils.parameterInvalidResponse("request body is empty");
+      return ResponseUtils.parameterInvalidResponse("request body is empty");
     }
 
     try {
@@ -248,6 +251,21 @@ public class AgentRecordingController {
       return zstdJacksonSerializer.deserialize(bytes, AREXMocker.class);
     } catch (Throwable throwable) {
       LOGGER.error("queryTest error:{} ", throwable.getMessage(), throwable);
+    }
+    return null;
+  }
+
+  @SuppressWarnings({"java:S1452", "java:S1168"})
+  @PostMapping(value = "/queryMockersTest", produces = {MediaType.APPLICATION_JSON_VALUE})
+  public @ResponseBody
+  List<? extends Mocker> queryMockersTest(@RequestBody QueryMockRequestType requestType) {
+    try {
+      byte[] bytes = this.queryMockers(requestType);
+      return zstdJacksonSerializer.deserialize(bytes,
+          new TypeReference<List<AREXMocker>>() {
+          });
+    } catch (RuntimeException runtimeException) {
+      LOGGER.error("queryMockersTest error:{} ", runtimeException.getMessage(), runtimeException);
     }
     return null;
   }

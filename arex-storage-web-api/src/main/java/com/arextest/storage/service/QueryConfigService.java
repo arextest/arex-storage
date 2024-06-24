@@ -9,7 +9,9 @@ import com.arextest.config.model.vo.QueryConfigOfCategoryResponse.QueryConfigOfC
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.cache.CacheKeyUtils;
 import com.arextest.storage.client.HttpWebServiceApiClient;
+import java.util.Collections;
 import javax.annotation.Resource;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -22,12 +24,19 @@ import org.springframework.stereotype.Service;
 public class QueryConfigService {
 
   private static final String CONFIG_PREFIX = "config_";
+
   @Value("${arex.query.config.url}")
   private String queryConfigOfCategoryUrl;
-  @Value("${arex.query.config.cache.expired.seconds:600}")
+
+  @Value("${arex.query.schedule.url}")
+  private String queryScheduleReplayConfigurationUrl;
+
+  @Value("${arex.config.cache.expired.seconds:600}")
   private long cacheExpiredSeconds;
+
   @Resource
   private HttpWebServiceApiClient httpWebServiceApiClient;
+
   @Resource
   private CacheProvider redisCacheProvider;
 
@@ -60,7 +69,13 @@ public class QueryConfigService {
     return null;
   }
 
-  public boolean putConfigCache(String appId, String categoryName, String operationName,
+  public ScheduleReplayConfiguration queryScheduleReplayConfiguration(String appId) {
+    String url = String.format(queryScheduleReplayConfigurationUrl, appId);
+    return httpWebServiceApiClient.get(url, Collections.emptyMap(),
+        ScheduleReplayConfiguration.class);
+  }
+
+  private boolean putConfigCache(String appId, String categoryName, String operationName,
       QueryConfigOfCategory response) {
     try {
       byte[] key = CacheKeyUtils.toUtf8Bytes(CONFIG_PREFIX + appId + categoryName + operationName);
@@ -73,7 +88,7 @@ public class QueryConfigService {
     }
   }
 
-  public QueryConfigOfCategory getConfigCache(String appId, String categoryName,
+  private QueryConfigOfCategory getConfigCache(String appId, String categoryName,
       String operationName) {
     try {
       byte[] key = CacheKeyUtils.toUtf8Bytes(CONFIG_PREFIX + appId + categoryName + operationName);
@@ -86,6 +101,13 @@ public class QueryConfigService {
       LOGGER.error("getConfigCache failed!", e);
       return null;
     }
+  }
+
+  @Data
+  public static class ScheduleReplayConfiguration {
+
+    private String mockHandlerJarUrl;
+
   }
 
 }

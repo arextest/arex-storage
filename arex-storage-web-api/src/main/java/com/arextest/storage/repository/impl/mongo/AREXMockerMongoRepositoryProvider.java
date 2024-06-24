@@ -268,8 +268,14 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
 
       long currentTimeMillis = System.currentTimeMillis();
       valueList.forEach(item -> {
-        item.setId(category.isEntryPoint() ? item.getRecordId() : IdGenerators.STRING_ID_GENERATOR.generate());
         item.setExpirationTime(currentTimeMillis + expiration);
+
+        if (category.isEntryPoint()) {
+          item.setId(item.getRecordId());
+          item.setRecordId(null);
+        } else {
+          item.setId(IdGenerators.STRING_ID_GENERATOR.generate());
+        }
       });
       mongoTemplate.insert(valueList, collection);
     } catch (Throwable ex) {
