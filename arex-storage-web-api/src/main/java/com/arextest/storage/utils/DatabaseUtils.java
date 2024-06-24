@@ -61,7 +61,7 @@ public class DatabaseUtils {
                 continue;
             }
             if (sql.length() > maxSqlLengthInt) {
-                LOGGER.warn("sql length is too long, sql: {}", sql);
+                LOGGER.warn("skip sql parse cause sql length > config max length {}, sql: {}", maxSqlLengthInt, sql);
                 continue;
             }
             TableSchema tableSchema = parse(sql);
