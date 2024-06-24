@@ -61,6 +61,9 @@ public class DatabaseUtils {
                 LOGGER.warn("sql length is too long or empty, sql: {}", sql);
                 continue;
             }
+            if (StringUtils.startsWith(sql, "exec sp")) {
+                continue;
+            }
             TableSchema tableSchema = parse(sql);
             tableSchema.setDbName(mocker.getTargetRequest().attributeAsString(MockAttributeNames.DB_NAME));
             operationNames.add(regenerateOperationName(tableSchema, mocker.getOperationName()));
