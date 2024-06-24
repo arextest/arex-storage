@@ -29,6 +29,6 @@ public interface Constants{
 
   // applicationConfig
   String MAX_SQL_LENGTH = "maxSqlLength";
-  int MAX_SQL_LENGTH_DEFAULT = 50000;
+  int MAX_SQL_LENGTH_DEFAULT = 5000;
 
 }
