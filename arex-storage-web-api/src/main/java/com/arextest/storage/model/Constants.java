@@ -30,5 +30,7 @@ public interface Constants{
   // applicationConfig
   String MAX_SQL_LENGTH = "maxSqlLength";
   int MAX_SQL_LENGTH_DEFAULT = 5000;
+  String AREX_CONFIG_MOCKERCONVERT_ENABLED = "arex.config.mockerConvert.enabled";
+  boolean AREX_CONFIG_MOCKERCONVERT_ENABLED_DEFAULT = true;
 
 }

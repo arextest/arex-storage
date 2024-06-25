@@ -6,6 +6,7 @@ import com.arextest.model.mock.Mocker;
 import com.arextest.storage.mock.MockResultContext;
 import com.arextest.storage.mock.MockResultMatchStrategy;
 import com.arextest.storage.mock.MockResultProvider;
+import com.arextest.storage.mock.MockerResultConverter;
 import com.arextest.storage.model.InvalidIncompleteRecordRequest;
 import com.arextest.storage.model.RecordEnvType;
 import com.arextest.storage.repository.RepositoryProvider;
@@ -13,16 +14,13 @@ import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.RepositoryReader;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.listener.AgentWorkingListener;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -33,6 +31,7 @@ import org.apache.commons.lang3.StringUtils;
  * @since 2021/11/11
  */
 @Slf4j
+@RequiredArgsConstructor
 public class AgentWorkingService {
 
   private final MockResultProvider mockResultProvider;
@@ -40,24 +39,14 @@ public class AgentWorkingService {
   private final List<AgentWorkingListener> agentWorkingListeners;
   private final InvalidIncompleteRecordService invalidIncompleteRecordService;
   private final ScheduleReplayingService scheduleReplayingService;
+  private final MockerResultConverter mockerResultConverter;
+
   @Setter
   private ZstdJacksonSerializer zstdJacksonSerializer;
   @Setter
   private PrepareMockResultService prepareMockResultService;
   @Setter
   private RecordEnvType recordEnvType;
-
-  public AgentWorkingService(MockResultProvider mockResultProvider,
-      RepositoryProviderFactory repositoryProviderFactory,
-      List<AgentWorkingListener> agentWorkingListeners,
-      InvalidIncompleteRecordService invalidIncompleteRecordService,
-      ScheduleReplayingService scheduleReplayingService) {
-    this.mockResultProvider = mockResultProvider;
-    this.repositoryProviderFactory = repositoryProviderFactory;
-    this.agentWorkingListeners = agentWorkingListeners;
-    this.invalidIncompleteRecordService = invalidIncompleteRecordService;
-    this.scheduleReplayingService = scheduleReplayingService;
-  }
 
   /**
    * requested from AREX's agent hits to recording, we direct save to repository for next replay
@@ -163,13 +152,15 @@ public class AgentWorkingService {
 
   public byte[] queryMockers(String recordId, String[] fieldNames, String[] categoryList) {
     List<RepositoryProvider<? extends Mocker>> repositoryProviderList = repositoryProviderFactory.getRepositoryProviderList();
-    Set<MockCategoryType> categoryTypes = repositoryProviderFactory.getCategoryTypesByName(categoryList);
+    Set<MockCategoryType> categoryTypes = repositoryProviderFactory.getCategoryTypesByName(
+        categoryList);
 
     // find data in the order of rolling -> pinned -> auto pinned
     for (RepositoryProvider<? extends Mocker> repositoryReader : repositoryProviderList) {
       List<AREXMocker> mockers = scheduleReplayingService.queryRecordsByRepositoryReader(recordId,
           categoryTypes, repositoryReader, fieldNames);
       if (CollectionUtils.isNotEmpty(mockers)) {
+        convertMockers(mockers);
         return zstdJacksonSerializer.serialize(mockers);
       }
     }
@@ -190,6 +181,19 @@ public class AgentWorkingService {
   }
 
   public void invalidIncompleteRecord(InvalidIncompleteRecordRequest request) {
-    invalidIncompleteRecordService.invalidIncompleteRecord(request.getRecordId(), request.getReplayId());
+    invalidIncompleteRecordService.invalidIncompleteRecord(request.getRecordId(),
+        request.getReplayId());
   }
+
+  // convert mockers by mockerResultConverter
+  private void convertMockers(List<AREXMocker> mockers) {
+    for (int i = 0; i < mockers.size(); i++) {
+      AREXMocker mocker = mockers.get(i);
+      AREXMocker convertedMocker = mockerResultConverter.convert(mocker.getCategoryType(), mocker);
+      if (convertedMocker != null) {
+        mockers.set(i, convertedMocker);
+      }
+    }
+  }
+
 }
