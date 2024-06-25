@@ -29,7 +29,7 @@ import com.arextest.storage.repository.impl.mongo.converters.ArexEigenCompressio
 import com.arextest.storage.repository.impl.mongo.converters.ArexMockerCompressionConverter;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.AgentWorkingService;
-import com.arextest.storage.service.InvalidIncompleteRecordService;
+import com.arextest.storage.service.InvalidRecordService;
 import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.service.PrepareMockResultService;
 import com.arextest.storage.service.QueryConfigService;
@@ -210,11 +210,11 @@ public class StorageAutoConfiguration {
       ZstdJacksonSerializer zstdJacksonSerializer,
       PrepareMockResultService prepareMockResultService,
       List<AgentWorkingListener> agentWorkingListeners,
-      InvalidIncompleteRecordService invalidIncompleteRecordService,
+      InvalidRecordService invalidRecordService,
       ScheduleReplayingService scheduleReplayingService) {
     AgentWorkingService workingService = new AgentWorkingService(mockResultProvider,
         repositoryProviderFactory, agentWorkingListeners,
-        invalidIncompleteRecordService, scheduleReplayingService);
+        invalidRecordService, scheduleReplayingService);
     workingService.setPrepareMockResultService(prepareMockResultService);
     workingService.setZstdJacksonSerializer(zstdJacksonSerializer);
     workingService.setRecordEnvType(properties.getRecordEnv());
@@ -240,9 +240,9 @@ public class StorageAutoConfiguration {
   public ScheduleReplayQueryController scheduleReplayQueryController(
       ScheduleReplayingService scheduleReplayingService,
       PrepareMockResultService prepareMockResultService,
-      InvalidIncompleteRecordService invalidIncompleteRecordService) {
+      InvalidRecordService invalidRecordService) {
     return new ScheduleReplayQueryController(scheduleReplayingService, prepareMockResultService,
-        invalidIncompleteRecordService);
+        invalidRecordService);
   }
 
   @Bean
