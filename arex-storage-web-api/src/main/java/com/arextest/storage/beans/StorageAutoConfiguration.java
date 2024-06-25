@@ -212,12 +212,13 @@ public class StorageAutoConfiguration {
       PrepareMockResultService prepareMockResultService,
       List<AgentWorkingListener> agentWorkingListeners,
       InvalidRecordService invalidRecordService,
-      ScheduleReplayingService scheduleReplayingService) {
+      ScheduleReplayingService scheduleReplayingService,
+      MockerResultConverter mockerResultConverter) {
     AgentWorkingService workingService = new AgentWorkingService(
         mockResultProvider,
         repositoryProviderFactory,
         agentWorkingListeners,
-        invalidIncompleteRecordService,
+        invalidRecordService,
         scheduleReplayingService,
         mockerResultConverter
     );
