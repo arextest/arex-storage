@@ -40,6 +40,8 @@ arex:
       compare:
         # to insert default ignoredCategoryTypes when create app
         ignoredCategoryTypes: [ { operationType: Redis }, { operationType: QMessageConsumer }, { operationType: DynamicClass } ]
+    mockerConvert:
+      enabled: true
   prometheus:
     port: 20093
   common:
