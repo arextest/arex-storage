@@ -10,6 +10,7 @@ import com.arextest.storage.metric.MetricListener;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.scenepool.ScenePoolFactory;
 import com.arextest.storage.repository.scenepool.ScenePoolProvider;
+import com.arextest.storage.service.InvalidRecordService;
 import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.service.handler.mocker.MockerHandler;
 import com.arextest.storage.trace.MDCTracer;
@@ -33,6 +34,7 @@ public class CoverageMockerHandler implements MockerHandler {
   private ScheduledExecutorService coverageHandleDelayedPool;
   private ScenePoolFactory scenePoolFactory;
   private CoverageHandlerSwitch handlerSwitch;
+  private InvalidRecordService invalidRecordService;
   public final List<MetricListener> metricListeners;
   // coverage metric constants
   private static final String COVERAGE_METRIC_NAME = "coverage.recording";
@@ -68,7 +70,7 @@ public class CoverageMockerHandler implements MockerHandler {
     // if replayId is empty, meaning this coverage mocker is received during record phase
     if (StringUtils.isEmpty(coverageMocker.getReplayId()) && handlerSwitch.allowRecordTask(appId)) {
       scenePoolProvider = scenePoolFactory.getProvider(ScenePoolFactory.RECORDING_SCENE_POOL);
-      task = new RecordTask(scenePoolProvider, coverageMocker);
+      task = new RecordTask(scenePoolProvider, coverageMocker, invalidRecordService);
       coverageHandleDelayedPool.schedule(task, 5, TimeUnit.SECONDS);
 
     } else if (CaseSendScene.MIXED_NORMAL.name().equals(scheduleSendScene) &&
@@ -160,6 +162,7 @@ public class CoverageMockerHandler implements MockerHandler {
   private class RecordTask implements Runnable {
     private final ScenePoolProvider scenePoolProvider;
     private final Mocker coverageMocker;
+    private final InvalidRecordService invalidRecordService;
     private static final long EXPIRATION_EXTENSION_DAYS = 14L;
     private static final String NEW_SCENE_OP = "NEW_SCENE";
     private static final String EXISTING_SCENE_OP = "EXISTING_SCENE";
@@ -176,6 +179,7 @@ public class CoverageMockerHandler implements MockerHandler {
 
         // scene exist remove Rolling mocker
         if (scenePoolProvider.checkSceneExist(appId, sceneKey)) {
+          invalidRecordService.putInvalidCaseInRedis(recordId);
           mockSourceEditionService.removeByRecordId(ProviderNames.DEFAULT, coverageMocker.getRecordId());
           LOGGER.info("CoverageMockerHandler received existing case, recordId: {}, pathKey: {}",
               coverageMocker.getRecordId(), coverageMocker.getOperationName());

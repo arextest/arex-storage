@@ -13,16 +13,12 @@ import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.RepositoryReader;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.listener.AgentWorkingListener;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -38,7 +34,7 @@ public class AgentWorkingService {
   private final MockResultProvider mockResultProvider;
   private final RepositoryProviderFactory repositoryProviderFactory;
   private final List<AgentWorkingListener> agentWorkingListeners;
-  private final InvalidIncompleteRecordService invalidIncompleteRecordService;
+  private final InvalidRecordService invalidRecordService;
   private final ScheduleReplayingService scheduleReplayingService;
   @Setter
   private ZstdJacksonSerializer zstdJacksonSerializer;
@@ -50,12 +46,12 @@ public class AgentWorkingService {
   public AgentWorkingService(MockResultProvider mockResultProvider,
       RepositoryProviderFactory repositoryProviderFactory,
       List<AgentWorkingListener> agentWorkingListeners,
-      InvalidIncompleteRecordService invalidIncompleteRecordService,
+      InvalidRecordService invalidRecordService,
       ScheduleReplayingService scheduleReplayingService) {
     this.mockResultProvider = mockResultProvider;
     this.repositoryProviderFactory = repositoryProviderFactory;
     this.agentWorkingListeners = agentWorkingListeners;
-    this.invalidIncompleteRecordService = invalidIncompleteRecordService;
+    this.invalidRecordService = invalidRecordService;
     this.scheduleReplayingService = scheduleReplayingService;
   }
 
@@ -72,7 +68,6 @@ public class AgentWorkingService {
       item.setRecordEnvironment(recordEnvType.getCodeValue());
     }
     if (!this.dispatchRecordSavingEvent(item)) {
-      LOGGER.warn("dispatch record saving event failed, skip save record data");
       return false;
     }
 
@@ -190,6 +185,6 @@ public class AgentWorkingService {
   }
 
   public void invalidIncompleteRecord(InvalidIncompleteRecordRequest request) {
-    invalidIncompleteRecordService.invalidIncompleteRecord(request.getRecordId(), request.getReplayId());
+    invalidRecordService.invalidIncompleteRecord(request.getRecordId(), request.getReplayId());
   }
 }

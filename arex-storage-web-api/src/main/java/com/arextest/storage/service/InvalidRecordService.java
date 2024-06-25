@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
  **/
 @Component
 @Slf4j
-public class InvalidIncompleteRecordService {
+public class InvalidRecordService {
     @Resource
     private CacheProvider redisCacheProvider;
     @Resource
@@ -36,7 +36,7 @@ public class InvalidIncompleteRecordService {
     public void invalidIncompleteRecord(String recordId, String replayId) {
         // replaying scene
         if (StringUtils.isNotEmpty(replayId) && !NULL.equalsIgnoreCase(replayId)) {
-            invalidReplayIncompleteRecords(replayId);
+            putInvalidCaseInRedis(replayId);
         } else {
             // recording scene
             invalidIncompleteRecords(recordId);
@@ -58,6 +58,20 @@ public class InvalidIncompleteRecordService {
         }
         return false;
     }
+
+    public boolean isInvalidCase(String caseId) {
+        return redisCacheProvider.exists(toInvalidCaseKeyBytes(caseId));
+    }
+
+    public void putInvalidCaseInRedis(String caseId) {
+        if (StringUtils.isEmpty(caseId)) {
+            return;
+        }
+        byte[] key = toInvalidCaseKeyBytes(caseId);
+        redisCacheProvider.put(key, THREE_MINUTES_EXPIRE, INVALID_CASE_VALUE);
+        LOGGER.info("[[title=putInvalidCaseInRedis]]invalid case id: {}", caseId);
+    }
+
     private void invalidIncompleteRecords(String recordId) {
         if (StringUtils.isEmpty(recordId)) {
             return;
@@ -65,16 +79,9 @@ public class InvalidIncompleteRecordService {
         InvalidTask invalidTask = new InvalidTask(recordId);
         coverageHandleDelayedPool.schedule(invalidTask, 1, TimeUnit.MINUTES);
     }
-    private void invalidReplayIncompleteRecords(String replayId) {
-        if (StringUtils.isEmpty(replayId)) {
-            return;
-        }
-        byte[] key = toInvalidCaseKeyBytes(replayId);
-        redisCacheProvider.put(key, THREE_MINUTES_EXPIRE, INVALID_CASE_VALUE);
-        LOGGER.info("[[title=invalidIncompleteRecord]]invalid replay case replayId:{}", replayId);
-    }
-    private byte[] toInvalidCaseKeyBytes(String replayId) {
-        byte[] paramKey = replayId.getBytes(StandardCharsets.UTF_8);
+
+    private byte[] toInvalidCaseKeyBytes(String caseId) {
+        byte[] paramKey = caseId.getBytes(StandardCharsets.UTF_8);
         return ByteBuffer.allocate(INVALID_CASE_KEY.length + paramKey.length).put(INVALID_CASE_KEY).put(paramKey).array();
     }
 
