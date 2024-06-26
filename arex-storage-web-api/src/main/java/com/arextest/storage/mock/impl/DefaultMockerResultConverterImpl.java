@@ -1,5 +1,8 @@
 package com.arextest.storage.mock.impl;
 
+import static com.arextest.storage.model.Constants.AREX_CONFIG_MOCKERCONVERT_ENABLED;
+import static com.arextest.storage.model.Constants.AREX_CONFIG_MOCKERCONVERT_ENABLED_DEFAULT;
+
 import com.arextest.diff.model.classloader.RemoteJarClassLoader;
 import com.arextest.diff.utils.RemoteJarLoaderUtils;
 import com.arextest.extension.mockconvert.MockerConverter;
@@ -9,9 +12,9 @@ import com.arextest.model.mock.Mocker;
 import com.arextest.storage.mapper.AREXMockerMapper;
 import com.arextest.storage.mock.MockerResultConverter;
 import com.arextest.storage.service.QueryConfigService;
-import com.arextest.storage.service.QueryConfigService.ScheduleReplayConfiguration;
+import com.arextest.storage.service.QueryConfigService.ScheduleReplayConfigurationResponse;
+import com.arextest.storage.service.config.ApplicationDefaultConfig;
 import com.arextest.storage.trace.MDCTracer;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -32,7 +35,7 @@ public class DefaultMockerResultConverterImpl implements MockerResultConverter {
 
   final QueryConfigService queryConfigService;
 
-  final ObjectMapper objectMapper;
+  final ApplicationDefaultConfig applicationDefaultConfig;
 
   private LoadingCache<String, MockerConvertSummary> mockerConvertSummaryCache =
       Caffeine.newBuilder().maximumSize(500).removalListener(((key, value, cause) -> {
@@ -55,7 +58,9 @@ public class DefaultMockerResultConverterImpl implements MockerResultConverter {
 
   @Override
   public <T extends Mocker> T convert(MockCategoryType category, T mocker) {
-    return convertFromJar(category, mocker);
+    return applicationDefaultConfig.getConfigAsBoolean(AREX_CONFIG_MOCKERCONVERT_ENABLED,
+        AREX_CONFIG_MOCKERCONVERT_ENABLED_DEFAULT)
+        ? convertFromJar(category, mocker) : mocker;
   }
 
   @SuppressWarnings("unchecked")
@@ -99,19 +104,18 @@ public class DefaultMockerResultConverterImpl implements MockerResultConverter {
 
     @Override
     public MockerConvertSummary load(String key) throws Exception {
-      ScheduleReplayConfiguration scheduleReplayConfiguration =
+      ScheduleReplayConfigurationResponse response =
           queryConfigService.queryScheduleReplayConfiguration(key);
-      return loadMockerConverter(scheduleReplayConfiguration);
+      return loadMockerConverter(response);
     }
 
-    private MockerConvertSummary loadMockerConverter(
-        ScheduleReplayConfiguration scheduleReplayConfiguration) {
-      if (scheduleReplayConfiguration == null || Strings.isEmpty(
-          scheduleReplayConfiguration.getMockHandlerJarUrl())) {
+    private MockerConvertSummary loadMockerConverter(ScheduleReplayConfigurationResponse response) {
+      if (response == null || response.getBody() == null || Strings.isEmpty(
+          response.getBody().getMockHandlerJarUrl())) {
         LOGGER.info("load mockerConverter failed, scheduleReplayConfiguration is null");
         return new MockerConvertSummary();
       }
-      String mockHandlerJarUrl = scheduleReplayConfiguration.getMockHandlerJarUrl();
+      String mockHandlerJarUrl = response.getBody().getMockHandlerJarUrl();
       RemoteJarClassLoader serviceClassLoader;
       try {
         serviceClassLoader = RemoteJarLoaderUtils.loadJar(mockHandlerJarUrl);
