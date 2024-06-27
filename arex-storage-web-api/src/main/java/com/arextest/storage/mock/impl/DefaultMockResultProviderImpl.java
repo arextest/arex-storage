@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -109,6 +110,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     }
 
     mockList.sort(Comparator.comparing(Mocker::getCreationTime));
+    HashMap<byte[], Integer> callReplayMaxMap = Maps.newHashMap(mockSequenceKeyMaps);
 
     final byte[] recordIdBytes = CacheKeyUtils.toUtf8Bytes(recordId);
     byte[] recordKey = CacheKeyUtils.buildRecordKey(category, recordIdBytes);
@@ -116,7 +118,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     int mockListSize = mockList.size();
     for (int sequence = 1; sequence <= mockListSize; sequence++) {
       T value = mockList.get(sequence - 1);
-      addCallReplayMax(shouldRecordCallReplayMax, category, recordId, value, mockSequenceKeyMaps);
+      addCallReplayMax(shouldRecordCallReplayMax, category, recordId, value, callReplayMaxMap);
       size = sequencePutRecordData(category, recordIdBytes, size, recordKey, value, sequence,
           mockSequenceKeyMaps);
     }
