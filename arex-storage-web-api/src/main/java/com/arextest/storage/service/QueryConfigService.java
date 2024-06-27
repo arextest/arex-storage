@@ -1,18 +1,27 @@
 package com.arextest.storage.service;
 
 import static com.arextest.diff.utils.JacksonHelperUtil.objectMapper;
-
 import com.arextest.common.cache.CacheProvider;
+import com.arextest.config.model.dto.ComparisonExclusionsConfiguration;
+import com.arextest.config.model.vo.ConfigComparisonExclusionsVO;
 import com.arextest.config.model.vo.QueryConfigOfCategoryRequest;
 import com.arextest.config.model.vo.QueryConfigOfCategoryResponse;
 import com.arextest.config.model.vo.QueryConfigOfCategoryResponse.QueryConfigOfCategory;
+import com.arextest.config.repository.impl.ComparisonExclusionsConfigurationRepositoryImpl;
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.cache.CacheKeyUtils;
 import com.arextest.storage.client.HttpWebServiceApiClient;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -24,12 +33,16 @@ import org.springframework.stereotype.Service;
 public class QueryConfigService {
 
   private static final String CONFIG_PREFIX = "config_";
+  private static final int COMPARE_CONFIG_TYPE = 0;
 
   @Value("${arex.query.config.url}")
   private String queryConfigOfCategoryUrl;
 
   @Value("${arex.query.schedule.url}")
   private String queryScheduleReplayConfigurationUrl;
+
+  @Value("${arex.query.systemConfig.url}")
+  private String querySystemConfigUrl;
 
   @Value("${arex.config.cache.expired.seconds:600}")
   private long cacheExpiredSeconds;
@@ -39,6 +52,9 @@ public class QueryConfigService {
 
   @Resource
   private CacheProvider redisCacheProvider;
+
+  @Resource
+  private ComparisonExclusionsConfigurationRepositoryImpl comparisonExclusionsConfigurationRepository;
 
   public QueryConfigOfCategory queryConfigOfCategory(Mocker mocker) {
     if (mocker.getCategoryType().isSkipComparison()) {
@@ -73,6 +89,47 @@ public class QueryConfigService {
     String url = String.format(queryScheduleReplayConfigurationUrl, appId);
     return httpWebServiceApiClient.get(url, Collections.emptyMap(),
         ScheduleReplayConfigurationResponse.class);
+  }
+
+  public List<ConfigComparisonExclusionsVO> queryComparisonExclusions(String appId) {
+    List<ComparisonExclusionsConfiguration> configs = comparisonExclusionsConfigurationRepository.listBy(
+        appId, COMPARE_CONFIG_TYPE);
+    if (CollectionUtils.isNotEmpty(configs)) {
+      return getComparisonExclusions(configs);
+    }
+    return Collections.emptyList();
+  }
+
+  public Set<String> getIgnoreNodeSet() {
+    SystemConfigResponse systemConfigResponse = httpWebServiceApiClient.get(
+        querySystemConfigUrl, Collections.emptyMap(), SystemConfigResponse.class);
+    if (systemConfigResponse == null || systemConfigResponse.getBody() == null) {
+      return Collections.emptySet();
+    }
+    return systemConfigResponse.getBody().getIgnoreNodeSet();
+  }
+
+  private List<ConfigComparisonExclusionsVO> getComparisonExclusions(
+      List<ComparisonExclusionsConfiguration> configs) {
+
+    Map<String, List<ComparisonExclusionsConfiguration>> groupByOperationNameAndType = configs.stream()
+        .collect(
+            Collectors.groupingBy(config -> config.getOperationName() + config.getOperationType()));
+    List<ConfigComparisonExclusionsVO> result = new ArrayList<>();
+    for (Entry<String, List<ComparisonExclusionsConfiguration>> entry : groupByOperationNameAndType
+        .entrySet()) {
+      List<ComparisonExclusionsConfiguration> configList = entry.getValue();
+      if (CollectionUtils.isEmpty(configList)) {
+        continue;
+      }
+      ConfigComparisonExclusionsVO vo = new ConfigComparisonExclusionsVO();
+      vo.setOperationName(configList.get(0).getOperationName());
+      vo.setCategoryType(configList.get(0).getOperationType());
+      vo.setExclusionList(configList.stream().map(ComparisonExclusionsConfiguration::getExclusions)
+          .collect(Collectors.toSet()));
+      result.add(vo);
+    }
+    return result;
   }
 
   private boolean putConfigCache(String appId, String categoryName, String operationName,
@@ -113,6 +170,22 @@ public class QueryConfigService {
 
     private String mockHandlerJarUrl;
 
+  }
+
+  @Data
+  public static class SystemConfigResponse {
+
+    private SystemConfigWithProperties body;
+
+  }
+
+  @Data
+  public static class SystemConfigWithProperties {
+
+    /**
+     * according to the names of node to ignore the node.
+     */
+    private Set<String> ignoreNodeSet;
   }
 
 

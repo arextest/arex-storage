@@ -5,7 +5,7 @@ logging:
 arex:
   storage:
     enableDiscoveryEntryPoint: true
-    mongodbUri: mongodb://arex:password@10.118.1.217:37017/arex_storage_db
+    mongodbUri: mongodb://arex:iLoveArex@10.118.1.217:27017/arex_storage_db
     recordEnv: TEST
     expirationDurationMap:
       ConfigFile: 3456000000

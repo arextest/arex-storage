@@ -13,6 +13,8 @@ arex:
     auth:
       switch: false
   query:
+    systemConfig:
+      url: ${arex.api.service.api:http://arex-api-service:8080}/api/system/config/list
     config:
       url: ${arex.api.service.api:http://arex-api-service:8080}/api/config/comparison/summary/queryConfigOfCategory
     schedule:

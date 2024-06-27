@@ -2,7 +2,6 @@ package com.arextest.config.mapper;
 
 import com.arextest.config.model.dao.config.ConfigComparisonExclusionsCollection;
 import com.arextest.config.model.dto.ComparisonExclusionsConfiguration;
-import com.arextest.config.model.vo.ConfigComparisonExclusionsVO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
@@ -25,6 +24,4 @@ public interface ConfigComparisonExclusionsMapper {
       @Mapping(target = "dataChangeCreateTime", expression = "java(System.currentTimeMillis())"),
       @Mapping(target = "dataChangeUpdateTime", expression = "java(System.currentTimeMillis())")})
   ConfigComparisonExclusionsCollection daoFromDto(ComparisonExclusionsConfiguration dto);
-
-  ConfigComparisonExclusionsVO voFromDto(ComparisonExclusionsConfiguration dto);
 }
