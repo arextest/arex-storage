@@ -37,5 +37,7 @@ public class AgentRemoteConfigurationResponse {
 
   private List<ConfigComparisonExclusionsVO> comparisonExclusions;
 
+  private Set<List<String>> globalExclusionList;
+
   private Set<String> ignoreNodeSet;
 }

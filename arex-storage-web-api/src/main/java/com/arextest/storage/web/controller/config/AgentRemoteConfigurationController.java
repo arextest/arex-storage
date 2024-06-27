@@ -12,6 +12,7 @@ import com.arextest.config.model.vo.AgentRemoteConfigurationRequest;
 import com.arextest.config.model.vo.AgentRemoteConfigurationResponse;
 import com.arextest.config.model.vo.AgentStatusRequest;
 import com.arextest.config.model.vo.AgentStatusType;
+import com.arextest.config.model.vo.ConfigComparisonExclusionsVO;
 import com.arextest.storage.service.QueryConfigService;
 import com.arextest.storage.service.config.ConfigurableHandler;
 import com.arextest.storage.service.config.impl.ApplicationConfigurableHandler;
@@ -145,7 +146,16 @@ public final class AgentRemoteConfigurationController {
       // asynchronously update application env
       asyncUpdateAppEnv(requestInstance);
 
-      body.setComparisonExclusions(queryConfigService.queryComparisonExclusions(appId));
+      List<ConfigComparisonExclusionsVO> comparisonExclusions = queryConfigService
+          .queryComparisonExclusions(appId);
+      for (ConfigComparisonExclusionsVO exclusion : comparisonExclusions) {
+        if (exclusion.getCategoryType() == null && exclusion.getOperationName() == null) {
+          comparisonExclusions.remove(exclusion);
+          body.setGlobalExclusionList(exclusion.getExclusionList());
+          break;
+        }
+      }
+      body.setComparisonExclusions(comparisonExclusions);
       body.setIgnoreNodeSet(queryConfigService.getIgnoreNodeSet());
 
       return ResponseUtils.successResponse(body);
