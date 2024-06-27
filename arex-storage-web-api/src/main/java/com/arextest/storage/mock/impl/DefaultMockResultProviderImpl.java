@@ -84,12 +84,15 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
 
   /**
    * 1. Store recorded data and matching keys in redis 2. The mock type associated with dubbo, which
-   * needs to record the maximum number of replays 3. renewal cache
-   * clearer
+   * needs to record the maximum number of replays 3. renewal cache clearer
    */
   @Override
   public <T extends Mocker> boolean putRecordResult(MockCategoryType category, String recordId,
       Iterable<T> values) {
+
+    boolean shouldRecordCallReplayMax = shouldRecordCallReplayMax(category);
+    // key: Redis keys that need to be counted. value: The number of redis keys
+    Map<byte[], Integer> mockSequenceKeyMaps = Maps.newHashMap();
 
     Iterator<T> valueIterator = values.iterator();
     // Records the maximum number of operations corresponding to recorded data
@@ -100,6 +103,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
       DatabaseUtils.regenerateOperationName(value,
           applicationDefaultConfig.getConfigAsInt(MAX_SQL_LENGTH, MAX_SQL_LENGTH_DEFAULT));
       T convertedMocker = mockerResultConverter.convert(category, value);
+      recordCallReplayMax(shouldRecordCallReplayMax, category, recordId, convertedMocker,
+          mockSequenceKeyMaps);
       mockList.add(convertedMocker);
     }
 
@@ -107,16 +112,11 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
 
     final byte[] recordIdBytes = CacheKeyUtils.toUtf8Bytes(recordId);
     byte[] recordKey = CacheKeyUtils.buildRecordKey(category, recordIdBytes);
-    boolean shouldRecordCallReplayMax = shouldRecordCallReplayMax(category);
-    // key: Redis keys that need to be counted. value: The number of redis keys
-    Map<byte[], Integer> mockSequenceKeyMaps = Maps.newHashMap();
     int size = 0;
     int mockListSize = mockList.size();
     for (int sequence = 1; sequence <= mockListSize; sequence++) {
       T value = mockList.get(sequence - 1);
-      if (shouldRecordCallReplayMax) {
-        recordCallReplayMax(category, recordId, value, mockSequenceKeyMaps);
-      }
+      addCallReplayMax(shouldRecordCallReplayMax, category, recordId, value, mockSequenceKeyMaps);
       size = sequencePutRecordData(category, recordIdBytes, size, recordKey, value, sequence,
           mockSequenceKeyMaps);
     }
@@ -130,13 +130,27 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   }
 
   // Place the maximum number of playback times corresponding to the operations into the recorded data
-  private void recordCallReplayMax(MockCategoryType category, String recordId, Mocker value,
+  private void recordCallReplayMax(boolean shouldRecordCallReplayMax, MockCategoryType category,
+      String recordId, Mocker value,
       Map<byte[], Integer> mockSequenceKeyMaps) {
+    if (!shouldRecordCallReplayMax) {
+      return;
+    }
     byte[] recordOperationKey = CacheKeyUtils.buildRecordOperationKey(category, recordId,
         getOperationNameWithCategory(value));
     int count = updateMapsAndGetCount(mockSequenceKeyMaps, recordOperationKey);
     LOGGER.info("update record operation cache, count: {}, operation: {}", count,
         value.getOperationName());
+  }
+
+  private void addCallReplayMax(boolean shouldRecordCallReplayMax, MockCategoryType category,
+      String recordId, Mocker value, Map<byte[], Integer> mockSequenceKeyMaps) {
+    if (!shouldRecordCallReplayMax) {
+      return;
+    }
+    byte[] recordOperationKey = CacheKeyUtils.buildRecordOperationKey(category, recordId,
+        getOperationNameWithCategory(value));
+    int count = mockSequenceKeyMaps.getOrDefault(recordOperationKey, 0);
     Mocker.Target targetResponse = value.getTargetResponse();
     if (targetResponse != null) {
       targetResponse.setAttribute(CALL_REPLAY_MAX, count);
