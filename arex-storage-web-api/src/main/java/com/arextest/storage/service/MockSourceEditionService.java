@@ -8,7 +8,7 @@ import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.utils.JsonUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
-import java.sql.Date;
+import java.util.Date;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -217,10 +217,12 @@ public class MockSourceEditionService {
       return false;
     }
     long updateCount = 0;
+    Date expireDate = Date.from(LocalDateTime.now().plusDays(extensionDays).atZone(
+        ZoneId.systemDefault()).toInstant());
+
     for (MockCategoryType categoryType : providerFactory.getCategoryTypes()) {
       updateCount += repositoryWriter.extendExpirationTo(categoryType, recordId,
-          Date.from(LocalDateTime.now().plusDays(extensionDays).atZone(
-              ZoneId.systemDefault()).toInstant()));
+          expireDate);
     }
     LOGGER.info("extendMockerExpirationByRecordId updated {} mockers for recordId: {}",
         updateCount, recordId);

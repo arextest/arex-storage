@@ -17,7 +17,7 @@ public abstract class AbstractConfig {
 
   public int getConfigAsInt(String key, int defaultValue) {
     String value = getConfigAsString(key);
-    if (!StringUtils.isNumeric(value)) {
+    if (StringUtils.isBlank(value)) {
       return defaultValue;
     }
 
@@ -28,16 +28,26 @@ public abstract class AbstractConfig {
     }
   }
 
-  public boolean getConfigAsBoolean(String key, boolean defaultValue) {
+  public long getConfigAsLong(String key, long defaultValue) {
     String value = getConfigAsString(key);
-    if (StringUtils.isBlank(value) || !isBoolean(value)) {
+    if (StringUtils.isBlank(value)) {
       return defaultValue;
     }
-    return Boolean.parseBoolean(value);
+
+    try {
+      return Long.parseLong(value);
+    } catch (NumberFormatException e) {
+      return defaultValue;
+    }
   }
 
-  private boolean isBoolean(String value) {
-    return "true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value);
+  public boolean getConfigAsBoolean(String key, boolean defaultValue) {
+    String value = getConfigAsString(key);
+    if (StringUtils.isBlank(value)) {
+      return defaultValue;
+    }
+
+    return Boolean.parseBoolean(value);
   }
 
 }
