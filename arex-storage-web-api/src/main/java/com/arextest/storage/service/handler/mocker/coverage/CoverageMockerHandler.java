@@ -12,6 +12,7 @@ import com.arextest.storage.repository.scenepool.ScenePoolFactory;
 import com.arextest.storage.repository.scenepool.ScenePoolProvider;
 import com.arextest.storage.service.InvalidRecordService;
 import com.arextest.storage.service.MockSourceEditionService;
+import com.arextest.storage.service.config.ApplicationDefaultConfig;
 import com.arextest.storage.service.handler.mocker.MockerHandler;
 import com.arextest.storage.trace.MDCTracer;
 import java.util.HashMap;
@@ -35,6 +36,7 @@ public class CoverageMockerHandler implements MockerHandler {
   private ScenePoolFactory scenePoolFactory;
   private CoverageHandlerSwitch handlerSwitch;
   private InvalidRecordService invalidRecordService;
+  private ApplicationDefaultConfig applicationDefaultConfig;
   public final List<MetricListener> metricListeners;
   // coverage metric constants
   private static final String COVERAGE_METRIC_NAME = "coverage.recording";
@@ -70,7 +72,7 @@ public class CoverageMockerHandler implements MockerHandler {
     // if replayId is empty, meaning this coverage mocker is received during record phase
     if (StringUtils.isEmpty(coverageMocker.getReplayId()) && handlerSwitch.allowRecordTask(appId)) {
       scenePoolProvider = scenePoolFactory.getProvider(ScenePoolFactory.RECORDING_SCENE_POOL);
-      task = new RecordTask(scenePoolProvider, coverageMocker, invalidRecordService);
+      task = new RecordTask(scenePoolProvider, coverageMocker, invalidRecordService, applicationDefaultConfig);
       coverageHandleDelayedPool.schedule(task, 5, TimeUnit.SECONDS);
 
     } else if (CaseSendScene.MIXED_NORMAL.name().equals(scheduleSendScene) &&
@@ -163,7 +165,10 @@ public class CoverageMockerHandler implements MockerHandler {
     private final ScenePoolProvider scenePoolProvider;
     private final Mocker coverageMocker;
     private final InvalidRecordService invalidRecordService;
-    private static final long EXPIRATION_EXTENSION_DAYS = 14L;
+    private final ApplicationDefaultConfig applicationDefaultConfig;
+
+    private static final long COVERAGE_EXPIRATION_DAYS = 14L;
+    private static final String COVERAGE_EXPIRATION_DAYS_KEY = "coverage.expiration.days";
     private static final String NEW_SCENE_OP = "NEW_SCENE";
     private static final String EXISTING_SCENE_OP = "EXISTING_SCENE";
 
@@ -190,7 +195,8 @@ public class CoverageMockerHandler implements MockerHandler {
 
           scenePoolProvider.upsertOne(scene);
           mockSourceEditionService.extendMockerExpirationByRecordId(ProviderNames.DEFAULT,
-              coverageMocker.getRecordId(), EXPIRATION_EXTENSION_DAYS);
+              coverageMocker.getRecordId(),
+              applicationDefaultConfig.getConfigAsLong(COVERAGE_EXPIRATION_DAYS_KEY, COVERAGE_EXPIRATION_DAYS));
           LOGGER.info("CoverageMockerHandler received new case, recordId: {}, pathKey: {}",
               coverageMocker.getRecordId(), coverageMocker.getOperationName());
         }
