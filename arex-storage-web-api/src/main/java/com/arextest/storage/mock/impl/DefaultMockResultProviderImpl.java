@@ -153,7 +153,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     }
     byte[] recordOperationKey = CacheKeyUtils.buildRecordOperationKey(category, recordId,
         getOperationNameWithCategory(value));
-    int count = mockSequenceKeyMaps.getOrDefault(recordOperationKey, 0);
+    int count = getValueByTargetKey(mockSequenceKeyMaps, recordOperationKey, 0);
     Mocker.Target targetResponse = value.getTargetResponse();
     if (targetResponse != null) {
       targetResponse.setAttribute(CALL_REPLAY_MAX, count);
@@ -227,6 +227,20 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
       }
     }
     return null;
+  }
+
+
+  private Integer getValueByTargetKey(Map<byte[], Integer> maps, byte[] targetKey,
+      Integer defaultValue) {
+    if (MapUtils.isEmpty(maps)) {
+      return defaultValue;
+    }
+    for (Map.Entry<byte[], Integer> entry : maps.entrySet()) {
+      if (Arrays.equals(entry.getKey(), targetKey)) {
+        return entry.getValue();
+      }
+    }
+    return defaultValue;
   }
 
   private boolean shouldUseIdOfInstanceToMockResult(MockCategoryType category) {
