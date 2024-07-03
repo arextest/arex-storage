@@ -2,6 +2,8 @@ package com.arextest.storage.mock.impl;
 
 import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH;
 import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH_DEFAULT;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.common.utils.CompressionUtils;
@@ -94,7 +96,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
 
     boolean shouldRecordCallReplayMax = shouldRecordCallReplayMax(category);
     // key: Redis keys that need to be counted. value: The number of redis keys
-    Map<byte[], Integer> mockSequenceKeyMaps = Maps.newHashMap();
+    Map<ByteHashKey, Integer> mockSequenceKeyMaps = Maps.newHashMap();
 
     Iterator<T> valueIterator = values.iterator();
     // Records the maximum number of operations corresponding to recorded data
@@ -111,7 +113,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     }
 
     mockList.sort(Comparator.comparing(Mocker::getCreationTime));
-    HashMap<byte[], Integer> callReplayMaxMap = Maps.newHashMap(mockSequenceKeyMaps);
+    HashMap<ByteHashKey, Integer> callReplayMaxMap = Maps.newHashMap(mockSequenceKeyMaps);
 
     final byte[] recordIdBytes = CacheKeyUtils.toUtf8Bytes(recordId);
     byte[] recordKey = CacheKeyUtils.buildRecordKey(category, recordIdBytes);
@@ -135,7 +137,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   // Place the maximum number of playback times corresponding to the operations into the recorded data
   private void calcCallReplayMax(boolean shouldRecordCallReplayMax, MockCategoryType category,
       String recordId, Mocker value,
-      Map<byte[], Integer> mockSequenceKeyMaps) {
+      Map<ByteHashKey, Integer> mockSequenceKeyMaps) {
     if (!shouldRecordCallReplayMax) {
       return;
     }
@@ -147,13 +149,13 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   }
 
   private void addCallReplayMax(boolean shouldRecordCallReplayMax, MockCategoryType category,
-      String recordId, Mocker value, Map<byte[], Integer> mockSequenceKeyMaps) {
+      String recordId, Mocker value, Map<ByteHashKey, Integer> mockSequenceKeyMaps) {
     if (!shouldRecordCallReplayMax) {
       return;
     }
     byte[] recordOperationKey = CacheKeyUtils.buildRecordOperationKey(category, recordId,
         getOperationNameWithCategory(value));
-    int count = getValueByTargetKey(mockSequenceKeyMaps, recordOperationKey, 0);
+    int count = mockSequenceKeyMaps.getOrDefault(new ByteHashKey(recordOperationKey), 0);
     Mocker.Target targetResponse = value.getTargetResponse();
     if (targetResponse != null) {
       targetResponse.setAttribute(CALL_REPLAY_MAX, count);
@@ -167,7 +169,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
 
   private <T extends Mocker> int sequencePutRecordData(MockCategoryType category,
       byte[] recordIdBytes, int size, byte[] recordKey, T value, int sequence,
-      Map<byte[], Integer> mockSequenceKeyMaps) {
+      Map<ByteHashKey, Integer> mockSequenceKeyMaps) {
     if (MapUtils.isEmpty(value.getEigenMap())) {
       calculateEigen(value, true);
     }
@@ -202,45 +204,12 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
    * Obtain the corresponding value in the maps through the key and update it. if key exist in
    * maps,increase the value by 1
    */
-  private int updateMapsAndGetCount(Map<byte[], Integer> maps, byte[] key) {
-    int count = 1;
-    byte[] mapKey = getKeyByTargetKey(maps, key);
-    if (mapKey == null) {
-      maps.put(key, count);
-      return count;
-    }
-    count = maps.get(mapKey) + 1;
+  private int updateMapsAndGetCount(Map<ByteHashKey, Integer> maps, byte[] key) {
+    ByteHashKey mapKey = new ByteHashKey(key);
+    int count = maps.getOrDefault(mapKey, 0);
+    count++;
     maps.put(mapKey, count);
     return count;
-  }
-
-  /**
-   * Obtain the key that matches the content in the maps through the target key
-   */
-  private byte[] getKeyByTargetKey(Map<byte[], Integer> maps, byte[] targetKey) {
-    if (MapUtils.isEmpty(maps)) {
-      return null;
-    }
-    for (byte[] key : maps.keySet()) {
-      if (Arrays.equals(key, targetKey)) {
-        return key;
-      }
-    }
-    return null;
-  }
-
-
-  private Integer getValueByTargetKey(Map<byte[], Integer> maps, byte[] targetKey,
-      Integer defaultValue) {
-    if (MapUtils.isEmpty(maps)) {
-      return defaultValue;
-    }
-    for (Map.Entry<byte[], Integer> entry : maps.entrySet()) {
-      if (Arrays.equals(entry.getKey(), targetKey)) {
-        return entry.getValue();
-      }
-    }
-    return defaultValue;
   }
 
   private boolean shouldUseIdOfInstanceToMockResult(MockCategoryType category) {
@@ -836,5 +805,70 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
 
   private byte[] createMockKeyWithInstanceIdKey(byte[] src, int index) {
     return CacheKeyUtils.merge(src, index);
+  }
+
+  /**
+   * reference:com.google.common.hash.HashCode.BytesHashCode
+   */
+  private static class ByteHashKey {
+
+    final byte[] bytes;
+
+    private ByteHashKey(byte[] bytes) {
+      checkNotNull(bytes);
+      this.bytes = bytes;
+    }
+
+
+    public int bits() {
+      return bytes.length * 8;
+    }
+
+    public int asInt() {
+      checkState(
+          bytes.length >= 4,
+          "HashCode#asInt() requires >= 4 bytes (it only has %s bytes).",
+          bytes.length);
+      return (bytes[0] & 0xFF)
+          | ((bytes[1] & 0xFF) << 8)
+          | ((bytes[2] & 0xFF) << 16)
+          | ((bytes[3] & 0xFF) << 24);
+    }
+
+    @Override
+    public int hashCode() {
+      if (bits() >= 32) {
+        return asInt();
+      }
+      // If we have less than 4 bytes, use them all.
+      byte[] bytes = getBytesInternal();
+      int val = (bytes[0] & 0xFF);
+      for (int i = 1; i < bytes.length; i++) {
+        val |= ((bytes[i] & 0xFF) << (i * 8));
+      }
+      return val;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+      if (this == object) {
+        return true;
+      }
+
+      if (object instanceof ByteHashKey) {
+        ByteHashKey that = (ByteHashKey) object;
+        return bits() == that.bits() && equalsSameBits(that);
+      }
+      return false;
+    }
+
+    byte[] getBytesInternal() {
+      return bytes;
+    }
+
+
+    public boolean equalsSameBits(ByteHashKey other) {
+      return Arrays.equals(bytes, other.bytes);
+    }
   }
 }
