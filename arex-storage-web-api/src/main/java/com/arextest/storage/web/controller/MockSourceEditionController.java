@@ -10,6 +10,7 @@ import com.arextest.storage.service.PrepareMockResultService;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -212,7 +213,7 @@ public class MockSourceEditionController {
                           String srcRecordId,
                           String targetProviderName,
                           String targetRecordId) {
-    if (srcProviderNames == null || srcProviderNames.length == 0) {
+    if (ArrayUtils.isEmpty(srcProviderNames)) {
       return ResponseUtils.parameterInvalidResponse("The srcProviderNames of requested is empty");
     }
     if (StringUtils.isEmpty(srcRecordId)) {
