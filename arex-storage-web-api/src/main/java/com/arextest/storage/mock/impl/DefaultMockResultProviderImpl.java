@@ -841,10 +841,10 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
         return asInt();
       }
       // If we have less than 4 bytes, use them all.
-      byte[] bytes = getBytesInternal();
-      int val = (bytes[0] & 0xFF);
-      for (int i = 1; i < bytes.length; i++) {
-        val |= ((bytes[i] & 0xFF) << (i * 8));
+      byte[] internalBytes = getBytesInternal();
+      int val = (internalBytes[0] & 0xFF);
+      for (int i = 1; i < internalBytes.length; i++) {
+        val |= ((internalBytes[i] & 0xFF) << (i * 8));
       }
       return val;
     }
