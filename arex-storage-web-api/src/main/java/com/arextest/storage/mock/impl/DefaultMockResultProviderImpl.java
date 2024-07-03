@@ -18,6 +18,7 @@ import com.arextest.storage.mock.MockResultMatchStrategy;
 import com.arextest.storage.mock.MockResultProvider;
 import com.arextest.storage.mock.MockerResultConverter;
 import com.arextest.storage.mock.internal.matchkey.impl.DubboConsumerMatchKeyBuilderImpl;
+import com.arextest.storage.model.ByteHashKey;
 import com.arextest.storage.model.MockResultType;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.QueryConfigService;
@@ -26,7 +27,6 @@ import com.arextest.storage.utils.DatabaseUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -94,7 +94,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
 
     boolean shouldRecordCallReplayMax = shouldRecordCallReplayMax(category);
     // key: Redis keys that need to be counted. value: The number of redis keys
-    Map<byte[], Integer> mockSequenceKeyMaps = Maps.newHashMap();
+    Map<ByteHashKey, Integer> mockSequenceKeyMaps = Maps.newHashMap();
 
     Iterator<T> valueIterator = values.iterator();
     // Records the maximum number of operations corresponding to recorded data
@@ -111,7 +111,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     }
 
     mockList.sort(Comparator.comparing(Mocker::getCreationTime));
-    HashMap<byte[], Integer> callReplayMaxMap = Maps.newHashMap(mockSequenceKeyMaps);
+    HashMap<ByteHashKey, Integer> callReplayMaxMap = Maps.newHashMap(mockSequenceKeyMaps);
 
     final byte[] recordIdBytes = CacheKeyUtils.toUtf8Bytes(recordId);
     byte[] recordKey = CacheKeyUtils.buildRecordKey(category, recordIdBytes);
@@ -135,7 +135,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   // Place the maximum number of playback times corresponding to the operations into the recorded data
   private void calcCallReplayMax(boolean shouldRecordCallReplayMax, MockCategoryType category,
       String recordId, Mocker value,
-      Map<byte[], Integer> mockSequenceKeyMaps) {
+      Map<ByteHashKey, Integer> mockSequenceKeyMaps) {
     if (!shouldRecordCallReplayMax) {
       return;
     }
@@ -147,13 +147,13 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   }
 
   private void addCallReplayMax(boolean shouldRecordCallReplayMax, MockCategoryType category,
-      String recordId, Mocker value, Map<byte[], Integer> mockSequenceKeyMaps) {
+      String recordId, Mocker value, Map<ByteHashKey, Integer> mockSequenceKeyMaps) {
     if (!shouldRecordCallReplayMax) {
       return;
     }
     byte[] recordOperationKey = CacheKeyUtils.buildRecordOperationKey(category, recordId,
         getOperationNameWithCategory(value));
-    int count = mockSequenceKeyMaps.getOrDefault(recordOperationKey, 0);
+    int count = mockSequenceKeyMaps.getOrDefault(new ByteHashKey(recordOperationKey), 0);
     Mocker.Target targetResponse = value.getTargetResponse();
     if (targetResponse != null) {
       targetResponse.setAttribute(CALL_REPLAY_MAX, count);
@@ -167,7 +167,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
 
   private <T extends Mocker> int sequencePutRecordData(MockCategoryType category,
       byte[] recordIdBytes, int size, byte[] recordKey, T value, int sequence,
-      Map<byte[], Integer> mockSequenceKeyMaps) {
+      Map<ByteHashKey, Integer> mockSequenceKeyMaps) {
     if (MapUtils.isEmpty(value.getEigenMap())) {
       calculateEigen(value, true);
     }
@@ -202,31 +202,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
    * Obtain the corresponding value in the maps through the key and update it. if key exist in
    * maps,increase the value by 1
    */
-  private int updateMapsAndGetCount(Map<byte[], Integer> maps, byte[] key) {
-    int count = 1;
-    byte[] mapKey = getKeyByTargetKey(maps, key);
-    if (mapKey == null) {
-      maps.put(key, count);
-      return count;
-    }
-    count = maps.get(mapKey) + 1;
-    maps.put(mapKey, count);
-    return count;
-  }
-
-  /**
-   * Obtain the key that matches the content in the maps through the target key
-   */
-  private byte[] getKeyByTargetKey(Map<byte[], Integer> maps, byte[] targetKey) {
-    if (MapUtils.isEmpty(maps)) {
-      return null;
-    }
-    for (byte[] key : maps.keySet()) {
-      if (Arrays.equals(key, targetKey)) {
-        return key;
-      }
-    }
-    return null;
+  private int updateMapsAndGetCount(Map<ByteHashKey, Integer> maps, byte[] key) {
+    return maps.merge(new ByteHashKey(key), 1, Integer::sum);
   }
 
   private boolean shouldUseIdOfInstanceToMockResult(MockCategoryType category) {
