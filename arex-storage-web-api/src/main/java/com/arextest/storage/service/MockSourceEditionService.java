@@ -131,7 +131,7 @@ public class MockSourceEditionService {
     return true;
   }
 
-  public boolean remove(String providerName, String categoryName, String recordId) {
+  public boolean remove(String providerName, String categoryName, String recordId, String id) {
     try {
       RepositoryProvider<?> repositoryWriter = providerFactory.findProvider(providerName);
       if (repositoryWriter == null) {
@@ -147,16 +147,19 @@ public class MockSourceEditionService {
             categoryName);
         return false;
       }
-      repositoryWriter.removeBy(categoryType, recordId);
+      if (StringUtils.isEmpty(id)) {
+        return repositoryWriter.removeBy(categoryType, recordId) > 0;
+      }
+      return repositoryWriter.removeById(categoryType, id) > 0;
     } catch (Throwable throwable) {
-      LOGGER.error("remove record error:{} from {} for category:{} at recordId:{}",
+      LOGGER.error("remove record error:{} from {} for category:{} at recordId:{} id:{}",
           throwable.getMessage(),
           providerName, categoryName,
           recordId,
+          id,
           throwable);
       return false;
     }
-    return true;
   }
 
   public int copyTo(String srcProviderName, String srcRecordId, String targetProviderName,

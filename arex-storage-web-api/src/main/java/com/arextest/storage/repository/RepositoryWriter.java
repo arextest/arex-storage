@@ -33,4 +33,5 @@ public interface RepositoryWriter<T extends Mocker> {
   long removeByOperationNameAndAppId(MockCategoryType categoryType, String operationName,
       String appId);
 
+  long removeById(MockCategoryType categoryType, String id);
 }
