@@ -20,6 +20,7 @@ import com.arextest.model.mock.Mocker;
 import com.arextest.storage.cache.CacheKeyUtils;
 import com.arextest.storage.client.HttpWebServiceApiClient;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -28,6 +29,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.Resource;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -147,57 +149,41 @@ public class QueryConfigService {
   private List<ConfigComparisonExclusions> getComparisonExclusions(
       List<ComparisonExclusionsConfiguration> configs, String appId) {
 
-    // Associated with interface config
-    List<ApplicationOperationConfiguration> operationConfigurationList =
-        applicationOperationConfigurationRepository.listBy(appId);
-    Map<String, ApplicationOperationConfiguration> operationConfigurationMap = operationConfigurationList.stream()
-        .collect(
-            Collectors.toMap(ApplicationOperationConfiguration::getId, operation -> operation));
+    List<ComparisonExclusionsConfiguration> interfaceConfigs = new ArrayList<>();
+    List<ComparisonExclusionsConfiguration> dependencyConfigs = new ArrayList<>();
+    List<ComparisonExclusionsConfiguration> globalConfigs = new ArrayList<>();
 
-    // Associated with dependency config
-    Map<String, AppContract> contractMap = new HashMap<>();
-    List<AppContract> contracts = appContractRepository.queryAppContracts(appId);
-    if (CollectionUtils.isNotEmpty(contracts)) {
-      contractMap.putAll(
-          contracts.stream().collect(Collectors.toMap(AppContract::getId, contract -> contract)));
-    }
-
-    List<ComparisonExclusionsConfiguration> newConfigs = new ArrayList<>();
     for (ComparisonExclusionsConfiguration config : configs) {
-      //dependency
       if (config.getDependencyId() != null) {
-        AppContract contract = contractMap.get(config.getDependencyId());
-        if (contract != null) {
-          config.setOperationType(contract.getOperationType());
-          config.setOperationName(contract.getOperationName());
-          newConfigs.add(config);
-        }
-        continue;
-      }
-
-      ApplicationOperationConfiguration operationConfiguration = operationConfigurationMap.get(config.getOperationId());
-      if (operationConfiguration != null) {
-        config.setOperationName(operationConfiguration.getOperationName());
-        // If the operation type is more than one, each operation type corresponds to the same configuration
-        if (operationConfiguration.getOperationTypes().size() > 1) {
-          for (String operationType : operationConfiguration.getOperationTypes()) {
-            ComparisonExclusionsConfiguration newConfig = new ComparisonExclusionsConfiguration();
-            newConfig.setOperationName(config.getOperationName());
-            newConfig.setOperationType(operationType);
-            newConfig.setExclusions(config.getExclusions());
-            newConfigs.add(newConfig);
-          }
-        } else if (operationConfiguration.getOperationTypes().size() == 1) {
-          String operationType = operationConfiguration.getOperationTypes().iterator().next();
-          config.setOperationType(operationType);
-          newConfigs.add(config);
-        }
+        dependencyConfigs.add(config);
+      } else if (config.getOperationId() != null) {
+        interfaceConfigs.add(config);
       } else {
-        newConfigs.add(config);
+        globalConfigs.add(config);
       }
     }
 
-    Map<String, List<ComparisonExclusionsConfiguration>> groupByOperationNameAndType = newConfigs
+    if (CollectionUtils.isNotEmpty(dependencyConfigs)) {
+      fillDependencyInfo(dependencyConfigs, appId);
+    }
+
+    if (CollectionUtils.isNotEmpty(interfaceConfigs)) {
+      interfaceConfigs = fillInterfaceInfo(interfaceConfigs, appId);
+    }
+
+    return mergeExclusionConfig(globalConfigs, interfaceConfigs, dependencyConfigs);
+  }
+
+  private List<ConfigComparisonExclusions> mergeExclusionConfig(
+      List<ComparisonExclusionsConfiguration> globalConfigs,
+      List<ComparisonExclusionsConfiguration> interfaceConfigs,
+      List<ComparisonExclusionsConfiguration> dependencyConfigs) {
+    List<ComparisonExclusionsConfiguration> allConfigs = Stream.of(
+            globalConfigs, interfaceConfigs, dependencyConfigs)
+        .flatMap(Collection::stream)
+        .collect(Collectors.toList());
+
+    Map<String, List<ComparisonExclusionsConfiguration>> groupByOperationNameAndType = allConfigs
         .stream()
         .collect(
             Collectors.groupingBy(config -> config.getOperationName() + config.getOperationType()));
@@ -217,6 +203,56 @@ public class QueryConfigService {
       result.add(configComparisonExclusions);
     }
     return result;
+  }
+
+
+  private void fillDependencyInfo(List<ComparisonExclusionsConfiguration> dependencyConfigs,
+      String appId) {
+    Map<String, AppContract> contractMap = new HashMap<>();
+    List<AppContract> contracts = appContractRepository.queryAppContracts(appId);
+    if (CollectionUtils.isNotEmpty(contracts)) {
+      contractMap.putAll(
+          contracts.stream().collect(Collectors.toMap(AppContract::getId, contract -> contract)));
+    }
+    for (ComparisonExclusionsConfiguration config : dependencyConfigs) {
+      AppContract contract = contractMap.get(config.getDependencyId());
+      if (contract != null) {
+        config.setOperationType(contract.getOperationType());
+        config.setOperationName(contract.getOperationName());
+      }
+    }
+  }
+
+  private List<ComparisonExclusionsConfiguration> fillInterfaceInfo(
+      List<ComparisonExclusionsConfiguration> interfaceConfigs, String appId) {
+    List<ComparisonExclusionsConfiguration> newConfigs = new ArrayList<>();
+    List<ApplicationOperationConfiguration> operationConfigurationList =
+        applicationOperationConfigurationRepository.listBy(appId);
+    Map<String, ApplicationOperationConfiguration> operationConfigurationMap =
+        operationConfigurationList.stream().collect(
+            Collectors.toMap(ApplicationOperationConfiguration::getId, operation -> operation));
+    for (ComparisonExclusionsConfiguration config : interfaceConfigs) {
+      ApplicationOperationConfiguration operationConfiguration = operationConfigurationMap.get(
+          config.getOperationId());
+      if (operationConfiguration != null) {
+        config.setOperationName(operationConfiguration.getOperationName());
+        // If the operation type is more than one, each operation type corresponds to the same configuration
+        if (operationConfiguration.getOperationTypes().size() > 1) {
+          for (String operationType : operationConfiguration.getOperationTypes()) {
+            ComparisonExclusionsConfiguration newConfig = new ComparisonExclusionsConfiguration();
+            newConfig.setOperationName(config.getOperationName());
+            newConfig.setOperationType(operationType);
+            newConfig.setExclusions(config.getExclusions());
+            newConfigs.add(newConfig);
+          }
+        } else if (operationConfiguration.getOperationTypes().size() == 1) {
+          String operationType = operationConfiguration.getOperationTypes().iterator().next();
+          config.setOperationType(operationType);
+          newConfigs.add(config);
+        }
+      }
+    }
+    return newConfigs;
   }
 
   private boolean putConfigCache(String appId, String categoryName, String operationName,
