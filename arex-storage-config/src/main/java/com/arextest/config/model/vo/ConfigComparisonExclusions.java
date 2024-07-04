@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @NoArgsConstructor
-public class ConfigComparisonExclusionsVO {
+public class ConfigComparisonExclusions {
   private String operationName;
   private String categoryType;
   private Set<List<String>> exclusionList;

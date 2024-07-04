@@ -4,7 +4,6 @@ import com.arextest.config.model.dto.record.DynamicClassConfiguration;
 import com.arextest.config.model.dto.record.ServiceCollectConfiguration;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import lombok.Data;
 
 /**
@@ -35,9 +34,5 @@ public class AgentRemoteConfigurationResponse {
 
   private Map<String, String> extendField;
 
-  private List<ConfigComparisonExclusionsVO> comparisonExclusions;
-
-  private Set<List<String>> globalExclusionList;
-
-  private Set<String> ignoreNodeSet;
+  private CompareConfiguration compareConfiguration;
 }

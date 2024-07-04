@@ -7,7 +7,8 @@ import com.arextest.config.model.dto.ComparisonExclusionsConfiguration;
 import com.arextest.config.model.dto.application.AppContract;
 import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
 import com.arextest.config.model.dto.system.SystemConfiguration;
-import com.arextest.config.model.vo.ConfigComparisonExclusionsVO;
+import com.arextest.config.model.vo.CompareConfiguration;
+import com.arextest.config.model.vo.ConfigComparisonExclusions;
 import com.arextest.config.model.vo.QueryConfigOfCategoryRequest;
 import com.arextest.config.model.vo.QueryConfigOfCategoryResponse;
 import com.arextest.config.model.vo.QueryConfigOfCategoryResponse.QueryConfigOfCategory;
@@ -105,7 +106,24 @@ public class QueryConfigService {
         ScheduleReplayConfigurationResponse.class);
   }
 
-  public List<ConfigComparisonExclusionsVO> queryComparisonExclusions(String appId) {
+  public CompareConfiguration queryCompareConfiguration(String appId) {
+    CompareConfiguration compareConfiguration = new CompareConfiguration();
+
+    List<ConfigComparisonExclusions> comparisonExclusions = queryComparisonExclusions(appId);
+    for (ConfigComparisonExclusions exclusion : comparisonExclusions) {
+      if (exclusion.getCategoryType() == null && exclusion.getOperationName() == null) {
+        comparisonExclusions.remove(exclusion);
+        compareConfiguration.setGlobalExclusionList(exclusion.getExclusionList());
+        break;
+      }
+    }
+    compareConfiguration.setComparisonExclusions(comparisonExclusions);
+    compareConfiguration.setIgnoreNodeSet(getIgnoreNodeSet());
+
+    return compareConfiguration;
+  }
+
+  private List<ConfigComparisonExclusions> queryComparisonExclusions(String appId) {
     List<ComparisonExclusionsConfiguration> configs = comparisonExclusionsConfigurationRepository.listBy(
         appId, COMPARE_CONFIG_TYPE);
     if (CollectionUtils.isNotEmpty(configs)) {
@@ -121,7 +139,7 @@ public class QueryConfigService {
         : systemConfiguration.getIgnoreNodeSet();
   }
 
-  private List<ConfigComparisonExclusionsVO> getComparisonExclusions(
+  private List<ConfigComparisonExclusions> getComparisonExclusions(
       List<ComparisonExclusionsConfiguration> configs, String appId) {
 
     List<ApplicationOperationConfiguration> operationConfigurationList =
@@ -175,14 +193,14 @@ public class QueryConfigService {
         .stream()
         .collect(Collectors.groupingBy(
             config -> config.getOperationName() + config.getOperationType()));
-    List<ConfigComparisonExclusionsVO> result = new ArrayList<>();
+    List<ConfigComparisonExclusions> result = new ArrayList<>();
     for (Entry<String, List<ComparisonExclusionsConfiguration>> entry : groupByOperationNameAndType
         .entrySet()) {
       List<ComparisonExclusionsConfiguration> configList = entry.getValue();
       if (CollectionUtils.isEmpty(configList)) {
         continue;
       }
-      ConfigComparisonExclusionsVO vo = new ConfigComparisonExclusionsVO();
+      ConfigComparisonExclusions vo = new ConfigComparisonExclusions();
       vo.setOperationName(configList.get(0).getOperationName());
       vo.setCategoryType(configList.get(0).getOperationType());
       vo.setExclusionList(configList.stream().map(ComparisonExclusionsConfiguration::getExclusions)
