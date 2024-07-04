@@ -145,8 +145,13 @@ public final class AgentRemoteConfigurationController {
 
       // asynchronously update application env
       asyncUpdateAppEnv(requestInstance);
-      CompareConfiguration compareConfiguration = queryConfigService.queryCompareConfiguration(appId);
-      body.setCompareConfiguration(compareConfiguration);
+      try {
+        CompareConfiguration compareConfiguration = queryConfigService.queryCompareConfiguration(appId);
+        body.setCompareConfiguration(compareConfiguration);
+      } catch (Exception e) {
+        LOGGER.error("query compare configuration error", e);
+      }
+
 
       return ResponseUtils.successResponse(body);
     } catch (Exception e) {
