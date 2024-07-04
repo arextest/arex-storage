@@ -1,16 +1,17 @@
-package com.arextest.storage.utils;
+package com.arextest.storage.service;
 
 import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
+import com.arextest.storage.metric.MetricListener;
 import com.arextest.storage.model.TableSchema;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import com.arextest.storage.service.config.ApplicationDefaultConfig;
 import com.google.common.annotations.VisibleForTesting;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
@@ -18,12 +19,15 @@ import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.util.TablesNamesFinder;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.util.Collections;
 
+import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH;
 import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH_DEFAULT;
+import static com.arextest.storage.model.Constants.SQL_PARSE_DURATION_THRESHOLD;
+import static com.arextest.storage.model.Constants.SQL_PARSE_DURATION_THRESHOLD_DEFAULT;
 
 /**
  * @author niyan
@@ -31,14 +35,20 @@ import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH_DEFAULT;
  * @since 1.0.0
  */
 @Slf4j
-public class DatabaseUtils {
+@Component
+public class DatabaseParseService {
 
-    private DatabaseUtils() {
-    }
-
+    private static final String SQL_PARSE_TIME_METRIC_NAME = "sql.parse.time";
+    private static final String SQL_LENGTH = "sql.length";
     private static final Pattern PATTERN = Pattern.compile("(\\s+|\"\\?\"|\\[|\\])");
 
-    public static void regenerateOperationName(Mocker mocker, int maxSqlLengthInt) {
+    @Resource
+    private List<MetricListener> metricListenerList;
+    @Resource
+    private ApplicationDefaultConfig applicationDefaultConfig;
+
+
+    public void regenerateOperationName(Mocker mocker) {
         if (!MockCategoryType.DATABASE.getName().equals(mocker.getCategoryType().getName())) {
             return;
         }
@@ -49,6 +59,7 @@ public class DatabaseUtils {
         if (StringUtils.contains(mocker.getOperationName(), '@')) {
             return;
         }
+        int maxSqlLengthInt = applicationDefaultConfig.getConfigAsInt(MAX_SQL_LENGTH, MAX_SQL_LENGTH_DEFAULT);
 
         if (maxSqlLengthInt <= 0) {
             maxSqlLengthInt = MAX_SQL_LENGTH_DEFAULT;
@@ -78,7 +89,7 @@ public class DatabaseUtils {
      * The operation name is generated in the format of dbName-tableNames-action-originalOperationName, eg: db1@table1,table2@select@operation1
      */
     @VisibleForTesting
-    public static String regenerateOperationName(TableSchema tableSchema, String originOperationName) {
+    public String regenerateOperationName(TableSchema tableSchema, String originOperationName) {
         return new StringBuilder(100).append(StringUtils.defaultString(tableSchema.getDbName())).append('@')
             .append(StringUtils.defaultString(StringUtils.join(tableSchema.getTableNames(), ","))).append('@')
             .append(StringUtils.defaultString(tableSchema.getAction())).append("@")
@@ -87,7 +98,7 @@ public class DatabaseUtils {
     }
 
 
-    public static String parseDbName(String operationName, Mocker.Target targetRequest) {
+    public String parseDbName(String operationName, Mocker.Target targetRequest) {
         String dbName = targetRequest.attributeAsString(MockAttributeNames.DB_NAME);
         if (StringUtils.isNotEmpty(dbName)) {
             return dbName;
@@ -107,7 +118,7 @@ public class DatabaseUtils {
      * @param operationName eg: db1@table1,table2@select@operation1;db2@table3,table4@select@operation2;
      * @return tableNames eg: ["table1,table2", "table3,table4"]
      */
-    public static List<String> parseTableNames(String operationName) {
+    public List<String> parseTableNames(String operationName) {
         if (StringUtils.isEmpty(operationName)) {
             return Collections.emptyList();
         }
@@ -134,7 +145,9 @@ public class DatabaseUtils {
      * @return table schema info
      */
     @VisibleForTesting
-    public static TableSchema parse(String sql) {
+    public TableSchema parse(String sql) {
+        long startTimeNanos = System.nanoTime();
+
         TableSchema tableSchema = new TableSchema();
         try {
             sql = PATTERN.matcher(sql).replaceAll(" ");
@@ -151,13 +164,32 @@ public class DatabaseUtils {
         } catch (Throwable e) {
             LOGGER.warn("parse sql error, sql: {}", sql, e);
         }
+        long totalTimeNanos = System.nanoTime() - startTimeNanos;
+        recordParseTimeAndLength(totalTimeNanos, sql.length());
         return tableSchema;
     }
 
-    static String getAction(Statement statement) {
+    private String getAction(Statement statement) {
         if (statement instanceof Select) {
             return "Select";
         }
         return statement.getClass().getSimpleName();
+    }
+
+    private void recordParseTimeAndLength(long duration, int sqlLength) {
+        if (CollectionUtils.isEmpty(metricListenerList)) {
+            return;
+        }
+        long durationMillis = nanosToMillis(duration);
+        for (MetricListener metricListener : metricListenerList) {
+            metricListener.recordTime(SQL_PARSE_TIME_METRIC_NAME, Collections.emptyMap(), durationMillis);
+            if (durationMillis > applicationDefaultConfig.getConfigAsInt(SQL_PARSE_DURATION_THRESHOLD, SQL_PARSE_DURATION_THRESHOLD_DEFAULT)) {
+                metricListener.recordSize(SQL_LENGTH, Collections.emptyMap(), sqlLength);
+            }
+        }
+    }
+
+    private long nanosToMillis(long duration) {
+        return TimeUnit.NANOSECONDS.toMillis(duration);
     }
 }
