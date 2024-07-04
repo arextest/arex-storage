@@ -1,6 +1,7 @@
 package com.arextest.storage.beans;
 
 import com.arextest.common.cache.CacheProvider;
+import com.arextest.common.config.DefaultApplicationConfig;
 import com.arextest.common.jwt.JWTService;
 import com.arextest.common.jwt.JWTServiceImpl;
 import com.arextest.config.model.dao.config.SystemConfigurationCollection;
@@ -34,10 +35,7 @@ import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.service.PrepareMockResultService;
 import com.arextest.storage.service.QueryConfigService;
 import com.arextest.storage.service.ScheduleReplayingService;
-import com.arextest.storage.service.config.ApplicationDefaultConfig;
 import com.arextest.storage.service.config.ApplicationService;
-import com.arextest.storage.service.config.impl.ApplicationPropertiesConfigProvider;
-import com.arextest.storage.service.config.provider.ConfigProvider;
 import com.arextest.storage.service.listener.AgentWorkingListener;
 import com.arextest.storage.service.listener.AutoDiscoveryEntryPointListener;
 import com.arextest.storage.web.controller.MockSourceEditionController;
@@ -287,40 +285,33 @@ public class StorageAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean(MockerResultConverter.class)
   public MockerResultConverter mockerResultConverter(QueryConfigService queryConfigService,
-      ApplicationDefaultConfig applicationDefaultConfig) {
-    return new DefaultMockerResultConverterImpl(queryConfigService, applicationDefaultConfig);
+      DefaultApplicationConfig defaultApplicationConfig) {
+    return new DefaultMockerResultConverterImpl(queryConfigService, defaultApplicationConfig);
   }
 
   @Bean
   @Order(3)
   public RepositoryProvider<AREXMocker> autoPinnedMockerProvider(MongoTemplate mongoTemplate,
-      Set<MockCategoryType> entryPointTypes, ApplicationDefaultConfig applicationDefaultConfig) {
+      Set<MockCategoryType> entryPointTypes, DefaultApplicationConfig defaultApplicationConfig) {
     return new AREXMockerMongoRepositoryProvider(ProviderNames.AUTO_PINNED, mongoTemplate,
         properties,
-        entryPointTypes, applicationDefaultConfig);
+        entryPointTypes, defaultApplicationConfig);
   }
 
   @Bean
   @Order(2)
   public RepositoryProvider<AREXMocker> pinnedMockerProvider(MongoTemplate mongoTemplate,
-      Set<MockCategoryType> entryPointTypes, ApplicationDefaultConfig applicationDefaultConfig) {
+      Set<MockCategoryType> entryPointTypes, DefaultApplicationConfig defaultApplicationConfig) {
     return new AREXMockerMongoRepositoryProvider(ProviderNames.PINNED, mongoTemplate, properties,
-        entryPointTypes, applicationDefaultConfig);
+        entryPointTypes, defaultApplicationConfig);
   }
 
   @Bean
   @Order(1)
   public RepositoryProvider<AREXMocker> defaultMockerProvider(MongoTemplate mongoTemplate,
-      Set<MockCategoryType> entryPointTypes, ApplicationDefaultConfig applicationDefaultConfig) {
+      Set<MockCategoryType> entryPointTypes, DefaultApplicationConfig defaultApplicationConfig) {
     return new AREXMockerMongoRepositoryProvider(mongoTemplate, properties, entryPointTypes,
-        applicationDefaultConfig);
-  }
-
-
-  @Bean
-  @ConditionalOnMissingBean(ConfigProvider.class)
-  public ConfigProvider applicationPropertiesConfigProvider() {
-    return new ApplicationPropertiesConfigProvider();
+        defaultApplicationConfig);
   }
 
   private void syncAuthSwitch(MongoDatabase database) {

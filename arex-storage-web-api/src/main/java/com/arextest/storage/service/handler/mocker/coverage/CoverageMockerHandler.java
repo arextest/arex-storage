@@ -1,5 +1,6 @@
 package com.arextest.storage.service.handler.mocker.coverage;
 
+import com.arextest.common.config.DefaultApplicationConfig;
 import com.arextest.model.replay.CaseSendScene;
 import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.MockCategoryType;
@@ -12,7 +13,6 @@ import com.arextest.storage.repository.scenepool.ScenePoolFactory;
 import com.arextest.storage.repository.scenepool.ScenePoolProvider;
 import com.arextest.storage.service.InvalidRecordService;
 import com.arextest.storage.service.MockSourceEditionService;
-import com.arextest.storage.service.config.ApplicationDefaultConfig;
 import com.arextest.storage.service.handler.mocker.MockerHandler;
 import com.arextest.storage.trace.MDCTracer;
 import java.util.HashMap;
@@ -36,7 +36,7 @@ public class CoverageMockerHandler implements MockerHandler {
   private ScenePoolFactory scenePoolFactory;
   private CoverageHandlerSwitch handlerSwitch;
   private InvalidRecordService invalidRecordService;
-  private ApplicationDefaultConfig applicationDefaultConfig;
+  private DefaultApplicationConfig defaultApplicationConfig;
   public final List<MetricListener> metricListeners;
   // coverage metric constants
   private static final String COVERAGE_METRIC_NAME = "coverage.recording";
@@ -72,7 +72,7 @@ public class CoverageMockerHandler implements MockerHandler {
     // if replayId is empty, meaning this coverage mocker is received during record phase
     if (StringUtils.isEmpty(coverageMocker.getReplayId()) && handlerSwitch.allowRecordTask(appId)) {
       scenePoolProvider = scenePoolFactory.getProvider(ScenePoolFactory.RECORDING_SCENE_POOL);
-      task = new RecordTask(scenePoolProvider, coverageMocker, invalidRecordService, applicationDefaultConfig);
+      task = new RecordTask(scenePoolProvider, coverageMocker, invalidRecordService, defaultApplicationConfig);
       coverageHandleDelayedPool.schedule(task, 5, TimeUnit.SECONDS);
 
     } else if (CaseSendScene.MIXED_NORMAL.name().equals(scheduleSendScene) &&
@@ -128,6 +128,7 @@ public class CoverageMockerHandler implements MockerHandler {
         String recordId = coverageMocker.getRecordId();
         Scene newScene = convert(coverageMocker);
         MDCTracer.addRecordId(recordId);
+        MDCTracer.addAppId(coverageMocker.getAppId());
 
         // todo: bug here, may insert multiple scene with same key, should be ensure by unique index
         Scene oldScene = scenePoolProvider.findAndUpdate(newScene);
@@ -165,7 +166,7 @@ public class CoverageMockerHandler implements MockerHandler {
     private final ScenePoolProvider scenePoolProvider;
     private final Mocker coverageMocker;
     private final InvalidRecordService invalidRecordService;
-    private final ApplicationDefaultConfig applicationDefaultConfig;
+    private final DefaultApplicationConfig defaultApplicationConfig;
 
     private static final long COVERAGE_EXPIRATION_DAYS = 14L;
     private static final String COVERAGE_EXPIRATION_DAYS_KEY = "coverage.expiration.days";
@@ -196,7 +197,7 @@ public class CoverageMockerHandler implements MockerHandler {
           scenePoolProvider.upsertOne(scene);
           mockSourceEditionService.extendMockerExpirationByRecordId(ProviderNames.DEFAULT,
               coverageMocker.getRecordId(),
-              applicationDefaultConfig.getConfigAsLong(COVERAGE_EXPIRATION_DAYS_KEY, COVERAGE_EXPIRATION_DAYS));
+              defaultApplicationConfig.getConfigAsLong(COVERAGE_EXPIRATION_DAYS_KEY, COVERAGE_EXPIRATION_DAYS));
           LOGGER.info("CoverageMockerHandler received new case, recordId: {}, pathKey: {}",
               coverageMocker.getRecordId(), coverageMocker.getOperationName());
         }

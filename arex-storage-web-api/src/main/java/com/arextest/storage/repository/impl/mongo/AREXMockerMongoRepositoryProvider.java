@@ -1,5 +1,6 @@
 package com.arextest.storage.repository.impl.mongo;
 
+import com.arextest.common.config.DefaultApplicationConfig;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
@@ -10,7 +11,6 @@ import com.arextest.model.util.MongoCounter;
 import com.arextest.storage.beans.StorageConfigurationProperties;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
-import com.arextest.storage.service.config.ApplicationDefaultConfig;
 import com.arextest.storage.utils.TimeUtils;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -76,7 +76,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
   private final String providerName;
   private final StorageConfigurationProperties properties;
   private final Set<MockCategoryType> entryPointTypes;
-  private final ApplicationDefaultConfig applicationDefaultConfig;
+  private final DefaultApplicationConfig defaultApplicationConfig;
 
   private static final String[] DEFAULT_INCLUDE_FIELDS =
       new String[]{AREXMocker.Fields.id, AREXMocker.Fields.categoryType, AREXMocker.Fields.recordId,
@@ -87,20 +87,20 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
   public AREXMockerMongoRepositoryProvider(MongoTemplate mongoTemplate,
       StorageConfigurationProperties properties,
       Set<MockCategoryType> entryPointTypes,
-      ApplicationDefaultConfig applicationDefaultConfig) {
-    this(ProviderNames.DEFAULT, mongoTemplate, properties, entryPointTypes, applicationDefaultConfig);
+      DefaultApplicationConfig defaultApplicationConfig) {
+    this(ProviderNames.DEFAULT, mongoTemplate, properties, entryPointTypes, defaultApplicationConfig);
   }
 
   public AREXMockerMongoRepositoryProvider(String providerName,
       MongoTemplate mongoTemplate,
       StorageConfigurationProperties properties,
       Set<MockCategoryType> entryPointTypes,
-      ApplicationDefaultConfig applicationDefaultConfig) {
+      DefaultApplicationConfig defaultApplicationConfig) {
     this.properties = properties;
     this.mongoTemplate = mongoTemplate;
     this.providerName = providerName;
     this.entryPointTypes = entryPointTypes;
-    this.applicationDefaultConfig = applicationDefaultConfig;
+    this.defaultApplicationConfig = defaultApplicationConfig;
   }
 
   private String getCollectionName(MockCategoryType category) {
@@ -273,7 +273,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
       MockCategoryType category = valueList.get(0).getCategoryType();
       Long expiration;
       if (StringUtils.equalsIgnoreCase(ProviderNames.AUTO_PINNED, this.providerName)) {
-        expiration = applicationDefaultConfig.getConfigAsLong(AUTO_PINNED_MOCKER_EXPIRATION_MILLIS,
+        expiration = defaultApplicationConfig.getConfigAsLong(AUTO_PINNED_MOCKER_EXPIRATION_MILLIS,
             FOURTEEN_DAYS_MILLIS);
       } else {
         expiration = properties.getExpirationDurationMap()
