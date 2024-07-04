@@ -10,7 +10,7 @@ import lombok.Data;
  */
 @Data
 public class CompareConfiguration {
-  private List<ConfigComparisonExclusions> comparisonExclusions;
+  private List<ConfigComparisonExclusion> comparisonExclusions;
   private Set<List<String>> globalExclusionList;
   private Set<String> ignoreNodeSet;
 }

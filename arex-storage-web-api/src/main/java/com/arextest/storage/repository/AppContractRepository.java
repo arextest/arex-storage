@@ -1,4 +1,4 @@
-package com.arextest.config.repository;
+package com.arextest.storage.repository;
 
 import com.arextest.config.model.dto.application.AppContract;
 import java.util.List;

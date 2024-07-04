@@ -1,9 +1,9 @@
-package com.arextest.config.repository.impl;
+package com.arextest.storage.repository.impl.mongo;
 
-import com.arextest.config.mapper.AppContractMapper;
-import com.arextest.config.model.dao.config.AppContractCollection;
 import com.arextest.config.model.dto.application.AppContract;
-import com.arextest.config.repository.AppContractRepository;
+import com.arextest.storage.mapper.AppContractMapper;
+import com.arextest.storage.model.AppContractCollection;
+import com.arextest.storage.repository.AppContractRepository;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;

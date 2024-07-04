@@ -1,6 +1,5 @@
 package com.arextest.storage.beans;
 
-import com.arextest.config.repository.impl.AppContractRepositoryImpl;
 import com.arextest.config.repository.impl.ApplicationConfigurationRepositoryImpl;
 import com.arextest.config.repository.impl.ApplicationOperationConfigurationRepositoryImpl;
 import com.arextest.config.repository.impl.ApplicationServiceConfigurationRepositoryImpl;
@@ -59,11 +58,6 @@ public class ConfigServiceAutoConfiguration {
   public SystemConfigurationRepositoryImpl systemConfigurationRepositoryImpl(
       MongoTemplate mongoTemplate) {
     return new SystemConfigurationRepositoryImpl(mongoTemplate);
-  }
-
-  @Bean
-  public AppContractRepositoryImpl appContractRepositoryImpl(MongoTemplate mongoTemplate) {
-    return new AppContractRepositoryImpl(mongoTemplate);
   }
 
   @Bean

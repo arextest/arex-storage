@@ -8,17 +8,17 @@ import com.arextest.config.model.dto.application.AppContract;
 import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
 import com.arextest.config.model.dto.system.SystemConfiguration;
 import com.arextest.config.model.vo.CompareConfiguration;
-import com.arextest.config.model.vo.ConfigComparisonExclusions;
+import com.arextest.config.model.vo.ConfigComparisonExclusion;
 import com.arextest.config.model.vo.QueryConfigOfCategoryRequest;
 import com.arextest.config.model.vo.QueryConfigOfCategoryResponse;
 import com.arextest.config.model.vo.QueryConfigOfCategoryResponse.QueryConfigOfCategory;
-import com.arextest.config.repository.AppContractRepository;
 import com.arextest.config.repository.SystemConfigurationRepository;
 import com.arextest.config.repository.impl.ApplicationOperationConfigurationRepositoryImpl;
 import com.arextest.config.repository.impl.ComparisonExclusionsConfigurationRepositoryImpl;
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.cache.CacheKeyUtils;
 import com.arextest.storage.client.HttpWebServiceApiClient;
+import com.arextest.storage.repository.AppContractRepository;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -112,10 +111,10 @@ public class QueryConfigService {
   public CompareConfiguration queryCompareConfiguration(String appId) {
     CompareConfiguration compareConfiguration = new CompareConfiguration();
 
-    List<ConfigComparisonExclusions> comparisonExclusions = queryComparisonExclusions(appId);
-    for (Iterator<ConfigComparisonExclusions> iterator = comparisonExclusions.iterator();
+    List<ConfigComparisonExclusion> comparisonExclusions = queryComparisonExclusions(appId);
+    for (Iterator<ConfigComparisonExclusion> iterator = comparisonExclusions.iterator();
         iterator.hasNext(); ) {
-      ConfigComparisonExclusions exclusion = iterator.next();
+      ConfigComparisonExclusion exclusion = iterator.next();
       if (exclusion.getCategoryType() == null || exclusion.getOperationName() == null) {
         compareConfiguration.setGlobalExclusionList(exclusion.getExclusionList());
         iterator.remove();
@@ -129,8 +128,8 @@ public class QueryConfigService {
     return compareConfiguration;
   }
 
-  private List<ConfigComparisonExclusions> queryComparisonExclusions(String appId) {
-    // ConfigComparisonExclusions, Source data
+  private List<ConfigComparisonExclusion> queryComparisonExclusions(String appId) {
+    // ConfigComparisonExclusion, Source data
     List<ComparisonExclusionsConfiguration> configs = comparisonExclusionsConfigurationRepository.listBy(
         appId, COMPARE_CONFIG_TYPE);
     if (CollectionUtils.isNotEmpty(configs)) {
@@ -146,7 +145,7 @@ public class QueryConfigService {
         : systemConfiguration.getIgnoreNodeSet();
   }
 
-  private List<ConfigComparisonExclusions> getComparisonExclusions(
+  private List<ConfigComparisonExclusion> getComparisonExclusions(
       List<ComparisonExclusionsConfiguration> configs, String appId) {
 
     List<ComparisonExclusionsConfiguration> interfaceConfigs = new ArrayList<>();
@@ -174,7 +173,7 @@ public class QueryConfigService {
     return mergeExclusionConfig(globalConfigs, interfaceConfigs, dependencyConfigs);
   }
 
-  private List<ConfigComparisonExclusions> mergeExclusionConfig(
+  private List<ConfigComparisonExclusion> mergeExclusionConfig(
       List<ComparisonExclusionsConfiguration> globalConfigs,
       List<ComparisonExclusionsConfiguration> interfaceConfigs,
       List<ComparisonExclusionsConfiguration> dependencyConfigs) {
@@ -187,14 +186,13 @@ public class QueryConfigService {
         .stream()
         .collect(
             Collectors.groupingBy(config -> config.getOperationName() + config.getOperationType()));
-    List<ConfigComparisonExclusions> result = new ArrayList<>();
-    for (Entry<String, List<ComparisonExclusionsConfiguration>> entry : groupByOperationNameAndType
-        .entrySet()) {
-      List<ComparisonExclusionsConfiguration> configList = entry.getValue();
+    List<ConfigComparisonExclusion> result = new ArrayList<>();
+    for (List<ComparisonExclusionsConfiguration> configList : groupByOperationNameAndType
+        .values()) {
       if (CollectionUtils.isEmpty(configList)) {
         continue;
       }
-      ConfigComparisonExclusions configComparisonExclusions = new ConfigComparisonExclusions();
+      ConfigComparisonExclusion configComparisonExclusions = new ConfigComparisonExclusion();
       configComparisonExclusions.setOperationName(configList.get(0).getOperationName());
       configComparisonExclusions.setCategoryType(configList.get(0).getOperationType());
       configComparisonExclusions.setExclusionList(

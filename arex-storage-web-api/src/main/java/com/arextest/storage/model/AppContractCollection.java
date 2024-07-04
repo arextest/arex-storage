@@ -1,4 +1,4 @@
-package com.arextest.config.model.dao.config;
+package com.arextest.storage.model;
 
 import com.arextest.config.model.dao.BaseEntity;
 import lombok.Data;

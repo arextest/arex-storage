@@ -1,7 +1,7 @@
-package com.arextest.config.mapper;
+package com.arextest.storage.mapper;
 
-import com.arextest.config.model.dao.config.AppContractCollection;
 import com.arextest.config.model.dto.application.AppContract;
+import com.arextest.storage.model.AppContractCollection;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 
