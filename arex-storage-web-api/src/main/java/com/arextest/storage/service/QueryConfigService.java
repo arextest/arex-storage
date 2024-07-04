@@ -2,12 +2,17 @@ package com.arextest.storage.service;
 
 import static com.arextest.diff.utils.JacksonHelperUtil.objectMapper;
 import com.arextest.common.cache.CacheProvider;
+import com.arextest.config.model.dao.config.SystemConfigurationCollection.KeySummary;
 import com.arextest.config.model.dto.ComparisonExclusionsConfiguration;
+import com.arextest.config.model.dto.application.AppContract;
 import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
+import com.arextest.config.model.dto.system.SystemConfiguration;
 import com.arextest.config.model.vo.ConfigComparisonExclusionsVO;
 import com.arextest.config.model.vo.QueryConfigOfCategoryRequest;
 import com.arextest.config.model.vo.QueryConfigOfCategoryResponse;
 import com.arextest.config.model.vo.QueryConfigOfCategoryResponse.QueryConfigOfCategory;
+import com.arextest.config.repository.AppContractRepository;
+import com.arextest.config.repository.SystemConfigurationRepository;
 import com.arextest.config.repository.impl.ApplicationOperationConfigurationRepositoryImpl;
 import com.arextest.config.repository.impl.ComparisonExclusionsConfigurationRepositoryImpl;
 import com.arextest.model.mock.Mocker;
@@ -44,12 +49,6 @@ public class QueryConfigService {
   @Value("${arex.query.schedule.url}")
   private String queryScheduleReplayConfigurationUrl;
 
-  @Value("${arex.query.systemConfig.url}")
-  private String querySystemConfigUrl;
-
-  @Value("${arex.query.contracts.url}")
-  private String queryContractsUrl;
-
   @Value("${arex.config.cache.expired.seconds:600}")
   private long cacheExpiredSeconds;
 
@@ -64,6 +63,12 @@ public class QueryConfigService {
 
   @Resource
   private ApplicationOperationConfigurationRepositoryImpl applicationOperationConfigurationRepository;
+
+  @Resource
+  private SystemConfigurationRepository systemConfigurationRepository;
+
+  @Resource
+  private AppContractRepository appContractRepository;
 
   public QueryConfigOfCategory queryConfigOfCategory(Mocker mocker) {
     if (mocker.getCategoryType().isSkipComparison()) {
@@ -110,12 +115,10 @@ public class QueryConfigService {
   }
 
   public Set<String> getIgnoreNodeSet() {
-    SystemConfigResponse systemConfigResponse = httpWebServiceApiClient.get(
-        querySystemConfigUrl, Collections.emptyMap(), SystemConfigResponse.class);
-    if (systemConfigResponse == null || systemConfigResponse.getBody() == null) {
-      return Collections.emptySet();
-    }
-    return systemConfigResponse.getBody().getIgnoreNodeSet();
+    SystemConfiguration systemConfiguration = systemConfigurationRepository.getSystemConfigByKey(
+        KeySummary.IGNORE_NODE_SET);
+    return systemConfiguration == null ? Collections.emptySet()
+        : systemConfiguration.getIgnoreNodeSet();
   }
 
   private List<ConfigComparisonExclusionsVO> getComparisonExclusions(
@@ -124,23 +127,21 @@ public class QueryConfigService {
     List<ApplicationOperationConfiguration> operationConfigurationList =
         applicationOperationConfigurationRepository.listBy(appId);
     Map<String, ApplicationOperationConfiguration> operationConfigurationMap = operationConfigurationList.stream()
-        .collect(Collectors.toMap(ApplicationOperationConfiguration::getId, operation -> operation));
+        .collect(
+            Collectors.toMap(ApplicationOperationConfiguration::getId, operation -> operation));
 
-    QueryContractRequestType requestType = new QueryContractRequestType();
-    requestType.setAppId(appId);
-    QueryContractResponse response = httpWebServiceApiClient.jsonPost(queryContractsUrl, requestType, QueryContractResponse.class);
-    Map<String, AppContractDto> contractMap = new HashMap<>();
-    if (response != null && response.getBody() != null) {
-      contractMap.putAll(response.getBody().stream()
-          .collect(Collectors.toMap(AppContractDto::getId, contract -> contract)));
+    Map<String, AppContract> contractMap = new HashMap<>();
+    List<AppContract> contracts = appContractRepository.queryAppContracts(appId);
+    if (CollectionUtils.isNotEmpty(contracts)) {
+      contractMap.putAll(
+          contracts.stream().collect(Collectors.toMap(AppContract::getId, contract -> contract)));
     }
-
 
     List<ComparisonExclusionsConfiguration> newConfigs = new ArrayList<>();
     for (ComparisonExclusionsConfiguration config : configs) {
       //dependency
       if (config.getDependencyId() != null) {
-        AppContractDto contract = contractMap.get(config.getDependencyId());
+        AppContract contract = contractMap.get(config.getDependencyId());
         if (contract != null) {
           config.setOperationType(contract.getOperationType());
           config.setOperationName(contract.getOperationName());
@@ -230,57 +231,4 @@ public class QueryConfigService {
     private String mockHandlerJarUrl;
 
   }
-
-  @Data
-  public static class SystemConfigResponse {
-
-    private SystemConfigWithProperties body;
-
-  }
-
-  @Data
-  public static class SystemConfigWithProperties {
-
-    /**
-     * according to the names of node to ignore the node.
-     */
-    private Set<String> ignoreNodeSet;
-  }
-
-  @Data
-  public static class QueryContractRequestType {
-
-    // query global contract
-    private String appId;
-    // query entryPointContract
-    private String operationId;
-    // query dependency
-    private String operationType;
-    private String operationName;
-
-  }
-
-  @Data
-  public static class QueryContractResponse {
-
-    private List<AppContractDto> body;
-
-  }
-
-  @Data
-  public static class AppContractDto  {
-
-    private String id;
-    private String appId;
-    private Integer contractType;
-    private String operationId;
-
-    /**
-     * the operationName and operationType exist, when contractType is 2
-     */
-    private String operationName;
-    private String operationType;
-    private String contract;
-  }
-
 }

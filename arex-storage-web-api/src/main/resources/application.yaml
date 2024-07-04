@@ -13,14 +13,10 @@ arex:
     auth:
       switch: false
   query:
-    systemConfig:
-      url: ${arex.api.service.api:http://arex-api-service:8080}/api/system/config/list
     config:
       url: ${arex.api.service.api:http://arex-api-service:8080}/api/config/comparison/summary/queryConfigOfCategory
     schedule:
       url: ${arex.api.service.api:http://arex-api-service:8080}/api/config/schedule/useResult/appId/%s
-    contracts:
-      url: ${arex.api.service.api:http://arex-api-service:8080}/api/report/queryAllContracts/internal
   config:
     # default for application settings
     application:
