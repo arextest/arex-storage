@@ -17,14 +17,13 @@ import com.arextest.model.replay.holder.ListResultHolder;
 import com.arextest.model.response.Response;
 import com.arextest.storage.mock.MockerPostProcessor;
 import com.arextest.storage.repository.ProviderNames;
-import com.arextest.storage.service.InvalidIncompleteRecordService;
+import com.arextest.storage.service.InvalidRecordService;
 import com.arextest.storage.service.PrepareMockResultService;
 import com.arextest.storage.service.ScheduleReplayingService;
 import com.arextest.storage.trace.MDCTracer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -37,8 +36,6 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
 /**
  * this class defined all api list for scheduler replaying
@@ -55,7 +52,7 @@ public class ScheduleReplayQueryController {
 
   private final PrepareMockResultService prepareMockResultService;
 
-  private final InvalidIncompleteRecordService invalidIncompleteRecordService;
+  private final InvalidRecordService invalidRecordService;
 
   /**
    * fetch the replay result for compare
@@ -85,7 +82,7 @@ public class ScheduleReplayQueryController {
           scheduleReplayingService.queryReplayResult(recordId, replayResultId);
       QueryReplayResultResponseType responseType = new QueryReplayResultResponseType();
       responseType.setResultHolderList(resultHolderList);
-      responseType.setInvalidResult(invalidIncompleteRecordService.isInvalidReplayIncompleteCase(replayResultId));
+      responseType.setInvalidResult(invalidRecordService.isInvalidReplayIncompleteCase(replayResultId));
       return ResponseUtils.successResponse(responseType);
     } catch (Throwable throwable) {
       LOGGER.error("replayResult error:{} ,recordId:{} ,replayResultId:{}",

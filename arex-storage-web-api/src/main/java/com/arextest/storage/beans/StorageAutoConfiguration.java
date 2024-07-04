@@ -29,11 +29,12 @@ import com.arextest.storage.repository.impl.mongo.converters.ArexEigenCompressio
 import com.arextest.storage.repository.impl.mongo.converters.ArexMockerCompressionConverter;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.AgentWorkingService;
-import com.arextest.storage.service.InvalidIncompleteRecordService;
+import com.arextest.storage.service.InvalidRecordService;
 import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.service.PrepareMockResultService;
 import com.arextest.storage.service.QueryConfigService;
 import com.arextest.storage.service.ScheduleReplayingService;
+import com.arextest.storage.service.config.ApplicationDefaultConfig;
 import com.arextest.storage.service.config.ApplicationService;
 import com.arextest.storage.service.config.impl.ApplicationPropertiesConfigProvider;
 import com.arextest.storage.service.config.provider.ConfigProvider;
@@ -41,7 +42,6 @@ import com.arextest.storage.service.listener.AgentWorkingListener;
 import com.arextest.storage.service.listener.AutoDiscoveryEntryPointListener;
 import com.arextest.storage.web.controller.MockSourceEditionController;
 import com.arextest.storage.web.controller.ScheduleReplayQueryController;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
@@ -205,16 +205,23 @@ public class StorageAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean(AgentWorkingService.class)
-  public AgentWorkingService agentWorkingService(MockResultProvider mockResultProvider,
+  public AgentWorkingService agentWorkingService(
+      MockResultProvider mockResultProvider,
       RepositoryProviderFactory repositoryProviderFactory,
       ZstdJacksonSerializer zstdJacksonSerializer,
       PrepareMockResultService prepareMockResultService,
       List<AgentWorkingListener> agentWorkingListeners,
-      InvalidIncompleteRecordService invalidIncompleteRecordService,
-      ScheduleReplayingService scheduleReplayingService) {
-    AgentWorkingService workingService = new AgentWorkingService(mockResultProvider,
-        repositoryProviderFactory, agentWorkingListeners,
-        invalidIncompleteRecordService, scheduleReplayingService);
+      InvalidRecordService invalidRecordService,
+      ScheduleReplayingService scheduleReplayingService,
+      MockerResultConverter mockerResultConverter) {
+    AgentWorkingService workingService = new AgentWorkingService(
+        mockResultProvider,
+        repositoryProviderFactory,
+        agentWorkingListeners,
+        invalidRecordService,
+        scheduleReplayingService,
+        mockerResultConverter
+    );
     workingService.setPrepareMockResultService(prepareMockResultService);
     workingService.setZstdJacksonSerializer(zstdJacksonSerializer);
     workingService.setRecordEnvType(properties.getRecordEnv());
@@ -240,9 +247,9 @@ public class StorageAutoConfiguration {
   public ScheduleReplayQueryController scheduleReplayQueryController(
       ScheduleReplayingService scheduleReplayingService,
       PrepareMockResultService prepareMockResultService,
-      InvalidIncompleteRecordService invalidIncompleteRecordService) {
+      InvalidRecordService invalidRecordService) {
     return new ScheduleReplayQueryController(scheduleReplayingService, prepareMockResultService,
-        invalidIncompleteRecordService);
+        invalidRecordService);
   }
 
   @Bean
@@ -280,8 +287,8 @@ public class StorageAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean(MockerResultConverter.class)
   public MockerResultConverter mockerResultConverter(QueryConfigService queryConfigService,
-      ObjectMapper objectMapper) {
-    return new DefaultMockerResultConverterImpl(queryConfigService, objectMapper);
+      ApplicationDefaultConfig applicationDefaultConfig) {
+    return new DefaultMockerResultConverterImpl(queryConfigService, applicationDefaultConfig);
   }
 
   @Bean

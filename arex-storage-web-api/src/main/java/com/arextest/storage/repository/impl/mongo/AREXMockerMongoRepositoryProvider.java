@@ -115,7 +115,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
       query.fields().include(fieldNames);
     }
 
-    Iterable<AREXMocker> iterable = mongoTemplate.find(new Query(criteria),
+    Iterable<AREXMocker> iterable = mongoTemplate.find(query,
         AREXMocker.class, getCollectionName(category));
     iterable.forEach(this::addUseMocker);
     return new AttachmentCategoryIterable(category, iterable);

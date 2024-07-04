@@ -69,10 +69,10 @@ public class QueryConfigService {
     return null;
   }
 
-  public ScheduleReplayConfiguration queryScheduleReplayConfiguration(String appId) {
+  public ScheduleReplayConfigurationResponse queryScheduleReplayConfiguration(String appId) {
     String url = String.format(queryScheduleReplayConfigurationUrl, appId);
     return httpWebServiceApiClient.get(url, Collections.emptyMap(),
-        ScheduleReplayConfiguration.class);
+        ScheduleReplayConfigurationResponse.class);
   }
 
   private boolean putConfigCache(String appId, String categoryName, String operationName,
@@ -104,10 +104,16 @@ public class QueryConfigService {
   }
 
   @Data
+  public static class ScheduleReplayConfigurationResponse {
+    ScheduleReplayConfiguration body;
+  }
+
+  @Data
   public static class ScheduleReplayConfiguration {
 
     private String mockHandlerJarUrl;
 
   }
+
 
 }

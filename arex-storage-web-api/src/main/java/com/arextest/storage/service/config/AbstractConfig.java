@@ -9,22 +9,45 @@ import org.apache.commons.lang3.StringUtils;
  */
 public abstract class AbstractConfig {
 
-    protected abstract String getConfigAsString(String key);
+  protected abstract String getConfigAsString(String key);
 
-    public String getConfigAsString(String key, String defaultValue) {
-        return StringUtils.defaultString(getConfigAsString(key), defaultValue);
+  public String getConfigAsString(String key, String defaultValue) {
+    return StringUtils.defaultString(getConfigAsString(key), defaultValue);
+  }
+
+  public int getConfigAsInt(String key, int defaultValue) {
+    String value = getConfigAsString(key);
+    if (StringUtils.isBlank(value)) {
+      return defaultValue;
     }
 
-    public int getConfigAsInt(String key, int defaultValue) {
-        String value = getConfigAsString(key);
-        if (!StringUtils.isNumeric(value)) {
-            return defaultValue;
-        }
-
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            return defaultValue;
-        }
+    try {
+      return Integer.parseInt(value);
+    } catch (NumberFormatException e) {
+      return defaultValue;
     }
+  }
+
+  public long getConfigAsLong(String key, long defaultValue) {
+    String value = getConfigAsString(key);
+    if (StringUtils.isBlank(value)) {
+      return defaultValue;
+    }
+
+    try {
+      return Long.parseLong(value);
+    } catch (NumberFormatException e) {
+      return defaultValue;
+    }
+  }
+
+  public boolean getConfigAsBoolean(String key, boolean defaultValue) {
+    String value = getConfigAsString(key);
+    if (StringUtils.isBlank(value)) {
+      return defaultValue;
+    }
+
+    return Boolean.parseBoolean(value);
+  }
+
 }
