@@ -95,7 +95,7 @@ public class MockSourceEditionController {
   public Response remove(
       @RequestParam(required = false, defaultValue = ProviderNames.DEFAULT) String srcProviderName,
       String category,
-      String recordId) {
+      String recordId, String id) {
     if (StringUtils.isEmpty(recordId)) {
       return ResponseUtils.emptyRecordIdResponse();
     }
@@ -103,7 +103,7 @@ public class MockSourceEditionController {
       return ResponseUtils.parameterInvalidResponse("The category of requested is empty");
     }
     return ResponseUtils.successResponse(
-        editableService.remove(srcProviderName, category, recordId));
+        editableService.remove(srcProviderName, category, recordId, id));
   }
 
   @PostMapping("/pinned/add/")
