@@ -10,6 +10,7 @@ import com.arextest.storage.service.PrepareMockResultService;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,6 +35,7 @@ public class MockSourceEditionController {
   private final int REMOVE_BY_APPID = 1;
   private final int REMOVE_BY_APPID_AND_OPERATIONNAME = 2;
   private final int REMOVE_BY_RECORDID = 3;
+  private static final String[] DEFAULT_PROVIDER_NAMES = new String[]{ProviderNames.DEFAULT, ProviderNames.AUTO_PINNED};
 
   public MockSourceEditionController(MockSourceEditionService editableService,
       PrepareMockResultService storageCache) {
@@ -44,7 +46,7 @@ public class MockSourceEditionController {
   @GetMapping(value = "/pinned/{srcRecordId}/{targetRecordId}/")
   @ResponseBody
   public Response pinned(@PathVariable String srcRecordId, @PathVariable String targetRecordId) {
-    return copyTo(ProviderNames.DEFAULT, srcRecordId, ProviderNames.PINNED, targetRecordId);
+    return copyTo(DEFAULT_PROVIDER_NAMES, srcRecordId, ProviderNames.PINNED, targetRecordId);
   }
 
   @GetMapping(value = "/copy/")
@@ -53,23 +55,7 @@ public class MockSourceEditionController {
       String srcRecordId,
       String targetProviderName,
       String targetRecordId) {
-    if (StringUtils.isEmpty(srcProviderName)) {
-      return ResponseUtils.parameterInvalidResponse("The srcProviderName of requested is empty");
-    }
-    if (StringUtils.isEmpty(srcRecordId)) {
-      return ResponseUtils.parameterInvalidResponse("The srcRecordId of requested is empty");
-    }
-    if (StringUtils.isEmpty(targetProviderName)) {
-      return ResponseUtils.parameterInvalidResponse("The targetProviderName of requested is empty");
-    }
-    if (StringUtils.isEmpty(targetRecordId)) {
-      return ResponseUtils.parameterInvalidResponse("The targetRecordId of requested is empty");
-    }
-    CopyResponseType copyResponseType = new CopyResponseType();
-    int count = editableService.copyTo(srcProviderName, srcRecordId, targetProviderName,
-        targetRecordId);
-    copyResponseType.setCopied(count);
-    return ResponseUtils.successResponse(copyResponseType);
+    return copyTo(new String[]{srcProviderName}, srcRecordId, targetProviderName, targetRecordId);
   }
 
   @GetMapping(value = "/removeAll/")
@@ -223,6 +209,33 @@ public class MockSourceEditionController {
     return null;
   }
 
+  private Response copyTo(String[] srcProviderNames,
+                          String srcRecordId,
+                          String targetProviderName,
+                          String targetRecordId) {
+    if (ArrayUtils.isEmpty(srcProviderNames)) {
+      return ResponseUtils.parameterInvalidResponse("The srcProviderNames of requested is empty");
+    }
+    if (StringUtils.isEmpty(srcRecordId)) {
+      return ResponseUtils.parameterInvalidResponse("The srcRecordId of requested is empty");
+    }
+    if (StringUtils.isEmpty(targetProviderName)) {
+      return ResponseUtils.parameterInvalidResponse("The targetProviderName of requested is empty");
+    }
+    if (StringUtils.isEmpty(targetRecordId)) {
+      return ResponseUtils.parameterInvalidResponse("The targetRecordId of requested is empty");
+    }
+    CopyResponseType copyResponseType = new CopyResponseType();
+    for (String srcProviderName : srcProviderNames) {
+      int count = editableService.copyTo(srcProviderName, srcRecordId, targetProviderName,
+              targetRecordId);
+      copyResponseType.setCopied(count);
+      if (count > 0) {
+        break;
+      }
+    }
+    return ResponseUtils.successResponse(copyResponseType);
+  }
   @Getter
   @Setter
   protected static class CopyResponseType implements Response {
