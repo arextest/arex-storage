@@ -132,7 +132,7 @@ public class QueryConfigService {
     return Collections.emptyList();
   }
 
-  public Set<String> getIgnoreNodeSet() {
+  private Set<String> getIgnoreNodeSet() {
     SystemConfiguration systemConfiguration = systemConfigurationRepository.getSystemConfigByKey(
         KeySummary.IGNORE_NODE_SET);
     return systemConfiguration == null ? Collections.emptySet()
