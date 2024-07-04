@@ -326,6 +326,13 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
   }
 
   @Override
+  public long removeById(MockCategoryType categoryType, String id) {
+    String collectionName = getCollectionName(categoryType);
+    Query query = new Query(Criteria.where(PRIMARY_KEY_COLUMN_NAME).is(id));
+    return mongoTemplate.remove(query, AREXMocker.class, collectionName).getDeletedCount();
+  }
+
+  @Override
   public boolean update(AREXMocker value) {
     try {
       String collection = getCollectionName(value.getCategoryType());
