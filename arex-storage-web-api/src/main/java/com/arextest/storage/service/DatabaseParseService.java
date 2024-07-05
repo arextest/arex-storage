@@ -161,10 +161,10 @@ public class DatabaseParseService {
             Statement statement = CCJSqlParserUtil.parse(sql);
             tableSchema.setAction(getAction(statement));
 
-            Set<String> tableNameList = new TablesNamesFinder().getTables(statement);
-            // sort table nam, Sort in lexicographical order
+            List<String> tableNameList = new TablesNamesFinder().getTableList(statement);
+            // sort table name
             if (CollectionUtils.isNotEmpty(tableNameList)) {
-                tableNameList = new TreeSet<>(tableNameList);
+                Collections.sort(tableNameList);
             }
             tableSchema.setTableNames(tableNameList);
         } catch (Throwable e) {

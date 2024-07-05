@@ -15,7 +15,7 @@ public class TableSchema {
     /**
      * Joint query sql statement parses out multiple table names
      */
-    Set<String> tableNames;
+    List<String> tableNames;
     /**
      * eg: query/insert/update/delete
      */
