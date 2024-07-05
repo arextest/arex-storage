@@ -164,7 +164,6 @@ public class DatabaseParseService {
             }
             tableSchema.setTableNames(tableNameList);
         } catch (Throwable e) {
-            LOGGER.warn("parse sql error, sql: {}", sql);
             return tableSchema;
         } finally {
             long totalTime = System.currentTimeMillis() - startTime;
