@@ -1,6 +1,7 @@
 package com.arextest.config.model.vo;
 
 import java.util.List;
+import java.util.Set;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -10,10 +11,8 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @NoArgsConstructor
-public class ConfigComparisonExclusionsVO {
-  private String appId;
-  private String operationId;
-  private String dependencyId;
-  private String operationType;
-  private List<String> exclusions;
+public class ConfigComparisonExclusion {
+  private String operationName;
+  private String categoryType;
+  private Set<List<String>> exclusionList;
 }

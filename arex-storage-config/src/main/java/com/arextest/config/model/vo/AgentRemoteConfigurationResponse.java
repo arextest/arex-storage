@@ -34,5 +34,5 @@ public class AgentRemoteConfigurationResponse {
 
   private Map<String, String> extendField;
 
-  private List<ConfigComparisonExclusionsVO> comparisonExclusions;
+  private CompareConfiguration compareConfiguration;
 }
