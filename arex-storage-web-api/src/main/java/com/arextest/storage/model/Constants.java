@@ -8,7 +8,7 @@ public interface Constants{
 
   String CONFIG_COMPARISON_ENCRYPTION_COLLECTION_NAME = "ConfigComparisonEncryption";
 
-  String CONFIG_COMPARISON_EXCLUSIONS_COLLECTION_NAME = "ConfigComparisonExclusions";
+  String CONFIG_COMPARISON_EXCLUSIONS_COLLECTION_NAME = "ConfigComparisonExclusion";
 
   String CONFIG_COMPARISON_IGNORE_CATEGORY_COLLECTION_NAME = "ConfigComparisonIgnoreCategory";
 

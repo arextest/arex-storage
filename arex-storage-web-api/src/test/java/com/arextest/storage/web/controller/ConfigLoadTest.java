@@ -6,7 +6,8 @@ import com.arextest.config.model.dto.application.InstancesConfiguration;
 import com.arextest.config.model.dto.record.DynamicClassConfiguration;
 import com.arextest.config.model.dto.record.ServiceCollectConfiguration;
 import com.arextest.config.model.vo.AgentRemoteConfigurationRequest;
-import com.arextest.config.repository.impl.ComparisonExclusionsConfigurationRepositoryImpl;
+import com.arextest.config.model.vo.CompareConfiguration;
+import com.arextest.storage.service.QueryConfigService;
 import com.arextest.storage.service.config.ConfigurableHandler;
 import com.arextest.storage.service.config.impl.ApplicationConfigurableHandler;
 import com.arextest.storage.service.config.impl.ApplicationInstancesConfigurableHandler;
@@ -50,7 +51,7 @@ public class ConfigLoadTest {
   @Mock
   private ThreadPoolExecutor envUpdateHandlerExecutor;
   @Mock
-  private ComparisonExclusionsConfigurationRepositoryImpl comparisonExclusionsConfigurationRepository;
+  private QueryConfigService queryConfigService;
 
   @Test
   public void testInvalidReq() {
@@ -74,7 +75,7 @@ public class ConfigLoadTest {
     AgentRemoteConfigurationRequest req = baseReq();
     mockAppQuery();
     mockInstanceQuery();
-    mockExclusionConfig();
+    mockQueryConfig();
     ServiceCollectConfiguration collectConfig = new ServiceCollectConfiguration();
     collectConfig.setRecordMachineCountLimit(1);
 
@@ -105,11 +106,6 @@ public class ConfigLoadTest {
   private void mockInstanceQuery() {
     Mockito.when(instanceHandler.listByAppOrdered(Mockito.any()))
         .thenReturn(selfInstance());
-  }
-
-  private void mockExclusionConfig() {
-    Mockito.when(comparisonExclusionsConfigurationRepository.listBy(Mockito.anyString(), Mockito.anyInt()))
-        .thenReturn(Collections.emptyList());
   }
 
   private static List<InstancesConfiguration> selfInstance() {
@@ -150,5 +146,10 @@ public class ConfigLoadTest {
     req.setAppId("TEST");
     req.setHost("1.1.1.1");
     return req;
+  }
+
+  private void mockQueryConfig() {
+    Mockito.when(queryConfigService.queryCompareConfiguration(Mockito.any()))
+        .thenReturn(new CompareConfiguration());
   }
 }
