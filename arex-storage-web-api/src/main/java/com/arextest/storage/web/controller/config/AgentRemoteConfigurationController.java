@@ -149,7 +149,7 @@ public final class AgentRemoteConfigurationController {
         CompareConfiguration compareConfiguration = queryConfigService.queryCompareConfiguration(appId);
         body.setCompareConfiguration(compareConfiguration);
       } catch (Exception e) {
-        LOGGER.error("query compare configuration error", e);
+        LOGGER.error("query compare configuration error, appId:{}", e, appId);
       }
 
 
