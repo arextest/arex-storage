@@ -13,6 +13,7 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 import com.arextest.storage.service.config.ApplicationDefaultConfig;
+import com.arextest.storage.trace.MDCTracer;
 import com.google.common.annotations.VisibleForTesting;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
@@ -41,7 +42,6 @@ import static com.arextest.storage.model.Constants.SQL_PARSE_DURATION_THRESHOLD_
 public class DatabaseParseService {
 
     private static final String SQL_PARSE_TIME_METRIC_NAME = "sql.parse.time";
-    private static final String SQL_LENGTH = "sql.length";
     private static final Pattern PATTERN = Pattern.compile("(\\s+|\"\\?\"|\\[|\\])");
     private static final String CLIENT_APP_ID = "clientAppId";
 
@@ -68,6 +68,8 @@ public class DatabaseParseService {
             maxSqlLengthInt = MAX_SQL_LENGTH_DEFAULT;
         }
 
+        addLogTags(mocker.getAppId(), mocker.getRecordId(), mocker.getReplayId());
+
         String[] sqls = StringUtils.split(mocker.getTargetRequest().getBody(), ";");
         List<String> operationNames = new ArrayList<>(sqls.length);
         for (String sql : sqls) {
@@ -86,6 +88,8 @@ public class DatabaseParseService {
             return;
         }
         mocker.setOperationName(StringUtils.join(operationNames, ";"));
+
+        MDCTracer.clear();
     }
 
     /**
@@ -167,7 +171,7 @@ public class DatabaseParseService {
             return tableSchema;
         } finally {
             long totalTime = System.currentTimeMillis() - startTime;
-            recordParseTimeAndLength(totalTime, sql.length(), appId);
+            recordParseTime(totalTime, sql, appId);
         }
         return tableSchema;
     }
@@ -179,16 +183,27 @@ public class DatabaseParseService {
         return statement.getClass().getSimpleName();
     }
 
-    private void recordParseTimeAndLength(long duration, int sqlLength, String appId) {
+    private void recordParseTime(long duration, String sql, String appId) {
         if (CollectionUtils.isEmpty(metricListenerList)) {
             return;
         }
         Map<String, String> tags = Collections.singletonMap(CLIENT_APP_ID, appId);
         for (MetricListener metricListener : metricListenerList) {
             metricListener.recordTime(SQL_PARSE_TIME_METRIC_NAME, tags, duration);
-            if (duration > applicationDefaultConfig.getConfigAsInt(SQL_PARSE_DURATION_THRESHOLD, SQL_PARSE_DURATION_THRESHOLD_DEFAULT)) {
-                metricListener.recordSize(SQL_LENGTH, tags, sqlLength);
+            int parseTimeThreshold = applicationDefaultConfig.getConfigAsInt(SQL_PARSE_DURATION_THRESHOLD, SQL_PARSE_DURATION_THRESHOLD_DEFAULT);
+            if (duration > parseTimeThreshold) {
+                LOGGER.warn("[[title=sqlParse]]the actual parsing time:{} exceeds the set threshold:{}, sql: {}", duration, parseTimeThreshold, sql);
             }
+        }
+    }
+
+    private void addLogTags(String appId, String recordId, String replayId) {
+        MDCTracer.addAppId(appId);
+        if (StringUtils.isNotEmpty(recordId)) {
+            MDCTracer.addRecordId(recordId);
+        }
+        if (StringUtils.isNotEmpty(replayId)) {
+            MDCTracer.addReplayId(replayId);
         }
     }
 }
