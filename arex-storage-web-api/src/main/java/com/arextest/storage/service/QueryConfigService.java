@@ -45,6 +45,7 @@ public class QueryConfigService {
 
   private static final String CONFIG_PREFIX = "config_";
   private static final int COMPARE_CONFIG_TYPE = 0;
+  private static final int SOFT_TIME_EXPIRED = 1;
 
   @Value("${arex.query.config.url}")
   private String queryConfigOfCategoryUrl;
@@ -131,11 +132,17 @@ public class QueryConfigService {
   private List<ConfigComparisonExclusion> queryComparisonExclusions(String appId) {
     // ConfigComparisonExclusion, Source data
     List<ComparisonExclusionsConfiguration> configs = comparisonExclusionsConfigurationRepository.listBy(
-        appId, COMPARE_CONFIG_TYPE);
+        appId, COMPARE_CONFIG_TYPE).stream().filter(config -> !removeDetailsExpired(config))
+        .collect(Collectors.toList());
     if (CollectionUtils.isNotEmpty(configs)) {
       return getComparisonExclusions(configs, appId);
     }
     return Collections.emptyList();
+  }
+
+  private boolean removeDetailsExpired(ComparisonExclusionsConfiguration config) {
+    return config.getExpirationType() == 1
+        && config.getExpirationDate().getTime() < System.currentTimeMillis();
   }
 
   private Set<String> getIgnoreNodeSet() {
