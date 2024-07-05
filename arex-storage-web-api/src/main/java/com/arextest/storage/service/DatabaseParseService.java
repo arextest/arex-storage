@@ -8,8 +8,6 @@ import com.arextest.storage.model.TableSchema;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 import com.arextest.storage.service.config.ApplicationDefaultConfig;
@@ -68,7 +66,7 @@ public class DatabaseParseService {
             maxSqlLengthInt = MAX_SQL_LENGTH_DEFAULT;
         }
 
-        addLogTags(mocker.getAppId(), mocker.getRecordId(), mocker.getReplayId());
+        MDCTracer.addTrace(mocker);
 
         String[] sqls = StringUtils.split(mocker.getTargetRequest().getBody(), ";");
         List<String> operationNames = new ArrayList<>(sqls.length);
@@ -194,16 +192,6 @@ public class DatabaseParseService {
             if (duration > parseTimeThreshold) {
                 LOGGER.warn("[[title=sqlParse]]the actual parsing time:{} exceeds the set threshold:{}, sql: {}", duration, parseTimeThreshold, sql);
             }
-        }
-    }
-
-    private void addLogTags(String appId, String recordId, String replayId) {
-        MDCTracer.addAppId(appId);
-        if (StringUtils.isNotEmpty(recordId)) {
-            MDCTracer.addRecordId(recordId);
-        }
-        if (StringUtils.isNotEmpty(replayId)) {
-            MDCTracer.addReplayId(replayId);
         }
     }
 }
