@@ -75,7 +75,7 @@ public class DatabaseParseService {
                 continue;
             }
             if (sql.length() > maxSqlLengthInt) {
-                LOGGER.warn("skip sql parse cause sql length > config max length {}, sql: {}", maxSqlLengthInt, sql);
+                LOGGER.warn("[[title=sqlParse]]skip sql parse cause sql length > config max length {}, sql: {}", maxSqlLengthInt, sql);
                 continue;
             }
             TableSchema tableSchema = parse(sql, mocker.getAppId());
