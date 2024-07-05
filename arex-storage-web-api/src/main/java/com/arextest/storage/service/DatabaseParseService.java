@@ -7,7 +7,9 @@ import com.arextest.storage.metric.MetricListener;
 import com.arextest.storage.model.TableSchema;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 import com.arextest.storage.service.config.ApplicationDefaultConfig;
@@ -41,6 +43,7 @@ public class DatabaseParseService {
     private static final String SQL_PARSE_TIME_METRIC_NAME = "sql.parse.time";
     private static final String SQL_LENGTH = "sql.length";
     private static final Pattern PATTERN = Pattern.compile("(\\s+|\"\\?\"|\\[|\\])");
+    private static final String CLIENT_APP_ID = "clientAppId";
 
     @Resource
     private List<MetricListener> metricListenerList;
@@ -75,7 +78,7 @@ public class DatabaseParseService {
                 LOGGER.warn("skip sql parse cause sql length > config max length {}, sql: {}", maxSqlLengthInt, sql);
                 continue;
             }
-            TableSchema tableSchema = parse(sql);
+            TableSchema tableSchema = parse(sql, mocker.getAppId());
             tableSchema.setDbName(mocker.getTargetRequest().attributeAsString(MockAttributeNames.DB_NAME));
             operationNames.add(regenerateOperationName(tableSchema, mocker.getOperationName()));
         }
@@ -144,9 +147,8 @@ public class DatabaseParseService {
      * @param sql sql
      * @return table schema info
      */
-    @VisibleForTesting
-    public TableSchema parse(String sql) {
-        long startTimeNanos = System.nanoTime();
+    public TableSchema parse(String sql, String appId) {
+        long startTime = System.currentTimeMillis();
 
         TableSchema tableSchema = new TableSchema();
         try {
@@ -155,17 +157,18 @@ public class DatabaseParseService {
             Statement statement = CCJSqlParserUtil.parse(sql);
             tableSchema.setAction(getAction(statement));
 
-            List<String> tableNameList = new TablesNamesFinder().getTableList(statement);
-            // sort table name
+            Set<String> tableNameList = new TablesNamesFinder().getTables(statement);
+            // sort table nam, Sort in lexicographical order
             if (CollectionUtils.isNotEmpty(tableNameList)) {
-                Collections.sort(tableNameList);
+                tableNameList = new TreeSet<>(tableNameList);
             }
             tableSchema.setTableNames(tableNameList);
         } catch (Throwable e) {
-            LOGGER.warn("parse sql error, sql: {}", sql, e);
+            return tableSchema;
+        } finally {
+            long totalTime = System.currentTimeMillis() - startTime;
+            recordParseTimeAndLength(totalTime, sql.length(), appId);
         }
-        long totalTimeNanos = System.nanoTime() - startTimeNanos;
-        recordParseTimeAndLength(totalTimeNanos, sql.length());
         return tableSchema;
     }
 
@@ -176,20 +179,16 @@ public class DatabaseParseService {
         return statement.getClass().getSimpleName();
     }
 
-    private void recordParseTimeAndLength(long duration, int sqlLength) {
+    private void recordParseTimeAndLength(long duration, int sqlLength, String appId) {
         if (CollectionUtils.isEmpty(metricListenerList)) {
             return;
         }
-        long durationMillis = nanosToMillis(duration);
+        Map<String, String> tags = Collections.singletonMap(CLIENT_APP_ID, appId);
         for (MetricListener metricListener : metricListenerList) {
-            metricListener.recordTime(SQL_PARSE_TIME_METRIC_NAME, Collections.emptyMap(), durationMillis);
-            if (durationMillis > applicationDefaultConfig.getConfigAsInt(SQL_PARSE_DURATION_THRESHOLD, SQL_PARSE_DURATION_THRESHOLD_DEFAULT)) {
-                metricListener.recordSize(SQL_LENGTH, Collections.emptyMap(), sqlLength);
+            metricListener.recordTime(SQL_PARSE_TIME_METRIC_NAME, tags, duration);
+            if (duration > applicationDefaultConfig.getConfigAsInt(SQL_PARSE_DURATION_THRESHOLD, SQL_PARSE_DURATION_THRESHOLD_DEFAULT)) {
+                metricListener.recordSize(SQL_LENGTH, tags, sqlLength);
             }
         }
-    }
-
-    private long nanosToMillis(long duration) {
-        return TimeUnit.NANOSECONDS.toMillis(duration);
     }
 }

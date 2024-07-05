@@ -1,23 +1,16 @@
 package com.arextest.storage.utils;
 
 import com.arextest.diff.handler.parse.sqlparse.constants.DbParseConstants;
-import com.arextest.storage.metric.MetricListener;
 import com.arextest.storage.model.TableSchema;
 import com.arextest.storage.service.DatabaseParseService;
-import com.arextest.storage.service.config.ApplicationDefaultConfig;
 import net.sf.jsqlparser.statement.upsert.Upsert;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +37,7 @@ public class DatabaseParseServiceTest {
     @Test
     public void testSimpleSelect() {
         String sql = "SELECT * FROM mytable";
-        TableSchema tableSchema = databaseParseService.parse(sql);
+        TableSchema tableSchema = databaseParseService.parse(sql, "test");
         assertNotNull(tableSchema);
         assertEquals(DbParseConstants.SELECT.toLowerCase(), tableSchema.getAction().toLowerCase());
         assertEquals("mytable", StringUtils.join(tableSchema.getTableNames(), ","));
@@ -59,7 +52,7 @@ public class DatabaseParseServiceTest {
                 "on a.departmentid = b.Id and a.aa = b.aa and a.cc = b.cc\n" +
                 "where a.rnk <= 3 and a.per_id in (select per_id from colle_subject);\n" +
                 "\n";
-        TableSchema tableSchema = databaseParseService.parse(sql);
+        TableSchema tableSchema = databaseParseService.parse(sql, "test");
         assertNotNull(tableSchema);
         assertEquals(DbParseConstants.SELECT.toLowerCase(), tableSchema.getAction().toLowerCase());
         assertEquals("Employee,colle_subject,department", StringUtils.join(tableSchema.getTableNames(), ","));
@@ -71,7 +64,7 @@ public class DatabaseParseServiceTest {
         String[] sqls = StringUtils.split(sql, ";");
         List<String> operationNames = new ArrayList<>(sqls.length);
         for (String s : sqls) {
-            TableSchema tableSchema = databaseParseService.parse(s);
+            TableSchema tableSchema = databaseParseService.parse(s, "test");
             if (tableSchema == null) {
                 continue;
             }
@@ -102,7 +95,7 @@ public class DatabaseParseServiceTest {
                 "         )  AS e2\n" +
                 "   );";
 
-        TableSchema tableSchema = databaseParseService.parse(sql);
+        TableSchema tableSchema = databaseParseService.parse(sql, "test");
         assertNotNull(tableSchema);
         assertEquals("Exam,TEST", StringUtils.join(tableSchema.getTableNames(), ","));
         assertEquals(DbParseConstants.DELETE.toLowerCase(), tableSchema.getAction().toLowerCase());
@@ -115,7 +108,7 @@ public class DatabaseParseServiceTest {
                 "SET alexa='5000', country='USA' \n" +
                 "WHERE name='Tutorial';";
 
-        TableSchema tableSchema = databaseParseService.parse(sql);
+        TableSchema tableSchema = databaseParseService.parse(sql, "test");
         assertNotNull(tableSchema);
         assertEquals("Websites", StringUtils.join(tableSchema.getTableNames(), ","));
         assertEquals(DbParseConstants.UPDATE.toLowerCase(), tableSchema.getAction().toLowerCase());
@@ -127,7 +120,7 @@ public class DatabaseParseServiceTest {
                 "   SELECT \n" +
                 "      *\n" +
                 "   FROM category );";
-        TableSchema tableSchema = databaseParseService.parse(sql);
+        TableSchema tableSchema = databaseParseService.parse(sql, "test");
         assertNotNull(tableSchema);
         assertEquals("category,category_stage", StringUtils.join(tableSchema.getTableNames(), ","));
         assertEquals(DbParseConstants.INSERT.toLowerCase(), tableSchema.getAction().toLowerCase());
@@ -136,7 +129,7 @@ public class DatabaseParseServiceTest {
     @Test
     public void testReplaceWithSelect() {
         String sql = "replace into tb1(name, title, mood) select  rname, rtitle, rmood from tb2";
-        TableSchema tableSchema = databaseParseService.parse(sql);
+        TableSchema tableSchema = databaseParseService.parse(sql, "test");
         assertNotNull(tableSchema);
         assertEquals("tb1,tb2", StringUtils.join(tableSchema.getTableNames(), ","));
         assertEquals(Upsert.class.getSimpleName().toLowerCase(), tableSchema.getAction().toLowerCase());
@@ -150,7 +143,7 @@ public class DatabaseParseServiceTest {
                 "t.serial_number,\n         t.second_id,\n         t.second_type\n   FROM tk_user_received_task_21 t \n      " +
                 "INNER JOIN tk_project  p ON t.project_id = p.id\n   WHERE t.uid = ? AND t.id In (?) ";
         // 去除所有空白字符
-        TableSchema tableSchema = databaseParseService.parse(sql);
+        TableSchema tableSchema = databaseParseService.parse(sql, "test");
         assertNotNull(tableSchema);
         assertEquals("tk_project,tk_user_received_task_21", StringUtils.join(tableSchema.getTableNames(), ","));
         assertEquals(DbParseConstants.SELECT.toLowerCase(), tableSchema.getAction().toLowerCase());
@@ -182,14 +175,14 @@ public class DatabaseParseServiceTest {
             + "and (qi.title like \"%'?'%\" or qi.code like \"%\"?\"%\") "
             + "and qi.product_code in             (                  ?             )      "
             + "order by qi.id desc ) tmp_count";
-        TableSchema tableSchema = databaseParseService.parse(sql);
+        TableSchema tableSchema = databaseParseService.parse(sql, "test");
         assertEquals("qc_issue", StringUtils.join(tableSchema.getTableNames(), ","));
     }
 
     @Test
     public void parseSQLWithKeyWord() {
         String sql = "SELECT address,extended,union_user_id FROM access_token WHERE ( user_id = ? ) LIMIT ?";
-        TableSchema tableSchema = databaseParseService.parse(sql);
+        TableSchema tableSchema = databaseParseService.parse(sql, "test");
         assertEquals("access_token", StringUtils.join(tableSchema.getTableNames(), ","));
     }
 }

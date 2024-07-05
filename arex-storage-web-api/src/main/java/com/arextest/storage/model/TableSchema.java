@@ -2,6 +2,8 @@ package com.arextest.storage.model;
 
 
 import java.util.List;
+import java.util.Set;
+
 import lombok.Data;
 
 /**
@@ -13,7 +15,7 @@ public class TableSchema {
     /**
      * Joint query sql statement parses out multiple table names
      */
-    List<String> tableNames;
+    Set<String> tableNames;
     /**
      * eg: query/insert/update/delete
      */
