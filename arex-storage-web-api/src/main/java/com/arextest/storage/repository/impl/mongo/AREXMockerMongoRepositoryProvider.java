@@ -10,6 +10,7 @@ import com.arextest.model.util.MongoCounter;
 import com.arextest.storage.beans.StorageConfigurationProperties;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
+import com.arextest.storage.service.config.ApplicationDefaultConfig;
 import com.arextest.storage.utils.TimeUtils;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -68,10 +70,14 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
   private final static Sort CREATE_TIME_DESCENDING_SORT = Sort.by(Direction.DESC, CREATE_TIME_COLUMN_NAME);
   private static final int DEFAULT_MIN_LIMIT_SIZE = 1;
   private static final int DEFAULT_MAX_LIMIT_SIZE = 1000;
+  private static final String AUTO_PINNED_MOCKER_EXPIRATION_MILLIS = "AutoPinned.mocker.expiration.millis";
+  private static final long FOURTEEN_DAYS_MILLIS = TimeUnit.DAYS.toMillis(14L);
   protected final MongoTemplate mongoTemplate;
   private final String providerName;
   private final StorageConfigurationProperties properties;
   private final Set<MockCategoryType> entryPointTypes;
+  private final ApplicationDefaultConfig applicationDefaultConfig;
+
   private static final String[] DEFAULT_INCLUDE_FIELDS =
       new String[]{AREXMocker.Fields.id, AREXMocker.Fields.categoryType, AREXMocker.Fields.recordId,
           AREXMocker.Fields.appId, AREXMocker.Fields.recordEnvironment, AREXMocker.Fields.creationTime,
@@ -80,18 +86,21 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
 
   public AREXMockerMongoRepositoryProvider(MongoTemplate mongoTemplate,
       StorageConfigurationProperties properties,
-      Set<MockCategoryType> entryPointTypes) {
-    this(ProviderNames.DEFAULT, mongoTemplate, properties, entryPointTypes);
+      Set<MockCategoryType> entryPointTypes,
+      ApplicationDefaultConfig applicationDefaultConfig) {
+    this(ProviderNames.DEFAULT, mongoTemplate, properties, entryPointTypes, applicationDefaultConfig);
   }
 
   public AREXMockerMongoRepositoryProvider(String providerName,
       MongoTemplate mongoTemplate,
       StorageConfigurationProperties properties,
-      Set<MockCategoryType> entryPointTypes) {
+      Set<MockCategoryType> entryPointTypes,
+      ApplicationDefaultConfig applicationDefaultConfig) {
     this.properties = properties;
     this.mongoTemplate = mongoTemplate;
     this.providerName = providerName;
     this.entryPointTypes = entryPointTypes;
+    this.applicationDefaultConfig = applicationDefaultConfig;
   }
 
   private String getCollectionName(MockCategoryType category) {
@@ -262,13 +271,19 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     }
     try {
       MockCategoryType category = valueList.get(0).getCategoryType();
-      Long expiration = properties.getExpirationDurationMap()
-          .getOrDefault(category.getName(), properties.getDefaultExpirationDuration());
+      Long expiration;
+      if (StringUtils.equalsIgnoreCase(ProviderNames.AUTO_PINNED, this.providerName)) {
+        expiration = applicationDefaultConfig.getConfigAsLong(AUTO_PINNED_MOCKER_EXPIRATION_MILLIS,
+            FOURTEEN_DAYS_MILLIS);
+      } else {
+        expiration = properties.getExpirationDurationMap()
+            .getOrDefault(category.getName(), properties.getDefaultExpirationDuration());
+      }
       String collection = getCollectionName(category);
 
-      long currentTimeMillis = System.currentTimeMillis();
+      long expirationTime = System.currentTimeMillis() + expiration;
       valueList.forEach(item -> {
-        item.setExpirationTime(currentTimeMillis + expiration);
+        item.setExpirationTime(expirationTime);
 
         if (category.isEntryPoint()) {
           item.setId(item.getRecordId());
