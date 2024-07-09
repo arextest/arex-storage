@@ -1,5 +1,6 @@
 package com.arextest.storage.service;
 
+import com.arextest.common.config.DefaultApplicationConfig;
 import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
@@ -10,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import com.arextest.storage.service.config.ApplicationDefaultConfig;
 import com.arextest.storage.trace.MDCTracer;
 import com.google.common.annotations.VisibleForTesting;
 import lombok.extern.slf4j.Slf4j;
@@ -46,7 +46,7 @@ public class DatabaseParseService {
     @Resource
     private List<MetricListener> metricListenerList;
     @Resource
-    private ApplicationDefaultConfig applicationDefaultConfig;
+    private DefaultApplicationConfig defaultApplicationConfig;
 
 
     public void regenerateOperationName(Mocker mocker) {
@@ -60,7 +60,7 @@ public class DatabaseParseService {
         if (StringUtils.contains(mocker.getOperationName(), '@')) {
             return;
         }
-        int maxSqlLengthInt = applicationDefaultConfig.getConfigAsInt(MAX_SQL_LENGTH, MAX_SQL_LENGTH_DEFAULT);
+        int maxSqlLengthInt = defaultApplicationConfig.getConfigAsInt(MAX_SQL_LENGTH, MAX_SQL_LENGTH_DEFAULT);
 
         if (maxSqlLengthInt <= 0) {
             maxSqlLengthInt = MAX_SQL_LENGTH_DEFAULT;
@@ -185,7 +185,7 @@ public class DatabaseParseService {
         if (CollectionUtils.isEmpty(metricListenerList)) {
             return;
         }
-        int parseTimeThreshold = applicationDefaultConfig.getConfigAsInt(SQL_PARSE_DURATION_THRESHOLD, SQL_PARSE_DURATION_THRESHOLD_DEFAULT);
+        int parseTimeThreshold = defaultApplicationConfig.getConfigAsInt(SQL_PARSE_DURATION_THRESHOLD, SQL_PARSE_DURATION_THRESHOLD_DEFAULT);
         if (duration > parseTimeThreshold) {
             LOGGER.warn("[[title=sqlParse]]the actual parsing time:{} exceeds the set threshold:{}, sql: {}", duration, parseTimeThreshold, sql);
         }
