@@ -185,10 +185,10 @@ public class DatabaseParseService {
         if (CollectionUtils.isEmpty(metricListenerList)) {
             return;
         }
+        int parseTimeThreshold = applicationDefaultConfig.getConfigAsInt(SQL_PARSE_DURATION_THRESHOLD, SQL_PARSE_DURATION_THRESHOLD_DEFAULT);
         Map<String, String> tags = Collections.singletonMap(CLIENT_APP_ID, appId);
         for (MetricListener metricListener : metricListenerList) {
             metricListener.recordTime(SQL_PARSE_TIME_METRIC_NAME, tags, duration);
-            int parseTimeThreshold = applicationDefaultConfig.getConfigAsInt(SQL_PARSE_DURATION_THRESHOLD, SQL_PARSE_DURATION_THRESHOLD_DEFAULT);
             if (duration > parseTimeThreshold) {
                 LOGGER.warn("[[title=sqlParse]]the actual parsing time:{} exceeds the set threshold:{}, sql: {}", duration, parseTimeThreshold, sql);
             }
