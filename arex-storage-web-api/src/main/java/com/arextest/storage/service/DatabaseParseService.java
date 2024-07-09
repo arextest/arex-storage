@@ -189,6 +189,7 @@ public class DatabaseParseService {
         if (duration > parseTimeThreshold) {
             LOGGER.warn("[[title=sqlParse]]the actual parsing time:{} exceeds the set threshold:{}, sql: {}", duration, parseTimeThreshold, sql);
         }
+
         Map<String, String> tags = Collections.singletonMap(CLIENT_APP_ID, appId);
         for (MetricListener metricListener : metricListenerList) {
             metricListener.recordTime(SQL_PARSE_TIME_METRIC_NAME, tags, duration);
