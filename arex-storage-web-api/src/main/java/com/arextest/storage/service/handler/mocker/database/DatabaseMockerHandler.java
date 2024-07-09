@@ -2,15 +2,12 @@ package com.arextest.storage.service.handler.mocker.database;
 
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
-import com.arextest.storage.service.config.ApplicationDefaultConfig;
 import com.arextest.storage.service.handler.mocker.MockerHandler;
-import com.arextest.storage.utils.DatabaseUtils;
+import com.arextest.storage.service.DatabaseParseService;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 
-import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH;
-import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH_DEFAULT;
 
 /**
  * @author niyan
@@ -21,8 +18,7 @@ import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH_DEFAULT;
 public class DatabaseMockerHandler implements MockerHandler {
 
     @Resource
-    private ApplicationDefaultConfig applicationDefaultConfig;
-
+    private DatabaseParseService databaseParseService;
 
     @Override
     public MockCategoryType getMockCategoryType() {
@@ -31,11 +27,11 @@ public class DatabaseMockerHandler implements MockerHandler {
 
     @Override
     public void handleOnRecordSaving(Mocker mocker) {
-        DatabaseUtils.regenerateOperationName(mocker, applicationDefaultConfig.getConfigAsInt(MAX_SQL_LENGTH, MAX_SQL_LENGTH_DEFAULT));
+        databaseParseService.regenerateOperationName(mocker);
     }
 
     @Override
     public void handleOnRecordMocking(Mocker mocker) {
-        DatabaseUtils.regenerateOperationName(mocker, applicationDefaultConfig.getConfigAsInt(MAX_SQL_LENGTH, MAX_SQL_LENGTH_DEFAULT));
+        databaseParseService.regenerateOperationName(mocker);
     }
 }

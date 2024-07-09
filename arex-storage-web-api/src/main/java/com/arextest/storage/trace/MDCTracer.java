@@ -22,13 +22,14 @@ public final class MDCTracer {
 
   }
 
-  public static void addTrace(MockCategoryType category, Mocker requestType) {
-    addCategory(category);
+  public static void addTrace(Mocker requestType) {
     if (requestType == null) {
       return;
     }
+    addCategory(requestType.getCategoryType());
     addRecordId(requestType.getRecordId());
     addReplayId(requestType.getReplayId());
+    addAppId(requestType.getAppId());
   }
 
   private static void put(String name, String value) {
