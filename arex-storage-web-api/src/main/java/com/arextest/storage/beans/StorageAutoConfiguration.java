@@ -294,25 +294,26 @@ public class StorageAutoConfiguration {
   @Bean
   @Order(3)
   public RepositoryProvider<AREXMocker> autoPinnedMockerProvider(MongoTemplate mongoTemplate,
-      Set<MockCategoryType> entryPointTypes) {
+      Set<MockCategoryType> entryPointTypes, ApplicationDefaultConfig applicationDefaultConfig) {
     return new AREXMockerMongoRepositoryProvider(ProviderNames.AUTO_PINNED, mongoTemplate,
         properties,
-        entryPointTypes);
+        entryPointTypes, applicationDefaultConfig);
   }
 
   @Bean
   @Order(2)
   public RepositoryProvider<AREXMocker> pinnedMockerProvider(MongoTemplate mongoTemplate,
-      Set<MockCategoryType> entryPointTypes) {
+      Set<MockCategoryType> entryPointTypes, ApplicationDefaultConfig applicationDefaultConfig) {
     return new AREXMockerMongoRepositoryProvider(ProviderNames.PINNED, mongoTemplate, properties,
-        entryPointTypes);
+        entryPointTypes, applicationDefaultConfig);
   }
 
   @Bean
   @Order(1)
   public RepositoryProvider<AREXMocker> defaultMockerProvider(MongoTemplate mongoTemplate,
-      Set<MockCategoryType> entryPointTypes) {
-    return new AREXMockerMongoRepositoryProvider(mongoTemplate, properties, entryPointTypes);
+      Set<MockCategoryType> entryPointTypes, ApplicationDefaultConfig applicationDefaultConfig) {
+    return new AREXMockerMongoRepositoryProvider(mongoTemplate, properties, entryPointTypes,
+        applicationDefaultConfig);
   }
 
 
