@@ -392,7 +392,13 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     if (rangeRequestType.getEnv() != null) {
       criteria.and(ENV_COLUMN_NAME).is(rangeRequestType.getEnv());
     }
-    criteria.andOperator(buildTimeRangeFilter(rangeRequestType.getBeginTime(), rangeRequestType.getEndTime()));
+    if (rangeRequestType.getBeginTime() != null && rangeRequestType.getEndTime() != null) {
+      criteria.andOperator(buildTimeRangeFilter(rangeRequestType.getBeginTime(), rangeRequestType.getEndTime()));
+    } else if (rangeRequestType.getBeginTime() != null) {
+      criteria.and(CREATE_TIME_COLUMN_NAME).gte(new Date(rangeRequestType.getBeginTime()));
+    } else if (rangeRequestType.getEndTime() != null) {
+      criteria.and(CREATE_TIME_COLUMN_NAME).lt(new Date(rangeRequestType.getEndTime()));
+    }
 
     if (MapUtils.isNotEmpty(rangeRequestType.getTags())) {
       for (Map.Entry<String, String> entry : rangeRequestType.getTags().entrySet()) {
