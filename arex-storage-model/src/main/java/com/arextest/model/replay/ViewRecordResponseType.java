@@ -16,4 +16,6 @@ public class ViewRecordResponseType extends DesensitizationResponseType implemen
 
   private ResponseStatusType responseStatusType;
   private List<AREXMocker> recordResult;
+  private List<AREXMocker> replayResult;
+  private String sourceProvider;
 }

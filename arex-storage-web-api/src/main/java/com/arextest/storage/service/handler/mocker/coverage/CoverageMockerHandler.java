@@ -144,8 +144,8 @@ public class CoverageMockerHandler implements MockerHandler {
           if (recordId.equals(oldScene.getRecordId())) {
             return;
           }
-          LOGGER.info(REPLAY_TASK_TITLE + "removed by case: {}, old RecordId: {}, sceneKey: {}",
-              recordId, oldScene.getRecordId(), newScene.getSceneKey());
+          LOGGER.info("{} removed by case: {}, old RecordId: {}, sceneKey: {}",
+              REPLAY_TASK_TITLE, recordId, oldScene.getRecordId(), newScene.getSceneKey());
           boolean removeResult =
               mockSourceEditionService.removeByRecordId(ProviderNames.AUTO_PINNED, oldScene.getRecordId());
           if (removeResult) {
@@ -160,10 +160,10 @@ public class CoverageMockerHandler implements MockerHandler {
 
         // todo should not happen, will handle case by case
         if (movedCount == 0) {
-          LOGGER.warn(REPLAY_TASK_TITLE + "Case {}, failed to transfer case to AUTO-PINNED", recordId);
+          LOGGER.warn("{} Case {}, failed to transfer case to AUTO-PINNED", REPLAY_TASK_TITLE, recordId);
         }
       } catch (Exception e) {
-        LOGGER.error(REPLAY_TASK_TITLE + "Error handling replay task for record: {}", coverageMocker.getRecordId(), e);
+        LOGGER.error("{} Error handling replay task for record: {}", REPLAY_TASK_TITLE, coverageMocker.getRecordId(), e);
       } finally {
         MDCTracer.clear();
       }
@@ -199,8 +199,8 @@ public class CoverageMockerHandler implements MockerHandler {
         if (scenePoolProvider.checkSceneExist(appId, sceneKey)) {
           invalidRecordService.putInvalidCaseInRedis(recordId);
           mockSourceEditionService.removeByRecordId(ProviderNames.DEFAULT, coverageMocker.getRecordId());
-          LOGGER.info(RECORD_TASK_TITLE + "CoverageMockerHandler received existing case, recordId: {}, pathKey: {}",
-              coverageMocker.getRecordId(), coverageMocker.getOperationName());
+          LOGGER.info("{} CoverageMockerHandler received existing case, recordId: {}, pathKey: {}",
+              RECORD_TASK_TITLE, coverageMocker.getRecordId(), coverageMocker.getOperationName());
         } else {
           op = NEW_SCENE_OP;
           // new scene: extend mocker expiration and insert scene
@@ -210,13 +210,13 @@ public class CoverageMockerHandler implements MockerHandler {
           mockSourceEditionService.extendMockerExpirationByRecordId(ProviderNames.DEFAULT,
               coverageMocker.getRecordId(),
               defaultApplicationConfig.getConfigAsLong(COVERAGE_EXPIRATION_DAYS_KEY, COVERAGE_EXPIRATION_DAYS));
-          LOGGER.info(RECORD_TASK_TITLE + "CoverageMockerHandler received new case, recordId: {}, pathKey: {}",
-              coverageMocker.getRecordId(), coverageMocker.getOperationName());
+          LOGGER.info("{} CoverageMockerHandler received new case, recordId: {}, pathKey: {}",
+              RECORD_TASK_TITLE, coverageMocker.getRecordId(), coverageMocker.getOperationName());
         }
 
         recordCoverageHandle(appId, op);
       } catch (Exception e) {
-        LOGGER.error(RECORD_TASK_TITLE + "CoverageMockerHandler handle error", e);
+        LOGGER.error("{} CoverageMockerHandler handle error", RECORD_TASK_TITLE, e);
       } finally {
         MDCTracer.clear();
       }
