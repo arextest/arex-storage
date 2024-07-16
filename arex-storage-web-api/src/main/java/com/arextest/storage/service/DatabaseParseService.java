@@ -20,6 +20,7 @@ import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.util.TablesNamesFinder;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -43,7 +44,7 @@ public class DatabaseParseService {
     private static final Pattern PATTERN = Pattern.compile("(\\s+|\"\\?\"|\\[|\\])");
     private static final String CLIENT_APP_ID = "clientAppId";
 
-    @Resource
+    @Autowired(required = false)
     private List<MetricListener> metricListenerList;
     @Resource
     private DefaultApplicationConfig defaultApplicationConfig;
