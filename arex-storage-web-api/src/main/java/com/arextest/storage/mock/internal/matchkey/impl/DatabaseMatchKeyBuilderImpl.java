@@ -5,7 +5,7 @@ import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.cache.CacheKeyUtils;
 import com.arextest.storage.mock.MatchKeyBuilder;
-import com.arextest.storage.utils.DatabaseUtils;
+import com.arextest.storage.service.DatabaseParseService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,6 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,6 +39,9 @@ import java.util.Objects;
 @Component
 @Order(30)
 public class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
+
+  @Resource
+  private DatabaseParseService databaseParseService;
 
   private static final char SQL_BATCH_TERMINAL_CHAR = ';';
   private static final String COMMA_STRING = ",";
@@ -162,7 +166,7 @@ public class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
     Mocker.Target targetRequest = databaseMocker.getTargetRequest();
     String sqlParameter = targetRequest.attributeAsString(MockAttributeNames.DB_PARAMETERS);
     String sqlText = targetRequest.getBody();
-    String dbName = DatabaseUtils.parseDbName(databaseMocker.getOperationName(), targetRequest);
+    String dbName = databaseParseService.parseDbName(databaseMocker.getOperationName(), targetRequest);
     byte[] dbNameBytes = CacheKeyUtils.toUtf8Bytes(dbName);
     byte[] sqlTextBytes = CacheKeyUtils.toUtf8Bytes(sqlText);
     byte[] sqlParameterBytes = CacheKeyUtils.toUtf8Bytes(sqlParameter);
@@ -233,7 +237,7 @@ public class DatabaseMatchKeyBuilderImpl implements MatchKeyBuilder {
   }
 
   private void findTableNameToMd5WithParser(String sqlText, MessageDigest md5Digest, String operationName) {
-    List<String> tableNames = DatabaseUtils.parseTableNames(operationName);
+    List<String> tableNames = databaseParseService.parseTableNames(operationName);
     if (CollectionUtils.isEmpty(tableNames)) {
       findTableNameToMd5(sqlText, md5Digest);
     } else {

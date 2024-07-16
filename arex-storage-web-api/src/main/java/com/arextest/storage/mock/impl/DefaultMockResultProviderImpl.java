@@ -22,8 +22,7 @@ import com.arextest.storage.model.ByteHashKey;
 import com.arextest.storage.model.MockResultType;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.QueryConfigService;
-import com.arextest.storage.service.config.ApplicationDefaultConfig;
-import com.arextest.storage.utils.DatabaseUtils;
+import com.arextest.storage.service.DatabaseParseService;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import java.util.ArrayList;
@@ -81,7 +80,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   @Resource
   private MockerResultConverter mockerResultConverter;
   @Resource
-  private ApplicationDefaultConfig applicationDefaultConfig;
+  private DatabaseParseService databaseParseService;
 
   /**
    * <p>1. Store recorded data and matching keys in redis<></p>
@@ -102,8 +101,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     // Obtain the number of the same interfaces in recorded data
     while (valueIterator.hasNext()) {
       T value = valueIterator.next();
-      DatabaseUtils.regenerateOperationName(value,
-          applicationDefaultConfig.getConfigAsInt(MAX_SQL_LENGTH, MAX_SQL_LENGTH_DEFAULT));
+      databaseParseService.regenerateOperationName(value);
       T convertedMocker = mockerResultConverter.convert(category, value);
       calcCallReplayMax(shouldRecordCallReplayMax, category, recordId, convertedMocker,
           mockSequenceKeyMaps);

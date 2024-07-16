@@ -92,7 +92,7 @@ public class AgentRecordingController {
             requestType.getRecordId());
         return ZstdJacksonSerializer.EMPTY_INSTANCE;
       }
-      MDCTracer.addTrace(category, requestType);
+      MDCTracer.addTrace(requestType);
       MockResultContext context = new MockResultContext(MockResultMatchStrategy.of(strategyCode));
       return agentWorkingMetricService.queryMockResult(requestType, context);
     } catch (Throwable throwable) {
@@ -140,7 +140,7 @@ public class AgentRecordingController {
       return ResponseUtils.parameterInvalidResponse("empty category");
     }
     try {
-      MDCTracer.addTrace(category, requestType);
+      MDCTracer.addTrace(requestType);
       if (invalidRecordService.isInvalidCase(requestType.getRecordId())) {
         LOGGER.warn("recordId: {} is invalid", requestType.getRecordId());
         return ResponseUtils.parameterInvalidResponse("invalid mocker");

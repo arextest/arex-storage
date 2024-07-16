@@ -3,6 +3,7 @@ package com.arextest.storage.mock.impl;
 import static com.arextest.storage.model.Constants.AREX_CONFIG_MOCKERCONVERT_ENABLED;
 import static com.arextest.storage.model.Constants.AREX_CONFIG_MOCKERCONVERT_ENABLED_DEFAULT;
 
+import com.arextest.common.config.DefaultApplicationConfig;
 import com.arextest.diff.model.classloader.RemoteJarClassLoader;
 import com.arextest.diff.utils.RemoteJarLoaderUtils;
 import com.arextest.extension.mockconvert.MockerConverter;
@@ -13,7 +14,6 @@ import com.arextest.storage.mapper.AREXMockerMapper;
 import com.arextest.storage.mock.MockerResultConverter;
 import com.arextest.storage.service.QueryConfigService;
 import com.arextest.storage.service.QueryConfigService.ScheduleReplayConfigurationResponse;
-import com.arextest.storage.service.config.ApplicationDefaultConfig;
 import com.arextest.storage.trace.MDCTracer;
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -35,7 +35,7 @@ public class DefaultMockerResultConverterImpl implements MockerResultConverter {
 
   final QueryConfigService queryConfigService;
 
-  final ApplicationDefaultConfig applicationDefaultConfig;
+  final DefaultApplicationConfig defaultApplicationConfig;
 
   private LoadingCache<String, MockerConvertSummary> mockerConvertSummaryCache =
       Caffeine.newBuilder().maximumSize(500).removalListener(((key, value, cause) -> {
@@ -58,7 +58,7 @@ public class DefaultMockerResultConverterImpl implements MockerResultConverter {
 
   @Override
   public <T extends Mocker> T convert(MockCategoryType category, T mocker) {
-    return applicationDefaultConfig.getConfigAsBoolean(AREX_CONFIG_MOCKERCONVERT_ENABLED,
+    return defaultApplicationConfig.getConfigAsBoolean(AREX_CONFIG_MOCKERCONVERT_ENABLED,
         AREX_CONFIG_MOCKERCONVERT_ENABLED_DEFAULT)
         ? convertFromJar(category, mocker) : mocker;
   }
