@@ -165,7 +165,7 @@ public class MockSourceEditionService {
   public int copyTo(String srcProviderName, String srcRecordId, String targetProviderName,
       String targetRecordId) {
     int count = 0;
-    if (StringUtils.equals(srcProviderName, targetProviderName)) {
+    if (StringUtils.equals(srcProviderName, targetProviderName) && StringUtils.equals(srcRecordId, targetRecordId)) {
       return count;
     }
     RepositoryProvider<Mocker> srcProvider = providerFactory.findProvider(srcProviderName);
