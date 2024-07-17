@@ -6,6 +6,7 @@ import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.model.mock.Mocker.Target;
+import com.arextest.model.replay.CaseStatusEnum;
 import com.arextest.model.scenepool.Scene;
 import com.arextest.storage.metric.MetricListener;
 import com.arextest.storage.repository.ProviderNames;
@@ -13,6 +14,7 @@ import com.arextest.storage.repository.scenepool.ScenePoolFactory;
 import com.arextest.storage.repository.scenepool.ScenePoolProvider;
 import com.arextest.storage.service.InvalidRecordService;
 import com.arextest.storage.service.MockSourceEditionService;
+import com.arextest.storage.service.UpdateCaseStatusService;
 import com.arextest.storage.service.handler.mocker.MockerHandler;
 import com.arextest.storage.trace.MDCTracer;
 import java.util.HashMap;
@@ -34,6 +36,7 @@ public class CoverageMockerHandler implements MockerHandler {
   private MockSourceEditionService mockSourceEditionService;
   private ScheduledExecutorService coverageHandleDelayedPool;
   private ScenePoolFactory scenePoolFactory;
+  private UpdateCaseStatusService updateCaseStatusService;
   private CoverageHandlerSwitch handlerSwitch;
   private InvalidRecordService invalidRecordService;
   private DefaultApplicationConfig defaultApplicationConfig;
@@ -43,6 +46,8 @@ public class CoverageMockerHandler implements MockerHandler {
   private static final String COVERAGE_OP_TAG_KEY = "operation";
   private static final String COVERAGE_APP_TAG_KEY = "clientAppId";
   private static final String INVALID_SCENE_KEY = "0";
+  private static final String REPLAY_TASK_TITLE = "[[title=replayTask]]";
+  private static final String RECORD_TASK_TITLE = "[[title=recordTask]]";
 
   @Override
   public MockCategoryType getMockCategoryType() {
@@ -78,7 +83,7 @@ public class CoverageMockerHandler implements MockerHandler {
     } else if (CaseSendScene.MIXED_NORMAL.name().equals(scheduleSendScene) &&
         handlerSwitch.allowReplayTask(appId)) {
       scenePoolProvider = scenePoolFactory.getProvider(ScenePoolFactory.REPLAY_SCENE_POOL);
-      task = new ReplayTask(scenePoolProvider, coverageMocker);
+      task = new ReplayTask(scenePoolProvider, updateCaseStatusService, coverageMocker);
       coverageHandleDelayedPool.schedule(task, 1, TimeUnit.SECONDS);
     }
   }
@@ -120,6 +125,7 @@ public class CoverageMockerHandler implements MockerHandler {
   @AllArgsConstructor
   private class ReplayTask implements Runnable {
     private final ScenePoolProvider scenePoolProvider;
+    private final UpdateCaseStatusService updateCaseStatusService;
     private final Mocker coverageMocker;
 
     @Override
@@ -138,7 +144,13 @@ public class CoverageMockerHandler implements MockerHandler {
           if (recordId.equals(oldScene.getRecordId())) {
             return;
           }
-          mockSourceEditionService.removeByRecordId(ProviderNames.AUTO_PINNED, oldScene.getRecordId());
+          LOGGER.info(REPLAY_TASK_TITLE + "removed by case: {}, old RecordId: {}, sceneKey: {}",
+              recordId, oldScene.getRecordId(), newScene.getSceneKey());
+          boolean removeResult =
+              mockSourceEditionService.removeByRecordId(ProviderNames.AUTO_PINNED, oldScene.getRecordId());
+          if (removeResult) {
+            updateCaseStatusService.updateStatusOfCase(recordId, CaseStatusEnum.DEDUPLICATED.getCode());
+          }
         }
 
         // try moving from rolling to AP,
@@ -148,10 +160,10 @@ public class CoverageMockerHandler implements MockerHandler {
 
         // todo should not happen, will handle case by case
         if (movedCount == 0) {
-          LOGGER.error("Case {}, failed to transfer case to AUTO-PINNED", recordId);
+          LOGGER.warn(REPLAY_TASK_TITLE + "Case {}, failed to transfer case to AUTO-PINNED", recordId);
         }
       } catch (Exception e) {
-        LOGGER.error("Error handling replay task for record: {}", coverageMocker.getRecordId(), e);
+        LOGGER.error(REPLAY_TASK_TITLE + "Error handling replay task for record: {}", coverageMocker.getRecordId(), e);
       } finally {
         MDCTracer.clear();
       }
@@ -187,7 +199,7 @@ public class CoverageMockerHandler implements MockerHandler {
         if (scenePoolProvider.checkSceneExist(appId, sceneKey)) {
           invalidRecordService.putInvalidCaseInRedis(recordId);
           mockSourceEditionService.removeByRecordId(ProviderNames.DEFAULT, coverageMocker.getRecordId());
-          LOGGER.info("CoverageMockerHandler received existing case, recordId: {}, pathKey: {}",
+          LOGGER.info(RECORD_TASK_TITLE + "CoverageMockerHandler received existing case, recordId: {}, pathKey: {}",
               coverageMocker.getRecordId(), coverageMocker.getOperationName());
         } else {
           op = NEW_SCENE_OP;
@@ -198,13 +210,13 @@ public class CoverageMockerHandler implements MockerHandler {
           mockSourceEditionService.extendMockerExpirationByRecordId(ProviderNames.DEFAULT,
               coverageMocker.getRecordId(),
               defaultApplicationConfig.getConfigAsLong(COVERAGE_EXPIRATION_DAYS_KEY, COVERAGE_EXPIRATION_DAYS));
-          LOGGER.info("CoverageMockerHandler received new case, recordId: {}, pathKey: {}",
+          LOGGER.info(RECORD_TASK_TITLE + "CoverageMockerHandler received new case, recordId: {}, pathKey: {}",
               coverageMocker.getRecordId(), coverageMocker.getOperationName());
         }
 
         recordCoverageHandle(appId, op);
       } catch (Exception e) {
-        LOGGER.error("CoverageMockerHandler handle error", e);
+        LOGGER.error(RECORD_TASK_TITLE + "CoverageMockerHandler handle error", e);
       } finally {
         MDCTracer.clear();
       }
