@@ -210,7 +210,7 @@ public class MockSourceEditionService {
       deleteCount += repositoryWriter.removeBy(categoryType, recordId);
     }
     LOGGER.info("removeByRecordId deleted {} mockers for recordId: {}", deleteCount, recordId);
-    return true;
+    return deleteCount > 0L;
   }
 
   public boolean extendMockerExpirationByRecordId(String providerName, String recordId, Long extensionDays) {
