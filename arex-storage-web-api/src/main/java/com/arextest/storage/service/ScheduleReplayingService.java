@@ -104,28 +104,29 @@ public class ScheduleReplayingService {
     dto.setSourceProvider(
         StringUtils.defaultIfEmpty(request.getSourceProvider(), ProviderNames.DEFAULT));
     // try query for requested provider
-    List<AREXMocker> result = queryRecordsByProvider(request.getSourceProvider(), recordId,
+    List<AREXMocker> recordMockers = queryRecordsByProvider(request.getSourceProvider(), recordId,
         mockCategoryTypes);
 
     // if no result found, try query for all providers
-    if (CollectionUtils.isEmpty(result)) {
+    if (CollectionUtils.isEmpty(recordMockers)) {
       for (String providerName : MOCKER_PROVIDER_NAMES) {
+        // filter out the request source provider
         if (StringUtils.equals(providerName, request.getSourceProvider())) {
           continue;
         }
-        result = queryRecordsByProvider(providerName, recordId, mockCategoryTypes);
-        if (CollectionUtils.isNotEmpty(result)) {
+        recordMockers = queryRecordsByProvider(providerName, recordId, mockCategoryTypes);
+        if (CollectionUtils.isNotEmpty(recordMockers)) {
           dto.setSourceProvider(providerName);
           break;
         }
       }
     }
 
-    if (Boolean.TRUE.equals(request.getSplitMergeRecord())) {
-      result = splitMergedMockers(result);
+    if (Boolean.TRUE.equals(request.getSplitMergeRecord()) && CollectionUtils.isNotEmpty(recordMockers)) {
+      recordMockers = splitMergedMockers(recordMockers);
     }
 
-    dto.setRecordResult(result);
+    dto.setRecordResult(recordMockers);
     handleSceneTypes(mockCategoryTypes, recordId, dto);
     return dto;
   }
@@ -247,7 +248,11 @@ public class ScheduleReplayingService {
   }
 
   private List<AREXMocker> splitMergedMockers(List<AREXMocker> mockerList) {
-    List<AREXMocker> result = new ArrayList<>();
+    // TODO The merge record mode has been deleted, it is compatible here for now and will be removed later.
+    if (mockerList.stream().noneMatch(item -> MERGE_RECORD_OPERATION_NAME.equals(item.getOperationName()))) {
+      return mockerList;
+    }
+    List<AREXMocker> result = new ArrayList<>(mockerList.size());
     for (AREXMocker mocker : mockerList) {
       if (MERGE_RECORD_OPERATION_NAME.equals(mocker.getOperationName())) {
         List<AREXMocker> splitMockers = splitMergedMocker(mocker);

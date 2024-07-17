@@ -43,14 +43,13 @@ public class ScenePoolService {
       return null;
     }
 
-    AREXMocker mocker = new AREXMocker();
+    AREXMocker mocker = new AREXMocker(MockCategoryType.COVERAGE);
     mocker.setOperationName(scene.getSceneKey());
     mocker.setAppId(scene.getAppId());
     mocker.setRecordId(scene.getRecordId());
     Target targetResponse = new Target();
     targetResponse.setBody(scene.getExecutionPath());
     mocker.setTargetResponse(targetResponse);
-    mocker.setCategoryType(MockCategoryType.COVERAGE);
     return mocker;
   }
 }

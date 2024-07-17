@@ -21,10 +21,13 @@ public class ScenePoolFactory {
   }
 
   public ScenePoolProvider getProviderByCategory(MockCategoryType categoryType) {
-   if (categoryType.equals(MockCategoryType.RECORDING_SCENE)) {
+   if (MockCategoryType.RECORDING_SCENE.equals(categoryType)) {
      return getProvider(RECORDING_SCENE_POOL);
    }
-   return getProvider(REPLAY_SCENE_POOL);
+   if (MockCategoryType.REPLAY_SCENE.equals(categoryType)) {
+     return getProvider(REPLAY_SCENE_POOL);
+   }
+   return null;
   }
 
 }
