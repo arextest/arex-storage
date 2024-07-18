@@ -34,6 +34,7 @@ import com.arextest.storage.service.InvalidRecordService;
 import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.service.PrepareMockResultService;
 import com.arextest.storage.service.QueryConfigService;
+import com.arextest.storage.service.ScenePoolService;
 import com.arextest.storage.service.ScheduleReplayingService;
 import com.arextest.storage.service.config.ApplicationService;
 import com.arextest.storage.service.listener.AgentWorkingListener;
@@ -254,9 +255,10 @@ public class StorageAutoConfiguration {
   @ConditionalOnMissingBean(ScheduleReplayingService.class)
   public ScheduleReplayingService scheduleReplayingService(MockResultProvider mockResultProvider,
       RepositoryProviderFactory repositoryProviderFactory,
-      ApplicationOperationConfigurationRepositoryImpl serviceOperationRepository) {
+      ApplicationOperationConfigurationRepositoryImpl serviceOperationRepository,
+      ScenePoolService scenePoolService) {
     return new ScheduleReplayingService(mockResultProvider, repositoryProviderFactory,
-        serviceOperationRepository);
+        serviceOperationRepository, scenePoolService);
   }
 
   @Bean

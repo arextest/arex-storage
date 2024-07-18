@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 
 /**
  * update case status service
- *
  * created by xinyuan_wang on 2024/7/17
  */
 @Service
@@ -39,13 +38,14 @@ public class UpdateCaseStatusService {
       );
 
       if (response == null || response.getBody() == 0L) {
-        LOGGER.warn(TITLE + "updateCaseStatus failed for recordId: {}", recordId);
+        LOGGER.warn("{}updateCaseStatus failed for recordId: {}", TITLE, recordId);
         return;
       }
 
-      LOGGER.info(TITLE + "updateCaseStatus success for recordId: {}, update count: {}", recordId, response.getBody());
+      LOGGER.info("{}updateCaseStatus success for recordId: {}, update count: {}",
+          TITLE, recordId, response.getBody());
     } catch (Exception e) {
-      LOGGER.error(TITLE + "updateCaseStatus failed for recordId: {}", recordId, e);
+      LOGGER.error("{}updateCaseStatus failed for recordId: {}", TITLE, recordId, e);
     } finally {
       MDCTracer.clear();
     }

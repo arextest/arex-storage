@@ -56,6 +56,14 @@ public final class RepositoryProviderFactory {
       return MockCategoryType.COVERAGE;
     }
 
+    if (MockCategoryType.RECORDING_SCENE.getName().equals(categoryName)) {
+      return MockCategoryType.RECORDING_SCENE;
+    }
+
+    if (MockCategoryType.REPLAY_SCENE.getName().equals(categoryName)) {
+      return MockCategoryType.REPLAY_SCENE;
+    }
+
     return categoryTypeMap.get(categoryName);
   }
 

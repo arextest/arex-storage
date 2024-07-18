@@ -67,4 +67,10 @@ public class ScenePoolProviderImpl extends AbstractScenePoolProvider {
     Query filter = Query.query(Criteria.where(Fields.appId).is(appid));
     return getTemplate().remove(filter, Scene.class, getCollectionName()).getDeletedCount();
   }
+
+  @Override
+  public Scene findByRecordId(String recordId) {
+    Query filter = Query.query(Criteria.where(Fields.recordId).is(recordId));
+    return getTemplate().findOne(filter, Scene.class, getCollectionName());
+  }
 }
