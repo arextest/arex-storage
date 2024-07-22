@@ -449,7 +449,7 @@
     </sonar.exclusions>
     <!-- Users could specify this property as true to skip the deploy process -->
     <spring.boot.version>2.7.18</spring.boot.version>
-    <arex-common.version>0.2.2</arex-common.version>
+    <arex-common.version>0.2.3</arex-common.version>
     <reddison.version>3.20.1</reddison.version>
   </properties>
   <scm>
