@@ -11,6 +11,8 @@ public final class CacheKeyUtils {
   public static final String DASH = "_";
   // private static final int SERVICE_TYPE_NORMAL = 4;
   public static final String SERVICE_MAPPINGS_PREFIX = "service_mappings_";
+  private static final String AGENT_VERSION_REDIS_KEY = "agent_version_";
+  private static final String REPLAY_RESULT_REDIS_KEY = "replay_result_";
 
 
   public static final byte[] EMPTY_BYTE = new byte[]{};
@@ -100,6 +102,14 @@ public final class CacheKeyUtils {
         .put(value)
         .put(replayIdBytes)
         .array();
+  }
+
+  public static byte[] buildAgentVersionKey(String replayId) {
+    return (AGENT_VERSION_REDIS_KEY + replayId).getBytes(StandardCharsets.UTF_8);
+  }
+
+  public static byte[] buildReplayResultKey(String recordId, String replayId) {
+    return (REPLAY_RESULT_REDIS_KEY + recordId + replayId).getBytes(StandardCharsets.UTF_8);
   }
 
   public static byte[] merge(@NotNull byte[] src, int value) {

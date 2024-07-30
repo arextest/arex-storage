@@ -57,16 +57,40 @@ public class AgentWorkingService {
    * @return true means success,else save failure
    */
   public <T extends Mocker> boolean saveRecord(@NotNull T item) {
+    if (!prepareAndDispatchRecord(item)) {
+      return false;
+    }
+
+    RepositoryProvider<T> repositoryWriter = repositoryProviderFactory.defaultProvider();
+    return repositoryWriter != null && repositoryWriter.save(item);
+  }
+
+  public <T extends Mocker> boolean batchSaveRecord(@NotNull List<T> list) {
+    if (CollectionUtils.isEmpty(list)) {
+      return false;
+    }
+
+    for (T item : list) {
+      if (!prepareAndDispatchRecord(item)) {
+        return false;
+      }
+    }
+
+    RepositoryProvider<T> repositoryWriter = repositoryProviderFactory.defaultProvider();
+    return repositoryWriter != null && repositoryWriter.saveList(list);
+  }
+
+  private <T extends Mocker> boolean prepareAndDispatchRecord(T item) {
     if (shouldMarkRecordEnv(item.getCategoryType())) {
       item.setRecordEnvironment(recordEnvType.getCodeValue());
     }
+
     if (!this.dispatchRecordSavingEvent(item)) {
       return false;
     }
 
     mockResultProvider.calculateEigen(item, true);
-    RepositoryProvider<T> repositoryWriter = repositoryProviderFactory.defaultProvider();
-    return repositoryWriter != null && repositoryWriter.save(item);
+    return true;
   }
 
   private boolean dispatchRecordSavingEvent(Mocker instance) {

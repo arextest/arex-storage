@@ -21,8 +21,9 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 public class AgentWorkingMetricService {
 
-  private static final String QUERY_MOCK_METHOD_NAME = "query";
-  private static final String SAVE_MOCK_METHOD_NAME = "save";
+  private static final String METHOD_NAME_QUERY_MOCK = "query";
+  private static final String METHOD_NAME_SAVE_MOCK = "save";
+  private static final String METHOD_NAME_BATCH_SAVE = "batchSave";
   private static final String METRIC_NAME = "service.entry.request";
   private static final String CLIENT_APP_ID = "clientAppId";
   private static final String PATH = "path";
@@ -55,8 +56,25 @@ public class AgentWorkingMetricService {
     boolean saveResult = agentWorkingService.saveRecord(item);
     long totalTimeNanos = System.nanoTime() - startTimeNanos;
 
-    recordEntryTime(SAVE_MOCK_METHOD_NAME, (AREXMocker) item, nanosToMillis(totalTimeNanos));
+    recordEntryTime(METHOD_NAME_SAVE_MOCK, (AREXMocker) item, nanosToMillis(totalTimeNanos));
     return saveResult;
+  }
+
+  public <T extends Mocker> boolean batchSaveRecord(@NotNull List<T> list) {
+    if (CollectionUtils.isEmpty(list)) {
+      return false;
+    }
+
+    if (CollectionUtils.isEmpty(metricListeners)) {
+      return agentWorkingService.batchSaveRecord(list);
+    }
+
+    long startTimeNanos = System.nanoTime();
+    boolean result = agentWorkingService.batchSaveRecord(list);
+    long totalTimeNanos = System.nanoTime() - startTimeNanos;
+
+    recordEntryTime(METHOD_NAME_BATCH_SAVE, (AREXMocker) list.get(0), nanosToMillis(totalTimeNanos));
+    return result;
   }
 
   public <T extends Mocker> byte[] queryMockResult(@NotNull T recordItem,
@@ -69,7 +87,7 @@ public class AgentWorkingMetricService {
     byte[] queryMockResult = agentWorkingService.queryMockResult(recordItem, context);
     long totalTimeNanos = System.nanoTime() - startTimeNanos;
 
-    recordEntryTime(QUERY_MOCK_METHOD_NAME, (AREXMocker) recordItem, nanosToMillis(totalTimeNanos));
+    recordEntryTime(METHOD_NAME_QUERY_MOCK, (AREXMocker) recordItem, nanosToMillis(totalTimeNanos));
     return queryMockResult;
   }
   public void invalidIncompleteRecord(InvalidIncompleteRecordRequest requestType) {

@@ -57,7 +57,7 @@ public final class ZstdJacksonMessageConverter extends AbstractHttpMessageConver
   @Override
   protected void writeInternal(Object o, HttpOutputMessage outputMessage) throws IOException,
       HttpMessageNotWritableException {
-    zstdJacksonSerializer.serializeTo(o, outputMessage.getBody());
+    outputMessage.getBody().write(zstdJacksonSerializer.serialize(o));
   }
   @Override
   public boolean canRead(Type type, Class<?> contextClass, MediaType mediaType) {
