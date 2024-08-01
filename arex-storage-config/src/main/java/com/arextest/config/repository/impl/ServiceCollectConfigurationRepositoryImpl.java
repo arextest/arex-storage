@@ -56,8 +56,7 @@ public class ServiceCollectConfigurationRepositoryImpl
     update.set(RecordServiceConfigCollection.Fields.recordMachineCountLimit,
             configuration.getRecordMachineCountLimit() == null ? 1
                 : configuration.getRecordMachineCountLimit());
-    return mongoTemplate.updateMulti(filter, update, RecordServiceConfigCollection.class)
-        .getModifiedCount() > 0;
+    return mongoTemplate.findAndModify(filter, update, RecordServiceConfigCollection.class) != null;
   }
 
   @Override
@@ -95,5 +94,12 @@ public class ServiceCollectConfigurationRepositoryImpl
     update.set(BaseEntity.Fields.dataChangeUpdateTime, System.currentTimeMillis());
     return mongoTemplate.updateMulti(filter, update, RecordServiceConfigCollection.class)
         .getModifiedCount() > 0;
+  }
+
+  public boolean updateServiceCollectTime(String appId) {
+    Query filter = new Query(Criteria.where(RecordServiceConfigCollection.Fields.appId).is(appId));
+    Update update = new Update();
+    update.set(BaseEntity.Fields.dataChangeUpdateTime, System.currentTimeMillis());
+    return mongoTemplate.findAndModify(filter, update, RecordServiceConfigCollection.class) != null;
   }
 }
