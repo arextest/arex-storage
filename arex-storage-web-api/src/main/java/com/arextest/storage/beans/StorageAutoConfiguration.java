@@ -1,7 +1,9 @@
 package com.arextest.storage.beans;
 
 import com.arextest.common.cache.CacheProvider;
+import com.arextest.common.config.ConfigProvider;
 import com.arextest.common.config.DefaultApplicationConfig;
+import com.arextest.common.config.DefaultConfigProvider;
 import com.arextest.common.jwt.JWTService;
 import com.arextest.common.jwt.JWTServiceImpl;
 import com.arextest.config.model.dao.config.SystemConfigurationCollection;
@@ -34,6 +36,7 @@ import com.arextest.storage.service.InvalidRecordService;
 import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.service.PrepareMockResultService;
 import com.arextest.storage.service.QueryConfigService;
+import com.arextest.storage.service.ScenePoolService;
 import com.arextest.storage.service.ScheduleReplayingService;
 import com.arextest.storage.service.config.ApplicationService;
 import com.arextest.storage.service.listener.AgentWorkingListener;
@@ -62,6 +65,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.env.Environment;
 import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -254,9 +258,10 @@ public class StorageAutoConfiguration {
   @ConditionalOnMissingBean(ScheduleReplayingService.class)
   public ScheduleReplayingService scheduleReplayingService(MockResultProvider mockResultProvider,
       RepositoryProviderFactory repositoryProviderFactory,
-      ApplicationOperationConfigurationRepositoryImpl serviceOperationRepository) {
+      ApplicationOperationConfigurationRepositoryImpl serviceOperationRepository,
+      ScenePoolService scenePoolService) {
     return new ScheduleReplayingService(mockResultProvider, repositoryProviderFactory,
-        serviceOperationRepository);
+        serviceOperationRepository, scenePoolService);
   }
 
   @Bean
@@ -287,6 +292,17 @@ public class StorageAutoConfiguration {
   public MockerResultConverter mockerResultConverter(QueryConfigService queryConfigService,
       DefaultApplicationConfig defaultApplicationConfig) {
     return new DefaultMockerResultConverterImpl(queryConfigService, defaultApplicationConfig);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean(ConfigProvider.class)
+  public ConfigProvider defaultConfigProvider(Environment environment) {
+    return new DefaultConfigProvider(environment);
+  }
+
+  @Bean
+  public DefaultApplicationConfig defaultApplicationConfig(ConfigProvider configProvider) {
+    return new DefaultApplicationConfig(configProvider);
   }
 
   @Bean

@@ -5,7 +5,12 @@ import com.arextest.model.scenepool.Scene.Fields;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.List;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -66,5 +71,25 @@ public class ScenePoolProviderImpl extends AbstractScenePoolProvider {
   public long clearSceneByAppid(String appid) {
     Query filter = Query.query(Criteria.where(Fields.appId).is(appid));
     return getTemplate().remove(filter, Scene.class, getCollectionName()).getDeletedCount();
+  }
+
+  @Override
+  public Scene findByRecordId(String recordId) {
+    Query filter = Query.query(Criteria.where(Fields.recordId).is(recordId));
+    return getTemplate().findOne(filter, Scene.class, getCollectionName());
+  }
+
+  @Override
+  public List<Scene> findByAppId(String appId, int pageIndex, int pageSize) {
+    Query filter = Query.query(Criteria.where(Fields.appId).is(appId));
+    Pageable pageableRequest = PageRequest.of(pageIndex, pageSize, Sort.by(Direction.ASC, Fields.id));
+    filter.with(pageableRequest);
+    return getTemplate().find(filter, Scene.class, getCollectionName());
+  }
+
+  @Override
+  public long countByAppId(String appId) {
+    Query filter = Query.query(Criteria.where(Fields.appId).is(appId));
+    return getTemplate().count(filter, getCollectionName());
   }
 }

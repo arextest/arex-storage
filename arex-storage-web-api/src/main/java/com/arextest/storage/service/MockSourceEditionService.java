@@ -28,6 +28,7 @@ public class MockSourceEditionService {
 
   private final RepositoryProviderFactory providerFactory;
   private final ScheduleReplayingService scheduleReplayingService;
+  private static final String LOG_TITLE_OPERATE_MOCKER = "[[title=operateMocker]]";
 
   public MockSourceEditionService(RepositoryProviderFactory providerFactory,
       ScheduleReplayingService scheduleReplayingService,
@@ -165,7 +166,7 @@ public class MockSourceEditionService {
   public int copyTo(String srcProviderName, String srcRecordId, String targetProviderName,
       String targetRecordId) {
     int count = 0;
-    if (StringUtils.equals(srcProviderName, targetProviderName)) {
+    if (StringUtils.equals(srcProviderName, targetProviderName) && StringUtils.equals(srcRecordId, targetRecordId)) {
       return count;
     }
     RepositoryProvider<Mocker> srcProvider = providerFactory.findProvider(srcProviderName);
@@ -193,6 +194,8 @@ public class MockSourceEditionService {
 
   public int moveTo(String srcProviderName, String srcRecordId, String targetProviderName) {
     int movedCount = copyTo(srcProviderName, srcRecordId, targetProviderName, srcRecordId);
+    LOGGER.info("{}copy recordId {}, from {} to {}, movedCount: {}",
+        LOG_TITLE_OPERATE_MOCKER, srcRecordId, srcProviderName, targetProviderName, movedCount);
     if (movedCount != 0) {
       removeByRecordId(srcProviderName, srcRecordId);
     }
@@ -202,15 +205,16 @@ public class MockSourceEditionService {
   public boolean removeByRecordId(String providerName, String recordId) {
     RepositoryProvider<?> repositoryWriter = providerFactory.findProvider(providerName);
     if (repositoryWriter == null) {
-      LOGGER.warn("Could not found provider for {}", providerName);
+      LOGGER.warn("{}Could not found provider for {}", LOG_TITLE_OPERATE_MOCKER, providerName);
       return false;
     }
     long deleteCount = 0;
     for (MockCategoryType categoryType : providerFactory.getCategoryTypes()) {
       deleteCount += repositoryWriter.removeBy(categoryType, recordId);
     }
-    LOGGER.info("removeByRecordId deleted {} mockers for recordId: {}", deleteCount, recordId);
-    return true;
+    LOGGER.info("{}removeByRecordId deleted {} {} mockers for recordId: {}",
+        LOG_TITLE_OPERATE_MOCKER, deleteCount, providerName, recordId);
+    return deleteCount > 0L;
   }
 
   public boolean extendMockerExpirationByRecordId(String providerName, String recordId, Long extensionDays) {

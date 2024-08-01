@@ -1,6 +1,7 @@
 package com.arextest.storage.repository.scenepool;
 
 import com.arextest.model.scenepool.Scene;
+import java.util.List;
 
 public interface ScenePoolProvider {
   String getProviderName();
@@ -12,4 +13,10 @@ public interface ScenePoolProvider {
   void upsertOne(Scene scene);
 
   long clearSceneByAppid(String appid);
+
+  Scene findByRecordId(String recordId);
+
+  List<Scene> findByAppId(String appId, int pageIndex, int pageSize);
+
+  long countByAppId(String appId);
 }
