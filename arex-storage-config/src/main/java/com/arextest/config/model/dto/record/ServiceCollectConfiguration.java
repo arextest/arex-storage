@@ -15,7 +15,9 @@ import lombok.Setter;
  */
 @Setter
 @Getter
-public class ServiceCollectConfiguration extends AbstractMultiEnvConfiguration<ServiceCollectConfiguration> {
+public class ServiceCollectConfiguration extends
+    AbstractMultiEnvConfiguration<ServiceCollectConfiguration> {
+
   private String appId;
   /**
    * The sample rate means for in 100 seconds should be occurred the number of records. example: if
@@ -57,6 +59,17 @@ public class ServiceCollectConfiguration extends AbstractMultiEnvConfiguration<S
   private List<SerializeSkipInfoConfiguration> serializeSkipInfoList;
 
   @Override
+  public void validParameters() throws Exception {
+    if (!isValidTime(this.getAllowTimeOfDayFrom()) || !isValidTime(this.getAllowTimeOfDayTo())) {
+      throw new RuntimeException("Invalid time format");
+    }
+
+    if (!isValidAllowDayOfWeeks(this.getAllowDayOfWeeks())) {
+      throw new RuntimeException("Invalid allowDayOfWeeks");
+    }
+  }
+
+  @Override
   public void validateEnvConfigs() throws Exception {
     if (this.getAppId() == null || this.getAppId().isEmpty()) {
       throw new RuntimeException("appid is empty");
@@ -72,6 +85,22 @@ public class ServiceCollectConfiguration extends AbstractMultiEnvConfiguration<S
           throw new RuntimeException("No." + (i + 1) + " config's envTags's value is empty");
         }
       }
+      current.validParameters();
     }
   }
+
+  public boolean isValidTime(String time) {
+    if (time == null || time.isEmpty()) {
+      return false;
+    }
+    // Regular expression for matching times in HH:mm format
+    String pattern = "^([01]?[0-9]|2[0-3]):[0-5][0-9]$";
+    return time.matches(pattern);
+  }
+
+  public boolean isValidAllowDayOfWeeks(int allowDayOfWeeks) {
+    // Check if allowDayOfWeeks is between 0 and 127
+    return allowDayOfWeeks >= 0 && allowDayOfWeeks <= 127;
+  }
+
 }
