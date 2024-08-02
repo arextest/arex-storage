@@ -31,6 +31,7 @@ import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH;
 import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH_DEFAULT;
 import static com.arextest.storage.model.Constants.SQL_PARSE_DURATION_THRESHOLD;
 import static com.arextest.storage.model.Constants.SQL_PARSE_DURATION_THRESHOLD_DEFAULT;
+import static com.arextest.storage.model.Constants.SQL_PARSE_FAIL_OUTPUT_SWITCH;
 
 /**
  * @author niyan
@@ -170,6 +171,9 @@ public class DatabaseParseService {
             tableSchema.setTableNames(tableNameList);
         } catch (Throwable e) {
             success = false;
+            if (defaultApplicationConfig.getConfigAsBoolean(SQL_PARSE_FAIL_OUTPUT_SWITCH, false)) {
+                LOGGER.warn("[[title=sqlParse]]sql parse fail, sql: {}", sql);
+            }
             return tableSchema;
         } finally {
             long totalTime = System.currentTimeMillis() - startTime;
