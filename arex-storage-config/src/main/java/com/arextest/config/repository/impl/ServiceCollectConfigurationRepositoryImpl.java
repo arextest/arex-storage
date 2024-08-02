@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.bson.conversions.Bson;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -56,8 +57,7 @@ public class ServiceCollectConfigurationRepositoryImpl
     update.set(RecordServiceConfigCollection.Fields.recordMachineCountLimit,
             configuration.getRecordMachineCountLimit() == null ? 1
                 : configuration.getRecordMachineCountLimit());
-    return mongoTemplate.updateMulti(filter, update, RecordServiceConfigCollection.class)
-        .getModifiedCount() > 0;
+    return mongoTemplate.findAndModify(filter, update, RecordServiceConfigCollection.class) != null;
   }
 
   @Override
@@ -95,5 +95,12 @@ public class ServiceCollectConfigurationRepositoryImpl
     update.set(BaseEntity.Fields.dataChangeUpdateTime, System.currentTimeMillis());
     return mongoTemplate.updateMulti(filter, update, RecordServiceConfigCollection.class)
         .getModifiedCount() > 0;
+  }
+
+  public boolean updateServiceCollectTime(String appId) {
+    Query filter = new Query(Criteria.where(RecordServiceConfigCollection.Fields.appId).is(appId));
+    Update update = new Update();
+    MongoHelper.withMongoTemplateBaseUpdate(update);
+    return mongoTemplate.findAndModify(filter, update, RecordServiceConfigCollection.class) != null;
   }
 }
