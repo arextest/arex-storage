@@ -44,7 +44,7 @@ public class DatabaseParseService {
     private static final String SQL_PARSE_TIME_METRIC_NAME = "sql.parse.time";
     private static final Pattern PATTERN = Pattern.compile("(\\s+|\"\\?\"|\\[|\\])");
     private static final String CLIENT_APP_ID = "clientAppId";
-    private static final String PARSING_RESULT = "parseResult";
+    private static final String PARSING_SQL_RESULT = "parseSqlResult";
 
     @Autowired(required = false)
     private List<MetricListener> metricListenerList;
@@ -194,9 +194,9 @@ public class DatabaseParseService {
             LOGGER.warn("[[title=sqlParse]]the actual parsing time:{} exceeds the set threshold:{}, sql: {}", duration, parseTimeThreshold, sql);
         }
 
-        Map<String, String> tags = new HashMap<>(2);
+        Map<String, String> tags = new HashMap<>();
         tags.put(CLIENT_APP_ID, appId);
-        tags.put(PARSING_RESULT, success ? "success" : "fail");
+        tags.put(PARSING_SQL_RESULT, success ? "success" : "fail");
         for (MetricListener metricListener : metricListenerList) {
             metricListener.recordTime(SQL_PARSE_TIME_METRIC_NAME, tags, duration);
         }
