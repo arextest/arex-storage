@@ -58,6 +58,7 @@ public class ServiceCollectConfiguration extends
 
   private List<SerializeSkipInfoConfiguration> serializeSkipInfoList;
 
+  @SuppressWarnings("java:S112")
   @Override
   public void validParameters() throws Exception {
     if (!isValidTime(this.getAllowTimeOfDayFrom()) || !isValidTime(this.getAllowTimeOfDayTo())) {
@@ -89,6 +90,7 @@ public class ServiceCollectConfiguration extends
     }
   }
 
+  @SuppressWarnings("java:S6353")
   public boolean isValidTime(String time) {
     if (time == null || time.isEmpty()) {
       return false;
