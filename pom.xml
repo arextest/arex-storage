@@ -427,7 +427,7 @@
   </profiles>
 
   <properties>
-    <revision>1.2.25</revision>
+    <revision>1.2.26</revision>
     <commons-lang3.version>3.3.2</commons-lang3.version>
     <java.version>1.8</java.version>
 

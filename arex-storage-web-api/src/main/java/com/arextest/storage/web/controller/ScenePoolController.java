@@ -2,7 +2,7 @@ package com.arextest.storage.web.controller;
 
 import com.arextest.common.model.response.Response;
 import com.arextest.common.utils.ResponseUtils;
-import com.arextest.model.replay.PagedRequestType;
+import com.arextest.model.replay.QuerySceneRequestType;
 import com.arextest.storage.service.ScenePoolService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,9 +36,9 @@ public class ScenePoolController {
 
   @PostMapping(value = "/findByAppId", produces = "application/json")
   @ResponseBody
-  public Response findByAppId(@RequestBody PagedRequestType requestType) {
+  public Response findRecordsByAppId(@RequestBody QuerySceneRequestType requestType) {
     return ResponseUtils.successResponse(
-        scenePoolService.findByAppId(requestType.getAppId(), requestType.getCategory(),
+        scenePoolService.findRecordsByAppId(requestType.getAppId(), requestType.getCategoryType(),
             requestType.getPageIndex(), requestType.getPageSize()));
   }
 }

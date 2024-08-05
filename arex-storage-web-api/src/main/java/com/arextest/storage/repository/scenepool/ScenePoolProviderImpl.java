@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -80,11 +81,16 @@ public class ScenePoolProviderImpl extends AbstractScenePoolProvider {
   }
 
   @Override
-  public List<Scene> findByAppId(String appId, int pageIndex, int pageSize) {
+  public List<String> findRecordsByAppId(String appId, int pageIndex, int pageSize) {
     Query filter = Query.query(Criteria.where(Fields.appId).is(appId));
+
+    filter.fields().include(Fields.recordId);
+
     Pageable pageableRequest = PageRequest.of(pageIndex, pageSize, Sort.by(Direction.ASC, Fields.id));
     filter.with(pageableRequest);
-    return getTemplate().find(filter, Scene.class, getCollectionName());
+    return getTemplate().find(filter, Scene.class, getCollectionName()).stream()
+        .map(Scene::getRecordId)
+        .collect(Collectors.toList());
   }
 
   @Override

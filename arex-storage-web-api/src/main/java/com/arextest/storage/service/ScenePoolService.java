@@ -42,13 +42,13 @@ public class ScenePoolService {
     return convert(provider.findByRecordId(recordId));
   }
 
-  public SceneDTO findByAppId(String appId, MockCategoryType categoryType, Integer pageIndex, int pageSize) {
-    if (StringUtils.isEmpty(appId) || categoryType == null || pageIndex == null
+  public SceneDTO findRecordsByAppId(String appId, String category, Integer pageIndex, int pageSize) {
+    if (StringUtils.isEmpty(appId) || StringUtils.isEmpty(category) || pageIndex == null
         || pageIndex < 0 || pageSize == 0) {
       return null;
     }
 
-    ScenePoolProvider provider = scenePoolFactory.getProviderByCategory(categoryType);
+    ScenePoolProvider provider = scenePoolFactory.getProviderByCategoryName(category);
     if (provider == null) {
       return null;
     }
@@ -63,7 +63,7 @@ public class ScenePoolService {
       return sceneDTO;
     }
 
-    List<Scene> scenes = provider.findByAppId(appId, pageIndex, pageSize);
+    List<String> scenes = provider.findRecordsByAppId(appId, pageIndex, pageSize);
     sceneDTO.setSceneList(scenes);
     return sceneDTO;
   }
