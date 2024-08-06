@@ -1,6 +1,5 @@
 package com.arextest.model.replay.dto;
 
-import com.arextest.model.scenepool.Scene;
 import java.util.List;
 import lombok.Data;
 
@@ -12,6 +11,6 @@ import lombok.Data;
  */
 @Data
 public class SceneDTO {
-    private List<Scene> sceneList;
+    private List<String> sceneList;
     private Long total;
 }

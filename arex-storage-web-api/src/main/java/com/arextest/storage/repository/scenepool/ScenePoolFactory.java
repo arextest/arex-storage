@@ -30,4 +30,14 @@ public class ScenePoolFactory {
    return null;
   }
 
+  public ScenePoolProvider getProviderByCategoryName(String categoryName) {
+   if (MockCategoryType.RECORDING_SCENE.getName().equalsIgnoreCase(categoryName)) {
+     return getProvider(RECORDING_SCENE_POOL);
+   }
+   if (MockCategoryType.REPLAY_SCENE.getName().equalsIgnoreCase(categoryName)) {
+     return getProvider(REPLAY_SCENE_POOL);
+   }
+   return null;
+  }
+
 }
