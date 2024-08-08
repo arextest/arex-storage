@@ -2,6 +2,7 @@ package com.arextest.storage.web.controller;
 
 import com.arextest.common.model.response.Response;
 import com.arextest.common.utils.ResponseUtils;
+import com.arextest.model.replay.QuerySceneRequestType;
 import com.arextest.storage.service.ScenePoolService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,6 +10,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -29,5 +32,13 @@ public class ScenePoolController {
   public Response clearReplayPool(@PathVariable("appId") String appId) {
     scenePoolService.clearReplayPoolByApp(appId);
     return ResponseUtils.successResponse(true);
+  }
+
+  @PostMapping(value = "/findByAppId", produces = "application/json")
+  @ResponseBody
+  public Response findRecordsByAppId(@RequestBody QuerySceneRequestType requestType) {
+    return ResponseUtils.successResponse(
+        scenePoolService.findRecordsByAppId(requestType.getAppId(), requestType.getCategoryType(),
+            requestType.getPageIndex(), requestType.getPageSize()));
   }
 }

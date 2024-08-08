@@ -19,7 +19,7 @@ import org.springframework.context.annotation.Configuration;
 @Slf4j
 public class ExecutorsConfiguration implements Thread.UncaughtExceptionHandler {
 
-  private static final int CORE_POOL_SIZE = 200;
+  private static final int CORE_POOL_SIZE = 400;
   private static final long KEEP_ALIVE_TIME = 60L;
 
   @Bean
@@ -54,7 +54,7 @@ public class ExecutorsConfiguration implements Thread.UncaughtExceptionHandler {
   /**
    * In the current scenario, the time consumption of a single save interface is 2ms,
    * the qps is around 400, and this interface is an IO-intensive interface,
-   * so the number of core threads is set to 200
+   * so the number of core threads is set to 400
    * @return
    */
   @Bean

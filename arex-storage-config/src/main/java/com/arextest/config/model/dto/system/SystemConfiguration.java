@@ -2,6 +2,7 @@ package com.arextest.config.model.dto.system;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.Data;
 
 /**
@@ -22,6 +23,7 @@ public class SystemConfiguration {
   private Boolean authSwitch;
   private ComparePluginInfo comparePluginInfo;
   private String jwtSeed;
+  private Set<String> ignoreNodeSet;
 
   public static SystemConfiguration mergeConfigs(List<SystemConfiguration> systemConfigurations) {
     if (systemConfigurations == null || systemConfigurations.isEmpty()) {
@@ -43,6 +45,9 @@ public class SystemConfiguration {
       }
       if (systemConfiguration.getComparePluginInfo() != null) {
         result.setComparePluginInfo(systemConfiguration.getComparePluginInfo());
+      }
+      if (systemConfiguration.getIgnoreNodeSet() != null) {
+        result.setIgnoreNodeSet(systemConfiguration.getIgnoreNodeSet());
       }
     }
     return result;

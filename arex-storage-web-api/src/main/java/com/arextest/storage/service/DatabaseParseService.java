@@ -1,16 +1,19 @@
-package com.arextest.storage.utils;
+package com.arextest.storage.service;
 
+import com.arextest.common.config.DefaultApplicationConfig;
 import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
+import com.arextest.storage.metric.MetricListener;
 import com.arextest.storage.model.TableSchema;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
-import com.arextest.storage.service.config.ApplicationDefaultConfig;
+import com.arextest.storage.trace.MDCTracer;
 import com.google.common.annotations.VisibleForTesting;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
@@ -21,9 +24,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.util.Collections;
 
+import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH;
 import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH_DEFAULT;
+import static com.arextest.storage.model.Constants.SQL_PARSE_DURATION_THRESHOLD;
+import static com.arextest.storage.model.Constants.SQL_PARSE_DURATION_THRESHOLD_DEFAULT;
+import static com.arextest.storage.model.Constants.SQL_PARSE_FAIL_OUTPUT_SWITCH;
 
 /**
  * @author niyan
@@ -31,14 +39,21 @@ import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH_DEFAULT;
  * @since 1.0.0
  */
 @Slf4j
-public class DatabaseUtils {
+@Component
+public class DatabaseParseService {
 
-    private DatabaseUtils() {
-    }
-
+    private static final String SQL_PARSE_TIME_METRIC_NAME = "sql.parse.time";
     private static final Pattern PATTERN = Pattern.compile("(\\s+|\"\\?\"|\\[|\\])");
+    private static final String CLIENT_APP_ID = "clientAppId";
+    private static final String PARSING_SQL_RESULT = "parseSqlResult";
 
-    public static void regenerateOperationName(Mocker mocker, int maxSqlLengthInt) {
+    @Autowired(required = false)
+    private List<MetricListener> metricListenerList;
+    @Resource
+    private DefaultApplicationConfig defaultApplicationConfig;
+
+
+    public void regenerateOperationName(Mocker mocker) {
         if (!MockCategoryType.DATABASE.getName().equals(mocker.getCategoryType().getName())) {
             return;
         }
@@ -49,10 +64,13 @@ public class DatabaseUtils {
         if (StringUtils.contains(mocker.getOperationName(), '@')) {
             return;
         }
+        int maxSqlLengthInt = defaultApplicationConfig.getConfigAsInt(MAX_SQL_LENGTH, MAX_SQL_LENGTH_DEFAULT);
 
         if (maxSqlLengthInt <= 0) {
             maxSqlLengthInt = MAX_SQL_LENGTH_DEFAULT;
         }
+
+        MDCTracer.addTrace(mocker);
 
         String[] sqls = StringUtils.split(mocker.getTargetRequest().getBody(), ";");
         List<String> operationNames = new ArrayList<>(sqls.length);
@@ -61,10 +79,10 @@ public class DatabaseUtils {
                 continue;
             }
             if (sql.length() > maxSqlLengthInt) {
-                LOGGER.warn("skip sql parse cause sql length > config max length {}, sql: {}", maxSqlLengthInt, sql);
+                LOGGER.warn("[[title=sqlParse]]skip sql parse cause sql length > config max length {}, sql: {}", maxSqlLengthInt, sql);
                 continue;
             }
-            TableSchema tableSchema = parse(sql);
+            TableSchema tableSchema = parse(sql, mocker.getAppId());
             tableSchema.setDbName(mocker.getTargetRequest().attributeAsString(MockAttributeNames.DB_NAME));
             operationNames.add(regenerateOperationName(tableSchema, mocker.getOperationName()));
         }
@@ -72,13 +90,15 @@ public class DatabaseUtils {
             return;
         }
         mocker.setOperationName(StringUtils.join(operationNames, ";"));
+
+        MDCTracer.clear();
     }
 
     /**
      * The operation name is generated in the format of dbName-tableNames-action-originalOperationName, eg: db1@table1,table2@select@operation1
      */
     @VisibleForTesting
-    public static String regenerateOperationName(TableSchema tableSchema, String originOperationName) {
+    public String regenerateOperationName(TableSchema tableSchema, String originOperationName) {
         return new StringBuilder(100).append(StringUtils.defaultString(tableSchema.getDbName())).append('@')
             .append(StringUtils.defaultString(StringUtils.join(tableSchema.getTableNames(), ","))).append('@')
             .append(StringUtils.defaultString(tableSchema.getAction())).append("@")
@@ -87,7 +107,7 @@ public class DatabaseUtils {
     }
 
 
-    public static String parseDbName(String operationName, Mocker.Target targetRequest) {
+    public String parseDbName(String operationName, Mocker.Target targetRequest) {
         String dbName = targetRequest.attributeAsString(MockAttributeNames.DB_NAME);
         if (StringUtils.isNotEmpty(dbName)) {
             return dbName;
@@ -107,7 +127,7 @@ public class DatabaseUtils {
      * @param operationName eg: db1@table1,table2@select@operation1;db2@table3,table4@select@operation2;
      * @return tableNames eg: ["table1,table2", "table3,table4"]
      */
-    public static List<String> parseTableNames(String operationName) {
+    public List<String> parseTableNames(String operationName) {
         if (StringUtils.isEmpty(operationName)) {
             return Collections.emptyList();
         }
@@ -133,8 +153,9 @@ public class DatabaseUtils {
      * @param sql sql
      * @return table schema info
      */
-    @VisibleForTesting
-    public static TableSchema parse(String sql) {
+    public TableSchema parse(String sql, String appId) {
+        long startTime = System.currentTimeMillis();
+        boolean success = true;
         TableSchema tableSchema = new TableSchema();
         try {
             sql = PATTERN.matcher(sql).replaceAll(" ");
@@ -149,15 +170,39 @@ public class DatabaseUtils {
             }
             tableSchema.setTableNames(tableNameList);
         } catch (Throwable e) {
-            LOGGER.warn("parse sql error, sql: {}", sql, e);
+            success = false;
+            if (defaultApplicationConfig.getConfigAsBoolean(SQL_PARSE_FAIL_OUTPUT_SWITCH, false)) {
+                LOGGER.warn("[[title=sqlParse]]sql parse fail, sql: {}", sql);
+            }
+            return tableSchema;
+        } finally {
+            long totalTime = System.currentTimeMillis() - startTime;
+            recordParseTime(totalTime, sql, appId, success);
         }
         return tableSchema;
     }
 
-    static String getAction(Statement statement) {
+    private String getAction(Statement statement) {
         if (statement instanceof Select) {
             return "Select";
         }
         return statement.getClass().getSimpleName();
+    }
+
+    private void recordParseTime(long duration, String sql, String appId, boolean success) {
+        if (CollectionUtils.isEmpty(metricListenerList)) {
+            return;
+        }
+        int parseTimeThreshold = defaultApplicationConfig.getConfigAsInt(SQL_PARSE_DURATION_THRESHOLD, SQL_PARSE_DURATION_THRESHOLD_DEFAULT);
+        if (duration > parseTimeThreshold) {
+            LOGGER.warn("[[title=sqlParse]]the actual parsing time:{} exceeds the set threshold:{}, sql: {}", duration, parseTimeThreshold, sql);
+        }
+
+        Map<String, String> tags = new HashMap<>();
+        tags.put(CLIENT_APP_ID, appId);
+        tags.put(PARSING_SQL_RESULT, success ? "success" : "fail");
+        for (MetricListener metricListener : metricListenerList) {
+            metricListener.recordTime(SQL_PARSE_TIME_METRIC_NAME, tags, duration);
+        }
     }
 }

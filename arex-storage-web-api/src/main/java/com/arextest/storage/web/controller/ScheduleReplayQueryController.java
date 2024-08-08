@@ -13,6 +13,7 @@ import com.arextest.model.replay.QueryReplayResultRequestType;
 import com.arextest.model.replay.QueryReplayResultResponseType;
 import com.arextest.model.replay.ViewRecordRequestType;
 import com.arextest.model.replay.ViewRecordResponseType;
+import com.arextest.model.replay.dto.ViewRecordDTO;
 import com.arextest.model.replay.holder.ListResultHolder;
 import com.arextest.model.response.Response;
 import com.arextest.storage.mock.MockerPostProcessor;
@@ -244,13 +245,17 @@ public class ScheduleReplayQueryController {
     MDCTracer.addRecordId(recordId);
     ViewRecordResponseType responseType = new ViewRecordResponseType();
     try {
-      List<AREXMocker> allReadableResult = scheduleReplayingService.queryRecordList(requestType);
-      if (CollectionUtils.isEmpty(allReadableResult)) {
-        LOGGER.info("could not found any resources for request: {}", requestType);
+      ViewRecordDTO viewRecordDto = scheduleReplayingService.queryRecordList(requestType);
+      List<AREXMocker> mockers = viewRecordDto.getRecordResult();
+      if (CollectionUtils.isEmpty(mockers)) {
+        LOGGER.info("could not found any resources for recordId: {}", recordId);
       }
-      responseType.setRecordResult(allReadableResult);
+
+      responseType.setRecordResult(mockers);
+      responseType.setReplayResult(viewRecordDto.getReplayResult());
+      responseType.setSourceProvider(viewRecordDto.getSourceProvider());
       if (Boolean.TRUE.toString().equals(downgrade)) {
-        MockerPostProcessor.desensitize(allReadableResult);
+        MockerPostProcessor.desensitize(mockers);
         responseType.setDesensitized(true);
       }
     } catch (JsonProcessingException exception) {

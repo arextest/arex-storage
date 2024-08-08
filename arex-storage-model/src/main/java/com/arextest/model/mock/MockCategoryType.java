@@ -37,6 +37,8 @@ public class MockCategoryType {
   public static final MockCategoryType DUBBO_CONSUMER = MockCategoryType.createDependency(
       "DubboConsumer");
   public static final MockCategoryType COVERAGE = MockCategoryType.createCoverage("Coverage");
+  public static final MockCategoryType RECORDING_SCENE = MockCategoryType.createCoverage("RecordingScene");
+  public static final MockCategoryType REPLAY_SCENE = MockCategoryType.createCoverage("ReplayScene");
 
   static {
     Set<MockCategoryType> internalSet = new LinkedHashSet<>();

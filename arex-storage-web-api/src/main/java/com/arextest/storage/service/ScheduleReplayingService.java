@@ -10,6 +10,7 @@ import com.arextest.model.mock.Mocker;
 import com.arextest.model.mock.Mocker.Target;
 import com.arextest.model.replay.PagedRequestType;
 import com.arextest.model.replay.ViewRecordRequestType;
+import com.arextest.model.replay.dto.ViewRecordDTO;
 import com.arextest.model.replay.holder.ListResultHolder;
 import com.arextest.storage.mock.MockResultProvider;
 import com.arextest.storage.repository.ProviderNames;
@@ -56,6 +57,7 @@ public class ScheduleReplayingService {
   private final MockResultProvider mockResultProvider;
   private final RepositoryProviderFactory repositoryProviderFactory;
   private final ConfigRepositoryProvider<ApplicationOperationConfiguration> serviceOperationRepository;
+  private final ScenePoolService scenePoolService;
 
   public List<ListResultHolder> queryReplayResult(String recordId, String replayResultId) {
     Set<MockCategoryType> categoryTypes = repositoryProviderFactory.getCategoryTypes();
@@ -93,32 +95,71 @@ public class ScheduleReplayingService {
     return Collections.emptyList();
   }
 
-  public List<AREXMocker> queryRecordList(ViewRecordRequestType request) {
+  public ViewRecordDTO queryRecordList(ViewRecordRequestType request) {
     // request category list
     Set<MockCategoryType> mockCategoryTypes = calculateNormalCategories(request);
     String recordId = request.getRecordId();
 
+    ViewRecordDTO dto = new ViewRecordDTO();
+    dto.setSourceProvider(
+        StringUtils.defaultIfEmpty(request.getSourceProvider(), ProviderNames.DEFAULT));
     // try query for requested provider
-    List<AREXMocker> result = queryRecordsByProvider(request.getSourceProvider(), recordId,
+    List<AREXMocker> recordMockers = queryRecordsByProvider(request.getSourceProvider(), recordId,
         mockCategoryTypes);
 
     // if no result found, try query for all providers
-    if (CollectionUtils.isEmpty(result)) {
+    if (CollectionUtils.isEmpty(recordMockers)) {
       for (String providerName : MOCKER_PROVIDER_NAMES) {
+        // filter out the request source provider
         if (StringUtils.equals(providerName, request.getSourceProvider())) {
           continue;
         }
-        result = queryRecordsByProvider(providerName, recordId, mockCategoryTypes);
-        if (CollectionUtils.isNotEmpty(result)) {
+        recordMockers = queryRecordsByProvider(providerName, recordId, mockCategoryTypes);
+        if (CollectionUtils.isNotEmpty(recordMockers)) {
+          dto.setSourceProvider(providerName);
           break;
         }
       }
     }
 
-    if (Boolean.TRUE.equals(request.getSplitMergeRecord())) {
-      return splitMergedMockers(result);
+    if (Boolean.TRUE.equals(request.getSplitMergeRecord()) && CollectionUtils.isNotEmpty(recordMockers)) {
+      recordMockers = splitMergedMockers(recordMockers);
     }
-    return result;
+
+    dto.setRecordResult(recordMockers);
+    handleSceneTypes(mockCategoryTypes, recordId, dto);
+    return dto;
+  }
+
+  private void handleSceneTypes(Set<MockCategoryType> mockCategoryTypes, String recordId, ViewRecordDTO dto) {
+    if (mockCategoryTypes.contains(MockCategoryType.RECORDING_SCENE)) {
+      handleSceneType(MockCategoryType.RECORDING_SCENE, recordId, dto);
+    }
+
+    if (mockCategoryTypes.contains(MockCategoryType.REPLAY_SCENE)) {
+      handleSceneType(MockCategoryType.REPLAY_SCENE, recordId, dto);
+    }
+  }
+
+  private void handleSceneType(MockCategoryType categoryType, String recordId, ViewRecordDTO dto) {
+    AREXMocker mocker = findByRecordId(recordId, categoryType);
+    if (mocker == null) {
+      return;
+    }
+
+    if (categoryType == MockCategoryType.RECORDING_SCENE) {
+      List<AREXMocker> recordResult =
+          CollectionUtils.isEmpty(dto.getRecordResult()) ?
+              new ArrayList<>(1) : dto.getRecordResult();
+      recordResult.add(mocker);
+      dto.setRecordResult(recordResult);
+    } else if (categoryType == MockCategoryType.REPLAY_SCENE) {
+      dto.setReplayResult(Collections.singletonList(mocker));
+    }
+  }
+
+  private AREXMocker findByRecordId(String recordId, MockCategoryType categoryType) {
+    return scenePoolService.findByRecordId(recordId, categoryType);
   }
 
   /**
@@ -207,7 +248,11 @@ public class ScheduleReplayingService {
   }
 
   private List<AREXMocker> splitMergedMockers(List<AREXMocker> mockerList) {
-    List<AREXMocker> result = new ArrayList<>();
+    // TODO The merge record mode has been deleted, it is compatible here for now and will be removed later.
+    if (mockerList.stream().noneMatch(item -> MERGE_RECORD_OPERATION_NAME.equals(item.getOperationName()))) {
+      return mockerList;
+    }
+    List<AREXMocker> result = new ArrayList<>(mockerList.size());
     for (AREXMocker mocker : mockerList) {
       if (MERGE_RECORD_OPERATION_NAME.equals(mocker.getOperationName())) {
         List<AREXMocker> splitMockers = splitMergedMocker(mocker);

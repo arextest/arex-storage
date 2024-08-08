@@ -8,7 +8,7 @@ public interface Constants{
 
   String CONFIG_COMPARISON_ENCRYPTION_COLLECTION_NAME = "ConfigComparisonEncryption";
 
-  String CONFIG_COMPARISON_EXCLUSIONS_COLLECTION_NAME = "ConfigComparisonExclusions";
+  String CONFIG_COMPARISON_EXCLUSIONS_COLLECTION_NAME = "ConfigComparisonExclusion";
 
   String CONFIG_COMPARISON_IGNORE_CATEGORY_COLLECTION_NAME = "ConfigComparisonIgnoreCategory";
 
@@ -32,5 +32,8 @@ public interface Constants{
   int MAX_SQL_LENGTH_DEFAULT = 5000;
   String AREX_CONFIG_MOCKERCONVERT_ENABLED = "arex.config.mockerConvert.enabled";
   boolean AREX_CONFIG_MOCKERCONVERT_ENABLED_DEFAULT = true;
+  String SQL_PARSE_DURATION_THRESHOLD = "sql.parse.duration.threshold";
+  int SQL_PARSE_DURATION_THRESHOLD_DEFAULT = 200;
+  String SQL_PARSE_FAIL_OUTPUT_SWITCH = "sql.parse.fail.output.switch";
 
 }

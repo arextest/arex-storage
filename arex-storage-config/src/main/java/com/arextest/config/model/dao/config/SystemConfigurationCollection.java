@@ -4,6 +4,7 @@ import com.arextest.config.model.dao.BaseEntity;
 import com.arextest.config.model.dto.system.ComparePluginInfo;
 import com.arextest.config.model.dto.system.DesensitizationJar;
 import java.util.Map;
+import java.util.Set;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -30,6 +31,7 @@ public class SystemConfigurationCollection extends BaseEntity {
   private Boolean authSwitch;
   private ComparePluginInfo comparePluginInfo;
   private String jwtSeed;
+  private Set<String> ignoreNodeSet;
 
 
   public interface KeySummary {
@@ -39,5 +41,6 @@ public class SystemConfigurationCollection extends BaseEntity {
     String AUTH_SWITCH = "auth_switch";
     String COMPARE_PLUGIN_INFO = "compare_plugin_info";
     String JWT_SEED = "jwt_seed";
+    String IGNORE_NODE_SET = "ignore_node_set";
   }
 }
