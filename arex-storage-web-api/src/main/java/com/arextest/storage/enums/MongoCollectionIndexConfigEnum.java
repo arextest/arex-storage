@@ -70,6 +70,14 @@ public enum MongoCollectionIndexConfigEnum {
               .ttlIndexConfig(null)
               .build())),
 
+  REPLAY_COMPARE_RESULT_INDEX("ReplayCompareResult",
+      Collections.singletonList(
+          IndexConfig.builder()
+              .fieldConfigs(Collections.singletonList(FieldConfig.build("planItemId", true)))
+              .unique(false)
+              .ttlIndexConfig(null)
+              .build())),
+
   LOGS_INDEX("logs",
       Arrays.asList(
           IndexConfig.builder()
