@@ -52,6 +52,7 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -267,8 +268,8 @@ public class StorageAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean(MockSourceEditionController.class)
   public MockSourceEditionController mockSourceEditionController(
-      MockSourceEditionService editableService, PrepareMockResultService storageCache) {
-    return new MockSourceEditionController(editableService, storageCache);
+      MockSourceEditionService editableService, PrepareMockResultService storageCache, Executor batchSaveExecutor) {
+    return new MockSourceEditionController(editableService, storageCache, batchSaveExecutor);
   }
 
   @Bean

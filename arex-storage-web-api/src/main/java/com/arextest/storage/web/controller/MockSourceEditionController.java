@@ -7,7 +7,11 @@ import com.arextest.model.response.ResponseStatusType;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.service.PrepareMockResultService;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
@@ -22,26 +26,21 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-
+@RequiredArgsConstructor
 @RequestMapping(path = "/api/storage/edit/", produces = MediaType.APPLICATION_JSON_VALUE)
 @Slf4j
 public class MockSourceEditionController {
 
   private final MockSourceEditionService editableService;
-
   private final PrepareMockResultService storageCache;
+  private final Executor batchSaveExecutor;
 
   private final String PROVIDER_ROLLING = "Rolling";
   private final int REMOVE_BY_APPID = 1;
   private final int REMOVE_BY_APPID_AND_OPERATIONNAME = 2;
   private final int REMOVE_BY_RECORDID = 3;
-  private static final String[] DEFAULT_PROVIDER_NAMES = new String[]{ProviderNames.DEFAULT, ProviderNames.AUTO_PINNED};
-
-  public MockSourceEditionController(MockSourceEditionService editableService,
-      PrepareMockResultService storageCache) {
-    this.editableService = editableService;
-    this.storageCache = storageCache;
-  }
+  private static final String[] DEFAULT_PROVIDER_NAMES = new String[]{ProviderNames.DEFAULT,
+      ProviderNames.AUTO_PINNED};
 
   @GetMapping(value = "/pinned/{srcRecordId}/{targetRecordId}/")
   @ResponseBody
@@ -112,6 +111,17 @@ public class MockSourceEditionController {
     return this.add(ProviderNames.PINNED, body);
   }
 
+  @PostMapping("/pinned/batchAdd/")
+  @ResponseBody
+  public Response pinnedBatchAdd(@RequestBody List<AREXMocker> mockers) {
+    CompletableFuture.runAsync(() -> {
+      for (AREXMocker mocker : mockers) {
+        this.add(ProviderNames.PINNED, mocker);
+      }
+    }, batchSaveExecutor);
+    return ResponseUtils.successResponse(true);
+  }
+
   /**
    * add special mocker's by whole object
    *
@@ -178,7 +188,6 @@ public class MockSourceEditionController {
       body.setUpdateTime(System.currentTimeMillis());
       boolean updateResult = editableService.update(srcProviderName, body);
 
-
       if (updateResult) {
         storageCache.removeRecord(srcProviderName, category, body.getRecordId());
       }
@@ -210,9 +219,9 @@ public class MockSourceEditionController {
   }
 
   private Response copyTo(String[] srcProviderNames,
-                          String srcRecordId,
-                          String targetProviderName,
-                          String targetRecordId) {
+      String srcRecordId,
+      String targetProviderName,
+      String targetRecordId) {
     if (ArrayUtils.isEmpty(srcProviderNames)) {
       return ResponseUtils.parameterInvalidResponse("The srcProviderNames of requested is empty");
     }
@@ -228,7 +237,7 @@ public class MockSourceEditionController {
     CopyResponseType copyResponseType = new CopyResponseType();
     for (String srcProviderName : srcProviderNames) {
       int count = editableService.copyTo(srcProviderName, srcRecordId, targetProviderName,
-              targetRecordId);
+          targetRecordId);
       copyResponseType.setCopied(count);
       if (count > 0) {
         break;
@@ -236,6 +245,7 @@ public class MockSourceEditionController {
     }
     return ResponseUtils.successResponse(copyResponseType);
   }
+
   @Getter
   @Setter
   protected static class CopyResponseType implements Response {
