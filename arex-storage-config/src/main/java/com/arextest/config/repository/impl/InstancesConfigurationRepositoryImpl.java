@@ -36,7 +36,7 @@ public class InstancesConfigurationRepositoryImpl implements
 
   public List<InstancesConfiguration> listByAppOrdered(String appId) {
     Query filter = new Query(Criteria.where(InstancesCollection.Fields.appId).is(appId));
-    filter.with(Sort.by(Sort.Direction.DESC, DASH_ID));
+    filter.with(Sort.by(Sort.Direction.ASC, DASH_ID));
     return mongoTemplate.find(filter, InstancesCollection.class)
         .stream().map(InstancesMapper.INSTANCE::dtoFromDao)
         .collect(Collectors.toList());
