@@ -23,6 +23,7 @@ public class AgentWorkingMetricService {
 
   private static final String QUERY_MOCK_METHOD_NAME = "query";
   private static final String SAVE_MOCK_METHOD_NAME = "save";
+  private static final String BATCH_SAVE_MOCK_METHOD_NAME = "batchSave";
   private static final String METRIC_NAME = "service.entry.request";
   private static final String CLIENT_APP_ID = "clientAppId";
   private static final String PATH = "path";
@@ -56,6 +57,18 @@ public class AgentWorkingMetricService {
     long totalTimeNanos = System.nanoTime() - startTimeNanos;
 
     recordEntryTime(SAVE_MOCK_METHOD_NAME, (AREXMocker) item, nanosToMillis(totalTimeNanos));
+    return saveResult;
+  }
+
+  public <T extends Mocker> boolean batchSaveRecord(List<AREXMocker> mockers) {
+
+    long startTimeNanos = System.nanoTime();
+    boolean saveResult = agentWorkingService.batchSaveRecord(mockers);
+    long totalTimeNanos = System.nanoTime() - startTimeNanos;
+
+    if (CollectionUtils.isEmpty(metricListeners)) {
+      recordEntryTime(BATCH_SAVE_MOCK_METHOD_NAME, mockers.get(0), nanosToMillis(totalTimeNanos));
+    }
     return saveResult;
   }
 

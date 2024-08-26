@@ -58,11 +58,11 @@ public class ExecutorsConfiguration implements Thread.UncaughtExceptionHandler {
    * @return
    */
   @Bean
-  public ExecutorService batchSaveExecutor() {
+  public ExecutorService batchSaveMockersExecutor() {
     ExecutorService executorService = new ThreadPoolExecutor(CORE_POOL_SIZE, CORE_POOL_SIZE * 2,
         KEEP_ALIVE_TIME, TimeUnit.SECONDS,
         new LinkedBlockingQueue<>(100),
-        createThreadFac("batchSave-executor-%d"));
+        createThreadFac("batchSaveMockers-executor-%d"));
     return TtlExecutors.getTtlExecutorService(executorService);
   }
 

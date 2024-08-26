@@ -17,6 +17,7 @@ import com.arextest.storage.model.InvalidIncompleteRecordRequest;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.AgentWorkingService;
 import com.arextest.storage.service.InvalidRecordService;
+import com.arextest.storage.service.handler.mocker.AgentWorkingHandler;
 import com.arextest.storage.trace.MDCTracer;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.HashMap;
@@ -60,7 +61,9 @@ public class AgentRecordingController {
   @Resource(name = "custom-fork-join-executor")
   private Executor customForkJoinExecutor;
   @Resource
-  private Executor batchSaveExecutor;
+  private Executor batchSaveMockersExecutor;
+  @Resource
+  private AgentWorkingHandler<AREXMocker> handleMockerService;
 
   /**
    * from agent query,means to save the request and try to find a record item as mock result for
@@ -141,12 +144,7 @@ public class AgentRecordingController {
     }
     try {
       MDCTracer.addTrace(requestType);
-      if (invalidRecordService.isInvalidCase(requestType.getRecordId())) {
-        LOGGER.warn("recordId: {} is invalid", requestType.getRecordId());
-        return ResponseUtils.parameterInvalidResponse("invalid mocker");
-      }
-
-      boolean saveResult = agentWorkingMetricService.saveRecord(requestType);
+      boolean saveResult = handleMockerService.save(requestType);
       LOGGER.info("agent record save result:{},category:{},recordId:{}", saveResult, category,
           requestType.getRecordId());
       return ResponseUtils.successResponse(saveResult);
@@ -168,19 +166,11 @@ public class AgentRecordingController {
     }
 
     try {
-      if (invalidRecordService.isInvalidCase(mockers.get(0).getRecordId())) {
-        LOGGER.warn("recordId: {} is invalid", mockers.get(0).getRecordId());
-        return ResponseUtils.parameterInvalidResponse("invalid mocker");
-      }
-
       // Return the results directly to the agent, asynchronous processing process
-      CompletableFuture.runAsync(() -> {
-        for (AREXMocker mocker : mockers) {
-          this.save(mocker);
-        }
-      }, batchSaveExecutor);
+      handleMockerService.batchSave(mockers);
     } catch (Exception e) {
-      LOGGER.error("batch save record error: {}", e.getMessage(), e);
+      LOGGER.error("batch save record error: {}, {}", mockers.get(0).getRecordId(), e.getMessage(), e);
+      handleSaveMockerError(mockers.get(0));
       return ResponseUtils.exceptionResponse(e.getMessage());
     }
     return ResponseUtils.successResponse(true);

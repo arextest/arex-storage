@@ -14,8 +14,12 @@ import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.RepositoryReader;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.listener.AgentWorkingListener;
+import com.arextest.storage.trace.MDCTracer;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -47,6 +51,7 @@ public class AgentWorkingService {
   private PrepareMockResultService prepareMockResultService;
   @Setter
   private RecordEnvType recordEnvType;
+  private static final String TITLE = "[[title=handleMocker]]";
 
   /**
    * requested from AREX's agent hits to recording, we direct save to repository for next replay
@@ -57,16 +62,62 @@ public class AgentWorkingService {
    * @return true means success,else save failure
    */
   public <T extends Mocker> boolean saveRecord(@NotNull T item) {
+    if (!prepareAndDispatchRecord(item)) {
+      return false;
+    }
+
+    RepositoryProvider<T> repositoryWriter = repositoryProviderFactory.defaultProvider();
+    return repositoryWriter != null && repositoryWriter.save(item);
+  }
+
+  public <T extends Mocker> boolean batchSaveRecord(List<AREXMocker> mockers) {
+    if (CollectionUtils.isEmpty(mockers)) {
+      return false;
+    }
+
+    MDCTracer.addTrace(mockers.get(0));
+    Map<String, List<AREXMocker>> groupedItems = mockers.stream()
+        .collect(Collectors.groupingBy(item -> item.getCategoryType().getName()));
+
+    boolean batchSaveResult = true;
+    RepositoryProvider<T> repositoryWriter = repositoryProviderFactory.defaultProvider();
+    for (Entry<String, List<AREXMocker>> entry : groupedItems.entrySet()) {
+      String categoryName = entry.getKey();
+      if (!batchSaveRecordWithCategory((List<T>) entry.getValue(), repositoryWriter)) {
+        batchSaveResult = false;
+      }
+
+      LOGGER.info("{}batch save record {}, category: {}, recordId: {}, count: {}",
+          TITLE, batchSaveResult, categoryName, mockers.get(0).getRecordId(), entry.getValue().size());
+    }
+    MDCTracer.clear();
+    return batchSaveResult;
+  }
+
+  private <T extends Mocker> boolean batchSaveRecordWithCategory(@NotNull List<T> list, RepositoryProvider<T> repositoryWriter) {
+    if (CollectionUtils.isEmpty(list)) {
+      return false;
+    }
+
+    for (T item : list) {
+      // Special types of data are already stored in the handle and do not need to be processed here, e.g. coverage
+      if (!prepareAndDispatchRecord(item)) {
+        return false;
+      }
+    }
+
+    return repositoryWriter != null && repositoryWriter.saveList(list);
+  }
+
+  private <T extends Mocker> boolean prepareAndDispatchRecord(T item) {
     if (shouldMarkRecordEnv(item.getCategoryType())) {
       item.setRecordEnvironment(recordEnvType.getCodeValue());
     }
     if (!this.dispatchRecordSavingEvent(item)) {
       return false;
     }
-
     mockResultProvider.calculateEigen(item, true);
-    RepositoryProvider<T> repositoryWriter = repositoryProviderFactory.defaultProvider();
-    return repositoryWriter != null && repositoryWriter.save(item);
+    return true;
   }
 
   private boolean dispatchRecordSavingEvent(Mocker instance) {
