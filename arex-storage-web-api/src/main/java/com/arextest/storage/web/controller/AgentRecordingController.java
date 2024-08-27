@@ -180,7 +180,8 @@ public class AgentRecordingController {
         }
       }, batchSaveExecutor);
     } catch (Exception e) {
-      LOGGER.error("batch save record error: {}", e.getMessage(), e);
+      LOGGER.error("batch save record error: {}, {}", mockers.get(0).getRecordId(), e.getMessage(), e);
+      handleSaveMockerError(mockers.get(0));
       return ResponseUtils.exceptionResponse(e.getMessage());
     }
     return ResponseUtils.successResponse(true);
