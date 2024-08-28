@@ -1,5 +1,6 @@
 package com.arextest.storage.enums;
 
+import com.google.common.collect.Lists;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -67,6 +68,21 @@ public enum MongoCollectionIndexConfigEnum {
           IndexConfig.builder()
               .fieldConfigs(Collections.singletonList(FieldConfig.build("appId", true)))
               .unique(true)
+              .ttlIndexConfig(null)
+              .build())),
+
+  REPLAY_COMPARE_RESULT_INDEX("ReplayCompareResult",
+      Lists.newArrayList(
+          IndexConfig.builder()
+              .fieldConfigs(Collections.singletonList(FieldConfig.build("planItemId", true)))
+              .unique(false)
+              .ttlIndexConfig(null)
+              .build(),
+          IndexConfig.builder()
+              .fieldConfigs(Lists.newArrayList(FieldConfig.build("operationId", true),
+                  FieldConfig.build("categoryName", true),
+                  FieldConfig.build("dataChangeCreateTime", false)))
+              .unique(false)
               .ttlIndexConfig(null)
               .build())),
 

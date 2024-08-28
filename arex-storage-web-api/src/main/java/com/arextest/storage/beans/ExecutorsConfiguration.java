@@ -1,6 +1,7 @@
 package com.arextest.storage.beans;
 
 import com.alibaba.ttl.threadpool.TtlExecutors;
+import com.arextest.common.config.DefaultApplicationConfig;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -11,6 +12,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy;
 import java.util.concurrent.ThreadPoolExecutor.DiscardPolicy;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,12 +21,18 @@ import org.springframework.context.annotation.Configuration;
 @Slf4j
 public class ExecutorsConfiguration implements Thread.UncaughtExceptionHandler {
 
-  private static final int CORE_POOL_SIZE = 200;
+  private static final int CORE_POOL_SIZE = 400;
   private static final long KEEP_ALIVE_TIME = 60L;
+  private static final String COVERAGE_HANDLER_EXECUTOR_CORE_POOL_SIZE = "coverage.handler.executor.core.pool.size";
+  private static final int DEFAULT_CORE_POOL_SIZE = Runtime.getRuntime().availableProcessors();
+  @Resource
+  private DefaultApplicationConfig defaultApplicationConfig;
 
   @Bean
   public ScheduledExecutorService coverageHandleDelayedPool() {
-    ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(4,
+    int corePoolSize = defaultApplicationConfig.getConfigAsInt(COVERAGE_HANDLER_EXECUTOR_CORE_POOL_SIZE,
+        2 * DEFAULT_CORE_POOL_SIZE);
+    ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(corePoolSize,
         createThreadFac("coverage-handler-%d"),
         new DiscardPolicy());
     return TtlExecutors.getTtlScheduledExecutorService(executor);
@@ -54,7 +62,7 @@ public class ExecutorsConfiguration implements Thread.UncaughtExceptionHandler {
   /**
    * In the current scenario, the time consumption of a single save interface is 2ms,
    * the qps is around 400, and this interface is an IO-intensive interface,
-   * so the number of core threads is set to 200
+   * so the number of core threads is set to 400
    * @return
    */
   @Bean

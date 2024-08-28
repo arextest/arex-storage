@@ -88,12 +88,16 @@ public class CoverageMockerHandler implements MockerHandler {
     if (StringUtils.isEmpty(coverageMocker.getReplayId()) && handlerSwitch.allowRecordTask(appId)) {
       scenePoolProvider = scenePoolFactory.getProvider(ScenePoolFactory.RECORDING_SCENE_POOL);
       task = new RecordTask(scenePoolProvider, coverageMocker);
+      LOGGER.info("{}Receive the record task, recordId: {}",
+          TITLE_RECORD_TASK, coverageMocker.getRecordId());
       coverageHandleDelayedPool.schedule(task, 5, TimeUnit.SECONDS);
 
     } else if (CaseSendScene.MIXED_NORMAL.name().equals(scheduleSendScene) &&
         handlerSwitch.allowReplayTask(appId)) {
       scenePoolProvider = scenePoolFactory.getProvider(ScenePoolFactory.REPLAY_SCENE_POOL);
       task = new ReplayTask(scenePoolProvider, coverageMocker);
+      LOGGER.info("{}Receive the replay task, recordId: {}",
+          TITLE_REPLAY_TASK, coverageMocker.getRecordId());
       coverageHandleDelayedPool.schedule(task, 1, TimeUnit.SECONDS);
     }
   }
@@ -277,6 +281,8 @@ public class CoverageMockerHandler implements MockerHandler {
         String op = EXISTING_SCENE_OP;
         MDCTracer.addAppId(appId);
         MDCTracer.addRecordId(recordId);
+        LOGGER.info("{}CoverageMockerHandler start, recordId: {}, pathKey: {}",
+            TITLE_RECORD_TASK, coverageMocker.getRecordId(), coverageMocker.getOperationName());
 
         // scene exist remove Rolling mocker
         if (scenePoolProvider.checkSceneExist(appId, sceneKey)) {

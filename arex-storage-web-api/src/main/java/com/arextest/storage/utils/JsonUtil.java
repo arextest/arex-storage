@@ -7,7 +7,8 @@ import org.apache.commons.lang3.StringUtils;
 public class JsonUtil {
 
   public static boolean isJsonStr(String obj) {
-    return StringUtils.isNotEmpty(obj) && obj.startsWith("{") && obj.endsWith("}");
+    return StringUtils.isNotEmpty(obj) &&
+        ((obj.startsWith("{") && obj.endsWith("}")) || (obj.startsWith("[") && obj.endsWith("]")));
   }
 
   public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()

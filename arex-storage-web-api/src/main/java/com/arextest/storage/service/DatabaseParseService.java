@@ -7,6 +7,7 @@ import com.arextest.model.mock.Mocker;
 import com.arextest.storage.metric.MetricListener;
 import com.arextest.storage.model.TableSchema;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -30,6 +31,7 @@ import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH;
 import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH_DEFAULT;
 import static com.arextest.storage.model.Constants.SQL_PARSE_DURATION_THRESHOLD;
 import static com.arextest.storage.model.Constants.SQL_PARSE_DURATION_THRESHOLD_DEFAULT;
+import static com.arextest.storage.model.Constants.SQL_PARSE_FAIL_OUTPUT_SWITCH;
 
 /**
  * @author niyan
@@ -43,6 +45,7 @@ public class DatabaseParseService {
     private static final String SQL_PARSE_TIME_METRIC_NAME = "sql.parse.time";
     private static final Pattern PATTERN = Pattern.compile("(\\s+|\"\\?\"|\\[|\\])");
     private static final String CLIENT_APP_ID = "clientAppId";
+    private static final String PARSING_SQL_RESULT = "parseSqlResult";
 
     @Autowired(required = false)
     private List<MetricListener> metricListenerList;
@@ -152,7 +155,7 @@ public class DatabaseParseService {
      */
     public TableSchema parse(String sql, String appId) {
         long startTime = System.currentTimeMillis();
-
+        boolean success = true;
         TableSchema tableSchema = new TableSchema();
         try {
             sql = PATTERN.matcher(sql).replaceAll(" ");
@@ -167,10 +170,14 @@ public class DatabaseParseService {
             }
             tableSchema.setTableNames(tableNameList);
         } catch (Throwable e) {
+            success = false;
+            if (defaultApplicationConfig.getConfigAsBoolean(SQL_PARSE_FAIL_OUTPUT_SWITCH, false)) {
+                LOGGER.warn("[[title=sqlParse]]sql parse fail, sql: {}", sql);
+            }
             return tableSchema;
         } finally {
             long totalTime = System.currentTimeMillis() - startTime;
-            recordParseTime(totalTime, sql, appId);
+            recordParseTime(totalTime, sql, appId, success);
         }
         return tableSchema;
     }
@@ -182,7 +189,7 @@ public class DatabaseParseService {
         return statement.getClass().getSimpleName();
     }
 
-    private void recordParseTime(long duration, String sql, String appId) {
+    private void recordParseTime(long duration, String sql, String appId, boolean success) {
         if (CollectionUtils.isEmpty(metricListenerList)) {
             return;
         }
@@ -191,7 +198,9 @@ public class DatabaseParseService {
             LOGGER.warn("[[title=sqlParse]]the actual parsing time:{} exceeds the set threshold:{}, sql: {}", duration, parseTimeThreshold, sql);
         }
 
-        Map<String, String> tags = Collections.singletonMap(CLIENT_APP_ID, appId);
+        Map<String, String> tags = new HashMap<>();
+        tags.put(CLIENT_APP_ID, appId);
+        tags.put(PARSING_SQL_RESULT, success ? "success" : "fail");
         for (MetricListener metricListener : metricListenerList) {
             metricListener.recordTime(SQL_PARSE_TIME_METRIC_NAME, tags, duration);
         }
