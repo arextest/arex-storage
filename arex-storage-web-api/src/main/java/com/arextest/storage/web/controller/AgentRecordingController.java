@@ -1,14 +1,18 @@
 package com.arextest.storage.web.controller;
 
+import static com.arextest.model.constants.HeaderNames.AREX_AGENT_VERSION;
 import static com.arextest.model.constants.HeaderNames.AREX_MOCK_STRATEGY_CODE;
 
+import com.arextest.common.cache.CacheProvider;
 import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.model.mock.Mocker.Target;
+import com.arextest.model.replay.CompareRelationResult;
 import com.arextest.model.replay.QueryMockRequestType;
 import com.arextest.model.response.Response;
+import com.arextest.storage.cache.CacheKeyUtils;
 import com.arextest.storage.enums.InvalidReasonEnum;
 import com.arextest.storage.metric.AgentWorkingMetricService;
 import com.arextest.storage.mock.MockResultContext;
@@ -17,8 +21,10 @@ import com.arextest.storage.model.InvalidIncompleteRecordRequest;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.AgentWorkingService;
 import com.arextest.storage.service.InvalidRecordService;
+import com.arextest.storage.service.handler.mocker.AgentWorkingHandler;
 import com.arextest.storage.trace.MDCTracer;
 import com.fasterxml.jackson.core.type.TypeReference;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,10 +63,15 @@ public class AgentRecordingController {
   private ZstdJacksonSerializer zstdJacksonSerializer;
   @Resource
   private InvalidRecordService invalidRecordService;
+  @Resource
+  private CacheProvider redisCacheProvider;
+  @Resource
+  private AgentWorkingHandler<CompareRelationResult> handleReplayResultService;
   @Resource(name = "custom-fork-join-executor")
   private Executor customForkJoinExecutor;
   @Resource
   private Executor batchSaveExecutor;
+  private static final long TEN_MINUTES = 10 * 60L;
 
   /**
    * from agent query,means to save the request and try to find a record item as mock result for
@@ -187,6 +198,24 @@ public class AgentRecordingController {
     return ResponseUtils.successResponse(true);
   }
 
+  @PostMapping(value = "/batchSaveReplayResult")
+  @ResponseBody
+  public Response batchSaveReplayResult(@RequestBody List<CompareRelationResult> replayResults,
+      @RequestHeader(name = AREX_AGENT_VERSION) String agentVersion) {
+    try {
+      if (CollectionUtils.isEmpty(replayResults)) {
+        ResponseUtils.parameterInvalidResponse("request body is empty");
+      }
+
+      boolean result = handleReplayResultService.batchSave(replayResults);
+      putAgentVersionInRedis(replayResults.get(0).getReplayId(), agentVersion);
+      return ResponseUtils.successResponse(result);
+    } catch (Exception e) {
+      LOGGER.error("batch save replay result error: {}", e.getMessage(), e);
+      return ResponseUtils.exceptionResponse(e.getMessage());
+    }
+  }
+
   @GetMapping(value = "/saveTest/", produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseBody
   public Response saveTest(
@@ -265,6 +294,22 @@ public class AgentRecordingController {
       LOGGER.error("queryMockersTest error:{} ", runtimeException.getMessage(), runtimeException);
     }
     return null;
+  }
+
+  /**
+   * put agent version in redis,
+   * when obtaining the matching relationship,
+   * use this key to determine whether new logic is needed.
+   * @param replayId
+   * @param agentVersion
+   */
+  private void putAgentVersionInRedis(String replayId, String agentVersion) {
+    if (StringUtils.isEmpty(agentVersion) || StringUtils.isEmpty(replayId)) {
+      return;
+    }
+
+    byte[] value = agentVersion.getBytes(StandardCharsets.UTF_8);
+    redisCacheProvider.put(CacheKeyUtils.buildAgentVersionKey(replayId), TEN_MINUTES, value);
   }
 
   private void handleSaveMockerError(AREXMocker requestType) {

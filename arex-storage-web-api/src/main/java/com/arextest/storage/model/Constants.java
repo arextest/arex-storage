@@ -35,5 +35,6 @@ public interface Constants{
   String SQL_PARSE_DURATION_THRESHOLD = "sql.parse.duration.threshold";
   int SQL_PARSE_DURATION_THRESHOLD_DEFAULT = 200;
   String SQL_PARSE_FAIL_OUTPUT_SWITCH = "sql.parse.fail.output.switch";
+  String AGENT_VERSION = "agentVersion";
 
 }

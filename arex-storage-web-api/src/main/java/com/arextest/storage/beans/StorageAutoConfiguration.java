@@ -39,6 +39,7 @@ import com.arextest.storage.service.QueryConfigService;
 import com.arextest.storage.service.ScenePoolService;
 import com.arextest.storage.service.ScheduleReplayingService;
 import com.arextest.storage.service.config.ApplicationService;
+import com.arextest.storage.service.handler.mocker.HandleReplayResultService;
 import com.arextest.storage.service.listener.AgentWorkingListener;
 import com.arextest.storage.service.listener.AutoDiscoveryEntryPointListener;
 import com.arextest.storage.web.controller.MockSourceEditionController;
@@ -249,9 +250,12 @@ public class StorageAutoConfiguration {
   public ScheduleReplayQueryController scheduleReplayQueryController(
       ScheduleReplayingService scheduleReplayingService,
       PrepareMockResultService prepareMockResultService,
-      InvalidRecordService invalidRecordService) {
+      InvalidRecordService invalidRecordService,
+      HandleReplayResultService handleReplayResultService,
+      CacheProvider redisCacheProvider,
+      DefaultApplicationConfig applicationDefaultConfig) {
     return new ScheduleReplayQueryController(scheduleReplayingService, prepareMockResultService,
-        invalidRecordService);
+        invalidRecordService, handleReplayResultService, redisCacheProvider, applicationDefaultConfig);
   }
 
   @Bean
