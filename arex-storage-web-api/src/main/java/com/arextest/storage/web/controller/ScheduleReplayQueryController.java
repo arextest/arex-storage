@@ -1,6 +1,11 @@
 package com.arextest.storage.web.controller;
 
+import static com.arextest.model.constants.HeaderNames.AREX_AGENT_VERSION;
+import static com.arextest.storage.converter.ZstdJacksonMessageConverter.ZSTD_JSON_MEDIA_TYPE;
+import com.arextest.common.cache.CacheProvider;
+import com.arextest.common.config.DefaultApplicationConfig;
 import com.arextest.model.mock.AREXMocker;
+import com.arextest.model.replay.CompareRelationResult;
 import com.arextest.model.replay.CountOperationCaseRequestType;
 import com.arextest.model.replay.CountOperationCaseResponseType;
 import com.arextest.model.replay.PagedRequestType;
@@ -14,13 +19,15 @@ import com.arextest.model.replay.QueryReplayResultResponseType;
 import com.arextest.model.replay.ViewRecordRequestType;
 import com.arextest.model.replay.ViewRecordResponseType;
 import com.arextest.model.replay.dto.ViewRecordDTO;
-import com.arextest.model.replay.holder.ListResultHolder;
 import com.arextest.model.response.Response;
+import com.arextest.storage.cache.CacheKeyUtils;
 import com.arextest.storage.mock.MockerPostProcessor;
+import com.arextest.storage.model.Constants;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.service.InvalidRecordService;
 import com.arextest.storage.service.PrepareMockResultService;
 import com.arextest.storage.service.ScheduleReplayingService;
+import com.arextest.storage.service.handler.mocker.AgentWorkingHandler;
 import com.arextest.storage.trace.MDCTracer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
@@ -37,6 +44,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.apache.maven.artifact.versioning.ComparableVersion;
 
 /**
  * this class defined all api list for scheduler replaying
@@ -50,10 +58,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 public class ScheduleReplayQueryController {
 
   private final ScheduleReplayingService scheduleReplayingService;
-
   private final PrepareMockResultService prepareMockResultService;
-
   private final InvalidRecordService invalidRecordService;
+  private final AgentWorkingHandler<CompareRelationResult> handleReplayResultService;
+  private final CacheProvider redisCacheProvider;
+  private final DefaultApplicationConfig applicationDefaultConfig;
 
   /**
    * fetch the replay result for compare
@@ -62,7 +71,7 @@ public class ScheduleReplayQueryController {
    * @return response
    * @see QueryReplayResultResponseType
    */
-  @PostMapping(value = "/replayResult")
+  @PostMapping(value = "/replayResult", produces = {MediaType.APPLICATION_JSON_VALUE, ZSTD_JSON_MEDIA_TYPE})
   @ResponseBody
   public Response replayResult(@RequestBody QueryReplayResultRequestType requestType) {
     if (requestType == null) {
@@ -79,11 +88,17 @@ public class ScheduleReplayQueryController {
     try {
       MDCTracer.addRecordId(recordId);
       MDCTracer.addReplayId(replayResultId);
-      List<ListResultHolder> resultHolderList =
-          scheduleReplayingService.queryReplayResult(recordId, replayResultId);
+
       QueryReplayResultResponseType responseType = new QueryReplayResultResponseType();
-      responseType.setResultHolderList(resultHolderList);
       responseType.setInvalidResult(invalidRecordService.isInvalidReplayIncompleteCase(replayResultId));
+
+      if (getFromCompareRelation(replayResultId)) {
+        responseType.setReplayResults(handleReplayResultService.findBy(replayResultId));
+        responseType.setNeedMatch(false);
+      } else {
+        responseType.setResultHolderList(scheduleReplayingService.queryReplayResult(recordId, replayResultId));
+        responseType.setNeedMatch(true);
+      }
       return ResponseUtils.successResponse(responseType);
     } catch (Throwable throwable) {
       LOGGER.error("replayResult error:{} ,recordId:{} ,replayResultId:{}",
@@ -279,7 +294,8 @@ public class ScheduleReplayQueryController {
    */
   @PostMapping(value = "/cacheLoad")
   @ResponseBody
-  public Response cacheLoad(@RequestBody QueryMockCacheRequestType requestType) {
+  public Response cacheLoad(@RequestBody QueryMockCacheRequestType requestType,
+      @RequestHeader(name = AREX_AGENT_VERSION) String agentVersion) {
     if (requestType == null) {
       return ResponseUtils.requestBodyEmptyResponse();
     }
@@ -294,8 +310,14 @@ public class ScheduleReplayQueryController {
     MDCTracer.addRecordId(recordId);
     long beginTime = System.currentTimeMillis();
     try {
-      return toResponse(
-          prepareMockResultService.preloadAll(requestType.getSourceProvider(), recordId));
+      if (compareVersion(agentVersion)) {
+        LOGGER.info("skip preload cache for recordId:{}, agentVersion:{}", recordId, agentVersion);
+        return ResponseUtils.successResponse(new QueryMockCacheResponseType());
+      } else {
+        LOGGER.info("preload cache for recordId:{}, agentVersion:{}", recordId, agentVersion);
+        return toResponse(
+            prepareMockResultService.preloadAll(requestType.getSourceProvider(), recordId));
+      }
     } catch (Throwable throwable) {
       LOGGER.error("QueryMockCache error:{},request:{}", throwable.getMessage(), requestType);
       return ResponseUtils.exceptionResponse(throwable.getMessage());
@@ -331,6 +353,26 @@ public class ScheduleReplayQueryController {
     } finally {
       MDCTracer.clear();
     }
+  }
+
+  /**
+   * Determine whether to adopt new logic based on the agent version number
+   * @param replayId
+   * @return
+   */
+  private boolean getFromCompareRelation(String replayId) {
+    return redisCacheProvider.exists(CacheKeyUtils.buildReplayResultKey(replayId));
+  }
+
+  private boolean compareVersion(String replayAgentVersion) {
+    String agentVersion = applicationDefaultConfig.getConfigAsString(Constants.AGENT_VERSION, null);
+    if (StringUtils.isEmpty(agentVersion)) {
+      return false;
+    }
+
+    ComparableVersion agentComparableVersion = new ComparableVersion(agentVersion);
+    ComparableVersion replayComparableVersion = new ComparableVersion(replayAgentVersion);
+    return replayComparableVersion.compareTo(agentComparableVersion) >= 0;
   }
 
   private Response toResponse(boolean actionResult) {
