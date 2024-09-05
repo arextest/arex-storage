@@ -2,6 +2,7 @@ package com.arextest.storage.repository;
 
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
+import com.arextest.storage.model.Constants;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -18,7 +19,6 @@ import org.springframework.stereotype.Component;
 @Component
 public final class RepositoryProviderFactory {
 
-  @Getter
   private final List<RepositoryProvider<? extends Mocker>> repositoryProviderList;
   @Getter
   private final Set<MockCategoryType> categoryTypes;
@@ -33,14 +33,29 @@ public final class RepositoryProviderFactory {
         .collect(Collectors.toMap(MockCategoryType::getName, Function.identity()));
   }
 
+  public List<RepositoryProvider<? extends Mocker>> getRepositoryProviderList() {
+    return getRepositoryProviderList(Constants.CLAZZ_NAME_AREX_MOCKER);
+  }
+
+  public List<RepositoryProvider<? extends Mocker>> getRepositoryProviderList(String clazzName) {
+    return repositoryProviderList.stream()
+        .filter(provider -> provider != null && StringUtils.equals(clazzName, provider.getMockerType()))
+        .collect(Collectors.toList());
+  }
+
   public <T extends Mocker> RepositoryProvider<T> findProvider(String providerName) {
+    return findProvider(providerName, Constants.CLAZZ_NAME_AREX_MOCKER);
+  }
+
+  public <T extends Mocker> RepositoryProvider<T> findProvider(String providerName, String clazzName) {
     if (StringUtils.isEmpty(providerName)) {
       providerName = ProviderNames.DEFAULT;
     }
     RepositoryProvider<? extends Mocker> repositoryProvider;
     for (int i = 0; i < repositoryProviderList.size(); i++) {
       repositoryProvider = repositoryProviderList.get(i);
-      if (StringUtils.equals(providerName, repositoryProvider.getProviderName())) {
+      if (StringUtils.equals(providerName, repositoryProvider.getProviderName()) &&
+            StringUtils.equals(clazzName, repositoryProvider.getMockerType())) {
         return (RepositoryProvider<T>) repositoryProvider;
       }
     }

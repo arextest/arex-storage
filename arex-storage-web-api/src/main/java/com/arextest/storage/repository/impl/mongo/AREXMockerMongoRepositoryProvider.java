@@ -2,6 +2,7 @@ package com.arextest.storage.repository.impl.mongo;
 
 import com.arextest.common.config.DefaultApplicationConfig;
 import com.arextest.model.mock.AREXMocker;
+import com.arextest.model.mock.AbstractMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.model.replay.PagedRequestType;
@@ -9,6 +10,7 @@ import com.arextest.model.replay.SortingOption;
 import com.arextest.model.replay.SortingTypeEnum;
 import com.arextest.model.util.MongoCounter;
 import com.arextest.storage.beans.StorageConfigurationProperties;
+import com.arextest.storage.model.Constants;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.utils.TimeUtils;
@@ -55,7 +57,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
   private static final String APP_ID_COLUMN_NAME = "appId";
   private static final String ENV_COLUMN_NAME = "recordEnvironment";
   private static final String OPERATION_COLUMN_NAME = "operationName";
-  private static final String COLLECTION_PREFIX = "Mocker";
+  private static final String COLLECTION_SUFFIX = "Mocker";
 
   private static final String AGENT_RECORD_VERSION_COLUMN_NAME = "recordVersion";
   private static final String TARGET_RESPONSE_COLUMN_NAME = "targetResponse";
@@ -77,12 +79,13 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
   private final StorageConfigurationProperties properties;
   private final Set<MockCategoryType> entryPointTypes;
   private final DefaultApplicationConfig defaultApplicationConfig;
+  private final String mockerType;
 
   private static final String[] DEFAULT_INCLUDE_FIELDS =
-      new String[]{AREXMocker.Fields.id, AREXMocker.Fields.categoryType, AREXMocker.Fields.recordId,
-          AREXMocker.Fields.appId, AREXMocker.Fields.recordEnvironment, AREXMocker.Fields.creationTime,
-          AREXMocker.Fields.expirationTime, AREXMocker.Fields.targetRequest, AREXMocker.Fields.operationName,
-          AREXMocker.Fields.tags, AREXMocker.Fields.recordVersion};
+      new String[]{AbstractMocker.Fields.id, AREXMocker.Fields.categoryType, AbstractMocker.Fields.recordId,
+          AbstractMocker.Fields.appId, AbstractMocker.Fields.recordEnvironment, AbstractMocker.Fields.creationTime,
+          AbstractMocker.Fields.expirationTime, AREXMocker.Fields.targetRequest, AbstractMocker.Fields.operationName,
+          AbstractMocker.Fields.tags, AbstractMocker.Fields.recordVersion};
 
   public AREXMockerMongoRepositoryProvider(MongoTemplate mongoTemplate,
       StorageConfigurationProperties properties,
@@ -101,10 +104,11 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     this.providerName = providerName;
     this.entryPointTypes = entryPointTypes;
     this.defaultApplicationConfig = defaultApplicationConfig;
+    this.mockerType = Constants.CLAZZ_NAME_AREX_MOCKER;
   }
 
   private String getCollectionName(MockCategoryType category) {
-    return this.getProviderName() + category.getName() + COLLECTION_PREFIX;
+    return this.getProviderName() + category.getName() + COLLECTION_SUFFIX;
   }
 
   public Iterable<AREXMocker> queryRecordList(MockCategoryType category, String recordId) {
@@ -362,6 +366,11 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
   @Override
   public String getProviderName() {
     return this.providerName;
+  }
+
+  @Override
+  public String getMockerType() {
+    return this.mockerType;
   }
 
   private Criteria buildAppIdWithOperationFilters(String appId, String operationName) {
