@@ -53,7 +53,7 @@ public class ScheduleReplayingService {
   private static final String MERGE_RECORD_OPERATION_NAME = "arex.mergeRecord";
   private static final List<String> MOCKER_PROVIDER_NAMES = Lists.newArrayList(
       ProviderNames.DEFAULT, ProviderNames.PINNED, ProviderNames.AUTO_PINNED);
-
+  private static final Class<AREXMocker> AREX_MOCKER_CLAZZ = AREXMocker.class;
   private final MockResultProvider mockResultProvider;
   private final RepositoryProviderFactory repositoryProviderFactory;
   private final ConfigRepositoryProvider<ApplicationOperationConfiguration> serviceOperationRepository;
@@ -180,11 +180,16 @@ public class ScheduleReplayingService {
 
   public List<AREXMocker> queryRecordsByRepositoryReader(String recordId, Set<MockCategoryType> types,
       RepositoryProvider<? extends Mocker> repositoryReader) {
-    return this.queryRecordsByRepositoryReader(recordId, types, repositoryReader, null);
+    return this.queryRecordsByRepositoryReader(recordId, types, repositoryReader, null, AREX_MOCKER_CLAZZ);
   }
 
   public List<AREXMocker> queryRecordsByRepositoryReader(String recordId, Set<MockCategoryType> types,
       RepositoryProvider<? extends Mocker> repositoryReader, String[] fieldNames) {
+    return this.queryRecordsByRepositoryReader(recordId, types, repositoryReader, fieldNames, AREX_MOCKER_CLAZZ);
+  }
+
+  public <T extends Mocker> List<T> queryRecordsByRepositoryReader(String recordId, Set<MockCategoryType> types,
+      RepositoryProvider<? extends Mocker> repositoryReader, String[] fieldNames, Class<T> clazz) {
     // true -> entry point, false -> dependency
     Map<Boolean, List<MockCategoryType>> partition = types.stream()
         .collect(Collectors.partitioningBy(MockCategoryType::isEntryPoint));
@@ -193,8 +198,8 @@ public class ScheduleReplayingService {
 
     if (CollectionUtils.isNotEmpty(entryPointTypes)) {
       // try get entrypoint first
-      List<AREXMocker> result = entryPointTypes.stream()
-          .flatMap(category -> queryRecordList(repositoryReader, category, recordId, fieldNames).stream())
+      List<T> result = entryPointTypes.stream()
+          .flatMap(category -> queryRecordList(repositoryReader, category, recordId, fieldNames, clazz).stream())
           .collect(Collectors.toList());
       // if entry point mockers not found, early return
       if (CollectionUtils.isEmpty(result)) {
@@ -203,13 +208,13 @@ public class ScheduleReplayingService {
         // if entry point mockers found, try getting all mockers back
         result.addAll(
             Optional.ofNullable(partition.get(false)).orElse(Collections.emptyList()).stream()
-                .flatMap(category -> queryRecordList(repositoryReader, category, recordId, fieldNames).stream())
+                .flatMap(category -> queryRecordList(repositoryReader, category, recordId, fieldNames, clazz).stream())
                 .collect(Collectors.toList()));
         return result;
       }
     } else {
       return types.stream()
-          .flatMap(category -> queryRecordList(repositoryReader, category, recordId, fieldNames).stream())
+          .flatMap(category -> queryRecordList(repositoryReader, category, recordId, fieldNames, clazz).stream())
           .collect(Collectors.toList());
     }
   }
@@ -316,13 +321,18 @@ public class ScheduleReplayingService {
 
   public List<AREXMocker> queryRecordList(RepositoryProvider<? extends Mocker> repositoryReader,
       MockCategoryType categoryType, String recordId, String[] fieldNames) {
+    return queryRecordList(repositoryReader, categoryType, recordId, fieldNames, AREXMocker.class);
+  }
+
+  public <T extends Mocker> List<T> queryRecordList(RepositoryProvider<? extends Mocker> repositoryReader,
+      MockCategoryType categoryType, String recordId, String[] fieldNames, Class<T> clazz) {
     Iterable<? extends Mocker> iterable = repositoryReader.queryRecordList(categoryType, recordId, fieldNames);
     if (iterable == null) {
       return null;
     }
-    List<AREXMocker> resultList = new LinkedList<>();
+    List<T> resultList = new LinkedList<>();
     for (Mocker mocker : iterable) {
-      resultList.add((AREXMocker) mocker);
+      resultList.add(clazz.cast(mocker));
     }
     resultList.sort(Comparator.comparing(Mocker::getCreationTime));
     return resultList;

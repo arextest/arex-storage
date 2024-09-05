@@ -14,6 +14,7 @@ import com.arextest.config.repository.impl.ApplicationServiceConfigurationReposi
 import com.arextest.config.repository.impl.SystemConfigurationRepositoryImpl;
 import com.arextest.config.utils.MongoHelper;
 import com.arextest.model.mock.AREXMocker;
+import com.arextest.model.mock.AREXQueryMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.storage.aspect.AppAuthAspectExecutor;
 import com.arextest.storage.converter.ZstdJacksonMessageConverter;
@@ -27,6 +28,7 @@ import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.impl.mongo.AREXMockerMongoRepositoryProvider;
+import com.arextest.storage.repository.impl.mongo.AREXQueryMockerMongoRepositoryProvider;
 import com.arextest.storage.repository.impl.mongo.DesensitizationLoader;
 import com.arextest.storage.repository.impl.mongo.converters.ArexEigenCompressionConverter;
 import com.arextest.storage.repository.impl.mongo.converters.ArexMockerCompressionConverter;
@@ -39,6 +41,7 @@ import com.arextest.storage.service.QueryConfigService;
 import com.arextest.storage.service.ScenePoolService;
 import com.arextest.storage.service.ScheduleReplayingService;
 import com.arextest.storage.service.config.ApplicationService;
+import com.arextest.storage.service.handler.mocker.HandleReplayResultService;
 import com.arextest.storage.service.listener.AgentWorkingListener;
 import com.arextest.storage.service.listener.AutoDiscoveryEntryPointListener;
 import com.arextest.storage.web.controller.MockSourceEditionController;
@@ -249,9 +252,12 @@ public class StorageAutoConfiguration {
   public ScheduleReplayQueryController scheduleReplayQueryController(
       ScheduleReplayingService scheduleReplayingService,
       PrepareMockResultService prepareMockResultService,
-      InvalidRecordService invalidRecordService) {
+      InvalidRecordService invalidRecordService,
+      HandleReplayResultService handleReplayResultService,
+      CacheProvider redisCacheProvider,
+      DefaultApplicationConfig applicationDefaultConfig) {
     return new ScheduleReplayQueryController(scheduleReplayingService, prepareMockResultService,
-        invalidRecordService);
+        invalidRecordService, handleReplayResultService, redisCacheProvider, applicationDefaultConfig);
   }
 
   @Bean
@@ -328,6 +334,22 @@ public class StorageAutoConfiguration {
       Set<MockCategoryType> entryPointTypes, DefaultApplicationConfig defaultApplicationConfig) {
     return new AREXMockerMongoRepositoryProvider(mongoTemplate, properties, entryPointTypes,
         defaultApplicationConfig);
+  }
+
+  @Bean
+  @Order(4)
+  public RepositoryProvider<AREXQueryMocker> defaultQueryMockerProvider(MongoTemplate mongoTemplate,
+      Set<MockCategoryType> entryPointTypes, DefaultApplicationConfig defaultApplicationConfig) {
+    return new AREXQueryMockerMongoRepositoryProvider(mongoTemplate, properties, entryPointTypes,
+        defaultApplicationConfig);
+  }
+
+  @Bean
+  @Order(5)
+  public RepositoryProvider<AREXQueryMocker> pinnedQueryMockerProvider(MongoTemplate mongoTemplate,
+      Set<MockCategoryType> entryPointTypes, DefaultApplicationConfig defaultApplicationConfig) {
+    return new AREXQueryMockerMongoRepositoryProvider(ProviderNames.PINNED, mongoTemplate, properties,
+        entryPointTypes, defaultApplicationConfig);
   }
 
   private void syncAuthSwitch(MongoDatabase database) {

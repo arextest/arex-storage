@@ -3,6 +3,7 @@ package com.arextest.storage.beans;
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.common.cache.LockWrapper;
 import com.arextest.model.mock.AREXMocker;
+import com.arextest.model.mock.AbstractMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.storage.cache.CacheKeyUtils;
 import com.arextest.storage.enums.MongoCollectionIndexConfigEnum;
@@ -107,7 +108,7 @@ public class IndexesSettingConfiguration {
                   AREXMocker.class);
           try {
             Document index = new Document();
-            index.append(AREXMocker.Fields.recordId, 1);
+            index.append(AbstractMocker.Fields.recordId, 1);
             collection.createIndex(index);
           } catch (MongoCommandException e) {
             LOGGER.info("create index failed for {}", category.getName(), e);
@@ -115,8 +116,8 @@ public class IndexesSettingConfiguration {
 
           try {
             Document index = new Document();
-            index.append(AREXMocker.Fields.appId, 1);
-            index.append(AREXMocker.Fields.operationName, 1);
+            index.append(AbstractMocker.Fields.appId, 1);
+            index.append(AbstractMocker.Fields.operationName, 1);
             collection.createIndex(index);
           } catch (MongoCommandException e) {
             LOGGER.info("create index failed for {}", category.getName(), e);
