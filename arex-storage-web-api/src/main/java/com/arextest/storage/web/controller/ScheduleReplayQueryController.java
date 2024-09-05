@@ -295,7 +295,7 @@ public class ScheduleReplayQueryController {
   @PostMapping(value = "/cacheLoad")
   @ResponseBody
   public Response cacheLoad(@RequestBody QueryMockCacheRequestType requestType,
-      @RequestHeader(name = AREX_AGENT_VERSION) String agentVersion) {
+      @RequestHeader(name = AREX_AGENT_VERSION, required = false) String agentVersion) {
     if (requestType == null) {
       return ResponseUtils.requestBodyEmptyResponse();
     }
