@@ -89,6 +89,9 @@ public class DatabaseParseService {
         if (operationNames.isEmpty()) {
             return;
         }
+        // sort operation name
+        Collections.sort(operationNames);
+
         mocker.setOperationName(StringUtils.join(operationNames, ";"));
 
         MDCTracer.clear();

@@ -433,7 +433,7 @@
   </profiles>
 
   <properties>
-    <revision>1.3.1</revision>
+    <revision>1.3.2</revision>
     <commons-lang3.version>3.3.2</commons-lang3.version>
     <java.version>1.8</java.version>
 
@@ -446,7 +446,7 @@
     <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
     <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
     <maven-war-plugin.version>3.0.0</maven-war-plugin.version>
-    <jsqlparser.version>4.9</jsqlparser.version>
+    <jsqlparser.version>4.5</jsqlparser.version>
     <maven.artifact.version>3.8.5</maven.artifact.version>
     <maven.deploy.skip>false</maven.deploy.skip>
     <maven.source.skip>false</maven.source.skip>
