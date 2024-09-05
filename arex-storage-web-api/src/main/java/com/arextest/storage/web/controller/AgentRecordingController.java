@@ -6,6 +6,7 @@ import static com.arextest.model.constants.HeaderNames.AREX_MOCK_STRATEGY_CODE;
 import com.arextest.common.cache.CacheProvider;
 import com.arextest.model.constants.MockAttributeNames;
 import com.arextest.model.mock.AREXMocker;
+import com.arextest.model.mock.AREXQueryMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker;
 import com.arextest.model.mock.Mocker.Target;
@@ -25,6 +26,7 @@ import com.arextest.storage.service.handler.mocker.AgentWorkingHandler;
 import com.arextest.storage.trace.MDCTracer;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +69,8 @@ public class AgentRecordingController {
   private CacheProvider redisCacheProvider;
   @Resource
   private AgentWorkingHandler<CompareRelationResult> handleReplayResultService;
+  @Resource
+  private AgentWorkingHandler<AREXQueryMocker> handleMockerService;
   @Resource(name = "custom-fork-join-executor")
   private Executor customForkJoinExecutor;
   @Resource
@@ -117,6 +121,7 @@ public class AgentRecordingController {
 
   @PostMapping(value = "/queryMockers")
   @ResponseBody
+  @Deprecated
   public byte[] queryMockers(@RequestBody QueryMockRequestType requestType) {
     try {
       if (StringUtils.isEmpty(requestType.getRecordId())) {
@@ -196,6 +201,17 @@ public class AgentRecordingController {
       return ResponseUtils.exceptionResponse(e.getMessage());
     }
     return ResponseUtils.successResponse(true);
+  }
+
+  @PostMapping(value = "/batchQueryMockers")
+  @ResponseBody
+  public List<AREXQueryMocker> batchQueryMockers(@RequestBody QueryMockRequestType requestType) {
+    if (requestType == null || StringUtils.isEmpty(requestType.getRecordId())) {
+      LOGGER.warn("agent batch query recordId empty");
+      return Collections.emptyList();
+    }
+    return handleMockerService.batchQuery(requestType.getRecordId(), requestType.getFieldNames(),
+        requestType.getCategoryTypes());
   }
 
   @PostMapping(value = "/batchSaveReplayResult")

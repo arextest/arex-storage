@@ -52,19 +52,29 @@ public interface Mocker {
 
   void setOperationName(String operationName);
 
-  Target getTargetRequest();
+  default Target getTargetRequest() {
+    return null;
+  }
 
-  void setTargetRequest(Target targetRequest);
+  default void setTargetRequest(Target targetRequest) {
+    return;
+  }
 
-  Target getTargetResponse();
+  default Target getTargetResponse() {
+    return null;
+  }
 
-  void setTargetResponse(Target targetResponse);
+  default void setTargetResponse(Target targetResponse) {
+    return;
+  }
 
   String getRecordVersion();
 
   void setRecordVersion(String recordVersion);
 
-  Map<Integer, Long> getEigenMap();
+  default Map<Integer, Long> getEigenMap() {
+    return null;
+  }
 
   void setUseMock(Boolean useMock);
 
@@ -76,7 +86,9 @@ public interface Mocker {
    * value: The hash code of the value value value of the JSON node,
    * The use of long type is to prevent memory overflow
    */
-  void setEigenMap(Map<Integer, Long> eigenMap);
+  default void setEigenMap(Map<Integer, Long> eigenMap) {
+    return;
+  }
 
   void setTags(Map<String, String> tags);
 

@@ -21,4 +21,15 @@ public interface AgentWorkingHandler<T> {
     return Collections.emptyList();
   }
 
+  /**
+   * batch query records
+   * @param recordId
+   * @param fieldNames
+   * @param categoryList
+   * @return
+   */
+  default List<T> batchQuery(String recordId, String[] fieldNames, String[] categoryList) {
+    return Collections.emptyList();
+  }
+
 }

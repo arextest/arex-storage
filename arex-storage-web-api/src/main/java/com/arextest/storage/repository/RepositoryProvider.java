@@ -12,4 +12,7 @@ public interface RepositoryProvider<T extends Mocker> extends RepositoryReader<T
 
   @NotNull
   String getProviderName();
+
+  @NotNull
+  String getMockerType();
 }

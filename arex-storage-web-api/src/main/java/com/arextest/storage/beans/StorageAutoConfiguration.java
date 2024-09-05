@@ -14,6 +14,7 @@ import com.arextest.config.repository.impl.ApplicationServiceConfigurationReposi
 import com.arextest.config.repository.impl.SystemConfigurationRepositoryImpl;
 import com.arextest.config.utils.MongoHelper;
 import com.arextest.model.mock.AREXMocker;
+import com.arextest.model.mock.AREXQueryMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.storage.aspect.AppAuthAspectExecutor;
 import com.arextest.storage.converter.ZstdJacksonMessageConverter;
@@ -27,6 +28,7 @@ import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.impl.mongo.AREXMockerMongoRepositoryProvider;
+import com.arextest.storage.repository.impl.mongo.AREXQueryMockerMongoRepositoryProvider;
 import com.arextest.storage.repository.impl.mongo.DesensitizationLoader;
 import com.arextest.storage.repository.impl.mongo.converters.ArexEigenCompressionConverter;
 import com.arextest.storage.repository.impl.mongo.converters.ArexMockerCompressionConverter;
@@ -332,6 +334,22 @@ public class StorageAutoConfiguration {
       Set<MockCategoryType> entryPointTypes, DefaultApplicationConfig defaultApplicationConfig) {
     return new AREXMockerMongoRepositoryProvider(mongoTemplate, properties, entryPointTypes,
         defaultApplicationConfig);
+  }
+
+  @Bean
+  @Order(4)
+  public RepositoryProvider<AREXQueryMocker> defaultQueryMockerProvider(MongoTemplate mongoTemplate,
+      Set<MockCategoryType> entryPointTypes, DefaultApplicationConfig defaultApplicationConfig) {
+    return new AREXQueryMockerMongoRepositoryProvider(mongoTemplate, properties, entryPointTypes,
+        defaultApplicationConfig);
+  }
+
+  @Bean
+  @Order(5)
+  public RepositoryProvider<AREXQueryMocker> pinnedQueryMockerProvider(MongoTemplate mongoTemplate,
+      Set<MockCategoryType> entryPointTypes, DefaultApplicationConfig defaultApplicationConfig) {
+    return new AREXQueryMockerMongoRepositoryProvider(ProviderNames.PINNED, mongoTemplate, properties,
+        entryPointTypes, defaultApplicationConfig);
   }
 
   private void syncAuthSwitch(MongoDatabase database) {
