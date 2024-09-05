@@ -205,13 +205,17 @@ public class AgentRecordingController {
 
   @PostMapping(value = "/batchQueryMockers")
   @ResponseBody
-  public List<AREXQueryMocker> batchQueryMockers(@RequestBody QueryMockRequestType requestType) {
+  public byte[] batchQueryMockers(@RequestBody QueryMockRequestType requestType) {
     if (requestType == null || StringUtils.isEmpty(requestType.getRecordId())) {
       LOGGER.warn("agent batch query recordId empty");
-      return Collections.emptyList();
+      return ZstdJacksonSerializer.EMPTY_INSTANCE;
     }
-    return handleMockerService.batchQuery(requestType.getRecordId(), requestType.getFieldNames(),
-        requestType.getCategoryTypes());
+    List<AREXQueryMocker> arexQueryMockers = handleMockerService.batchQuery(requestType.getRecordId(),
+        requestType.getFieldNames(), requestType.getCategoryTypes());
+    if (CollectionUtils.isEmpty(arexQueryMockers)) {
+      return ZstdJacksonSerializer.EMPTY_INSTANCE;
+    }
+    return zstdJacksonSerializer.serialize(arexQueryMockers);
   }
 
   @PostMapping(value = "/batchSaveReplayResult")
@@ -310,6 +314,20 @@ public class AgentRecordingController {
       LOGGER.error("queryMockersTest error:{} ", runtimeException.getMessage(), runtimeException);
     }
     return null;
+  }
+
+  @PostMapping(value = "/batchQueryMockersTest", produces = {MediaType.APPLICATION_JSON_VALUE})
+  public @ResponseBody
+  List<AREXQueryMocker> batchQueryMockersTest(@RequestBody QueryMockRequestType requestType) {
+    try {
+      byte[] bytes = this.batchQueryMockers(requestType);
+      return zstdJacksonSerializer.deserialize(bytes,
+          new TypeReference<List<AREXQueryMocker>>() {
+          });
+    } catch (RuntimeException runtimeException) {
+      LOGGER.error("queryMockersTest error:{} ", runtimeException.getMessage(), runtimeException);
+    }
+    return Collections.emptyList();
   }
 
   /**
