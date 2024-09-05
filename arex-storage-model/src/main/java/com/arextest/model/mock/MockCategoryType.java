@@ -18,7 +18,7 @@ import java.util.Set;
 public class MockCategoryType {
 
   public static final Set<MockCategoryType> DEFAULTS;
-  public static final MockCategoryType Q_MESSAGE_CONSUMER = MockCategoryType.createEntryPoint(
+  public static final MockCategoryType Q_MESSAGE_CONSUMER = MockCategoryType.createSkipComparisonEntrance(
       "QMessageConsumer");
   public static final MockCategoryType Q_MESSAGE_PRODUCER = MockCategoryType.createDependency(
       "QMessageProducer");
@@ -67,6 +67,10 @@ public class MockCategoryType {
 
   public static MockCategoryType createSkipComparison(String name) {
     return new MockCategoryType(name, false, true);
+  }
+
+  public static MockCategoryType createSkipComparisonEntrance(String name) {
+    return new MockCategoryType(name, true, true);
   }
 
   public static MockCategoryType createDependency(String name) {
