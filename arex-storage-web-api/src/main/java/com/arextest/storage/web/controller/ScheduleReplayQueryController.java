@@ -365,6 +365,10 @@ public class ScheduleReplayQueryController {
   }
 
   private boolean compareVersion(String replayAgentVersion) {
+    if (StringUtils.isEmpty(replayAgentVersion)) {
+      return false;
+    }
+
     String agentVersion = applicationDefaultConfig.getConfigAsString(Constants.AGENT_VERSION, null);
     if (StringUtils.isEmpty(agentVersion)) {
       return false;
