@@ -11,8 +11,17 @@ import org.springframework.stereotype.Service;
 @Service
 @ConditionalOnMissingBean(CoverageEventListener.class)
 public class DefaultCoverageEventListener implements CoverageEventListener {
+
+    @Override
+    public void onBeforeNewCaseRecord(Mocker coverageMocker) {
+    }
+
     @Override
     public void onNewCaseRecorded(Mocker coverageMocker) {
+    }
+
+    @Override
+    public void onBeforeExistingCaseRecord(Mocker coverageMocker) {
     }
 
     @Override

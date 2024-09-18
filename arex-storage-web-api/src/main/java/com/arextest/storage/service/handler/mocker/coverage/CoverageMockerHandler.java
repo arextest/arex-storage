@@ -288,6 +288,8 @@ public class CoverageMockerHandler implements MockerHandler {
 
         // scene exist remove Rolling mocker
         if (scenePoolProvider.checkSceneExist(appId, sceneKey)) {
+          coverageEventListener.onBeforeExistingCaseRecord(coverageMocker);
+
           invalidRecordService.putInvalidCaseInRedis(recordId);
           mockSourceEditionService.removeByRecordId(ProviderNames.DEFAULT, coverageMocker.getRecordId());
           LOGGER.info("{}CoverageMockerHandler received existing case, recordId: {}, pathKey: {}",
@@ -296,6 +298,8 @@ public class CoverageMockerHandler implements MockerHandler {
           coverageEventListener.onExistingCaseRecorded(coverageMocker);
         } else {
           op = NEW_SCENE_OP;
+          coverageEventListener.onBeforeNewCaseRecord(coverageMocker);
+
           // new scene: extend mocker expiration and insert scene
           Scene scene = convert(coverageMocker);
 
