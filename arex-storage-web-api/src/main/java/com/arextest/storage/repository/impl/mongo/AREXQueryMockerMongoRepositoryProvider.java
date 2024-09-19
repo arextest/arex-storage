@@ -11,21 +11,18 @@ import com.arextest.storage.beans.StorageConfigurationProperties;
 import com.arextest.storage.model.Constants;
 import com.arextest.storage.repository.ProviderNames;
 import com.arextest.storage.repository.RepositoryProvider;
-import com.arextest.storage.utils.TimeUtils;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
 
 /**
  * The rolling provider used by default, which means auto deleted the records after TTL index
@@ -83,10 +80,6 @@ public class AREXQueryMockerMongoRepositoryProvider implements RepositoryProvide
   public Iterable<AREXQueryMocker> queryRecordList(MockCategoryType category, String recordId, String[] fieldNames) {
     Criteria criteria = buildRecordIdFilter(category, recordId);
 
-    if (Objects.equals(this.providerName, ProviderNames.DEFAULT)) {
-      updateExpirationTime(criteria, getCollectionName(category));
-    }
-
     Query query = new Query(criteria);
     if (ArrayUtils.isNotEmpty(fieldNames)) {
       String[] mappedFieldNames = Arrays.stream(fieldNames)
@@ -99,27 +92,6 @@ public class AREXQueryMockerMongoRepositoryProvider implements RepositoryProvide
         AREXQueryMocker.class, getCollectionName(category));
     iterable.forEach(this::addUseMocker);
     return new AttachmentCategoryIterable(category, iterable);
-  }
-
-  private void updateExpirationTime(Criteria criteria, String collectionName) {
-    long currentTimeMillis = System.currentTimeMillis();
-    long allowedLastMills = TimeUtils.getTodayFirstMills() +
-        properties.getAllowReRunDays() * TimeUtils.ONE_DAY;
-
-    Criteria finalCriteria = new Criteria().andOperator(
-        criteria,
-        new Criteria().orOperator(
-            Criteria.where(AbstractMocker.Fields.expirationTime).lt(new Date(allowedLastMills)),
-            Criteria.where(AbstractMocker.Fields.expirationTime).exists(false)
-        )
-    );
-
-    // Add different minutes to avoid the same expiration time
-    Update update = new Update();
-    update.set(AbstractMocker.Fields.expirationTime,
-        new Date(allowedLastMills + currentTimeMillis % TimeUtils.ONE_HOUR));
-    update.set(AbstractMocker.Fields.updateTime, new Date(currentTimeMillis));
-    mongoTemplate.updateMulti(new Query(finalCriteria), update, collectionName);
   }
 
   private Criteria buildRecordIdFilter(MockCategoryType categoryType, String value) {

@@ -25,6 +25,10 @@
   </Appenders>
 
   <Loggers>
+    <Logger level="WARN" name="org.springframework.data.mongodb.core.convert.QueryMapper">
+      <AppenderRef ref="Mongo4"/>
+      <AppenderRef ref="Prometheus"/>
+    </Logger>
     <Logger level="INFO" name="com.arextest.storage">
       <AppenderRef ref="Mongo4"/>
       <AppenderRef ref="Prometheus"/>

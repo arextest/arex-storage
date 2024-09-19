@@ -64,7 +64,7 @@ public class ScheduleReplayingService {
     List<ListResultHolder> resultHolderList = new ArrayList<>(categoryTypes.size());
     ListResultHolder listResultHolder;
     for (MockCategoryType categoryType : categoryTypes) {
-      if (categoryType.isSkipComparison()) {
+      if (categoryType.isSkipComparison() && MockCategoryType.Q_MESSAGE_CONSUMER != categoryType) {
         continue;
       }
       MDCTracer.addCategory(categoryType);
