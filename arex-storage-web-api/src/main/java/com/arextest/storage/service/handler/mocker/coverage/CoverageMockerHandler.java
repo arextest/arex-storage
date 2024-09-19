@@ -43,7 +43,9 @@ public class CoverageMockerHandler implements MockerHandler {
   private InvalidRecordService invalidRecordService;
   private DefaultApplicationConfig defaultApplicationConfig;
   private CacheProvider cacheProvider;
-  public final List<MetricListener> metricListeners;
+  private final List<MetricListener> metricListeners;
+  private final CoverageEventListener coverageEventListener;
+
   // coverage metric constants
   private static final String METRIC_NAME_RECORD_COVERAGE = "coverage.recording";
   private static final String METRIC_NAME_REPLAY_COVERAGE = "coverage.replay";
@@ -286,12 +288,18 @@ public class CoverageMockerHandler implements MockerHandler {
 
         // scene exist remove Rolling mocker
         if (scenePoolProvider.checkSceneExist(appId, sceneKey)) {
+          coverageEventListener.onBeforeExistingCaseRecord(coverageMocker);
+
           invalidRecordService.putInvalidCaseInRedis(recordId);
           mockSourceEditionService.removeByRecordId(ProviderNames.DEFAULT, coverageMocker.getRecordId());
           LOGGER.info("{}CoverageMockerHandler received existing case, recordId: {}, pathKey: {}",
               TITLE_RECORD_TASK, coverageMocker.getRecordId(), coverageMocker.getOperationName());
+
+          coverageEventListener.onExistingCaseRecorded(coverageMocker);
         } else {
           op = NEW_SCENE_OP;
+          coverageEventListener.onBeforeNewCaseRecord(coverageMocker);
+
           // new scene: extend mocker expiration and insert scene
           Scene scene = convert(coverageMocker);
 
@@ -301,6 +309,8 @@ public class CoverageMockerHandler implements MockerHandler {
               defaultApplicationConfig.getConfigAsLong(COVERAGE_EXPIRATION_DAYS_KEY, COVERAGE_EXPIRATION_DAYS));
           LOGGER.info("{}CoverageMockerHandler received new case, recordId: {}, pathKey: {}",
               TITLE_RECORD_TASK, coverageMocker.getRecordId(), coverageMocker.getOperationName());
+
+          coverageEventListener.onNewCaseRecorded(coverageMocker);
         }
 
         recordCoverageHandle(appId, op, METRIC_NAME_RECORD_COVERAGE);

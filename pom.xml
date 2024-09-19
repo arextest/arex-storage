@@ -433,7 +433,7 @@
   </profiles>
 
   <properties>
-    <revision>1.3.4</revision>
+    <revision>1.3.5</revision>
     <commons-lang3.version>3.3.2</commons-lang3.version>
     <java.version>1.8</java.version>
 
