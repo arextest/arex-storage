@@ -13,6 +13,7 @@ import com.arextest.config.repository.impl.ApplicationOperationConfigurationRepo
 import com.arextest.config.repository.impl.ApplicationServiceConfigurationRepositoryImpl;
 import com.arextest.config.repository.impl.SystemConfigurationRepositoryImpl;
 import com.arextest.config.utils.MongoHelper;
+import com.arextest.extension.desensitization.DataDesensitization;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.AREXQueryMocker;
 import com.arextest.model.mock.MockCategoryType;
@@ -29,7 +30,7 @@ import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.impl.mongo.AREXMockerMongoRepositoryProvider;
 import com.arextest.storage.repository.impl.mongo.AREXQueryMockerMongoRepositoryProvider;
-import com.arextest.storage.repository.impl.mongo.DesensitizationLoader;
+import com.arextest.storage.repository.impl.mongo.DesensitizationProvider;
 import com.arextest.storage.repository.impl.mongo.converters.ArexEigenCompressionConverter;
 import com.arextest.storage.repository.impl.mongo.converters.ArexMockerCompressionConverter;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
@@ -115,9 +116,6 @@ public class StorageAutoConfiguration {
 
       // todo make this optional
       indexesSettingConfiguration.setIndexes(database);
-
-      // load singleton desensitization service for every thread
-      DesensitizationLoader.DESENSITIZATION_SERVICE = DesensitizationLoader.load(database);
       syncAuthSwitch(database);
       return factory;
     } catch (Exception e) {
@@ -133,12 +131,23 @@ public class StorageAutoConfiguration {
   }
 
   @Bean
+  @ConditionalOnMissingBean(DesensitizationProvider.class)
+  DesensitizationProvider desensitizationProvider(MongoDatabaseFactory factory) {
+    return new DesensitizationProvider(factory.getMongoDatabase());
+  }
+
+  @Bean
+  DataDesensitization dataDesensitization(DesensitizationProvider desensitizationProvider) {
+    return desensitizationProvider.get();
+  }
+
+  @Bean
   @ConditionalOnMissingBean(MongoCustomConversions.class)
-  public MongoCustomConversions customConversions() {
+  public MongoCustomConversions customConversions(DataDesensitization dataDesensitization) {
     return MongoCustomConversions.create((adapter) -> {
       // Type based converter
-      adapter.registerConverter(new ArexMockerCompressionConverter.Read());
-      adapter.registerConverter(new ArexMockerCompressionConverter.Write());
+      adapter.registerConverter(new ArexMockerCompressionConverter.Read(dataDesensitization));
+      adapter.registerConverter(new ArexMockerCompressionConverter.Write(dataDesensitization));
 
       // Property based converter
       adapter.configurePropertyConversions((register) -> {
@@ -257,7 +266,8 @@ public class StorageAutoConfiguration {
       CacheProvider redisCacheProvider,
       DefaultApplicationConfig applicationDefaultConfig) {
     return new ScheduleReplayQueryController(scheduleReplayingService, prepareMockResultService,
-        invalidRecordService, handleReplayResultService, redisCacheProvider, applicationDefaultConfig);
+        invalidRecordService, handleReplayResultService, redisCacheProvider,
+        applicationDefaultConfig);
   }
 
   @Bean
