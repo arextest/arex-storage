@@ -43,6 +43,8 @@ import com.arextest.storage.service.ScenePoolService;
 import com.arextest.storage.service.ScheduleReplayingService;
 import com.arextest.storage.service.config.ApplicationService;
 import com.arextest.storage.service.handler.mocker.HandleReplayResultService;
+import com.arextest.storage.service.handler.mocker.coverage.CoverageEventListener;
+import com.arextest.storage.service.handler.mocker.coverage.DefaultCoverageEventListener;
 import com.arextest.storage.service.listener.AgentWorkingListener;
 import com.arextest.storage.service.listener.AutoDiscoveryEntryPointListener;
 import com.arextest.storage.web.controller.MockSourceEditionController;
@@ -322,6 +324,12 @@ public class StorageAutoConfiguration {
   }
 
   @Bean
+  @ConditionalOnMissingBean(CoverageEventListener.class)
+  public CoverageEventListener defaultCoverageEventListener() {
+    return new DefaultCoverageEventListener();
+  }
+
+  @Bean
   @Order(3)
   public RepositoryProvider<AREXMocker> autoPinnedMockerProvider(MongoTemplate mongoTemplate,
       Set<MockCategoryType> entryPointTypes, DefaultApplicationConfig defaultApplicationConfig) {
@@ -358,7 +366,8 @@ public class StorageAutoConfiguration {
   @Order(5)
   public RepositoryProvider<AREXQueryMocker> pinnedQueryMockerProvider(MongoTemplate mongoTemplate,
       Set<MockCategoryType> entryPointTypes, DefaultApplicationConfig defaultApplicationConfig) {
-    return new AREXQueryMockerMongoRepositoryProvider(ProviderNames.PINNED, mongoTemplate, properties,
+    return new AREXQueryMockerMongoRepositoryProvider(ProviderNames.PINNED, mongoTemplate,
+        properties,
         entryPointTypes, defaultApplicationConfig);
   }
 
