@@ -4,6 +4,7 @@ import com.arextest.common.cache.CacheProvider;
 import com.arextest.common.config.ConfigProvider;
 import com.arextest.common.config.DefaultApplicationConfig;
 import com.arextest.common.config.DefaultConfigProvider;
+import com.arextest.common.desensitization.DesensitizationProvider;
 import com.arextest.common.jwt.JWTService;
 import com.arextest.common.jwt.JWTServiceImpl;
 import com.arextest.config.model.dao.config.SystemConfigurationCollection;
@@ -30,7 +31,6 @@ import com.arextest.storage.repository.RepositoryProvider;
 import com.arextest.storage.repository.RepositoryProviderFactory;
 import com.arextest.storage.repository.impl.mongo.AREXMockerMongoRepositoryProvider;
 import com.arextest.storage.repository.impl.mongo.AREXQueryMockerMongoRepositoryProvider;
-import com.arextest.storage.repository.impl.mongo.DesensitizationProvider;
 import com.arextest.storage.repository.impl.mongo.converters.ArexEigenCompressionConverter;
 import com.arextest.storage.repository.impl.mongo.converters.ArexMockerCompressionConverter;
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
@@ -61,6 +61,7 @@ import java.util.Set;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -135,7 +136,9 @@ public class StorageAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean(DesensitizationProvider.class)
   DesensitizationProvider desensitizationProvider(MongoDatabaseFactory factory) {
-    return new DesensitizationProvider(factory.getMongoDatabase());
+    String desensitizationJarUrl = DataDesensitizationUtils.getDesensitizationJarUrl(
+        factory.getMongoDatabase());
+    return new DesensitizationProvider(desensitizationJarUrl);
   }
 
   @Bean
@@ -387,6 +390,24 @@ public class StorageAutoConfiguration {
           .getModifiedCount();
     } catch (Exception e) {
       LOGGER.error("sync auth switch failed", e);
+    }
+  }
+
+  private static class DataDesensitizationUtils {
+
+    private static final String SYSTEM_CONFIGURATION = "SystemConfiguration";
+    private static final String DESENSITIZATION_JAR = "desensitizationJar";
+    private static final String JAR_URL = "jarUrl";
+
+    private static String getDesensitizationJarUrl(MongoDatabase database) {
+      MongoCollection<Document> collection = database.getCollection(SYSTEM_CONFIGURATION);
+      Bson filter = Filters.eq(SystemConfigurationCollection.Fields.key,
+          KeySummary.DESERIALIZATION_JAR);
+      Document document = collection.find(filter).first();
+      if (document != null && document.get(DESENSITIZATION_JAR) != null) {
+        return document.get(DESENSITIZATION_JAR, Document.class).getString(JAR_URL);
+      }
+      return null;
     }
   }
 }
