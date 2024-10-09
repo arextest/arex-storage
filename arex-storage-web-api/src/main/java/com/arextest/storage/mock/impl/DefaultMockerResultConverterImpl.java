@@ -4,8 +4,8 @@ import static com.arextest.storage.model.Constants.AREX_CONFIG_MOCKERCONVERT_ENA
 import static com.arextest.storage.model.Constants.AREX_CONFIG_MOCKERCONVERT_ENABLED_DEFAULT;
 
 import com.arextest.common.config.DefaultApplicationConfig;
-import com.arextest.diff.model.classloader.RemoteJarClassLoader;
-import com.arextest.diff.utils.RemoteJarLoaderUtils;
+import com.arextest.common.model.classloader.RemoteJarClassLoader;
+import com.arextest.common.utils.RemoteJarLoaderUtils;
 import com.arextest.extension.mockconvert.MockerConverter;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
