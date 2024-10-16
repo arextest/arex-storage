@@ -1,9 +1,7 @@
 package com.arextest.storage.mock.impl;
 
-import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH;
-import static com.arextest.storage.model.Constants.MAX_SQL_LENGTH_DEFAULT;
-
 import com.arextest.common.cache.CacheProvider;
+import com.arextest.common.config.DefaultApplicationConfig;
 import com.arextest.common.utils.CompressionUtils;
 import com.arextest.config.model.vo.QueryConfigOfCategoryResponse.QueryConfigOfCategory;
 import com.arextest.model.mock.AREXMocker;
@@ -55,6 +53,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   private static final String DUBBO_PREFIX = "Dubbo";
   private static final String STRICT_MATCH = "strictMatch";
   private static final String MULTI_OPERATION_WITH_STRICT_MATCH = "multiOperationStrictMatch";
+  private static final String QUERY_CONFIG_APP = "query.config.app";
+  private static final String ALL = "ALL";
   private static final String FUZZY_MATCH = "fuzzyMatch";
   private static final String EIGEN_MATCH = "eigenMatch";
   private static final String COMMA_STRING = ",";
@@ -63,8 +63,6 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
    */
   @Value("${arex.storage.cache.expired.seconds:7200}")
   private long cacheExpiredSeconds;
-  @Value("${arex.storage.query.config:true}")
-  private boolean queryConfigSwitch;
   @Resource
   private CacheProvider redisCacheProvider;
   @Resource
@@ -81,7 +79,8 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   private MockerResultConverter mockerResultConverter;
   @Resource
   private DatabaseParseService databaseParseService;
-
+  @Resource
+  private DefaultApplicationConfig defaultApplicationConfig;
   /**
    * <p>1. Store recorded data and matching keys in redis<></p>
    * <p>2. The mock type associated with dubbo,which needs to record the maximum number of replays.</p>
@@ -167,7 +166,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
       byte[] recordIdBytes, int size, byte[] recordKey, T value, int sequence,
       Map<ByteHashKey, Integer> mockSequenceKeyMaps) {
     if (MapUtils.isEmpty(value.getEigenMap())) {
-      calculateEigen(value, true);
+      calculateEigen(value);
     }
     List<byte[]> mockKeyList = matchKeyFactory.build(value);
     final byte[] zstdValue = serializer.serialize(value);
@@ -244,7 +243,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
   }
 
   @Override
-  public void calculateEigen(Mocker item, boolean queryConfig) {
+  public void calculateEigen(Mocker item) {
     try {
       if (item.getCategoryType().isEntryPoint()) {
         return;
@@ -257,7 +256,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
       // get exclusion and ignore node from arex-api.use this to reduction noise
       Collection<List<String>> exclusions = null;
       Collection<String> ignoreNodes = null;
-      if (queryConfig && queryConfigSwitch) {
+      if (isQueryConfigSwitchOn(item.getAppId())) {
         QueryConfigOfCategory queryConfigOfCategory = queryConfigService.queryConfigOfCategory(
             item);
         if (queryConfigOfCategory != null) {
@@ -275,6 +274,11 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     } catch (Exception e) {
       LOGGER.error("setCalculateEigen failed!", e);
     }
+  }
+
+  private boolean isQueryConfigSwitchOn(String appId) {
+    String queryApps = defaultApplicationConfig.getConfigAsString(QUERY_CONFIG_APP, ALL);
+    return StringUtils.equalsIgnoreCase(queryApps, ALL) || StringUtils.contains(queryApps, appId);
   }
 
   private <T extends Mocker> int removeResult(MockCategoryType category,
@@ -367,7 +371,7 @@ final class DefaultMockResultProviderImpl implements MockResultProvider {
     String replayId = mockItem.getReplayId();
     try {
       long start = System.currentTimeMillis();
-      calculateEigen(mockItem, false);
+      calculateEigen(mockItem);
       List<byte[]> mockKeyList = matchKeyFactory.build(mockItem);
       long end = System.currentTimeMillis();
       LOGGER.info("build mock keys cost:{} ms", end - start);

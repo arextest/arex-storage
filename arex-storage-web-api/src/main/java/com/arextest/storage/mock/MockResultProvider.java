@@ -32,5 +32,5 @@ public interface MockResultProvider {
   /**
    * Calculate the eigen values of the request body.
    */
-  void calculateEigen(@NotNull Mocker item, boolean queryConfig);
+  void calculateEigen(@NotNull Mocker item);
 }
