@@ -56,10 +56,9 @@ import org.apache.maven.artifact.versioning.ComparableVersion;
  * @since 2021/11/3
  */
 @Slf4j
+@Controller
 @RequestMapping(path = "/api/storage/replay/query", produces = {MediaType.APPLICATION_JSON_VALUE})
 @RequiredArgsConstructor
-@Controller
-@ConditionalOnMissingBean(ScheduleReplayQueryController.class)
 public class ScheduleReplayQueryController {
   private final ScheduleReplayingService scheduleReplayingService;
   private final PrepareMockResultService prepareMockResultService;

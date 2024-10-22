@@ -25,10 +25,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 
-@RequestMapping(path = "/api/storage/edit/", produces = MediaType.APPLICATION_JSON_VALUE)
 @Slf4j
 @Controller
-@ConditionalOnMissingBean(MockSourceEditionController.class)
+@RequestMapping(path = "/api/storage/edit/", produces = MediaType.APPLICATION_JSON_VALUE)
 public class MockSourceEditionController {
 
   private final MockSourceEditionService editableService;

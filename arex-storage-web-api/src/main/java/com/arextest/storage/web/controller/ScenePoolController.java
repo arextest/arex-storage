@@ -5,6 +5,7 @@ import com.arextest.common.utils.ResponseUtils;
 import com.arextest.model.replay.QuerySceneRequestType;
 import com.arextest.storage.service.ScenePoolService;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -23,9 +24,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @Controller
 @RequestMapping("/api/scene/")
 @CrossOrigin(origins = "*", maxAge = 3600)
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class ScenePoolController {
-  private ScenePoolService scenePoolService;
+  private final ScenePoolService scenePoolService;
 
   @GetMapping(value = "/clearReplayPool/{appId}", produces = "application/json")
   @ResponseBody
