@@ -3,7 +3,7 @@ package com.arextest.storage.web.controller;
 import com.arextest.model.response.Response;
 import com.arextest.model.response.ResponseCode;
 import com.arextest.model.response.ResponseStatusType;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @author jmo

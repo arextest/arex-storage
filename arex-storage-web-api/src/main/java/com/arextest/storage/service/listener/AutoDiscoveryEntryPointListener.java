@@ -13,7 +13,7 @@ import com.arextest.storage.cache.CacheKeyUtils;
 import com.arextest.storage.mock.MockResultContext;
 import java.util.Collections;
 import java.util.List;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;

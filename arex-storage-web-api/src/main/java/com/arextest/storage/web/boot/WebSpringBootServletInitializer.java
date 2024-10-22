@@ -3,7 +3,7 @@ package com.arextest.storage.web.boot;
 import com.arextest.common.metrics.PrometheusConfiguration;
 import java.awt.Desktop;
 import java.net.URI;
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

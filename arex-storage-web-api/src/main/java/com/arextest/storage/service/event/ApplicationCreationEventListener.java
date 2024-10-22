@@ -9,7 +9,7 @@ import com.mongodb.client.model.Updates;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
