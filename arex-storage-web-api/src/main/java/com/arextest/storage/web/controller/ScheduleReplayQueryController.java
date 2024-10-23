@@ -33,10 +33,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.http.MediaType;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -53,10 +56,10 @@ import org.apache.maven.artifact.versioning.ComparableVersion;
  * @since 2021/11/3
  */
 @Slf4j
+@Controller
 @RequestMapping(path = "/api/storage/replay/query", produces = {MediaType.APPLICATION_JSON_VALUE})
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class ScheduleReplayQueryController {
-
   private final ScheduleReplayingService scheduleReplayingService;
   private final PrepareMockResultService prepareMockResultService;
   private final InvalidRecordService invalidRecordService;

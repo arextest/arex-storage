@@ -1,7 +1,7 @@
 package com.arextest.storage.repository;
 
 import com.arextest.model.mock.Mocker;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @author jmo

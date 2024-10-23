@@ -12,7 +12,9 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.http.MediaType;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,8 +25,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 
-@RequestMapping(path = "/api/storage/edit/", produces = MediaType.APPLICATION_JSON_VALUE)
 @Slf4j
+@Controller
+@RequestMapping(path = "/api/storage/edit/", produces = MediaType.APPLICATION_JSON_VALUE)
 public class MockSourceEditionController {
 
   private final MockSourceEditionService editableService;

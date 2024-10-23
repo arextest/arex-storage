@@ -6,7 +6,7 @@ import com.arextest.storage.service.handler.mocker.MockerHandler;
 import com.arextest.storage.service.DatabaseParseService;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 
 /**

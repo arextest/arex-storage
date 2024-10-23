@@ -4,7 +4,7 @@ import com.arextest.model.replay.UpdateCaseStatusRequestType;
 import com.arextest.model.replay.UpdateCaseStatusResponseType;
 import com.arextest.storage.client.HttpWebServiceApiClient;
 import com.arextest.storage.trace.MDCTracer;
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;

@@ -74,17 +74,9 @@
       <artifactId>aspectjweaver</artifactId>
       <groupId>org.aspectj</groupId>
     </dependency>
-
-
     <dependency>
-      <artifactId>mapstruct-jdk8</artifactId>
+      <artifactId>mapstruct</artifactId>
       <groupId>org.mapstruct</groupId>
-      <version>1.2.0.Final</version>
-    </dependency>
-    <dependency>
-      <artifactId>mapstruct-processor</artifactId>
-      <groupId>org.mapstruct</groupId>
-      <version>1.2.0.Final</version>
     </dependency>
     <dependency>
       <artifactId>commons-lang3</artifactId>
@@ -151,10 +143,6 @@
           </resource>
         </resources>
         <plugins>
-          <plugin>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <groupId>org.apache.maven.plugins</groupId>
-          </plugin>
           <plugin>
             <version>${spring.boot.version}</version>
             <artifactId>spring-boot-maven-plugin</artifactId>

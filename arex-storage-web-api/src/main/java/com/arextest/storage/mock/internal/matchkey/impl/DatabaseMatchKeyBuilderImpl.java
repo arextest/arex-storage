@@ -17,7 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;

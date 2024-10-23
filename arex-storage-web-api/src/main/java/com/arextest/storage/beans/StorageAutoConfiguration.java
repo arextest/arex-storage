@@ -36,29 +36,25 @@ import com.arextest.storage.repository.impl.mongo.converters.ArexMockerCompressi
 import com.arextest.storage.serialization.ZstdJacksonSerializer;
 import com.arextest.storage.service.AgentWorkingService;
 import com.arextest.storage.service.InvalidRecordService;
-import com.arextest.storage.service.MockSourceEditionService;
 import com.arextest.storage.service.PrepareMockResultService;
 import com.arextest.storage.service.QueryConfigService;
 import com.arextest.storage.service.ScenePoolService;
 import com.arextest.storage.service.ScheduleReplayingService;
 import com.arextest.storage.service.config.ApplicationService;
-import com.arextest.storage.service.handler.mocker.HandleReplayResultService;
 import com.arextest.storage.service.handler.mocker.coverage.CoverageEventListener;
 import com.arextest.storage.service.handler.mocker.coverage.DefaultCoverageEventListener;
 import com.arextest.storage.service.listener.AgentWorkingListener;
 import com.arextest.storage.service.listener.AutoDiscoveryEntryPointListener;
-import com.arextest.storage.web.controller.MockSourceEditionController;
-import com.arextest.storage.web.controller.ScheduleReplayQueryController;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
+import jakarta.annotation.Resource;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.bson.Document;
@@ -261,19 +257,6 @@ public class StorageAutoConfiguration {
     return new MatchStrategyMetricService(metricListeners);
   }
 
-  @Bean
-  @ConditionalOnMissingBean(ScheduleReplayQueryController.class)
-  public ScheduleReplayQueryController scheduleReplayQueryController(
-      ScheduleReplayingService scheduleReplayingService,
-      PrepareMockResultService prepareMockResultService,
-      InvalidRecordService invalidRecordService,
-      HandleReplayResultService handleReplayResultService,
-      CacheProvider redisCacheProvider,
-      DefaultApplicationConfig applicationDefaultConfig) {
-    return new ScheduleReplayQueryController(scheduleReplayingService, prepareMockResultService,
-        invalidRecordService, handleReplayResultService, redisCacheProvider,
-        applicationDefaultConfig);
-  }
 
   @Bean
   @ConditionalOnMissingBean(ScheduleReplayingService.class)
@@ -283,13 +266,6 @@ public class StorageAutoConfiguration {
       ScenePoolService scenePoolService) {
     return new ScheduleReplayingService(mockResultProvider, repositoryProviderFactory,
         serviceOperationRepository, scenePoolService);
-  }
-
-  @Bean
-  @ConditionalOnMissingBean(MockSourceEditionController.class)
-  public MockSourceEditionController mockSourceEditionController(
-      MockSourceEditionService editableService, PrepareMockResultService storageCache) {
-    return new MockSourceEditionController(editableService, storageCache);
   }
 
   @Bean
