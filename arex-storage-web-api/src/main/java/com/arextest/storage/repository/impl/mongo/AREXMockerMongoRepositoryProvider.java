@@ -68,8 +68,10 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
   // endregion
 
   private static final String EIGEN_MAP_COLUMN_NAME = "eigenMap";
-  private final static Sort CREATE_TIME_ASCENDING_SORT = Sort.by(Direction.ASC, CREATE_TIME_COLUMN_NAME);
-  private final static Sort CREATE_TIME_DESCENDING_SORT = Sort.by(Direction.DESC, CREATE_TIME_COLUMN_NAME);
+  private final static Sort CREATE_TIME_ASCENDING_SORT = Sort.by(Direction.ASC,
+      CREATE_TIME_COLUMN_NAME);
+  private final static Sort CREATE_TIME_DESCENDING_SORT = Sort.by(Direction.DESC,
+      CREATE_TIME_COLUMN_NAME);
   private static final int DEFAULT_MIN_LIMIT_SIZE = 1;
   private static final int DEFAULT_MAX_LIMIT_SIZE = 1000;
   private static final String AUTO_PINNED_MOCKER_EXPIRATION_MILLIS = "AutoPinned.mocker.expiration.millis";
@@ -82,16 +84,20 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
   private final String mockerType;
 
   private static final String[] DEFAULT_INCLUDE_FIELDS =
-      new String[]{AbstractMocker.Fields.id, AREXMocker.Fields.categoryType, AbstractMocker.Fields.recordId,
-          AbstractMocker.Fields.appId, AbstractMocker.Fields.recordEnvironment, AbstractMocker.Fields.creationTime,
-          AbstractMocker.Fields.expirationTime, AREXMocker.Fields.targetRequest, AbstractMocker.Fields.operationName,
+      new String[]{AbstractMocker.Fields.id, AREXMocker.Fields.categoryType,
+          AbstractMocker.Fields.recordId,
+          AbstractMocker.Fields.appId, AbstractMocker.Fields.recordEnvironment,
+          AbstractMocker.Fields.creationTime,
+          AbstractMocker.Fields.expirationTime, AREXMocker.Fields.targetRequest,
+          AbstractMocker.Fields.operationName,
           AbstractMocker.Fields.tags, AbstractMocker.Fields.recordVersion};
 
   public AREXMockerMongoRepositoryProvider(MongoTemplate mongoTemplate,
       StorageConfigurationProperties properties,
       Set<MockCategoryType> entryPointTypes,
       DefaultApplicationConfig defaultApplicationConfig) {
-    this(ProviderNames.DEFAULT, mongoTemplate, properties, entryPointTypes, defaultApplicationConfig);
+    this(ProviderNames.DEFAULT, mongoTemplate, properties, entryPointTypes,
+        defaultApplicationConfig);
   }
 
   public AREXMockerMongoRepositoryProvider(String providerName,
@@ -116,7 +122,8 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
   }
 
   @Override
-  public Iterable<AREXMocker> queryRecordList(MockCategoryType category, String recordId, String[] fieldNames) {
+  public Iterable<AREXMocker> queryRecordList(MockCategoryType category, String recordId,
+      String[] fieldNames) {
     Criteria criteria = buildRecordIdFilter(category, recordId);
 
     if (Objects.equals(this.providerName, ProviderNames.DEFAULT)) {
@@ -141,7 +148,8 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         .with(CREATE_TIME_DESCENDING_SORT)
         .limit(DEFAULT_MIN_LIMIT_SIZE);
 
-    AREXMocker item = mongoTemplate.findOne(query, AREXMocker.class, getCollectionName(categoryType));
+    AREXMocker item = mongoTemplate.findOne(query, AREXMocker.class,
+        getCollectionName(categoryType));
     addUseMocker(item);
     return AttachmentCategoryIterable.attach(categoryType, item);
   }
@@ -176,7 +184,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     // By default, targetResponse is not output. When includeExtendFields is included, it is output.
     query.fields().include(DEFAULT_INCLUDE_FIELDS);
     if (ArrayUtils.isNotEmpty(pagedRequestType.getIncludeExtendFields())) {
-        query.fields().include(pagedRequestType.getIncludeExtendFields());
+      query.fields().include(pagedRequestType.getIncludeExtendFields());
     }
 
     Iterable<AREXMocker> iterable = mongoTemplate.find(query, AREXMocker.class, collection);
@@ -285,9 +293,10 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
       }
       String collection = getCollectionName(category);
 
-      long expirationTime = System.currentTimeMillis() + expiration;
+      long currentTime = System.currentTimeMillis();
       valueList.forEach(item -> {
-        item.setExpirationTime(expirationTime);
+        item.setCreationTime(currentTime);
+        item.setExpirationTime(currentTime + expiration);
 
         if (category.isEntryPoint()) {
           item.setId(item.getRecordId());
@@ -315,7 +324,7 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
   public long removeBy(MockCategoryType categoryType, String recordId) {
     String collectionName = getCollectionName(categoryType);
     return mongoTemplate.remove(new Query(buildRecordIdFilter(categoryType, recordId)),
-            AREXMocker.class, collectionName).getDeletedCount();
+        AREXMocker.class, collectionName).getDeletedCount();
   }
 
   @Override
@@ -323,7 +332,8 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     String collectionName = getCollectionName(categoryType);
     Query query = new Query(buildRecordIdFilter(categoryType, recordId));
     Update update = Update.update(EXPIRATION_TIME_COLUMN_NAME, expireTime);
-    return mongoTemplate.updateMulti(query, update, AREXMocker.class, collectionName).getModifiedCount();
+    return mongoTemplate.updateMulti(query, update, AREXMocker.class, collectionName)
+        .getModifiedCount();
   }
 
   @Override
@@ -355,7 +365,8 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
   public boolean update(AREXMocker value) {
     try {
       String collection = getCollectionName(value.getCategoryType());
-      mongoTemplate.findAndReplace(new Query(Criteria.where(PRIMARY_KEY_COLUMN_NAME).is(value.getId())), value, collection);
+      mongoTemplate.findAndReplace(
+          new Query(Criteria.where(PRIMARY_KEY_COLUMN_NAME).is(value.getId())), value, collection);
       return true;
     } catch (Exception e) {
       LOGGER.error("update record error:{} ", e.getMessage(), e);
@@ -389,7 +400,8 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
   }
 
   private Criteria buildRecordFilters(MockCategoryType categoryType, @NotNull Mocker mocker) {
-    Criteria criteria = this.buildAppIdWithOperationFilters(mocker.getAppId(), mocker.getOperationName());
+    Criteria criteria = this.buildAppIdWithOperationFilters(mocker.getAppId(),
+        mocker.getOperationName());
     criteria.andOperator(buildRecordIdFilter(categoryType, mocker.getRecordId()));
     criteria.and(ENV_COLUMN_NAME).is(mocker.getRecordEnvironment());
     return criteria;
@@ -401,12 +413,13 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
     if (rangeRequestType.getEnv() != null) {
       criteria.and(ENV_COLUMN_NAME).is(rangeRequestType.getEnv());
     }
-    criteria.andOperator(buildTimeRangeFilter(rangeRequestType.getBeginTime(), rangeRequestType.getEndTime()));
+    criteria.andOperator(
+        buildTimeRangeFilter(rangeRequestType.getBeginTime(), rangeRequestType.getEndTime()));
 
     if (MapUtils.isNotEmpty(rangeRequestType.getTags())) {
       for (Map.Entry<String, String> entry : rangeRequestType.getTags().entrySet()) {
         String tagName = entry.getKey();
-        if (StringUtils.isEmpty(tagName)){
+        if (StringUtils.isEmpty(tagName)) {
           continue;
         }
         criteria.and(TAGS_COLUMN_NAME + DOT_OP + tagName).is(entry.getValue());
