@@ -277,7 +277,6 @@ public class AgentRecordingController {
     mocker.setOperationName("hello");
     mocker.setRecordId("demo-recordId-" + System.currentTimeMillis());
     mocker.setAppId("demoAppID");
-    mocker.setCreationTime(System.currentTimeMillis());
     Target targetRequest = new Target();
     targetRequest.setBody("request body");
     mocker.setTargetRequest(targetRequest);
