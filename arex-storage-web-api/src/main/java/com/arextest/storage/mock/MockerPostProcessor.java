@@ -9,6 +9,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import org.apache.commons.lang3.StringUtils;
 
 public class MockerPostProcessor {
 
@@ -41,6 +42,9 @@ public class MockerPostProcessor {
   }
 
   private static boolean isBase64(String str) {
+    if (StringUtils.isEmpty(str)) {
+      return false;
+    }
     return BASE_64_PATTERN.matcher(str).matches();
   }
 
