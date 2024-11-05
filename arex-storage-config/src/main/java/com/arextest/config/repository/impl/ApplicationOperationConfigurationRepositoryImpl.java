@@ -5,7 +5,7 @@ import com.arextest.config.model.dao.config.ServiceOperationCollection;
 import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
 import com.arextest.config.utils.MongoHelper;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -18,10 +18,12 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.util.CollectionUtils;
 
 @RequiredArgsConstructor
 public class ApplicationOperationConfigurationRepositoryImpl
     implements ConfigRepositoryProvider<ApplicationOperationConfiguration> {
+
   private final MongoTemplate mongoTemplate;
 
   @Override
@@ -45,7 +47,8 @@ public class ApplicationOperationConfigurationRepositoryImpl
     Update update = MongoHelper.getMongoTemplateUpdates(configuration,
         ServiceOperationCollection.Fields.status);
     MongoHelper.withMongoTemplateBaseUpdate(update);
-    return mongoTemplate.updateMulti(query, update, ServiceOperationCollection.class).getModifiedCount() > 0;
+    return mongoTemplate.updateMulti(query, update, ServiceOperationCollection.class)
+        .getModifiedCount() > 0;
   }
 
   @Override
@@ -73,7 +76,8 @@ public class ApplicationOperationConfigurationRepositoryImpl
 
   // the search of operation's based—info by serviceId
   public List<ApplicationOperationConfiguration> operationBaseInfoList(String serviceId) {
-    Query filter = new Query(Criteria.where(ServiceOperationCollection.Fields.serviceId).is(serviceId));
+    Query filter = new Query(
+        Criteria.where(ServiceOperationCollection.Fields.serviceId).is(serviceId));
     return mongoTemplate.find(filter, ServiceOperationCollection.class)
         .stream().map(ServiceOperationMapper.INSTANCE::baseInfoFromDao)
         .collect(Collectors.toList());
@@ -88,7 +92,8 @@ public class ApplicationOperationConfigurationRepositoryImpl
   public boolean findAndUpdate(ApplicationOperationConfiguration configuration) {
     Query query = new Query(
         Criteria.where(ServiceOperationCollection.Fields.serviceId).is(configuration.getServiceId())
-            .and(ServiceOperationCollection.Fields.operationName).is(configuration.getOperationName())
+            .and(ServiceOperationCollection.Fields.operationName)
+            .is(configuration.getOperationName())
             .and(ServiceOperationCollection.Fields.appId).is(configuration.getAppId())
     );
     Update update = MongoHelper.getMongoTemplateUpdates(configuration,
@@ -127,4 +132,17 @@ public class ApplicationOperationConfigurationRepositoryImpl
     return mongoTemplate.find(filters, ServiceOperationCollection.class).stream()
         .map(ServiceOperationMapper.INSTANCE::dtoFromDao).collect(Collectors.toList());
   }
+
+  public List<ApplicationOperationConfiguration> queryByOperationIdList(
+      Collection<String> operationIds) {
+    if (CollectionUtils.isEmpty(operationIds)) {
+      return Collections.emptyList();
+    }
+    Query query = new Query(Criteria.where(DASH_ID).in(operationIds));
+    return mongoTemplate.find(query, ServiceOperationCollection.class)
+        .stream().map(ServiceOperationMapper.INSTANCE::dtoFromDao)
+        .collect(Collectors.toList());
+  }
+
+
 }
