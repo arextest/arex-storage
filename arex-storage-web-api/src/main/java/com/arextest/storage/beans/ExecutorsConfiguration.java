@@ -24,6 +24,9 @@ public class ExecutorsConfiguration implements Thread.UncaughtExceptionHandler {
   private static final int CORE_POOL_SIZE = 400;
   private static final long KEEP_ALIVE_TIME = 60L;
   private static final String COVERAGE_HANDLER_EXECUTOR_CORE_POOL_SIZE = "coverage.handler.executor.core.pool.size";
+  private static final String BATCH_SAVE_EXECUTOR_CORE_POOL_SIZE = "batch.save.executor.core.pool.size";
+  private static final String BATCH_SAVE_EXECUTOR_MAX_POOL_SIZE = "batch.save.executor.max.pool.size";
+  private static final String BATCH_SAVE_EXECUTOR_CAPACITY = "batch.save.executor.capacity";
   private static final int DEFAULT_CORE_POOL_SIZE = Runtime.getRuntime().availableProcessors();
   @Resource
   private DefaultApplicationConfig defaultApplicationConfig;
@@ -67,9 +70,12 @@ public class ExecutorsConfiguration implements Thread.UncaughtExceptionHandler {
    */
   @Bean
   public ExecutorService batchSaveExecutor() {
-    ExecutorService executorService = new ThreadPoolExecutor(CORE_POOL_SIZE, CORE_POOL_SIZE * 2,
+    int corePoolSize = defaultApplicationConfig.getConfigAsInt(BATCH_SAVE_EXECUTOR_CORE_POOL_SIZE, CORE_POOL_SIZE);
+    int maximumPoolSize = defaultApplicationConfig.getConfigAsInt(BATCH_SAVE_EXECUTOR_MAX_POOL_SIZE, CORE_POOL_SIZE * 2);
+    int capacity = defaultApplicationConfig.getConfigAsInt(BATCH_SAVE_EXECUTOR_CAPACITY, 100);
+    ExecutorService executorService = new ThreadPoolExecutor(corePoolSize, maximumPoolSize,
         KEEP_ALIVE_TIME, TimeUnit.SECONDS,
-        new LinkedBlockingQueue<>(100),
+        new LinkedBlockingQueue<>(capacity),
         createThreadFac("batchSave-executor-%d"));
     return TtlExecutors.getTtlExecutorService(executorService);
   }

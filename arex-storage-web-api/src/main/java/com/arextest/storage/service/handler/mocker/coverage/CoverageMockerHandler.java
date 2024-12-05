@@ -53,7 +53,7 @@ public class CoverageMockerHandler implements MockerHandler {
   private static final String TAG_KEY_COVERAGE_APP = "clientAppId";
   private static final String INVALID_SCENE_KEY = "0";
   private static final String TITLE_REPLAY_TASK = "[[title=replayTask]]";
-  private static final String TITLE_RECORD_TASK = "[[title=recordTask]]";
+  public static final String TITLE_RECORD_TASK = "[[title=recordTask]]";
   private static final String UNDERLINE_SLASH = "_";
   private static final String REPLAY_LOCK_WAIT_TIME = "coverage.replay.lock.wait.millis";
   private static final String REPLAY_LOCK_LEASE_TIME = "coverage.replay.lock.lease.millis";
@@ -288,8 +288,9 @@ public class CoverageMockerHandler implements MockerHandler {
 
         // scene exist remove Rolling mocker
         if (scenePoolProvider.checkSceneExist(appId, sceneKey)) {
-          coverageEventListener.onBeforeExistingCaseRecord(coverageMocker);
-
+          if (!coverageEventListener.handleExistingCaseCondition(coverageMocker)) {
+            return;
+          }
           invalidRecordService.putInvalidCaseInRedis(recordId);
           mockSourceEditionService.removeByRecordId(ProviderNames.DEFAULT, coverageMocker.getRecordId());
           LOGGER.info("{}CoverageMockerHandler received existing case, recordId: {}, pathKey: {}",
