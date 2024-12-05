@@ -17,7 +17,8 @@ public class DefaultCoverageEventListener implements CoverageEventListener {
   }
 
   @Override
-  public void onBeforeExistingCaseRecord(Mocker coverageMocker) {
+  public boolean handleExistingCaseCondition(Mocker coverageMocker) {
+    return true;
   }
 
   @Override

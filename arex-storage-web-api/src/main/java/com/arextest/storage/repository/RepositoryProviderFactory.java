@@ -23,6 +23,8 @@ public final class RepositoryProviderFactory {
   @Getter
   private final Set<MockCategoryType> categoryTypes;
   private final Map<String, MockCategoryType> categoryTypeMap;
+  @Getter
+  private final Set<MockCategoryType> entryCategoryTypes;
 
   public RepositoryProviderFactory(
       List<RepositoryProvider<? extends Mocker>> repositoryProviderList,
@@ -31,6 +33,8 @@ public final class RepositoryProviderFactory {
     this.categoryTypes = categoryTypes;
     this.categoryTypeMap = categoryTypes.stream()
         .collect(Collectors.toMap(MockCategoryType::getName, Function.identity()));
+    this.entryCategoryTypes =  categoryTypes.stream().filter(MockCategoryType::isEntryPoint)
+        .collect(Collectors.toSet());
   }
 
   public List<RepositoryProvider<? extends Mocker>> getRepositoryProviderList() {

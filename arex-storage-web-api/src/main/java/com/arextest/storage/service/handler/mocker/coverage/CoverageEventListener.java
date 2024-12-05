@@ -10,6 +10,6 @@ public interface CoverageEventListener {
   void onBeforeNewCaseRecord(Mocker coverageMocker);
   void onNewCaseRecorded(Mocker coverageMocker);
 
-  void onBeforeExistingCaseRecord(Mocker coverageMocker);
+  boolean handleExistingCaseCondition(Mocker coverageMocker);
   void onExistingCaseRecorded(Mocker coverageMocker);
 }
