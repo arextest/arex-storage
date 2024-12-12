@@ -76,7 +76,11 @@ final class HttpClientMatchKeyBuilderImpl implements MatchKeyBuilder {
       LOGGER.error("Http Client replay result match key build error:{}", e.getMessage(), e);
     }
     messageDigest.update(httpMethodWithUrlBytes);
-    return Arrays.asList(messageDigest.digest(), httpMethodWithUrlBytes, operationBytes);
+    if (Arrays.equals(operationBytes, CacheKeyUtils.EMPTY_BYTE)) {
+      return Arrays.asList(messageDigest.digest(), httpMethodWithUrlBytes);
+    } else {
+      return Arrays.asList(messageDigest.digest(), httpMethodWithUrlBytes, operationBytes);
+    }
 
   }
 
