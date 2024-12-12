@@ -10,6 +10,11 @@ public interface CoverageEventListener {
   void onBeforeNewCaseRecord(Mocker coverageMocker);
   void onNewCaseRecorded(Mocker coverageMocker);
 
+  /**
+   * Provides extensibility and supports special handling of deduplicated cases
+   * @param coverageMocker
+   * @return
+   */
   boolean handleExistingCaseCondition(Mocker coverageMocker);
   void onExistingCaseRecorded(Mocker coverageMocker);
 }
