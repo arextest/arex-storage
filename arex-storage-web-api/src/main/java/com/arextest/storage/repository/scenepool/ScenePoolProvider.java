@@ -1,6 +1,7 @@
 package com.arextest.storage.repository.scenepool;
 
 import com.arextest.model.scenepool.Scene;
+import java.util.Date;
 import java.util.List;
 
 public interface ScenePoolProvider {
@@ -12,7 +13,7 @@ public interface ScenePoolProvider {
 
   void upsertOne(Scene scene);
 
-  long clearSceneByAppid(String appid);
+  long clearSceneByAppid(String appid, Date date, int limit);
 
   Scene findByRecordId(String recordId);
 
