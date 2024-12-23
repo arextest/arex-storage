@@ -65,6 +65,7 @@ public class AgentWorkingService {
     }
 
     mockResultProvider.calculateEigen(item);
+    item.setCreationTime(System.currentTimeMillis());
     RepositoryProvider<T> repositoryWriter = repositoryProviderFactory.defaultProvider();
     return repositoryWriter != null && repositoryWriter.save(item);
   }
