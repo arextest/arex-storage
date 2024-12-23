@@ -1,7 +1,6 @@
 package com.arextest.storage.service;
 
-import static com.arextest.storage.repository.scenepool.ScenePoolFactory.REPLAY_SCENE_POOL;
-
+import com.arextest.common.config.DefaultApplicationConfig;
 import com.arextest.model.mock.AREXMocker;
 import com.arextest.model.mock.MockCategoryType;
 import com.arextest.model.mock.Mocker.Target;
@@ -10,6 +9,7 @@ import com.arextest.model.scenepool.Scene;
 import com.arextest.storage.repository.scenepool.ScenePoolFactory;
 import com.arextest.storage.repository.scenepool.ScenePoolProvider;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
@@ -22,11 +22,25 @@ import org.springframework.stereotype.Service;
 public class ScenePoolService {
   @Resource
   private ScenePoolFactory scenePoolFactory;
+  @Resource
+  private DefaultApplicationConfig defaultApplicationConfig;
+  private static final int DEFAULT_LIMIT = 200;
+  private static final String CLEAR_LIMIT_KEY = "clear.pool.limit";
   private static final int MAX_PAGE_SIZE = 300;
 
-  public long clearReplayPoolByApp(String appId) {
-    ScenePoolProvider provider = scenePoolFactory.getProvider(REPLAY_SCENE_POOL);
-    return provider.clearSceneByAppid(appId);
+  public long clearPoolByApp(String appId, String providerName) {
+    ScenePoolProvider provider = scenePoolFactory.getProvider(providerName);
+
+    int limit = defaultApplicationConfig.getConfigAsInt(CLEAR_LIMIT_KEY, DEFAULT_LIMIT);
+    long totalDeletedCount = 0;
+    Date date = new Date();
+    long deletedCount;
+    do {
+      deletedCount = provider.clearSceneByAppid(appId, date, limit);
+      totalDeletedCount += deletedCount;
+    } while (deletedCount == limit);
+
+    return totalDeletedCount;
   }
 
   public AREXMocker findByRecordId(String recordId, MockCategoryType categoryType) {

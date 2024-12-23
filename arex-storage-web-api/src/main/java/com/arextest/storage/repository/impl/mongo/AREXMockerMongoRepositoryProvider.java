@@ -293,10 +293,9 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
       }
       String collection = getCollectionName(category);
 
-      long currentTime = System.currentTimeMillis();
+      long expirationTime = System.currentTimeMillis() + expiration;
       valueList.forEach(item -> {
-        item.setCreationTime(currentTime);
-        item.setExpirationTime(currentTime + expiration);
+        item.setExpirationTime(expirationTime);
 
         if (category.isEntryPoint()) {
           item.setId(item.getRecordId());

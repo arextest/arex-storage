@@ -69,8 +69,8 @@ public class ScenePoolProviderImpl extends AbstractScenePoolProvider {
   }
 
   @Override
-  public long clearSceneByAppid(String appid) {
-    Query filter = Query.query(Criteria.where(Fields.appId).is(appid));
+  public long clearSceneByAppid(String appid, Date date, int limit) {
+    Query filter = Query.query(Criteria.where(Fields.appId).is(appid).and(Fields.creationTime).lte(date)).limit(limit);
     return getTemplate().remove(filter, Scene.class, getCollectionName()).getDeletedCount();
   }
 

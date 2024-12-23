@@ -3,8 +3,8 @@ package com.arextest.storage.web.controller;
 import com.arextest.common.model.response.Response;
 import com.arextest.common.utils.ResponseUtils;
 import com.arextest.model.replay.QuerySceneRequestType;
+import com.arextest.storage.repository.scenepool.ScenePoolFactory;
 import com.arextest.storage.service.ScenePoolService;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -31,7 +31,7 @@ public class ScenePoolController {
   @GetMapping(value = "/clearReplayPool/{appId}", produces = "application/json")
   @ResponseBody
   public Response clearReplayPool(@PathVariable("appId") String appId) {
-    scenePoolService.clearReplayPoolByApp(appId);
+    scenePoolService.clearPoolByApp(appId, ScenePoolFactory.REPLAY_SCENE_POOL);
     return ResponseUtils.successResponse(true);
   }
 
