@@ -5,6 +5,7 @@ import com.arextest.config.model.dao.config.ServiceOperationCollection;
 import com.arextest.config.model.dto.application.ApplicationOperationConfiguration;
 import com.arextest.config.repository.ConfigRepositoryProvider;
 import com.arextest.config.utils.MongoHelper;
+import com.arextest.config.utils.RegexUtils;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -144,5 +146,18 @@ public class ApplicationOperationConfigurationRepositoryImpl
         .collect(Collectors.toList());
   }
 
+  public List<ApplicationOperationConfiguration> queryLikeOperationName(
+      String appid, String operationName) {
+    if (StringUtils.isEmpty(appid)) {
+      return Collections.emptyList();
+    }
+    Query query = new Query(Criteria.where(ServiceOperationCollection.Fields.appId).is(appid)
+        .and(ServiceOperationCollection.Fields.operationName)
+        .regex(RegexUtils.getRegexForFuzzySearch(operationName), "i"));
+    return mongoTemplate.find(query, ServiceOperationCollection.class)
+        .stream().map(ServiceOperationMapper.INSTANCE::dtoFromDao)
+        .collect(Collectors.toList());
+
+  }
 
 }
