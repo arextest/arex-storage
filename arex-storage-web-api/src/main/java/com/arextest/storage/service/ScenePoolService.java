@@ -27,20 +27,36 @@ public class ScenePoolService {
   private static final int DEFAULT_LIMIT = 200;
   private static final String CLEAR_LIMIT_KEY = "clear.pool.limit";
   private static final int MAX_PAGE_SIZE = 300;
+  private static final int MAX_ITERATIONS = 200;
+  private static final int MAX_LIMIT = 5000;
+  private static final int MIN_LIMIT = 0;
 
   public long clearPoolByApp(String appId, String providerName) {
     ScenePoolProvider provider = scenePoolFactory.getProvider(providerName);
 
-    int limit = defaultApplicationConfig.getConfigAsInt(CLEAR_LIMIT_KEY, DEFAULT_LIMIT);
+    int limit = getLimit();
     long totalDeletedCount = 0;
     Date date = new Date();
     long deletedCount;
+    int iterations = 0;
+
     do {
       deletedCount = provider.clearSceneByAppid(appId, date, limit);
       totalDeletedCount += deletedCount;
-    } while (deletedCount == limit);
+      iterations++;
+    } while (deletedCount > 0 && iterations <= MAX_ITERATIONS);
 
     return totalDeletedCount;
+  }
+
+  private int getLimit() {
+    int limit = defaultApplicationConfig.getConfigAsInt(CLEAR_LIMIT_KEY, DEFAULT_LIMIT);
+    if (limit <= MIN_LIMIT) {
+      limit = DEFAULT_LIMIT;
+    } else if (limit > MAX_LIMIT) {
+      limit = MAX_LIMIT;
+    }
+    return limit;
   }
 
   public AREXMocker findByRecordId(String recordId, MockCategoryType categoryType) {
