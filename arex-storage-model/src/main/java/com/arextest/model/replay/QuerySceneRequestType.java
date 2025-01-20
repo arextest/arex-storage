@@ -7,5 +7,6 @@ import lombok.Data;
 public class QuerySceneRequestType extends PagedRequestType {
 
     private String categoryType;
+    private String lastId;
 
 }

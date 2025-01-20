@@ -41,5 +41,8 @@ public interface Constants{
   String AGENT_VERSION = "agentVersion";
   String CLAZZ_NAME_AREX_MOCKER = AREXMocker.class.getSimpleName();
   String CLAZZ_NAME_AREX_QUERY_MOCKER = AREXQueryMocker.class.getSimpleName();
+  String QUERY_CONFIG_URL = "query.config.url";
+  String QUERY_SCHEDULE_REPLAY_CONFIG_URL = "query.schedule.replay.config.url";
+  String UPDATE_CASE_STATUS_URL = "update.case.status.url";
 
 }

@@ -12,8 +12,10 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import jakarta.annotation.Resource;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 /**
  * created by xinyuan_wang on 2024/2/2
@@ -72,9 +74,8 @@ public class ScenePoolService {
     return convert(provider.findByRecordId(recordId));
   }
 
-  public SceneDTO findRecordsByAppId(String appId, String category, Integer pageIndex, int pageSize) {
-    if (StringUtils.isEmpty(appId) || StringUtils.isEmpty(category) || pageIndex == null
-        || pageIndex < 0 || pageSize == 0) {
+  public SceneDTO findRecordsByAppId(String appId, String lastId, String category, int pageSize) {
+    if (StringUtils.isEmpty(appId) || StringUtils.isEmpty(category) || pageSize == 0) {
       return null;
     }
 
@@ -93,8 +94,16 @@ public class ScenePoolService {
       return sceneDTO;
     }
 
-    List<String> scenes = provider.findRecordsByAppId(appId, pageIndex, pageSize);
-    sceneDTO.setSceneList(scenes);
+    List<Scene> scenes = provider.findRecordsByAppId(appId, lastId, pageSize);
+    if (CollectionUtils.isEmpty(scenes)) {
+      sceneDTO.setSceneList(Collections.emptyList());
+      return sceneDTO;
+    }
+
+    List<String> recordIds = scenes.stream().map(Scene::getRecordId).collect(Collectors.toList());
+    Scene last = scenes.getLast();
+    sceneDTO.setSceneList(recordIds);
+    sceneDTO.setLastId(last.getId());
     return sceneDTO;
   }
 

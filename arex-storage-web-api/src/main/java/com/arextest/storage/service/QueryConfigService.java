@@ -2,6 +2,7 @@ package com.arextest.storage.service;
 
 import static com.arextest.diff.utils.JacksonHelperUtil.objectMapper;
 import com.arextest.common.cache.CacheProvider;
+import com.arextest.common.config.DefaultApplicationConfig;
 import com.arextest.config.model.dao.config.SystemConfigurationCollection.KeySummary;
 import com.arextest.config.model.dto.ComparisonExclusionsConfiguration;
 import com.arextest.config.model.dto.application.AppContract;
@@ -18,6 +19,7 @@ import com.arextest.config.repository.impl.ComparisonExclusionsConfigurationRepo
 import com.arextest.model.mock.Mocker;
 import com.arextest.storage.cache.CacheKeyUtils;
 import com.arextest.storage.client.HttpWebServiceApiClient;
+import com.arextest.storage.model.Constants;
 import com.arextest.storage.repository.AppContractRepository;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -73,6 +75,8 @@ public class QueryConfigService {
 
   @Resource
   private AppContractRepository appContractRepository;
+  @Resource
+  private DefaultApplicationConfig defaultApplicationConfig;
 
   public QueryConfigOfCategory queryConfigOfCategory(Mocker mocker) {
     if (mocker.getCategoryType().isSkipComparison()) {
@@ -94,7 +98,8 @@ public class QueryConfigService {
     queryConfigOfCategoryRequest.setEntryPoint(mocker.getCategoryType().isEntryPoint());
     queryConfigOfCategoryRequest.setOperationName(operationName);
     QueryConfigOfCategoryResponse queryConfigOfCategoryResponse =
-        httpWebServiceApiClient.jsonPost(queryConfigOfCategoryUrl,
+        httpWebServiceApiClient.jsonPost(defaultApplicationConfig.getConfigAsString(Constants.QUERY_CONFIG_URL,
+                queryConfigOfCategoryUrl),
             queryConfigOfCategoryRequest, QueryConfigOfCategoryResponse.class);
     if (queryConfigOfCategoryResponse != null && queryConfigOfCategoryResponse.getBody() != null) {
       putConfigCache(appId, categoryName, operationName, queryConfigOfCategoryResponse.getBody());
@@ -104,7 +109,8 @@ public class QueryConfigService {
   }
 
   public ScheduleReplayConfigurationResponse queryScheduleReplayConfiguration(String appId) {
-    String url = String.format(queryScheduleReplayConfigurationUrl, appId);
+    String url = String.format(defaultApplicationConfig.getConfigAsString(Constants.QUERY_SCHEDULE_REPLAY_CONFIG_URL,
+        queryScheduleReplayConfigurationUrl), appId);
     return httpWebServiceApiClient.get(url, Collections.emptyMap(),
         ScheduleReplayConfigurationResponse.class);
   }

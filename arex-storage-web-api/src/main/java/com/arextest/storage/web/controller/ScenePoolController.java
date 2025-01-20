@@ -39,7 +39,7 @@ public class ScenePoolController {
   @ResponseBody
   public Response findRecordsByAppId(@RequestBody QuerySceneRequestType requestType) {
     return ResponseUtils.successResponse(
-        scenePoolService.findRecordsByAppId(requestType.getAppId(), requestType.getCategoryType(),
-            requestType.getPageIndex(), requestType.getPageSize()));
+        scenePoolService.findRecordsByAppId(requestType.getAppId(), requestType.getLastId(), requestType.getCategoryType(),
+            requestType.getPageSize()));
   }
 }

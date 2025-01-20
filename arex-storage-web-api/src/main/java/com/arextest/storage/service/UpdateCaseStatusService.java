@@ -1,8 +1,10 @@
 package com.arextest.storage.service;
 
+import com.arextest.common.config.DefaultApplicationConfig;
 import com.arextest.model.replay.UpdateCaseStatusRequestType;
 import com.arextest.model.replay.UpdateCaseStatusResponseType;
 import com.arextest.storage.client.HttpWebServiceApiClient;
+import com.arextest.storage.model.Constants;
 import com.arextest.storage.trace.MDCTracer;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +24,8 @@ public class UpdateCaseStatusService {
   private String updateCaseStatusUrl;
   @Resource
   private HttpWebServiceApiClient httpWebServiceApiClient;
+  @Resource
+  private DefaultApplicationConfig defaultApplicationConfig;
   private static final String TITLE = "[[title=updateCaseStatus]]";
 
   public void updateStatusOfCase(String recordId, int caseStatus) {
@@ -32,7 +36,7 @@ public class UpdateCaseStatusService {
     try {
       MDCTracer.addRecordId(recordId);
       UpdateCaseStatusResponseType response = httpWebServiceApiClient.jsonPost(
-          updateCaseStatusUrl,
+          defaultApplicationConfig.getConfigAsString(Constants.UPDATE_CASE_STATUS_URL, updateCaseStatusUrl),
           new UpdateCaseStatusRequestType(recordId, caseStatus),
           UpdateCaseStatusResponseType.class
       );

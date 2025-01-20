@@ -6,12 +6,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -81,16 +78,16 @@ public class ScenePoolProviderImpl extends AbstractScenePoolProvider {
   }
 
   @Override
-  public List<String> findRecordsByAppId(String appId, int pageIndex, int pageSize) {
-    Query filter = Query.query(Criteria.where(Fields.appId).is(appId));
-
-    filter.fields().include(Fields.recordId);
-
-    Pageable pageableRequest = PageRequest.of(pageIndex, pageSize, Sort.by(Direction.ASC, Fields.id));
-    filter.with(pageableRequest);
-    return getTemplate().find(filter, Scene.class, getCollectionName()).stream()
-        .map(Scene::getRecordId)
-        .collect(Collectors.toList());
+  public List<Scene> findRecordsByAppId(String appId, String lastId, int pageSize) {
+    Criteria criteria = Criteria.where(Fields.appId).is(appId);
+    if (StringUtils.isNotBlank(lastId)) {
+      criteria.and(Fields.id).gt(lastId);
+    }
+    Query filter = Query.query(criteria);
+    filter.fields().include(Fields.recordId, Fields.id);
+    filter.limit(pageSize);
+    filter.with(Sort.by(Sort.Order.asc(Fields.id)));
+    return getTemplate().find(filter, Scene.class, getCollectionName());
   }
 
   @Override

@@ -13,4 +13,5 @@ import lombok.Data;
 public class SceneDTO {
     private List<String> sceneList;
     private Long total;
+    private String lastId;
 }

@@ -17,7 +17,7 @@ public interface ScenePoolProvider {
 
   Scene findByRecordId(String recordId);
 
-  List<String> findRecordsByAppId(String appId, int pageIndex, int pageSize);
+  List<Scene> findRecordsByAppId(String appId, String lastId, int pageSize);
 
   long countByAppId(String appId);
 }
