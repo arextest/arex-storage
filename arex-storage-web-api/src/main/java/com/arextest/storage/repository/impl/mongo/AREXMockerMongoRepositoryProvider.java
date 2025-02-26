@@ -182,10 +182,10 @@ public class AREXMockerMongoRepositoryProvider implements RepositoryProvider<ARE
         .limit(Math.min(pagedRequestType.getPageSize(), DEFAULT_MAX_LIMIT_SIZE));
 
     // By default, targetResponse is not output. When includeExtendFields is included, it is output.
-    query.fields().include(DEFAULT_INCLUDE_FIELDS);
-    if (ArrayUtils.isNotEmpty(pagedRequestType.getIncludeExtendFields())) {
-      query.fields().include(pagedRequestType.getIncludeExtendFields());
-    }
+    String[] includeExtendFields =
+        ArrayUtils.isNotEmpty(pagedRequestType.getIncludeExtendFields()) ?
+            pagedRequestType.getIncludeExtendFields() : DEFAULT_INCLUDE_FIELDS;
+    query.fields().include(includeExtendFields);
 
     Iterable<AREXMocker> iterable = mongoTemplate.find(query, AREXMocker.class, collection);
     return new AttachmentCategoryIterable(categoryType, iterable);
