@@ -88,14 +88,14 @@ public class ScenePoolService {
     pageIndex = Math.min(pageIndex, MAX_PAGE_INDEX);
 
     SceneDTO sceneDTO = new SceneDTO();
-    long count = provider.countByAppId(appId);
-    sceneDTO.setTotal(count);
-    if (count == 0L) {
+    if (pageIndex == MAX_PAGE_INDEX) {
+      sceneDTO.setTotal(0L);
       sceneDTO.setSceneList(Collections.emptyList());
       return sceneDTO;
     }
-    if (pageIndex == MAX_PAGE_INDEX) {
-      sceneDTO.setTotal(0L);
+    long count = provider.countByAppId(appId);
+    sceneDTO.setTotal(count);
+    if (count == 0L) {
       sceneDTO.setSceneList(Collections.emptyList());
       return sceneDTO;
     }
