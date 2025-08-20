@@ -27,6 +27,7 @@ public class ScenePoolService {
   private static final int DEFAULT_LIMIT = 200;
   private static final String CLEAR_LIMIT_KEY = "clear.pool.limit";
   private static final int MAX_PAGE_SIZE = 300;
+  private static final int MAX_PAGE_INDEX = 200;
   private static final int MAX_ITERATIONS = 200;
   private static final int MAX_LIMIT = 5000;
   private static final int MIN_LIMIT = 0;
@@ -84,11 +85,17 @@ public class ScenePoolService {
     }
 
     pageSize = Math.min(pageSize, MAX_PAGE_SIZE);
+    pageIndex = Math.min(pageIndex, MAX_PAGE_INDEX);
 
     SceneDTO sceneDTO = new SceneDTO();
     long count = provider.countByAppId(appId);
     sceneDTO.setTotal(count);
     if (count == 0L) {
+      sceneDTO.setSceneList(Collections.emptyList());
+      return sceneDTO;
+    }
+    if (pageIndex == MAX_PAGE_INDEX) {
+      sceneDTO.setTotal(0L);
       sceneDTO.setSceneList(Collections.emptyList());
       return sceneDTO;
     }
